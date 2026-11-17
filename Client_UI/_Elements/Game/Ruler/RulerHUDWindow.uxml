@@ -1,0 +1,45 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/Game/Ruler/RulerHUDWindow.uss?fileID=7433441132597879392&amp;guid=f4a63560d9f9fef459f3a3592e928918&amp;type=3#RulerHUDWindow" />
+    
+    <ui:VisualElement name="RulerHUDWindow" picking-mode="Ignore" style="position: absolute; width: 100%; height: 100%;">
+        <!-- Top Right Ruler Control Panel -->
+        <ui:VisualElement name="RulerTopPanel" class="ruler-top-panel" picking-mode="Position">
+            <ui:VisualElement name="RulerHeader" class="ruler-header" picking-mode="Ignore">
+                <ui:Label text="👑 RULER MODE" name="RulerTitleLabel" class="ruler-title-label" picking-mode="Ignore" />
+            </ui:VisualElement>
+            
+            <ui:VisualElement name="RulerBody" class="ruler-body" picking-mode="Ignore">
+                <ui:Button text="RTS Camera: OFF" name="BtnToggleRtsCamera" class="ruler-main-btn" picking-mode="Position" />
+                
+                <ui:VisualElement name="RulerSubModesContainer" class="ruler-submodes-container" picking-mode="Ignore">
+                    <ui:Button text="Observe Mode" name="BtnObserveMode" class="ruler-mode-btn" picking-mode="Position" />
+                    <ui:Button text="Build Mode" name="BtnBuildMode" class="ruler-mode-btn" picking-mode="Position" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Bottom Build Bar (Only visible in Build Mode) -->
+        <ui:VisualElement name="RulerBuildBar" class="ruler-build-bar" picking-mode="Position">
+            <ui:VisualElement name="BuildBarHeader" class="build-bar-header" picking-mode="Ignore">
+                <ui:Label text="BUILDINGS" name="BuildBarTitle" class="build-bar-title" picking-mode="Ignore" />
+                
+                <ui:VisualElement name="PaginationContainer" class="pagination-container" picking-mode="Ignore">
+                    <ui:Button text="&lt; Prev" name="BtnPrevPage" class="pagination-btn" picking-mode="Position" />
+                    <ui:Label text="Page 1/3" name="PageLabel" class="pagination-label" picking-mode="Ignore" />
+                    <ui:Button text="Next &gt;" name="BtnNextPage" class="pagination-btn" picking-mode="Position" />
+                </ui:VisualElement>
+
+                <ui:VisualElement style="flex-grow: 1;" picking-mode="Ignore" />
+                <ui:Button text="Demolish Under Cursor (Del)" name="BtnDemolish" class="build-bar-action-btn demolish-btn" picking-mode="Position" />
+                <ui:Button text="Cancel / Clear (Esc)" name="BtnCancelSelection" class="build-bar-action-btn cancel-btn" picking-mode="Position" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="BuildingsGridContainer" class="buildings-grid-container" picking-mode="Position" />
+
+            <ui:VisualElement name="BuildBarFooter" class="build-bar-footer" picking-mode="Ignore">
+                <ui:Label text="Controls: [LMB] Place | [R] Rotate 90° | [Shift+R] Rotate 45° | [RMB / Esc] Cancel | [Del] Demolish" name="HelpTextLabel" class="ruler-help-text" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

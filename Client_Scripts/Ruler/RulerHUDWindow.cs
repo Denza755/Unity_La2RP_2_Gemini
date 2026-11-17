@@ -1,0 +1,584 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class RulerHUDWindow : L2Window
+{
+    private static RulerHUDWindow _instance;
+    public static RulerHUDWindow Instance => _instance;
+
+    private VisualElement _topPanel;
+    private Button _btnToggleRts;
+    private VisualElement _subModesContainer;
+    private Button _btnObserve;
+    private Button _btnBuild;
+
+    private VisualElement _buildBar;
+    private VisualElement _buildingsGridContainer;
+    private Button _btnPrevPage;
+    private Label _pageLabel;
+    private Button _btnNextPage;
+    private Button _btnDemolish;
+    private Button _btnCancel;
+
+    private readonly List<Button> _buildingButtons = new List<Button>();
+    private readonly List<string> _buildingButtonPrefabs = new List<string>();
+
+    private int _currentPage = 0;
+    private const int PageSize = 10;
+    private int TotalPages
+    {
+        get
+        {
+            var list = BuildingPlacementSystem.GetAvailableBuildingPrefabNames();
+            int count = (list != null && list.Count > 0) ? list.Count : 30;
+            return Mathf.Max(1, Mathf.CeilToInt(count / (float)PageSize));
+        }
+    }
+
+    private bool _pointerOverTopPanel = false;
+    private bool _pointerOverBuildBar = false;
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (RulerManager.Instance != null)
+        {
+            RulerManager.Instance.OnRtsCameraToggled -= HandleRtsToggled;
+            RulerManager.Instance.OnSubModeChanged -= HandleSubModeChanged;
+            RulerManager.Instance.OnRulerAccessChanged -= HandleAccessChanged;
+        }
+
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset("Data/UI/_Elements/Game/Ruler/RulerHUDWindow");
+    }
+
+    protected override void InitWindow(VisualElement root)
+    {
+        base.InitWindow(root);
+
+        // Load and add USS programmatically to guarantee styles are loaded even if UXML style link fails
+        StyleSheet uss = Resources.Load<StyleSheet>("Data/UI/_Elements/Game/Ruler/RulerHUDWindow");
+        if (uss != null && _windowEle != null)
+        {
+            if (!_windowEle.styleSheets.Contains(uss))
+            {
+                _windowEle.styleSheets.Add(uss);
+            }
+        }
+
+        // Set pickingMode = Ignore on transparent fullscreen wrappers so clicks pass through to game world
+        if (_windowEle != null)
+        {
+            _windowEle.pickingMode = PickingMode.Ignore;
+
+            if (_windowEle.parent != null)
+            {
+                _windowEle.parent.pickingMode = PickingMode.Ignore;
+            }
+        }
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+        yield return new WaitForEndOfFrame();
+
+        RulerSystemBootstrapper.EnsureRulerSystemsInScene();
+        BindUIElements();
+        RegisterEvents();
+        RenderCurrentPage();
+        RefreshState();
+    }
+
+    private void BindUIElements()
+    {
+        _topPanel = GetElementById("RulerTopPanel");
+        _btnToggleRts = (Button)GetElementById("BtnToggleRtsCamera");
+        _subModesContainer = GetElementById("RulerSubModesContainer");
+        _btnObserve = (Button)GetElementById("BtnObserveMode");
+        _btnBuild = (Button)GetElementById("BtnBuildMode");
+
+        _buildBar = GetElementById("RulerBuildBar");
+        if (_buildBar != null)
+        {
+            _buildBar.style.height = 185;
+            _buildBar.style.minHeight = 185;
+        }
+
+        _buildingsGridContainer = GetElementById("BuildingsGridContainer");
+        if (_buildingsGridContainer != null)
+        {
+            _buildingsGridContainer.style.display = DisplayStyle.Flex;
+            _buildingsGridContainer.style.flexDirection = FlexDirection.Row;
+            _buildingsGridContainer.style.flexWrap = Wrap.Wrap;
+            _buildingsGridContainer.style.flexGrow = 1;
+            _buildingsGridContainer.style.flexShrink = 0;
+            _buildingsGridContainer.style.minHeight = 86;
+            _buildingsGridContainer.style.width = Length.Percent(100);
+            _buildingsGridContainer.style.overflow = Overflow.Visible;
+        }
+
+        _btnPrevPage = (Button)GetElementById("BtnPrevPage");
+        _pageLabel = (Label)GetElementById("PageLabel");
+        _btnNextPage = (Button)GetElementById("BtnNextPage");
+        _btnDemolish = (Button)GetElementById("BtnDemolish");
+        _btnCancel = (Button)GetElementById("BtnCancelSelection");
+    }
+
+    private void RegisterEvents()
+    {
+        if (_topPanel != null)
+        {
+            _topPanel.RegisterCallback<PointerEnterEvent>(evt => _pointerOverTopPanel = true);
+            _topPanel.RegisterCallback<PointerLeaveEvent>(evt => _pointerOverTopPanel = false);
+        }
+
+        if (_buildBar != null)
+        {
+            _buildBar.RegisterCallback<PointerEnterEvent>(evt => _pointerOverBuildBar = true);
+            _buildBar.RegisterCallback<PointerLeaveEvent>(evt => _pointerOverBuildBar = false);
+        }
+
+        if (_btnToggleRts != null)
+        {
+            _btnToggleRts.clicked += OnToggleRtsClicked;
+            _btnToggleRts.RegisterCallback<ClickEvent>(evt =>
+            {
+                // Backup ClickEvent listener in case clicked doesn't fire
+                if (RulerManager.Instance != null)
+                {
+                    Debug.Log("[RulerHUDWindow] ClickEvent on BtnToggleRtsCamera received.");
+                }
+            });
+        }
+
+        if (_btnObserve != null)
+        {
+            _btnObserve.clicked += () =>
+            {
+                if (RulerManager.Instance != null)
+                {
+                    RulerManager.Instance.SetSubMode(RulerSubMode.Observe);
+                }
+            };
+        }
+
+        if (_btnBuild != null)
+        {
+            _btnBuild.clicked += () =>
+            {
+                if (RulerManager.Instance != null)
+                {
+                    RulerManager.Instance.SetSubMode(RulerSubMode.Build);
+                }
+                if (BuildingPlacementSystem.Instance != null && string.IsNullOrEmpty(BuildingPlacementSystem.Instance.SelectedPrefabName))
+                {
+                    BuildingPlacementSystem.Instance.SelectBuildingByIndex(0);
+                }
+            };
+        }
+
+        if (_btnPrevPage != null)
+        {
+            _btnPrevPage.clicked += () =>
+            {
+                if (_currentPage > 0)
+                {
+                    _currentPage--;
+                    RenderCurrentPage();
+                }
+            };
+        }
+
+        if (_btnNextPage != null)
+        {
+            _btnNextPage.clicked += () =>
+            {
+                if (_currentPage < TotalPages - 1)
+                {
+                    _currentPage++;
+                    RenderCurrentPage();
+                }
+            };
+        }
+
+        if (_btnDemolish != null)
+        {
+            _btnDemolish.clicked += () =>
+            {
+                if (BuildingPlacementSystem.Instance != null)
+                {
+                    BuildingPlacementSystem.Instance.TryDemolishHoveredBuilding();
+                }
+            };
+        }
+
+        if (_btnCancel != null)
+        {
+            _btnCancel.clicked += () =>
+            {
+                if (BuildingPlacementSystem.Instance != null)
+                {
+                    BuildingPlacementSystem.Instance.CancelSelection();
+                    UpdateSelectedBuildingCard(null);
+                }
+            };
+        }
+
+        if (RulerManager.Instance != null)
+        {
+            RulerManager.Instance.OnRtsCameraToggled += HandleRtsToggled;
+            RulerManager.Instance.OnSubModeChanged += HandleSubModeChanged;
+            RulerManager.Instance.OnRulerAccessChanged += HandleAccessChanged;
+        }
+    }
+
+    public void RenderCurrentPage()
+    {
+        RulerSystemBootstrapper.EnsureRulerSystemsInScene();
+
+        if (_buildingsGridContainer == null) return;
+
+        var list = BuildingPlacementSystem.GetAvailableBuildingPrefabNames();
+        if (list == null || list.Count == 0)
+        {
+            GameObject[] loaded = Resources.LoadAll<GameObject>("Data/Buildings");
+            List<string> fallback = new List<string>();
+            for (int f = 0; f < loaded.Length; f++)
+            {
+                if (loaded[f] != null) fallback.Add(loaded[f].name);
+            }
+            list = fallback;
+        }
+
+        int total = list != null ? list.Count : 0;
+        int totalPages = Mathf.Max(1, Mathf.CeilToInt(total / (float)PageSize));
+
+        if (_currentPage < 0) _currentPage = 0;
+        if (_currentPage >= totalPages) _currentPage = totalPages - 1;
+
+        _buildingsGridContainer.style.display = DisplayStyle.Flex;
+        _buildingsGridContainer.style.flexDirection = FlexDirection.Row;
+        _buildingsGridContainer.style.flexWrap = Wrap.Wrap;
+        _buildingsGridContainer.style.flexGrow = 1;
+        _buildingsGridContainer.style.flexShrink = 0;
+        _buildingsGridContainer.style.minHeight = 86;
+        _buildingsGridContainer.style.width = Length.Percent(100);
+        _buildingsGridContainer.style.overflow = Overflow.Visible;
+
+        _buildingsGridContainer.Clear();
+        _buildingButtons.Clear();
+        _buildingButtonPrefabs.Clear();
+
+        int startIndex = _currentPage * PageSize;
+        int endIndex = Mathf.Min(startIndex + PageSize, total);
+
+        string currentSelected = BuildingPlacementSystem.Instance != null ? BuildingPlacementSystem.Instance.SelectedPrefabName : null;
+
+        for (int i = startIndex; i < endIndex; i++)
+        {
+            string prefabName = list[i];
+            string displayName = FormatBuildingName(prefabName);
+
+            Button btn = new Button
+            {
+                text = displayName,
+                name = $"BtnBuilding_{prefabName}"
+            };
+            btn.AddToClassList("building-card-btn");
+
+            // Apply all critical styles directly inline to prevent overrides
+            ApplyButtonNormalStyle(btn);
+
+            if (prefabName == currentSelected)
+            {
+                ApplyButtonSelectedStyle(btn);
+            }
+
+            btn.clicked += () =>
+            {
+                if (BuildingPlacementSystem.Instance != null)
+                {
+                    BuildingPlacementSystem.Instance.SelectBuilding(prefabName);
+                    UpdateSelectedBuildingCard(prefabName);
+                }
+            };
+
+            _buildingsGridContainer.Add(btn);
+            _buildingButtons.Add(btn);
+            _buildingButtonPrefabs.Add(prefabName);
+        }
+
+        if (_pageLabel != null)
+        {
+            _pageLabel.text = $"Page {_currentPage + 1}/{totalPages}";
+        }
+
+        if (_btnPrevPage != null)
+        {
+            _btnPrevPage.SetEnabled(_currentPage > 0);
+        }
+
+        if (_btnNextPage != null)
+        {
+            _btnNextPage.SetEnabled(_currentPage < totalPages - 1);
+        }
+
+        Debug.Log($"[RulerUI] Rendered {_buildingButtons.Count} building buttons");
+    }
+
+    private void PopulateBuildingsPage()
+    {
+        RenderCurrentPage();
+    }
+
+    private void ApplyButtonNormalStyle(Button btn)
+    {
+        btn.style.width = 125;
+        btn.style.height = 36;
+        btn.style.marginRight = 6;
+        btn.style.marginBottom = 6;
+        btn.style.marginLeft = 0;
+        btn.style.marginTop = 0;
+        btn.style.paddingLeft = 2;
+        btn.style.paddingRight = 2;
+        btn.style.paddingTop = 0;
+        btn.style.paddingBottom = 0;
+        btn.style.flexShrink = 0;
+        btn.style.backgroundColor = new Color(0.16f, 0.18f, 0.22f, 0.95f);
+        btn.style.color = Color.white;
+        btn.style.fontSize = 11;
+        btn.style.unityTextAlign = TextAnchor.MiddleCenter;
+        btn.style.whiteSpace = WhiteSpace.Normal;
+
+        Color bronze = new Color(0.65f, 0.54f, 0.36f, 1f);
+        btn.style.borderTopColor = bronze;
+        btn.style.borderBottomColor = bronze;
+        btn.style.borderLeftColor = bronze;
+        btn.style.borderRightColor = bronze;
+        btn.style.borderTopWidth = 1;
+        btn.style.borderBottomWidth = 1;
+        btn.style.borderLeftWidth = 1;
+        btn.style.borderRightWidth = 1;
+        btn.style.borderTopLeftRadius = 3;
+        btn.style.borderTopRightRadius = 3;
+        btn.style.borderBottomLeftRadius = 3;
+        btn.style.borderBottomRightRadius = 3;
+    }
+
+    private void ApplyButtonSelectedStyle(Button btn)
+    {
+        btn.style.backgroundColor = new Color(0.18f, 0.42f, 0.32f, 0.98f);
+        btn.style.color = Color.white;
+        Color brightHighlight = new Color(0.4f, 1.0f, 0.6f, 1f);
+        btn.style.borderTopColor = brightHighlight;
+        btn.style.borderBottomColor = brightHighlight;
+        btn.style.borderLeftColor = brightHighlight;
+        btn.style.borderRightColor = brightHighlight;
+        btn.style.borderTopWidth = 2;
+        btn.style.borderBottomWidth = 2;
+        btn.style.borderLeftWidth = 2;
+        btn.style.borderRightWidth = 2;
+    }
+
+    private string FormatBuildingName(string rawName)
+    {
+        string formatted = rawName.Replace("Preset_", "");
+        formatted = formatted.Replace("_", " ");
+        return formatted;
+    }
+
+    private void UpdateSelectedBuildingCard(string selectedPrefab)
+    {
+        for (int i = 0; i < _buildingButtons.Count; i++)
+        {
+            if (i < _buildingButtonPrefabs.Count && _buildingButtonPrefabs[i] == selectedPrefab)
+            {
+                ApplyButtonSelectedStyle(_buildingButtons[i]);
+            }
+            else
+            {
+                ApplyButtonNormalStyle(_buildingButtons[i]);
+            }
+        }
+    }
+
+    private void OnToggleRtsClicked()
+    {
+        Debug.Log("[RulerHUDWindow] OnToggleRtsClicked triggered.");
+        if (RulerManager.Instance != null)
+        {
+            RulerManager.Instance.ToggleRtsCamera();
+        }
+        else
+        {
+            Debug.LogError("[RulerHUDWindow] RulerManager.Instance is null!");
+        }
+    }
+
+    private void HandleRtsToggled(bool isRts)
+    {
+        RefreshState();
+    }
+
+    private void HandleSubModeChanged(RulerSubMode subMode)
+    {
+        RefreshState();
+    }
+
+    private void HandleAccessChanged(bool hasAccess)
+    {
+        RefreshState();
+    }
+
+    public void RefreshState()
+    {
+        bool hasAccess = RulerManager.Instance != null && RulerManager.Instance.HasRulerAccess();
+        if (!hasAccess)
+        {
+            HideWindow(true);
+            return;
+        }
+
+        ShowWindow();
+
+        bool isRts = RulerManager.Instance != null && RulerManager.Instance.IsRtsActive;
+        RulerSubMode subMode = RulerManager.Instance != null ? RulerManager.Instance.CurrentSubMode : RulerSubMode.Observe;
+
+        if (_btnToggleRts != null)
+        {
+            _btnToggleRts.text = isRts ? "RTS Camera: ON" : "RTS Camera: OFF";
+            if (isRts)
+            {
+                _btnToggleRts.AddToClassList("active");
+            }
+            else
+            {
+                _btnToggleRts.RemoveFromClassList("active");
+            }
+        }
+
+        if (_subModesContainer != null)
+        {
+            _subModesContainer.style.display = isRts ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        if (_btnObserve != null)
+        {
+            if (subMode == RulerSubMode.Observe)
+            {
+                _btnObserve.AddToClassList("selected");
+            }
+            else
+            {
+                _btnObserve.RemoveFromClassList("selected");
+            }
+        }
+
+        bool isBuild = (isRts && subMode == RulerSubMode.Build);
+
+        if (_btnBuild != null)
+        {
+            if (isBuild)
+            {
+                _btnBuild.AddToClassList("selected");
+            }
+            else
+            {
+                _btnBuild.RemoveFromClassList("selected");
+            }
+        }
+
+        if (_buildBar != null)
+        {
+            _buildBar.style.display = isBuild ? DisplayStyle.Flex : DisplayStyle.None;
+            if (isBuild)
+            {
+                _buildBar.style.height = 185;
+                _buildBar.style.minHeight = 185;
+                if (BuildingPlacementSystem.Instance != null && string.IsNullOrEmpty(BuildingPlacementSystem.Instance.SelectedPrefabName))
+                {
+                    BuildingPlacementSystem.Instance.SelectBuildingByIndex(0);
+                }
+                RenderCurrentPage();
+            }
+        }
+
+        string currentSelected = BuildingPlacementSystem.Instance != null ? BuildingPlacementSystem.Instance.SelectedPrefabName : null;
+        UpdateSelectedBuildingCard(currentSelected);
+    }
+
+    public bool IsPointerOverRulerUI()
+    {
+        if (_pointerOverTopPanel || _pointerOverBuildBar)
+        {
+            return true;
+        }
+
+        if (_windowEle == null) return false;
+
+        Vector2 screenPos;
+        if (UnityEngine.InputSystem.Mouse.current != null)
+        {
+            screenPos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+        }
+        else
+        {
+            screenPos = Input.mousePosition;
+        }
+
+        Vector2 panelPos;
+        if (_windowEle.panel != null)
+        {
+            panelPos = RuntimePanelUtils.ScreenToPanel(_windowEle.panel, screenPos);
+        }
+        else
+        {
+            panelPos = new Vector2(screenPos.x, Screen.height - screenPos.y);
+        }
+
+        if (_topPanel != null && _topPanel.resolvedStyle.display != DisplayStyle.None && _topPanel.worldBound.Contains(panelPos))
+        {
+            return true;
+        }
+
+        if (_buildBar != null && _buildBar.resolvedStyle.display != DisplayStyle.None && _buildBar.worldBound.Contains(panelPos))
+        {
+            return true;
+        }
+
+        Vector2 rawFlipped = new Vector2(screenPos.x, Screen.height - screenPos.y);
+        if (_topPanel != null && _topPanel.resolvedStyle.display != DisplayStyle.None && _topPanel.worldBound.Contains(rawFlipped))
+        {
+            return true;
+        }
+
+        if (_buildBar != null && _buildBar.resolvedStyle.display != DisplayStyle.None && _buildBar.worldBound.Contains(rawFlipped))
+        {
+            return true;
+        }
+
+        return false;
+    }
+}

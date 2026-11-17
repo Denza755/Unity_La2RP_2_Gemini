@@ -1,0 +1,27 @@
+
+Служебные файлы ОС и редакторов
+
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
+*.bak
+*.swp
+*~
+.vs/
+.idea/
+.vscode/
+
+На случай случайного копирования бинарных и мета-файлов
+
+*.meta
+*.dll
+*.exe
+*.jar
+*.png
+*.jpg
+*.tga
+*.fbx
+*.unity
+*.prefab
+*.asset
