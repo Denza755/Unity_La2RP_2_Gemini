@@ -1,0 +1,79 @@
+class m_u025_c extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter12
+		UseDirectionAs=PTDU_Normal
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.6
+		FadeOutStartTime=0.5
+		FadeOut=true
+		FadeInEndTime=0.25
+		FadeIn=true
+		MaxParticles=4
+		RespawnDeadParticles=false
+		Name="Dark"
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=2.2)
+		StartSizeRange=(X=(Min=20.0,Max=20.0),Y=(Min=20.0,Max=20.0),Z=(Min=20.0,Max=20.0))
+		UniformSize=true
+		InitialParticlesPerSecond=1.5
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Darken
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0066'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=4
+		SubdivisionEnd=1
+		LifetimeRange=(Min=1.5,Max=1.5)
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter12'
+	Begin Object Class=MeshEmitter Name=MeshEmitter1
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.orc.orc_magic01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=100,G=255,R=150,A=255))
+		ColorScale(1)=(RelativeTime=0.439286,Color=(B=100,G=255,R=150,A=255))
+		ColorScale(2)=(RelativeTime=0.703571,Color=(B=37,G=131,R=86,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		ColorMultiplierRange=(X=(Min=0.7,Max=0.7),Y=(Min=0.5,Max=0.5),Z=(Min=1.0,Max=1.0))
+		Opacity=0.6
+		FadeOutStartTime=2.24
+		FadeOut=true
+		FadeInEndTime=0.364
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MC"
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.03,Max=0.03),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.25,Max=0.25),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.1,RelativeSize=1.03)
+		SizeScale(1)=(RelativeTime=0.25,RelativeSize=1.0)
+		SizeScale(2)=(RelativeTime=0.36,RelativeSize=1.02)
+		SizeScale(3)=(RelativeTime=0.66,RelativeSize=1.0)
+		SizeScale(4)=(RelativeTime=1.0,RelativeSize=0.98)
+		SizeScaleRepeats=3.0
+		StartSizeRange=(X=(Min=0.14,Max=0.14),Y=(Min=0.14,Max=0.14),Z=(Min=0.14,Max=0.14))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=2.8,Max=2.8)
+		InitialDelayRange=(Min=0.5,Max=0.5)
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter1'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	DrawScale=0.1
+}

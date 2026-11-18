@@ -1,0 +1,113 @@
+class m_u000_d extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter8
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.235714,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		FadeOutStartTime=0.3
+		MaxParticles=1
+		ResetAfterChange=true
+		RespawnDeadParticles=false
+		Name="Core"
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=360.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=1.5)
+		StartSizeRange=(X=(Min=14.0,Max=14.0),Y=(Min=100.0,Max=100.0),Z=(Min=100.0,Max=100.0))
+		UniformSize=true
+		InitialParticlesPerSecond=2000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0002'
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.3,Max=0.3)
+		RelativeWarmupTime=0.2
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter8'
+	Begin Object Class=MeshEmitter Name=MeshEmitter5
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Wind.windblowin01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.9,Max=0.9),Y=(Min=0.95,Max=0.95),Z=(Min=1.0,Max=1.0))
+		Opacity=0.63
+		FadeOutFactor=(W=1.0,X=0.3,Y=0.3,Z=0.3)
+		FadeOutStartTime=0.2365
+		FadeOut=true
+		FadeInFactor=(W=1.0,X=0.3,Y=0.3,Z=0.3)
+		FadeInEndTime=0.1595
+		FadeIn=true
+		MaxParticles=2
+		ResetAfterChange=true
+		RespawnDeadParticles=false
+		Name="Windmesh"
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-3.2,Max=0.0))
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.0,Z=0.0)
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=2.0,Max=2.0))
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.2)
+		SizeScale(1)=(RelativeTime=0.28,RelativeSize=0.7)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.5)
+		StartSizeRange=(X=(Min=0.288,Max=0.352),Y=(Min=0.256,Max=0.256),Z=(Min=0.256,Max=0.256))
+		InitialParticlesPerSecond=2000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0000'
+		InitialTimeRange=(Min=0.1,Max=0.1)
+		LifetimeRange=(Min=1.0,Max=1.0)
+		StartVelocityRange=(X=(Min=38.4,Max=38.4),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		WarmupTicksPerSecond=3.0
+		RelativeWarmupTime=0.55
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter5'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter9
+		UseDirectionAs=PTDU_Normal
+		ProjectionNormal=(X=1.0,Y=0.0,Z=0.0)
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.303571,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=0.714286,Color=(B=0,G=0,R=0,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		FadeOutStartTime=0.25
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="Ring"
+		UseRotationFrom=1
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=360.0),Z=(Min=0.0,Max=360.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.3)
+		SizeScale(1)=(RelativeTime=0.2,RelativeSize=1.2)
+		SizeScale(2)=(RelativeTime=0.41,RelativeSize=1.6)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=2.0)
+		StartSizeRange=(X=(Min=18.0,Max=18.0),Y=(Min=80.0,Max=80.0),Z=(Min=80.0,Max=80.0))
+		UniformSize=true
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0006'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=2
+		SubdivisionEnd=1
+		LifetimeRange=(Min=0.25,Max=0.25)
+		StartVelocityRange=(X=(Min=0.0,Max=8.0E-4),Y=(Min=0.0,Max=8.0E-4),Z=(Min=0.0,Max=8.0E-4))
+	End Object
+	Emitters(2)=SpriteEmitter'SpriteEmitter9'
+	AutoDestroy=true
+	AutoReset=true
+	bUseDynamicLights=false
+	bNoDelete=false
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	DrawScale=0.1
+	bUnlit=false
+	bDirectional=true
+	bSelected=true
+}

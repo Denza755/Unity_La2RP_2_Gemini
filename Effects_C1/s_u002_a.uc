@@ -1,0 +1,114 @@
+class s_u002_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Skill_Power.skill_power01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.357143,Color=(B=255,G=255,R=255,A=191))
+		ColorScale(2)=(RelativeTime=0.789286,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(3)=(RelativeTime=0.914286,Color=(B=255,G=255,R=255,A=191))
+		ColorScale(4)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=15.0
+		Opacity=0.72
+		FadeOutStartTime=0.252
+		FadeOut=true
+		FadeInEndTime=0.1845
+		FadeIn=true
+		MaxParticles=11
+		ForcedMaxParticles=true
+		RespawnDeadParticles=false
+		Name="MeshEmitter2"
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=1.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.7,RelativeSize=0.5)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.01)
+		StartSizeRange=(X=(Min=0.11,Max=0.22),Y=(Min=0.11,Max=0.22),Z=(Min=0.11,Max=0.22))
+		InitialParticlesPerSecond=9.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.45,Max=0.45)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter2'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter2
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.3,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.857143,Color=(B=93,G=93,R=93,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=20.0
+		Opacity=0.8
+		FadeOutStartTime=1.2
+		FadeOut=true
+		FadeInEndTime=0.435
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="SpriteEmitter2"
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.25,RelativeSize=1.4)
+		SizeScale(1)=(RelativeTime=0.65,RelativeSize=1.7)
+		SizeScale(2)=(RelativeTime=0.9,RelativeSize=1.9)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=1.9)
+		StartSizeRange=(X=(Min=4.18,Max=4.18),Y=(Min=4.18,Max=4.18),Z=(Min=4.18,Max=4.18))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0002'
+		LifetimeRange=(Min=1.5,Max=1.5)
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter2'
+	Begin Object Class=MeshEmitter Name=MeshEmitter5
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Skill_Power.skill_charge01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		ColorScaleRepeats=1.0
+		FadeOutStartTime=0.069
+		FadeOut=true
+		FadeInEndTime=0.039
+		FadeIn=true
+		MaxParticles=7
+		ForcedMaxParticles=true
+		RespawnDeadParticles=false
+		Name="MeshEmitter5"
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.3,Max=0.3),Y=(Min=0.3,Max=0.3),Z=(Min=0.3,Max=0.3))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=1.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		StartSizeRange=(X=(Min=0.275,Max=0.275),Y=(Min=0.275,Max=0.275),Z=(Min=0.275,Max=0.275))
+		UniformSize=true
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=0.4,Max=0.4)
+		InitialDelayRange=(Min=0.5,Max=0.5)
+		StartVelocityRange=(X=(Min=-33.0,Max=33.0),Y=(Min=-33.0,Max=33.0),Z=(Min=-33.0,Max=33.0))
+		VelocityLossRange=(X=(Min=2.0,Max=2.0),Y=(Min=2.0,Max=2.0),Z=(Min=2.0,Max=2.0))
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter5'
+	AutoDestroy=true
+	AutoReplay=true
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	bSunAffect=true
+	Location=(X=-1.174793,Y=7.374109,Z=-493.96155)
+	DrawScale=0.05
+	bUnlit=false
+	bSelected=true
+	TexModifyInfo=(bUseModify=false,bTwoSide=false,bAlphaBlend=false,bDummy=false,Color=(B=255,G=255,R=255,A=255),AlphaOp=1,ColorOp=1)
+}

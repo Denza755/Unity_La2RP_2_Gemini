@@ -1,0 +1,75 @@
+class e_u011_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter4
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Summon.summon00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.571429,Color=(B=226,G=211,R=205,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=50.0
+		Opacity=0.6
+		FadeOutStartTime=4.3
+		FadeOut=true
+		FadeInEndTime=1.0
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="MC"
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.04,Max=0.04),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSizeRange=(X=(Min=0.287,Max=0.287),Y=(Min=0.287,Max=0.287),Z=(Min=0.287,Max=0.287))
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=5.0,Max=5.0)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter4'
+	Begin Object Class=MeshEmitter Name=MeshEmitter3
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Support.supportenchant02'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.31
+		FadeOutStartTime=0.28
+		FadeOut=true
+		FadeInEndTime=0.11
+		FadeIn=true
+		MaxParticles=20
+		ForcedMaxParticles=true
+		RespawnDeadParticles=false
+		Name="RingsFlow"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=5.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.07,RelativeSize=2.2)
+		SizeScale(1)=(RelativeTime=0.22,RelativeSize=3.0)
+		SizeScale(2)=(RelativeTime=0.48,RelativeSize=3.8)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=4.5)
+		StartSizeRange=(X=(Min=0.45,Max=0.45),Y=(Min=0.45,Max=0.45),Z=(Min=2.0,Max=2.0))
+		InitialParticlesPerSecond=5.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.8,Max=0.8)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-40.0,Max=-40.0))
+		VelocityLossRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=2.0,Max=2.0))
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter3'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	DrawScale=0.25
+	bUnlit=false
+}

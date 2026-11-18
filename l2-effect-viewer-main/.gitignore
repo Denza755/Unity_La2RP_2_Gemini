@@ -1,0 +1,104 @@
+# Unity generated
+# https://github.com/github/gitignore/blob/main/Unity.gitignore
+.utmp/
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+*.log
+*.blend1
+*.blend1.meta
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Aa]ssets/Plugins/Editor/JetBrains*
+*.DotSettings.user
+.vs/
+.vsconfig
+.idea/
+.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.temp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+mono_crash.*
+*.apk
+*.aab
+*.unitypackage
+*.unitypackage.meta
+*.app
+crashlytics-build.properties
+InitTestScene*.unity*
+/ServerData
+[Aa]ssets/StreamingAssets/aa*
+[Aa]ssets/AddressableAssetsData/link.xml*
+[Aa]ssets/Addressables_Temp*
+[Aa]ssets/AddressableAssetsData/*/*.bin*
+[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db
+[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
+[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers
+[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
+[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+[Aa]ssets/[Ss]ceneDependencyCache*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+__pycache__/
+*.pyc
+
+# Viewer runtime caches (UModel extract, generated prefabs)
+ViewerCache/
+[Aa]ssets/ViewerEffects/Cache/
+[Aa]ssets/StreamingAssets/ViewerData/Unpack/
+
+# Temp / extracted Unreal packages and dumps
+*.ukx
+*.ukx.meta
+*.utx
+*.utx.meta
+*.uc
+*.uc.meta
+*.usx
+*.usx.meta
+*.unk
+*.psk
+*.psk.meta
+*.psa
+*.psa.meta
+*.umodel.log.txt
+
+# Keep empty placeholders; do not commit dumped UC/packages
+Assets/StreamingAssets/UcEffects/Classes/**
+!Assets/StreamingAssets/UcEffects/Classes/.gitkeep
+Assets/StreamingAssets/ViewerData/Meshes/**
+!Assets/StreamingAssets/ViewerData/Meshes/.gitkeep
+Assets/StreamingAssets/ViewerData/Textures/**
+!Assets/StreamingAssets/ViewerData/Textures/.gitkeep
+
+# UModel noise / duplicate zip
+Tools/UModel/notify.log
+Tools/UModel/**/notify.log
+Tools/UModel/umodel_win32 (1)/
+Tools/UModel/*.zip

@@ -1,0 +1,81 @@
+class m_u010_b extends NSkillProjectile;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter0
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.521429,Color=(B=224,G=224,R=224,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=3.0
+		FadeOutStartTime=0.249
+		FadeOut=true
+		FadeInEndTime=0.045
+		FadeIn=true
+		MaxParticles=12
+		RespawnDeadParticles=false
+		Name="Core"
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=-0.01,Max=0.01),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.52,RelativeSize=0.98)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=2.0
+		StartSizeRange=(X=(Min=5.0,Max=5.0),Y=(Min=5.0,Max=5.0),Z=(Min=5.0,Max=5.0))
+		UniformSize=true
+		InitialParticlesPerSecond=4.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0058'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=2
+		BlendBetweenSubdivisions=true
+		SubdivisionEnd=4
+		LifetimeRange=(Min=0.3,Max=0.3)
+		InitialDelayRange=(Min=0.3,Max=0.3)
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter0'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter2
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.6
+		FadeOutStartTime=0.365
+		FadeOut=true
+		FadeInEndTime=0.045
+		FadeIn=true
+		CoordinateSystem=PTCS_Independent
+		MaxParticles=36
+		RespawnDeadParticles=false
+		Name="ParticleWind"
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=2.5)
+		StartSizeRange=(X=(Min=2.0,Max=2.0),Y=(Min=2.0,Max=2.0),Z=(Min=2.0,Max=2.0))
+		UniformSize=true
+		InitialParticlesPerSecond=12.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0059'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=4
+		SubdivisionEnd=4
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.5,Max=0.5)
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter2'
+	AutoDestroy=true
+	AutoReplay=true
+	bUseDynamicLights=false
+	bLightChanged=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	bSunAffect=true
+	DrawScale=0.01
+	bDirectional=true
+	bSelected=true
+}

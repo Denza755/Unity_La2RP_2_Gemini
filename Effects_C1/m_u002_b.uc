@@ -1,0 +1,97 @@
+class m_u002_b extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter6
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Summon.summonskeleton00'
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		FadeOutStartTime=3.0
+		FadeInFactor=(W=1.0,X=0.5,Y=0.5,Z=0.5)
+		FadeInEndTime=1.0
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="TombStone"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=5.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.5,RelativeSize=1.001)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=30.0
+		StartSizeRange=(X=(Min=0.196,Max=0.196),Y=(Min=0.7,Max=0.7),Z=(Min=0.7,Max=0.7))
+		UniformSize=true
+		InitialParticlesPerSecond=2000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Regular
+		LifetimeRange=(Min=4.5,Max=4.5)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter6'
+	Begin Object Class=MeshEmitter Name=MeshEmitter7
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Summon.summonskeleton02'
+		UseMeshBlendMode=false
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScale(1)=(RelativeTime=0.5,Color=(B=216,G=216,R=216,A=0))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScaleRepeats=20.0
+		FadeOutStartTime=3.0
+		FadeOut=true
+		FadeInEndTime=1.0
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MeshEmitter7"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=2.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.5,RelativeSize=1.005)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=30.0
+		StartSizeRange=(X=(Min=0.245,Max=0.245),Y=(Min=0.7,Max=0.7),Z=(Min=0.7,Max=0.7))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		InitialDelayRange=(Min=1.0,Max=1.0)
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter7'
+	Begin Object Class=MeshEmitter Name=MeshEmitter8
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Summon.summonskeleton01'
+		RenderTwoSided=true
+		Acceleration=(X=0.0,Y=0.0,Z=-6.3)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=40.0
+		FadeInEndTime=0.5
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MeshEmitter8"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-10.0)
+		SpinCCWorCW=(X=0.0,Y=0.0,Z=0.0)
+		SpinsPerSecondRange=(X=(Min=0.05,Max=0.05),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseRegularSizeScale=false
+		StartSizeRange=(X=(Min=0.21,Max=0.21),Y=(Min=0.21,Max=0.21),Z=(Min=0.175,Max=0.175))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Regular
+		Texture=Texture'LineageEffectsTextures.Blackfire.fx_m_t0020'
+		LifetimeRange=(Min=4.5,Max=4.5)
+		InitialDelayRange=(Min=1.0,Max=1.0)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=12.599999,Max=12.599999))
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter8'
+	AutoDestroy=true
+	AutoReplay=true
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	bSunAffect=true
+	Location=(X=85.48825,Y=0.0,Z=-512.1045)
+	DrawScale=0.1
+	bDirectional=true
+	bSelected=true
+}

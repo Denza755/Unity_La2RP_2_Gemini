@@ -1,0 +1,72 @@
+class e_u034_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter0
+		ProjectionNormal=(X=1.0,Y=0.0,Z=0.0)
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.514286,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=5.0
+		FadeOutStartTime=0.61
+		FadeOut=true
+		MaxParticles=12
+		RespawnDeadParticles=false
+		Name="Frag"
+		StartLocationOffset=(X=3.0,Y=0.0,Z=0.0)
+		StartLocationRange=(X=(Min=-3.0,Max=3.0),Y=(Min=-3.0,Max=3.0),Z=(Min=-3.0,Max=3.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.4,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=0.1)
+		StartSizeRange=(X=(Min=1.0,Max=3.0),Y=(Min=1.0,Max=3.0),Z=(Min=1.0,Max=3.0))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0000'
+		TextureUSubdivisions=8
+		TextureVSubdivisions=8
+		SubdivisionStart=11
+		SubdivisionEnd=12
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.3,Max=0.7)
+		StartVelocityRange=(X=(Min=150.0,Max=150.0),Y=(Min=150.0,Max=150.0),Z=(Min=150.0,Max=150.0))
+		VelocityLossRange=(X=(Min=5.0,Max=5.0),Y=(Min=5.0,Max=5.0),Z=(Min=5.0,Max=5.0))
+		GetVelocityDirectionFrom=PTVD_OwnerAndStartPosition
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter0'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter5
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.6,Max=0.6),Z=(Min=0.2,Max=0.2))
+		FadeOutStartTime=0.018
+		FadeOut=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="wave"
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.08,RelativeSize=2.5)
+		SizeScale(1)=(RelativeTime=0.39,RelativeSize=3.5)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=4.5)
+		StartSizeRange=(X=(Min=5.0,Max=5.0),Y=(Min=5.0,Max=5.0),Z=(Min=5.0,Max=5.0))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0061'
+		TextureUSubdivisions=1
+		TextureVSubdivisions=2
+		SubdivisionStart=1
+		SubdivisionEnd=2
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.3,Max=0.3)
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter5'
+	AutoDestroy=true
+	AutoReset=true
+	bNoDelete=false
+	Tag="Emitter"
+	DrawScale=0.1
+}

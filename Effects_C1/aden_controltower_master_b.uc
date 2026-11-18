@@ -1,0 +1,104 @@
+class aden_controltower_master_b extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter29
+		StaticMesh=StaticMesh'FX_E_S.Etc.fx_skill_charge01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		Acceleration=(X=0.0,Y=0.0,Z=5.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.5
+		FadeOutStartTime=1.02
+		FadeOut=true
+		FadeInEndTime=0.3
+		FadeIn=true
+		MaxParticles=15
+		RespawnDeadParticles=false
+		Name="MeshEmitter1"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-3.0)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-1.0,Max=1.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.2),Y=(Min=0.0,Max=0.2),Z=(Min=0.0,Max=0.2))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=1.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.2)
+		SizeScale(1)=(RelativeTime=0.51,RelativeSize=3.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.2)
+		StartSizeRange=(X=(Min=0.1,Max=0.15),Y=(Min=0.1,Max=0.15),Z=(Min=0.3,Max=0.3))
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=2.0,Max=2.0)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.5,Max=0.8))
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter29'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter14
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.5,Max=0.7),Y=(Min=0.5,Max=0.5),Z=(Min=1.0,Max=1.0))
+		Opacity=0.27
+		FadeOutStartTime=2.16
+		FadeOut=true
+		FadeInEndTime=0.39
+		FadeIn=true
+		MaxParticles=20
+		RespawnDeadParticles=false
+		Name="SpriteEmitter35"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=2.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.51,RelativeSize=1.5)
+		SizeScale(2)=(RelativeTime=0.72,RelativeSize=1.8)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=2.2)
+		StartSizeRange=(X=(Min=4.0,Max=5.0),Y=(Min=4.0,Max=5.0),Z=(Min=4.0,Max=5.0))
+		UniformSize=true
+		InitialParticlesPerSecond=20.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'FX_E_T.Etc.fx_e_t001_34'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=4
+		SubdivisionStart=2
+		SubdivisionEnd=4
+		UseRandomSubdivision=true
+		StartVelocityRange=(X=(Min=-2.2,Max=2.2),Y=(Min=-2.2,Max=2.2),Z=(Min=-2.2,Max=2.2))
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter14'
+	Begin Object Class=MeshEmitter Name=MeshEmitter30
+		StaticMesh=StaticMesh'FX_E_S.Etc.fx_wispray00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.8,Max=0.8),Y=(Min=0.7,Max=0.7),Z=(Min=1.0,Max=1.0))
+		Opacity=0.39
+		FadeOutStartTime=1.89
+		FadeOut=true
+		FadeInEndTime=0.78
+		FadeIn=true
+		MaxParticles=5
+		RespawnDeadParticles=false
+		Name="MeshEmitter4"
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=-0.5,Max=0.5),Z=(Min=-0.5,Max=0.5))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.0)
+		SizeScale(1)=(RelativeTime=0.2,RelativeSize=1.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.5)
+		StartSizeRange=(X=(Min=0.3,Max=0.3),Y=(Min=0.3,Max=0.3),Z=(Min=0.3,Max=0.3))
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=3.0,Max=3.0)
+		InitialDelayRange=(Min=2.0,Max=2.0)
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter30'
+	AutoDestroy=true
+	bLightChanged=true
+	bNoDelete=false
+	Tag="aden_controltower_off"
+	DrawScale=0.1
+	bUnlit=false
+}

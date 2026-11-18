@@ -1,0 +1,111 @@
+class m_u028_c extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter21
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.6
+		FadeOutStartTime=0.28
+		FadeOut=true
+		FadeInEndTime=0.128
+		FadeIn=true
+		MaxParticles=8
+		RespawnDeadParticles=false
+		Name="Base"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=10.0)
+		StartLocationRange=(X=(Min=-7.0,Max=7.0),Y=(Min=-7.0,Max=7.0),Z=(Min=0.0,Max=0.0))
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=5.0,Max=5.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=2.0,Max=2.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.1,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.41,RelativeSize=0.95)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.3)
+		StartSizeRange=(X=(Min=15.0,Max=15.0),Y=(Min=15.0,Max=15.0),Z=(Min=15.0,Max=15.0))
+		UniformSize=true
+		InitialParticlesPerSecond=30.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0081'
+		LifetimeRange=(Min=0.8,Max=0.8)
+		StartVelocityRange=(X=(Min=-10.0,Max=10.0),Y=(Min=-10.0,Max=10.0),Z=(Min=-8.0,Max=-8.0))
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter21'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter8
+		UseDirectionAs=PTDU_Up
+		Acceleration=(X=0.0,Y=0.0,Z=-28.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.9,Max=0.9),Y=(Min=0.9,Max=0.9),Z=(Min=1.0,Max=1.0))
+		Opacity=0.67
+		FadeOutStartTime=0.795
+		FadeOut=true
+		MaxParticles=5
+		RespawnDeadParticles=false
+		Name="Flame"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=30.0)
+		StartLocationRange=(X=(Min=-20.0,Max=20.0),Y=(Min=-20.0,Max=20.0),Z=(Min=-20.0,Max=20.0))
+		StartLocationShape=PTLS_Polar
+		StartLocationPolarRange=(X=(Min=90.0,Max=90.0),Y=(Min=0.0,Max=360.0),Z=(Min=15.0,Max=15.0))
+		SpinParticles=true
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.1,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.29,RelativeSize=0.95)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.1)
+		StartSizeRange=(X=(Min=12.0,Max=12.0),Y=(Min=28.0,Max=28.0),Z=(Min=12.0,Max=12.0))
+		InitialParticlesPerSecond=30.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'FX_E_T.Flameset_a.flame_a00'
+		LifetimeRange=(Min=0.3,Max=0.9)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-0.1,Max=-0.1))
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter8'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter27
+		Acceleration=(X=0.0,Y=0.0,Z=500.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.2
+		FadeOutStartTime=0.2
+		FadeOut=true
+		RespawnDeadParticles=false
+		Name="smoke"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=5.0)
+		StartLocationRange=(X=(Min=-30.0,Max=30.0),Y=(Min=-30.0,Max=30.0),Z=(Min=0.0,Max=0.0))
+		StartLocationShape=PTLS_Sphere
+		SphereRadiusRange=(Min=8.0,Max=8.0)
+		StartLocationPolarRange=(X=(Min=90.0,Max=90.0),Y=(Min=90.0,Max=150.0),Z=(Min=20.0,Max=20.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.1),Y=(Min=0.05,Max=0.1),Z=(Min=0.05,Max=0.1))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.2,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=0.3)
+		StartSizeRange=(X=(Min=40.0,Max=40.0),Y=(Min=40.0,Max=40.0),Z=(Min=40.0,Max=40.0))
+		UniformSize=true
+		InitialParticlesPerSecond=30.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0083'
+		LifetimeRange=(Min=0.5,Max=0.5)
+		StartVelocityRange=(X=(Min=-6.0,Max=6.0),Y=(Min=-6.0,Max=6.0),Z=(Min=100.0,Max=100.0))
+		VelocityLossRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=5.0,Max=5.0))
+	End Object
+	Emitters(2)=SpriteEmitter'SpriteEmitter27'
+	AutoDestroy=true
+	AutoReset=true
+	Physics=10
+	bUseDynamicLights=false
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	DrawScale=0.2
+	bUnlit=false
+	bDirectional=true
+	TexModifyInfo=(bUseModify=false,bTwoSide=false,bAlphaBlend=false,bDummy=false,Color=(B=255,G=255,R=255,A=255),AlphaOp=1,ColorOp=1)
+}

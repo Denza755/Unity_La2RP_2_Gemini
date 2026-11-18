@@ -1,0 +1,81 @@
+class m_u013_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter3
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Spirit_Fire.spirit_fire00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScale(1)=(RelativeTime=0.521429,Color=(B=173,G=156,R=148,A=0))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScaleRepeats=50.0
+		ColorMultiplierRange=(X=(Min=0.6,Max=0.6),Y=(Min=0.7,Max=0.7),Z=(Min=1.0,Max=1.0))
+		Opacity=0.5
+		FadeOutStartTime=4.5
+		FadeOut=true
+		FadeInEndTime=0.5
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="MeshEmitter3"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=8.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.0,Z=0.0)
+		SpinsPerSecondRange=(X=(Min=0.5,Max=0.5),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.25,Max=0.25),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.5,RelativeSize=0.99)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.01)
+		SizeScaleRepeats=50.0
+		StartSizeRange=(X=(Min=0.06,Max=0.06),Y=(Min=0.06,Max=0.06),Z=(Min=0.1,Max=0.1))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=5.0,Max=5.0)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter3'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter8
+		UseDirectionAs=PTDU_Normal
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.55,Color=(B=224,G=224,R=224,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=50.0
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.8,Max=0.8),Z=(Min=1.0,Max=1.0))
+		Opacity=0.67
+		FadeOutStartTime=3.4
+		FadeOut=true
+		FadeInEndTime=0.52
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="SpriteEmitter8"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=8.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.03,Max=0.03),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.49,RelativeSize=0.98)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=30.0
+		StartSizeRange=(X=(Min=19.0,Max=19.0),Y=(Min=19.0,Max=19.0),Z=(Min=19.0,Max=19.0))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0060'
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter8'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bLightChanged=true
+	bNoDelete=false
+	bTrailerPrePivot=true
+	DrawScale=0.1
+}

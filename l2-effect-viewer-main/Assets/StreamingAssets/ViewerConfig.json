@@ -1,0 +1,12 @@
+{
+  "ucEffectsDir": "Assets/StreamingAssets/UcEffects/Classes",
+  "meshPackageDir": "Assets/StreamingAssets/ViewerData/Meshes",
+  "texturePackageDir": "Assets/StreamingAssets/ViewerData/Textures",
+  "unpackFallbackDir": "",
+  "extraPackageDirs": [],
+  "blenderExe": "",
+  "umodelExe": "Tools/UModel/umodel_64.exe",
+  "worldCalibrationMesh": 1.8,
+  "worldCalibrationSprite": 1.1,
+  "worldCalibrationBeam": 1.4
+}

@@ -1,0 +1,166 @@
+class aden_controltower_master_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter25
+		StaticMesh=StaticMesh'FX_E_S.Etc.fx_skill_charge01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		Acceleration=(X=0.0,Y=0.0,Z=5.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.5
+		FadeOutStartTime=0.8
+		FadeOut=true
+		FadeInEndTime=0.3
+		FadeIn=true
+		MaxParticles=15
+		Name="MeshEmitter1"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-4.0)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-2.0,Max=2.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.2),Y=(Min=0.0,Max=0.2),Z=(Min=0.0,Max=0.2))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=1.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.7)
+		SizeScale(1)=(RelativeTime=0.51,RelativeSize=1.5)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.2)
+		StartSizeRange=(X=(Min=0.12,Max=0.12),Y=(Min=0.12,Max=0.12),Z=(Min=0.4,Max=0.4))
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=2.0,Max=2.0)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.5,Max=0.8))
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter25'
+	Begin Object Class=MeshEmitter Name=MeshEmitter26
+		StaticMesh=StaticMesh'FX_E_S.Etc.fx_jewel_ring1'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=131,G=131,R=131,A=255))
+		Opacity=0.64
+		FadeOutStartTime=2.6
+		FadeOut=true
+		FadeInEndTime=1.08
+		FadeIn=true
+		MaxParticles=3
+		RespawnDeadParticles=false
+		Name="MeshEmitter4"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=1.5)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.2))
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.1,Max=0.1),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=0.02),Y=(Min=0.0,Max=0.02),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.2)
+		SizeScale(1)=(RelativeTime=0.28,RelativeSize=1.5)
+		SizeScale(2)=(RelativeTime=0.5,RelativeSize=1.0)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=1.0)
+		StartSizeRange=(X=(Min=1.5,Max=1.5),Y=(Min=1.5,Max=1.5),Z=(Min=0.5,Max=0.5))
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=3.0,Max=3.0)
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter26'
+	Begin Object Class=MeshEmitter Name=MeshEmitter27
+		StaticMesh=StaticMesh'FX_E_S.Etc.fx_jewel_ring1'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.5
+		FadeOutStartTime=2.01
+		FadeOut=true
+		FadeInEndTime=0.57
+		FadeIn=true
+		MaxParticles=2
+		Name="MeshEmitter2"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=1.5)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-0.5,Max=0.5))
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.1,Max=0.1),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.46,RelativeSize=0.9)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.0)
+		StartSizeRange=(X=(Min=1.6,Max=1.6),Y=(Min=1.6,Max=1.6),Z=(Min=0.5,Max=0.5))
+		InitialParticlesPerSecond=5.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=3.0,Max=3.0)
+		InitialDelayRange=(Min=2.0,Max=2.0)
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter27'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter13
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.471429,Color=(B=37,G=119,R=218,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=94,G=190,R=215,A=255))
+		ColorMultiplierRange=(X=(Min=0.5,Max=0.5),Y=(Min=0.8,Max=0.8),Z=(Min=1.0,Max=1.0))
+		Opacity=0.32
+		FadeOutStartTime=0.732
+		FadeOut=true
+		FadeInEndTime=0.264
+		FadeIn=true
+		MaxParticles=15
+		Name="SpriteEmitter35"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=1.5)
+		StartSizeRange=(X=(Min=5.0,Max=6.0),Y=(Min=5.0,Max=6.0),Z=(Min=5.0,Max=6.0))
+		UniformSize=true
+		InitialParticlesPerSecond=20.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'FX_E_T.Etc.fx_e_t001_34'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=4
+		SubdivisionStart=2
+		SubdivisionEnd=4
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=1.2,Max=1.2)
+		StartVelocityRange=(X=(Min=-4.0,Max=4.0),Y=(Min=-4.0,Max=4.0),Z=(Min=-4.0,Max=4.0))
+	End Object
+	Emitters(3)=SpriteEmitter'SpriteEmitter13'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter0
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.94
+		FadeOutStartTime=0.68
+		FadeOut=true
+		FadeInEndTime=0.01
+		FadeIn=true
+		MaxParticles=15
+		RespawnDeadParticles=false
+		Name="SpriteEmitter0"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=1.0)
+		StartLocationRange=(X=(Min=-1.0,Max=1.0),Y=(Min=-1.0,Max=1.0),Z=(Min=-1.0,Max=1.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.2,Max=0.5),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.15,RelativeSize=1.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.2)
+		StartSizeRange=(X=(Min=8.0,Max=11.0),Y=(Min=8.0,Max=11.0),Z=(Min=8.0,Max=11.0))
+		UniformSize=true
+		InitialParticlesPerSecond=130.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'FX_M_T.M_FX_FlareSet.flare7'
+		LifetimeRange=(Min=1.5,Max=1.5)
+		StartVelocityRange=(X=(Min=-12.0,Max=12.0),Y=(Min=-12.0,Max=12.0),Z=(Min=-3.0,Max=3.0))
+	End Object
+	Emitters(4)=SpriteEmitter'SpriteEmitter0'
+	bLightChanged=true
+	bNoDelete=false
+	Tag="aden_controltower_on"
+	DrawScale=0.1
+	bUnlit=false
+}

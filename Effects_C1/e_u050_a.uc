@@ -1,0 +1,104 @@
+class e_u050_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter25
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.55,Color=(B=124,G=124,R=124,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=20.0
+		ColorMultiplierRange=(X=(Min=0.599,Max=0.599),Y=(Min=0.71,Max=0.71),Z=(Min=1.0,Max=1.0))
+		Opacity=0.6
+		FadeOutStartTime=1.3
+		FadeInEndTime=0.351
+		FadeIn=true
+		MaxParticles=3
+		RespawnDeadParticles=false
+		Name="Dark"
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.5,Z=0.5)
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.1,RelativeSize=0.5)
+		SizeScale(1)=(RelativeTime=0.24,RelativeSize=0.4)
+		SizeScale(2)=(RelativeTime=0.44,RelativeSize=0.3)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=0.2)
+		StartSizeRange=(X=(Min=340.0,Max=340.0),Y=(Min=340.0,Max=340.0),Z=(Min=340.0,Max=340.0))
+		UniformSize=true
+		InitialParticlesPerSecond=12.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Darken
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0105'
+		TextureVSubdivisions=1
+		SubdivisionEnd=1
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=1.8,Max=1.8)
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter25'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter26
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.8,Max=0.8),Y=(Min=1.0,Max=1.0),Z=(Min=0.8,Max=0.8))
+		Opacity=0.45
+		FadeOutStartTime=0.3
+		MaxParticles=40
+		RespawnDeadParticles=false
+		Name="Flash"
+		StartLocationRange=(X=(Min=-50.0,Max=50.0),Y=(Min=-50.0,Max=50.0),Z=(Min=-50.0,Max=50.0))
+		StartLocationPolarRange=(X=(Min=-120.0,Max=120.0),Y=(Min=60.0,Max=120.0),Z=(Min=50.0,Max=50.0))
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.125,Max=0.125),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.08,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.17,RelativeSize=1.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.1)
+		StartSizeRange=(X=(Min=7.0,Max=7.0),Y=(Min=7.0,Max=7.0),Z=(Min=7.0,Max=7.0))
+		UniformSize=true
+		InitialParticlesPerSecond=80.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0085'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=2
+		BlendBetweenSubdivisions=true
+		SubdivisionEnd=2
+		LifetimeRange=(Min=0.3,Max=0.3)
+		InitialDelayRange=(Min=1.0,Max=1.0)
+		VelocityLossRange=(X=(Min=1.0,Max=1.0),Y=(Min=1.0,Max=1.0),Z=(Min=1.0,Max=1.0))
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter26'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter27
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.271429,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		Opacity=0.8
+		FadeOutStartTime=0.4
+		MaxParticles=3
+		RespawnDeadParticles=false
+		Name="Ring"
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.09,RelativeSize=1.6)
+		SizeScale(1)=(RelativeTime=0.2,RelativeSize=2.1)
+		SizeScale(2)=(RelativeTime=0.52,RelativeSize=2.5)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=2.8)
+		StartSizeRange=(X=(Min=50.0,Max=50.0),Y=(Min=50.0,Max=50.0),Z=(Min=50.0,Max=50.0))
+		UniformSize=true
+		InitialParticlesPerSecond=20.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Darken
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0056'
+		LifetimeRange=(Min=0.7,Max=0.7)
+		InitialDelayRange=(Min=1.0,Max=1.0)
+	End Object
+	Emitters(2)=SpriteEmitter'SpriteEmitter27'
+	AutoDestroy=true
+	bLightChanged=true
+	bNoDelete=false
+	Tag="Emitter"
+	Rotation=(Pitch=0,Yaw=65532,Roll=0)
+	bUnlit=false
+}

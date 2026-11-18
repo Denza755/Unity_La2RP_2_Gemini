@@ -1,0 +1,89 @@
+class s_u003_b extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Skill_Power.skill_power00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=127,G=127,R=127,A=255))
+		ColorScale(1)=(RelativeTime=0.064286,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=0.125,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(3)=(RelativeTime=0.235714,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(4)=(RelativeTime=0.346429,Color=(B=191,G=191,R=191,A=255))
+		ColorScale(5)=(RelativeTime=0.382143,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(6)=(RelativeTime=0.439286,Color=(B=194,G=194,R=194,A=255))
+		ColorScale(7)=(RelativeTime=0.482143,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(8)=(RelativeTime=0.539286,Color=(B=191,G=191,R=191,A=255))
+		ColorScale(9)=(RelativeTime=0.589286,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(10)=(RelativeTime=0.646429,Color=(B=193,G=193,R=193,A=255))
+		ColorScale(11)=(RelativeTime=0.675,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(12)=(RelativeTime=0.75,Color=(B=191,G=191,R=191,A=255))
+		ColorScale(13)=(RelativeTime=0.789286,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(14)=(RelativeTime=0.857143,Color=(B=191,G=191,R=191,A=255))
+		ColorScale(15)=(RelativeTime=0.907143,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(16)=(RelativeTime=0.964286,Color=(B=191,G=191,R=191,A=255))
+		ColorScale(17)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		FadeOutStartTime=0.4225
+		FadeOut=true
+		FadeInEndTime=0.026
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MeshEmitter0"
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=3.0,Max=3.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		StartSizeRange=(X=(Min=0.05,Max=0.05),Y=(Min=0.03,Max=0.03),Z=(Min=0.03,Max=0.03))
+		InitialParticlesPerSecond=100000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=1.0,Max=1.0)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter2'
+	Begin Object Class=MeshEmitter Name=MeshEmitter0
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Wind.windknifewave00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.6
+		FadeOutStartTime=0.27
+		FadeOut=true
+		FadeInEndTime=0.08
+		FadeIn=true
+		MaxParticles=12
+		RespawnDeadParticles=false
+		Name="MeshEmitter0"
+		StartLocationOffset=(X=12.0,Y=0.0,Z=0.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.12,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=5.0)
+		StartSizeRange=(X=(Min=0.0336,Max=0.0336),Y=(Min=0.0126,Max=0.0126),Z=(Min=0.0126,Max=0.0126))
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=1.0,Max=1.0)
+		StartVelocityRange=(X=(Min=-60.2,Max=-60.2),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		WarmupTicksPerSecond=5.0
+		RelativeWarmupTime=0.63
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter0'
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bTrailerSameRotation=true
+	bTrailerPrePivot=true
+	bTrailerNoOwnerDestroy=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	Location=(X=58.310184,Y=0.927353,Z=-483.62653)
+	DrawScale=0.05
+	bDirectional=true
+	bSelected=true
+}

@@ -1,0 +1,125 @@
+class s_u015_a extends NSkillProjectile;
+
+defaultproperties
+{
+	Speed=1000.0
+	AccSpeed=3000.0
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter9
+		UseDirectionAs=PTDU_Up
+		Acceleration=(X=-960.0,Y=0.0,Z=0.0)
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=142,R=213,A=255))
+		ColorScale(1)=(RelativeTime=0.453571,Color=(B=0,G=121,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.771429,Color=(B=40,G=57,R=215,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		Opacity=0.6
+		FadeOutStartTime=0.3
+		FadeOut=true
+		FadeInEndTime=0.04
+		FadeIn=true
+		MaxParticles=80
+		RespawnDeadParticles=false
+		Name="Tail"
+		StartLocationOffset=(X=-20.0,Y=0.0,Z=0.0)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-24.0,Max=24.0))
+		StartLocationShape=PTLS_Polar
+		StartLocationPolarRange=(X=(Min=0.0,Max=0.0),Y=(Min=45.0,Max=135.0),Z=(Min=20.0,Max=40.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.27,RelativeSize=1.8)
+		SizeScale(2)=(RelativeTime=0.61,RelativeSize=1.4)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=1.0)
+		StartSizeRange=(X=(Min=3.6,Max=6.0),Y=(Min=24.0,Max=48.0),Z=(Min=3.6,Max=6.0))
+		InitialParticlesPerSecond=40.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0101'
+		TextureUSubdivisions=8
+		TextureVSubdivisions=1
+		BlendBetweenSubdivisions=true
+		SubdivisionEnd=8
+		LifetimeRange=(Min=0.2,Max=0.3)
+		StartVelocityRange=(X=(Min=-180.0,Max=-180.0),Y=(Min=-36.0,Max=36.0),Z=(Min=0.0,Max=0.0))
+		VelocityLossRange=(X=(Min=0.0,Max=0.0),Y=(Min=2.0,Max=2.0),Z=(Min=0.0,Max=0.0))
+		WarmupTicksPerSecond=10.0
+		RelativeWarmupTime=0.3
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter9'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter10
+		UseDirectionAs=PTDU_Up
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.475,Color=(B=0,G=0,R=0,A=255))
+		ColorScale(2)=(RelativeTime=0.685714,Color=(B=0,G=0,R=0,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=10.0
+		ColorMultiplierRange=(X=(Min=0.55,Max=1.0),Y=(Min=0.55,Max=1.0),Z=(Min=0.55,Max=1.0))
+		Opacity=0.4
+		FadeOutStartTime=0.12
+		FadeOut=true
+		FadeInEndTime=0.024
+		FadeIn=true
+		MaxParticles=80
+		RespawnDeadParticles=false
+		Name="Ticks"
+		StartLocationOffset=(X=40.0,Y=0.0,Z=0.0)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-24.0,Max=24.0))
+		SpinsPerSecondRange=(X=(Min=0.5,Max=0.5),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.37,RelativeSize=0.9)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=0.2)
+		StartSizeRange=(X=(Min=0.48,Max=0.96),Y=(Min=36.0,Max=60.0),Z=(Min=0.48,Max=0.96))
+		InitialParticlesPerSecond=40.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0061'
+		TextureUSubdivisions=8
+		TextureVSubdivisions=8
+		SubdivisionStart=17
+		SubdivisionEnd=20
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.3,Max=0.3)
+		StartVelocityRange=(X=(Min=-480.0,Max=-480.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		VelocityLossRange=(X=(Min=0.0,Max=0.0),Y=(Min=3.0,Max=3.0),Z=(Min=3.0,Max=3.0))
+		WarmupTicksPerSecond=10.0
+		RelativeWarmupTime=0.3
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter10'
+	Begin Object Class=MeshEmitter Name=MeshEmitter4
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Skill_Power.skill_power02'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.514286,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=20.0
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.749,Max=0.749),Z=(Min=1.0,Max=1.0))
+		Opacity=0.6
+		FadeOutStartTime=2.0
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MeshBlade"
+		StartLocationOffset=(X=-20.0,Y=0.0,Z=0.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.79,RelativeSize=0.97)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=20.0
+		StartSizeRange=(X=(Min=0.576,Max=0.576),Y=(Min=0.48,Max=0.48),Z=(Min=0.384,Max=0.384))
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=2.0,Max=2.0)
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter4'
+	AutoDestroy=true
+	AutoReset=true
+	bRotEmitter=true
+	RotPerSecond=(Pitch=0,Yaw=0,Roll=20000)
+	bSelfRotation=true
+	Tag="Emitter"
+	DrawScale=0.1
+	bUpdateShadow=1
+	bUnlit=false
+	bDirectional=true
+}

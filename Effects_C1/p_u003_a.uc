@@ -1,0 +1,104 @@
+class p_u003_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter3
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Impact.bloodspray00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		Acceleration=(X=-13.0,Y=0.0,Z=0.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.8,Max=0.9),Y=(Min=0.8,Max=0.9),Z=(Min=0.8,Max=0.9))
+		Opacity=0.33
+		FadeOutStartTime=0.012
+		FadeOut=true
+		MaxParticles=4
+		RespawnDeadParticles=false
+		AutoDestroy=true
+		Name="Blood"
+		StartLocationRange=(X=(Min=6.0,Max=6.0),Y=(Min=-3.9,Max=3.9),Z=(Min=0.0,Max=0.0))
+		UseRotationFrom=1
+		SpinParticles=true
+		SpinCCWorCW=(X=0.5,Y=1.0,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.08,Max=0.08),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=-0.07,Max=0.02),Z=(Min=-0.05,Max=0.05))
+		RotationNormal=(X=1.0,Y=0.0,Z=0.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.11,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.28,RelativeSize=2.6)
+		SizeScale(2)=(RelativeTime=0.58,RelativeSize=3.0)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=3.5)
+		StartSizeRange=(X=(Min=0.019,Max=0.04),Y=(Min=0.028,Max=0.028),Z=(Min=0.028,Max=0.028))
+		UniformSize=true
+		InitialParticlesPerSecond=30.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		LifetimeRange=(Min=0.2,Max=0.3)
+		StartVelocityRange=(X=(Min=10.4,Max=10.4),Y=(Min=2.6,Max=2.6),Z=(Min=2.6,Max=2.6))
+		GetVelocityDirectionFrom=PTVD_OwnerAndStartPosition
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter3'
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Impact.sparkredcone00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.45
+		FadeOutStartTime=0.06
+		FadeOut=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="RedCone"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-0.452)
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=3.0)
+		StartSizeRange=(X=(Min=0.468,Max=0.468),Y=(Min=0.156,Max=0.156),Z=(Min=0.156,Max=0.156))
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.3,Max=0.3)
+		StartVelocityRange=(X=(Min=9.36,Max=9.36),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		VelocityLossRange=(X=(Min=4.0,Max=4.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter2'
+	Begin Object Class=MeshEmitter Name=MeshEmitter8
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Impact.shockwave00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.39
+		FadeOutStartTime=0.0375
+		FadeOut=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="Wave2"
+		StartLocationOffset=(X=-3.0,Y=0.0,Z=0.0)
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.09,RelativeSize=1.45)
+		SizeScale(1)=(RelativeTime=0.23,RelativeSize=1.8)
+		SizeScale(2)=(RelativeTime=0.62,RelativeSize=2.0)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=2.2)
+		StartSizeRange=(X=(Min=0.15,Max=0.15),Y=(Min=0.15,Max=0.15),Z=(Min=0.15,Max=0.15))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.25,Max=0.25)
+		StartVelocityRange=(X=(Min=4.0,Max=4.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter8'
+	AutoDestroy=true
+	AutoReplay=true
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bAcceptsProjectors=false
+	DrawScale=0.02
+}

@@ -1,0 +1,99 @@
+class e_u033_b extends NSkillProjectile;
+
+defaultproperties
+{
+	Speed=1000.0
+	AccSpeed=3000.0
+	Begin Object Class=MeshEmitter Name=MeshEmitter3
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.White.white_Protect00'
+		UseMeshBlendMode=false
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="Core"
+		SpinParticles=true
+		SpinCCWorCW=(X=0.5,Y=0.5,Z=0.0)
+		StartSizeRange=(X=(Min=0.22,Max=0.22),Y=(Min=0.18,Max=0.18),Z=(Min=0.18,Max=0.18))
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Darken
+		LifetimeRange=(Min=1.5,Max=1.5)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter3'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter1
+		Acceleration=(X=-180.0,Y=0.0,Z=0.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=51,G=244,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScaleRepeats=10.0
+		Opacity=0.6
+		FadeOutStartTime=0.24
+		FadeOut=true
+		MaxParticles=100
+		RespawnDeadParticles=false
+		Name="Trail"
+		StartLocationOffset=(X=2.0,Y=0.0,Z=0.0)
+		StartLocationRange=(X=(Min=-1.1811,Max=-1.1811),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=5.0,Max=5.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=-0.3,Max=0.3),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.21,RelativeSize=1.5)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.8)
+		StartSizeRange=(X=(Min=9.0,Max=12.375001),Y=(Min=9.0,Max=12.375001),Z=(Min=9.0,Max=12.375001))
+		UniformSize=true
+		InitialParticlesPerSecond=50.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0072'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionEnd=8
+		LifetimeRange=(Min=0.5,Max=0.6)
+		StartVelocityRange=(X=(Min=-90.0,Max=-90.0),Y=(Min=-10.0,Max=10.0),Z=(Min=-10.0,Max=10.0))
+		VelocityLossRange=(X=(Min=0.0,Max=0.0),Y=(Min=1.0,Max=1.0),Z=(Min=1.0,Max=1.0))
+		WarmupTicksPerSecond=3.0
+		RelativeWarmupTime=1.0
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter1'
+	Begin Object Class=MeshEmitter Name=MeshEmitter5
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Wind.windknifewave00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		Acceleration=(X=-1500.0,Y=0.0,Z=0.0)
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=77,G=224,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.25,Color=(B=106,G=244,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.514286,Color=(B=48,G=48,R=192,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=0,G=0,R=77,A=255))
+		Opacity=0.2
+		FadeOutStartTime=0.1575
+		FadeOut=true
+		FadeInEndTime=0.035
+		FadeIn=true
+		MaxParticles=32
+		RespawnDeadParticles=false
+		Name="Rings"
+		StartLocationRange=(X=(Min=4.5,Max=4.5),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.2)
+		SizeScale(1)=(RelativeTime=0.14,RelativeSize=1.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=3.0)
+		StartSizeRange=(X=(Min=0.11,Max=0.11),Y=(Min=0.08,Max=0.08),Z=(Min=0.08,Max=0.08))
+		InitialParticlesPerSecond=16.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.35,Max=0.35)
+		StartVelocityRange=(X=(Min=-80.0,Max=-80.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		WarmupTicksPerSecond=3.0
+		RelativeWarmupTime=1.0
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter5'
+	AutoDestroy=true
+	AutoReplay=true
+	Tag="Emitter"
+	DrawScale=0.05
+}

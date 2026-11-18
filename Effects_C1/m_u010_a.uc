@@ -1,0 +1,72 @@
+class m_u010_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter4
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Spirit_Wind.spirit_wind00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=120,G=100,R=100,A=0))
+		ColorScale(1)=(RelativeTime=0.5,Color=(B=210,G=185,R=185,A=0))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=120,G=100,R=100,A=0))
+		ColorScaleRepeats=50.0
+		Opacity=0.33
+		FadeOutStartTime=4.5
+		FadeOut=true
+		FadeInEndTime=0.5
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MeshEmitter3"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=8.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.0,Z=0.0)
+		SpinsPerSecondRange=(X=(Min=0.5,Max=0.5),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.25,Max=0.25),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		StartSizeRange=(X=(Min=0.06,Max=0.06),Y=(Min=0.06,Max=0.06),Z=(Min=0.1,Max=0.1))
+		InitialParticlesPerSecond=100.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=5.0,Max=5.0)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter4'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter0
+		UseDirectionAs=PTDU_Normal
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.55,Color=(B=224,G=224,R=224,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=50.0
+		Opacity=0.52
+		FadeOutStartTime=3.4
+		FadeOut=true
+		FadeInEndTime=0.52
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="SpriteEmitter0"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=8.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.03,Max=0.03),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSizeRange=(X=(Min=19.0,Max=19.0),Y=(Min=19.0,Max=19.0),Z=(Min=19.0,Max=19.0))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0060'
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter0'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	bSunAffect=true
+	DrawScale=0.1
+	bDirectional=true
+	bSelected=true
+}

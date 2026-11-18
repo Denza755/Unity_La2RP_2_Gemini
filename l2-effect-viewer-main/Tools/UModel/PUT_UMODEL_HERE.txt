@@ -1,0 +1,10 @@
+umodel.exe lives in this folder (UE Viewer from https://www.gildor.org/en/projects/umodel ).
+The viewer reads packed effect data from inside the Unity project:
+
+  Assets/StreamingAssets/UcEffects/Classes
+  Assets/StreamingAssets/ViewerData/Meshes
+  Assets/StreamingAssets/ViewerData/Textures
+  Tools/UModel/umodel_64.exe
+
+Meshes/textures are extracted on demand by UModel when an effect is shown.
+Results are cached in ViewerCache/extract and Assets/ViewerEffects/Cache.

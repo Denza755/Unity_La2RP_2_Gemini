@@ -1,0 +1,52 @@
+class m_u005_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter8
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Etc.etcpotion02'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.823,Max=0.83),Y=(Min=0.748,Max=0.838),Z=(Min=0.964,Max=1.0))
+		Opacity=0.31
+		FadeOutStartTime=3.36
+		FadeOut=true
+		FadeInEndTime=0.52
+		FadeIn=true
+		MaxParticles=2
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="waterwind"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=5.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=2.0,Max=3.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.001),Z=(Min=0.0,Max=0.001))
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.5)
+		SizeScale(1)=(RelativeTime=0.14,RelativeSize=2.0)
+		SizeScale(2)=(RelativeTime=0.34,RelativeSize=3.0)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=3.5)
+		StartSizeRange=(X=(Min=0.23,Max=0.271),Y=(Min=0.23,Max=0.271),Z=(Min=-0.08,Max=0.08))
+		InitialParticlesPerSecond=6.0
+		AutomaticInitialSpawning=false
+		WarmupTicksPerSecond=3.0
+		RelativeWarmupTime=0.3
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter8'
+	AutoDestroy=true
+	AutoReset=true
+	Physics=10
+	bUseDynamicLights=false
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	bSunAffect=true
+	Location=(X=-0.038479,Y=0.112934,Z=-512.0484)
+	DrawScale=0.05
+	bDirectional=true
+	bSelected=true
+}

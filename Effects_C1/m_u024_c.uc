@@ -1,0 +1,73 @@
+class m_u024_c extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter3
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.orc.orc_magic00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.875,Color=(B=188,G=188,R=188,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=12.0
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.8,Max=0.8),Z=(Min=0.7,Max=0.7))
+		FadeOutStartTime=0.885
+		FadeOut=true
+		FadeInEndTime=0.09
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MC"
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.1,Max=0.1),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=1.2)
+		StartSizeRange=(X=(Min=0.12,Max=0.12),Y=(Min=0.12,Max=0.12),Z=(Min=0.12,Max=0.12))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=1.5,Max=1.5)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter3'
+	Begin Object Class=MeshEmitter Name=MeshEmitter4
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Summon.summon01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.799,Max=0.799),Z=(Min=0.569,Max=0.569))
+		Opacity=0.4
+		FadeOutStartTime=0.201
+		FadeOut=true
+		FadeInEndTime=0.033
+		FadeIn=true
+		MaxParticles=2
+		RespawnDeadParticles=false
+		Name="ParticleMesh"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-100.0)
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=0.95)
+		StartSizeRange=(X=(Min=0.28,Max=0.28),Y=(Min=0.28,Max=0.28),Z=(Min=1.2,Max=1.2))
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.3,Max=0.3)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=1000.0,Max=1000.0))
+		VelocityLossRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=8.0,Max=8.0))
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter4'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	DrawScale=0.1
+}

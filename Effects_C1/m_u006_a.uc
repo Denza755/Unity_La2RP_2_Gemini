@@ -1,0 +1,116 @@
+class m_u006_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Fire.firebomb02'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		Acceleration=(X=0.0,Y=0.0,Z=-130.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=208,G=176,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=152,G=67,R=135,A=255))
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.75,Max=0.75),Z=(Min=0.75,Max=0.75))
+		Opacity=0.48
+		FadeOutStartTime=0.365
+		FadeOut=true
+		FadeInEndTime=0.035
+		FadeIn=true
+		MaxParticles=23
+		ForcedMaxParticles=true
+		RespawnDeadParticles=false
+		Name="FlameMesh"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-3.0)
+		SphereRadiusRange=(Min=3.0,Max=3.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=1.2)
+		StartSizeRange=(X=(Min=0.62,Max=0.62),Y=(Min=0.62,Max=0.62),Z=(Min=0.8,Max=0.8))
+		InitialParticlesPerSecond=5.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		LifetimeRange=(Min=0.6,Max=0.6)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=30.0,Max=30.0))
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter2'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter1
+		UseDirectionAs=PTDU_Normal
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.84,Max=0.84),Z=(Min=0.84,Max=0.84))
+		Opacity=0.15
+		FadeOutStartTime=4.0
+		FadeOut=true
+		FadeInEndTime=1.0
+		FadeIn=true
+		MaxParticles=4
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="Plane"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=3.0)
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-2.0,Max=2.0))
+		StartSizeRange=(X=(Min=23.0,Max=23.0),Y=(Min=23.0,Max=23.0),Z=(Min=23.0,Max=23.0))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0034'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionStart=10
+		SubdivisionEnd=11
+		LifetimeRange=(Min=5.0,Max=5.0)
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter1'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter8
+		Acceleration=(X=0.0,Y=0.0,Z=-10.0)
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=15,G=15,R=21,A=255))
+		ColorScale(1)=(RelativeTime=0.096429,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.439286,Color=(B=207,G=206,R=255,A=255))
+		ColorScale(3)=(RelativeTime=0.696429,Color=(B=30,G=21,R=130,A=255))
+		ColorScale(4)=(RelativeTime=1.0,Color=(B=2,G=2,R=2,A=255))
+		Opacity=0.95
+		FadeOutStartTime=0.595
+		FadeOut=true
+		FadeInEndTime=0.084
+		FadeIn=true
+		MaxParticles=40
+		ForcedMaxParticles=true
+		RespawnDeadParticles=false
+		Name="FlameUp"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-1.0)
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=1.0,Max=1.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.02),Y=(Min=0.05,Max=0.1),Z=(Min=0.05,Max=0.1))
+		StartSpinRange=(X=(Min=-0.1,Max=0.1),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=18.0)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=16.0)
+		StartSizeRange=(X=(Min=1.0,Max=1.4),Y=(Min=1.0,Max=1.4),Z=(Min=1.0,Max=1.4))
+		UniformSize=true
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0034'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=2
+		SubdivisionEnd=2
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.3,Max=0.5)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=30.0,Max=60.0))
+	End Object
+	Emitters(2)=SpriteEmitter'SpriteEmitter8'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	DrawScale=0.05
+}

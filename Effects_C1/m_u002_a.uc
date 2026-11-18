@@ -1,0 +1,70 @@
+class m_u002_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter4
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Summon.summonskeleton03'
+		UseMeshBlendMode=false
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScale(1)=(RelativeTime=0.5,Color=(B=216,G=216,R=216,A=0))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScaleRepeats=20.0
+		FadeOutStartTime=3.0
+		FadeOut=true
+		FadeInEndTime=1.0
+		FadeIn=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="MeshEmitter4"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=2.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.5,RelativeSize=1.005)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=30.0
+		StartSizeRange=(X=(Min=0.128,Max=0.128),Y=(Min=0.8,Max=0.8),Z=(Min=0.8,Max=0.8))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter4'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter0
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		FadeOut=true
+		MaxParticles=20
+		ResetAfterChange=true
+		RespawnDeadParticles=false
+		Name="SpriteEmitter0"
+		StartLocationShape=PTLS_Polar
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=1.0,Max=13.0))
+		StartSizeRange=(X=(Min=0.8,Max=3.2),Y=(Min=80.0,Max=80.0),Z=(Min=80.0,Max=80.0))
+		UniformSize=true
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0030'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionEnd=1
+		LifetimeRange=(Min=0.5,Max=0.5)
+		StartVelocityRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=16.0,Max=48.0))
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter0'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	bSunAffect=true
+	Location=(X=-0.511749,Y=0.0,Z=-512.1045)
+	DrawScale=0.1
+	bDirectional=true
+	bSelected=true
+}

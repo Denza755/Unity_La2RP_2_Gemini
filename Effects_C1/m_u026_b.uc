@@ -1,0 +1,124 @@
+class m_u026_b extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Wind.windblowin02'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		FadeOutFactor=(W=1.0,X=0.3,Y=0.3,Z=0.3)
+		FadeOutStartTime=6.0
+		FadeInFactor=(W=1.0,X=0.3,Y=0.3,Z=0.3)
+		FadeInEndTime=1.68
+		FadeIn=true
+		MaxParticles=1
+		ResetAfterChange=true
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="Windmesh"
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=3.0,Max=3.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		StartSizeRange=(X=(Min=0.06,Max=0.06),Y=(Min=0.06,Max=0.06),Z=(Min=0.15,Max=0.15))
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0001'
+		LifetimeRange=(Min=6.0,Max=6.0)
+		InitialDelayRange=(Min=0.2,Max=0.2)
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter2'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter6
+		UseDirectionAs=PTDU_Normal
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.7,Max=0.7),Y=(Min=0.7,Max=0.7),Z=(Min=1.0,Max=1.0))
+		Opacity=0.14
+		FadeOutStartTime=4.0
+		FadeOut=true
+		FadeInEndTime=1.0
+		FadeIn=true
+		MaxParticles=5
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="Aura"
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-0.25,Max=0.25))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=2.0,Max=2.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.08,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.27,RelativeSize=4.0)
+		SizeScale(2)=(RelativeTime=0.66,RelativeSize=6.0)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=7.0)
+		StartSizeRange=(X=(Min=7.5,Max=12.5),Y=(Min=7.5,Max=12.5),Z=(Min=7.5,Max=12.5))
+		UniformSize=true
+		InitialParticlesPerSecond=10.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0006'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionStart=12
+		SubdivisionEnd=13
+		LifetimeRange=(Min=5.0,Max=5.0)
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter6'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter11
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.275,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.428571,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=0,G=0,R=0,A=255))
+		ColorMultiplierRange=(X=(Min=0.7,Max=0.7),Y=(Min=0.7,Max=0.7),Z=(Min=1.0,Max=1.0))
+		Opacity=0.8
+		FadeOutStartTime=4.9
+		FadeOut=true
+		FadeInEndTime=1.1
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="Core"
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=360.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.6,RelativeSize=1.5)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=40.0
+		StartSizeRange=(X=(Min=5.0,Max=5.0),Y=(Min=40.0,Max=40.0),Z=(Min=40.0,Max=40.0))
+		UniformSize=true
+		InitialParticlesPerSecond=100.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Darken
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0063'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionEnd=1
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=5.0,Max=5.0)
+		InitialDelayRange=(Min=0.3,Max=0.3)
+		MaxAbsVelocity=(X=6400.0,Y=10000.0,Z=8000.0)
+	End Object
+	Emitters(2)=SpriteEmitter'SpriteEmitter11'
+	AutoDestroy=true
+	bRotEmitter=true
+	RotPerSecond=(Pitch=0,Yaw=0,Roll=30000)
+	Physics=10
+	bNoDelete=false
+	bRelativeTrail=true
+	bSelfRotation=true
+	Tag="Emitter"
+	Rotation=(Pitch=393148,Yaw=375455585,Roll=303854657)
+	DrawScale=0.01
+	SwayRotationOrig=(Pitch=393148,Yaw=375455585,Roll=300643539)
+	bDirectional=true
+	TexModifyInfo=(bUseModify=false,bTwoSide=false,bAlphaBlend=false,bDummy=false,Color=(B=255,G=255,R=255,A=255),AlphaOp=1,ColorOp=1)
+}

@@ -1,0 +1,111 @@
+class e_u024_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter2
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.346429,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.696429,Color=(B=77,G=77,R=77,A=255))
+		ColorScale(3)=(RelativeTime=0.946429,Color=(B=2,G=2,R=2,A=255))
+		ColorScale(4)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=8.0
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.6,Max=0.6),Z=(Min=0.6,Max=0.6))
+		FadeOutStartTime=0.315
+		FadeOut=true
+		MaxParticles=15
+		ResetAfterChange=true
+		RespawnDeadParticles=false
+		Name="Dust"
+		StartLocationShape=PTLS_Polar
+		SphereRadiusRange=(Min=15.0,Max=15.0)
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=20.0,Max=20.0))
+		UseRotationFrom=1
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.3),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		StartSizeRange=(X=(Min=7.0,Max=7.0),Y=(Min=7.0,Max=7.0),Z=(Min=7.0,Max=7.0))
+		UniformSize=true
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0005'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionStart=8
+		SubdivisionEnd=10
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.5,Max=1.5)
+		StartVelocityRange=(X=(Min=100.0,Max=100.0),Y=(Min=100.0,Max=100.0),Z=(Min=100.0,Max=100.0))
+		VelocityLossRange=(X=(Min=1.5,Max=2.0),Y=(Min=1.5,Max=2.0),Z=(Min=1.5,Max=2.0))
+		GetVelocityDirectionFrom=PTVD_OwnerAndStartPosition
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter2'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter12
+		UseDirectionAs=PTDU_Normal
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.571429,Color=(B=213,G=213,R=213,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=100.0
+		ColorMultiplierRange=(X=(Min=0.6,Max=0.6),Y=(Min=0.6,Max=0.6),Z=(Min=1.0,Max=1.0))
+		FadeOutStartTime=0.081
+		FadeOut=true
+		MaxParticles=5
+		ResetAfterChange=true
+		RespawnDeadParticles=false
+		Name="Rings"
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=10.0,Max=10.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.0,Max=0.2),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.13,RelativeSize=1.7)
+		SizeScale(1)=(RelativeTime=0.36,RelativeSize=2.2)
+		SizeScale(2)=(RelativeTime=0.6,RelativeSize=2.6)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=3.0)
+		StartSizeRange=(X=(Min=30.0,Max=30.0),Y=(Min=48.0,Max=48.0),Z=(Min=48.0,Max=48.0))
+		UniformSize=true
+		InitialParticlesPerSecond=25.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0063'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionStart=5
+		SubdivisionEnd=6
+		LifetimeRange=(Min=0.22,Max=0.22)
+		StartVelocityRange=(X=(Min=-0.01,Max=0.01),Y=(Min=-0.01,Max=0.01),Z=(Min=-0.01,Max=0.01))
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter12'
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Monster.wispray00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.8,Max=1.0),Y=(Min=0.8,Max=1.0),Z=(Min=0.8,Max=1.0))
+		Opacity=0.8
+		FadeOutStartTime=0.032
+		FadeOut=true
+		FadeInEndTime=0.012
+		FadeIn=true
+		MaxParticles=12
+		RespawnDeadParticles=false
+		Name="RayMesh"
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.2,Max=0.2),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=3.0)
+		StartSizeRange=(X=(Min=0.35,Max=0.35),Y=(Min=0.35,Max=0.35),Z=(Min=0.1,Max=0.1))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.2,Max=0.3)
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter2'
+	AutoDestroy=true
+	AutoReplay=true
+	bNoDelete=false
+	DrawScale=0.3
+}

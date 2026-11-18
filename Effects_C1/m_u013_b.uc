@@ -1,0 +1,81 @@
+class m_u013_b extends NSkillProjectile;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter12
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.571429,Color=(B=173,G=173,R=173,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=50.0
+		Opacity=0.8
+		FadeOutStartTime=4.5
+		FadeOut=true
+		FadeInEndTime=0.5
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="SpriteEmitter12"
+		UseRotationFrom=1
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.76,RelativeSize=0.99)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.01)
+		SizeScaleRepeats=25.0
+		StartSizeRange=(X=(Min=4.0,Max=4.0),Y=(Min=4.0,Max=4.0),Z=(Min=4.0,Max=4.0))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0067'
+		TextureUSubdivisions=1
+		TextureVSubdivisions=2
+		BlendBetweenSubdivisions=true
+		SubdivisionEnd=1
+		LifetimeRange=(Min=5.0,Max=5.0)
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter12'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter13
+		Acceleration=(X=0.0,Y=0.0,Z=10.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.357143,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(2)=(RelativeTime=0.675,Color=(B=11,G=11,R=255,A=255))
+		ColorScale(3)=(RelativeTime=1.0,Color=(B=0,G=0,R=198,A=0))
+		FadeOutStartTime=0.2
+		FadeOut=true
+		CoordinateSystem=PTCS_Independent
+		MaxParticles=45
+		ForcedMaxParticles=true
+		RespawnDeadParticles=false
+		Name="SpriteEmitter13"
+		StartLocationOffset=(X=-2.0,Y=0.0,Z=0.0)
+		StartLocationRange=(X=(Min=3.5,Max=3.5),Y=(Min=-0.5,Max=0.5),Z=(Min=-0.5,Max=0.5))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.2,Max=0.5),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=1.5)
+		StartSizeRange=(X=(Min=3.4,Max=3.4),Y=(Min=3.4,Max=3.4),Z=(Min=3.4,Max=3.4))
+		UniformSize=true
+		InitialParticlesPerSecond=15.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0067'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=4
+		SubdivisionStart=2
+		SubdivisionEnd=4
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.5,Max=0.5)
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter13'
+	AutoDestroy=true
+	AutoReplay=true
+	bLightChanged=true
+	Tag="Emitter"
+	DrawScale=0.01
+}

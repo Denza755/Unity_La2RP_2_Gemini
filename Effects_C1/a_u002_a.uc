@@ -1,0 +1,49 @@
+class a_u002_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter4
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.675,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=105,G=105,R=105,A=255))
+		ColorScaleRepeats=5.0
+		ColorMultiplierRange=(X=(Min=1.0,Max=1.0),Y=(Min=0.7,Max=0.7),Z=(Min=0.5,Max=0.5))
+		FadeOutStartTime=1.6
+		FadeOut=true
+		ResetAfterChange=true
+		Name="SpriteEmitter4"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=5.0)
+		StartLocationShape=PTLS_Polar
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=90.0,Max=90.0),Z=(Min=7.5,Max=7.5))
+		UseRotationFrom=1
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.15,Max=0.15),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=0.1)
+		SizeScale(1)=(RelativeTime=0.06,RelativeSize=2.0)
+		SizeScale(2)=(RelativeTime=0.16,RelativeSize=1.0)
+		SizeScale(3)=(RelativeTime=0.56,RelativeSize=1.0)
+		SizeScale(4)=(RelativeTime=1.0,RelativeSize=0.1)
+		SizeScaleRepeats=5.0
+		StartSizeRange=(X=(Min=1.5,Max=3.0),Y=(Min=10.0,Max=10.0),Z=(Min=10.0,Max=10.0))
+		UniformSize=true
+		InitialParticlesPerSecond=12.0
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0085'
+		TextureUSubdivisions=2
+		TextureVSubdivisions=2
+		BlendBetweenSubdivisions=true
+		UseSubdivisionScale=true
+		SubdivisionScale(0)=0.8,0.2
+		SubdivisionEnd=2
+		LifetimeRange=(Min=1.0,Max=2.0)
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter4'
+	AutoDestroy=true
+	AutoReplay=true
+	bRotEmitter=true
+	RotPerSecond=(Pitch=0,Yaw=-12000,Roll=0)
+	bNoDelete=false
+	Tag="Emitter"
+}

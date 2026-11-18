@@ -1,0 +1,50 @@
+class e_u047_b extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter2
+		Acceleration=(X=0.0,Y=0.0,Z=1200.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.9,Max=1.0),Y=(Min=0.84,Max=0.94),Z=(Min=0.73,Max=0.825))
+		Opacity=0.09
+		FadeOutStartTime=0.13
+		FadeOut=true
+		FadeInEndTime=0.09
+		FadeIn=true
+		MaxParticles=75
+		RespawnDeadParticles=false
+		Name="breath150"
+		StartLocationOffset=(X=50.0,Y=0.0,Z=0.0)
+		StartLocationRange=(X=(Min=-21.0,Max=21.0),Y=(Min=-21.0,Max=21.0),Z=(Min=0.0,Max=0.0))
+		StartLocationShape=PTLS_Polar
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.1,Max=0.2),Y=(Min=0.05,Max=0.1),Z=(Min=0.05,Max=0.1))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=1.0,RelativeSize=2.0)
+		StartSizeRange=(X=(Min=40.0,Max=60.0),Y=(Min=40.0,Max=60.0),Z=(Min=40.0,Max=60.0))
+		UniformSize=true
+		InitialParticlesPerSecond=50.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0071'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionStart=12
+		SubdivisionEnd=15
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.3,Max=0.5)
+		StartVelocityRange=(X=(Min=600.0,Max=600.0),Y=(Min=-120.0,Max=120.0),Z=(Min=-120.0,Max=120.0))
+		VelocityLossRange=(X=(Min=2.0,Max=3.0),Y=(Min=2.0,Max=3.0),Z=(Min=2.0,Max=3.0))
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter2'
+	AutoDestroy=true
+	AutoReset=true
+	bLightChanged=true
+	bNoDelete=false
+	Tag="Emitter"
+	Rotation=(Pitch=-8964,Yaw=32744,Roll=0)
+	bUnlit=false
+}

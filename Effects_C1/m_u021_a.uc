@@ -1,0 +1,119 @@
+class m_u021_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=MeshEmitter Name=MeshEmitter5
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.magiccircle.magiccircleblack02'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.01,Max=0.01),Y=(Min=0.01,Max=0.01),Z=(Min=0.01,Max=0.01))
+		FadeOutStartTime=3.32
+		FadeOut=true
+		FadeInEndTime=0.8
+		FadeIn=true
+		MaxParticles=1
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="MeshEmitter5"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=-1.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=0.0,Y=0.5,Z=0.5)
+		SpinsPerSecondRange=(X=(Min=0.01,Max=0.01),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.66,RelativeSize=1.01)
+		SizeScale(1)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=20.0
+		StartSizeRange=(X=(Min=0.65,Max=0.65),Y=(Min=0.65,Max=0.65),Z=(Min=0.2,Max=0.2))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+	End Object
+	Emitters(0)=MeshEmitter'MeshEmitter5'
+	Begin Object Class=MeshEmitter Name=MeshEmitter1
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.magiccircle.magiccircleblack01'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScale(1)=(RelativeTime=0.5,Color=(B=197,G=197,R=197,A=0))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=0))
+		ColorScaleRepeats=200.0
+		FadeOutStartTime=3.24
+		FadeOut=true
+		FadeInEndTime=0.8
+		FadeIn=true
+		MaxParticles=1
+		ResetAfterChange=true
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="MeshEmitter1"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=1.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.0,Z=0.0)
+		SpinsPerSecondRange=(X=(Min=0.02,Max=0.02),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.11,RelativeSize=1.03)
+		SizeScale(2)=(RelativeTime=0.35,RelativeSize=0.98)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=3.0
+		StartSizeRange=(X=(Min=0.4,Max=0.4),Y=(Min=0.4,Max=0.4),Z=(Min=0.4,Max=0.4))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter1'
+	Begin Object Class=MeshEmitter Name=MeshEmitter2
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.magiccircle.magiccircleblack00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=200.0
+		FadeOutStartTime=3.2
+		FadeOut=true
+		FadeInEndTime=0.8
+		FadeIn=true
+		MaxParticles=1
+		ResetAfterChange=true
+		ForcedLifeTime=true
+		ForcedFade=true
+		RespawnDeadParticles=false
+		Name="MeshEmitter2"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=1.0)
+		SpinParticles=true
+		SpinCCWorCW=(X=1.0,Y=0.0,Z=0.0)
+		SpinsPerSecondRange=(X=(Min=0.02,Max=0.02),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.0)
+		SizeScale(1)=(RelativeTime=0.12,RelativeSize=1.015)
+		SizeScale(2)=(RelativeTime=0.37,RelativeSize=0.995)
+		SizeScale(3)=(RelativeTime=0.59,RelativeSize=1.01)
+		SizeScale(4)=(RelativeTime=1.0,RelativeSize=1.0)
+		SizeScaleRepeats=3.0
+		StartSizeRange=(X=(Min=0.4,Max=0.4),Y=(Min=0.4,Max=0.4),Z=(Min=0.4,Max=0.4))
+		UniformSize=true
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter2'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	Tag="Emitter"
+	DrawScale=0.05
+}

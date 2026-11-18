@@ -1,0 +1,6 @@
+Готовая таблица «умение → визуальный эффект» из LineageSkillEffect.u клиента High Five rev.268 (EN): 4135 строк, 1255 умений, 1202 уникальных класса эффекта. Нужна, когда надо ответить на вопрос «а что за эффект вон у того скилла» не перебором в редакторе, а грепом.
+Колонки: skill_id, phase (PreshotAction / CastingAction / ShotAction / ExplosionAction / ChannelingAction / UnionTargetAction), effect_class, attach_on (куда крепится), bone, spawn_delay, scale, on_target.
+Что видно в данных: по фазам — CastingAction 2196, ShotAction 1457, ExplosionAction 204, PreshotAction 24, ChannelingAction 23, UnionTargetAction 14, то есть отдельный эффект попадания у проджектайлов — редкость. По креплению — 9 (Trail) 3101, не задан 395, 7 (BoneSpecified) 151, 2 (правая рука) 148, 1 (Location) 54, 3 (левая рука) 48.
+Главная оговорка: skill_id здесь — это не id умения на сервере, а визуальный id, на который ссылается skill_visual_effect из skillgrp.dat — несколько умений могут делить один визуал.
+Остальное честно выписано в README: 5787 слотов в массивах — нулевые ссылки и в таблицу не попали; у 98 классов SkillID в дефолтах не задан и взят из имени класса; у 30 записей вообще нет EffectClass; наследование фазовых массивов не разворачивалось.
+Снято с одного клиента, HF268-EN. На других хрониках список будет другим.

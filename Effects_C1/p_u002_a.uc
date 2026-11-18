@@ -1,0 +1,103 @@
+class p_u002_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter2
+		UseDirectionAs=PTDU_Up
+		Acceleration=(X=0.0,Y=0.0,Z=-200.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		FadeOutStartTime=0.115
+		FadeOut=true
+		MaxParticles=15
+		RespawnDeadParticles=false
+		Name="Spark"
+		StartLocationShape=PTLS_Polar
+		StartLocationPolarRange=(X=(Min=-45.0,Max=45.0),Y=(Min=60.0,Max=120.0),Z=(Min=4.0,Max=4.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=1.5)
+		SizeScale(1)=(RelativeTime=0.37,RelativeSize=2.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.3)
+		StartSizeRange=(X=(Min=0.2,Max=0.4),Y=(Min=1.8,Max=3.5),Z=(Min=100.0,Max=100.0))
+		InitialParticlesPerSecond=10000.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0061'
+		TextureUSubdivisions=8
+		TextureVSubdivisions=8
+		SubdivisionStart=17
+		SubdivisionEnd=20
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.6,Max=0.6)
+		StartVelocityRange=(X=(Min=50.0,Max=120.0),Y=(Min=-80.0,Max=80.0),Z=(Min=-80.0,Max=80.0))
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter2'
+	Begin Object Class=MeshEmitter Name=MeshEmitter1
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Impact.sparkredcone00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		Acceleration=(X=-10.0,Y=0.0,Z=0.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.7,Max=0.8),Y=(Min=0.7,Max=0.8),Z=(Min=0.75,Max=0.85))
+		FadeOutStartTime=0.0352
+		FadeOut=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		AutoDestroy=true
+		Name="SparkCone"
+		UseRotationFrom=1
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=1.0))
+		RotationNormal=(X=1.0,Y=0.0,Z=0.0)
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.15,RelativeSize=2.2)
+		SizeScale(1)=(RelativeTime=0.31,RelativeSize=3.0)
+		SizeScale(2)=(RelativeTime=0.59,RelativeSize=3.5)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=4.0)
+		StartSizeRange=(X=(Min=0.3,Max=0.3),Y=(Min=0.18,Max=0.18),Z=(Min=0.18,Max=0.18))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.4,Max=0.4)
+		StartVelocityRange=(X=(Min=4.0,Max=4.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		VelocityLossRange=(X=(Min=2.0,Max=2.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter1'
+	Begin Object Class=MeshEmitter Name=MeshEmitter0
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Impact.shockwave00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.49
+		FadeOutStartTime=0.0375
+		FadeOut=true
+		MaxParticles=1
+		RespawnDeadParticles=false
+		Name="Wave2"
+		StartLocationRange=(X=(Min=-3.0,Max=-3.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=1.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.09,RelativeSize=1.45)
+		SizeScale(1)=(RelativeTime=0.23,RelativeSize=1.8)
+		SizeScale(2)=(RelativeTime=0.62,RelativeSize=2.0)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=2.2)
+		StartSizeRange=(X=(Min=0.15,Max=0.15),Y=(Min=0.15,Max=0.15),Z=(Min=0.15,Max=0.15))
+		InitialParticlesPerSecond=1000.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.25,Max=0.25)
+		StartVelocityRange=(X=(Min=3.0,Max=3.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+	End Object
+	Emitters(2)=MeshEmitter'MeshEmitter0'
+	AutoDestroy=true
+	AutoReplay=true
+	bUseDynamicLights=false
+	bLightChanged=true
+	bNoDelete=false
+	bAcceptsProjectors=false
+	DrawScale=0.02
+}

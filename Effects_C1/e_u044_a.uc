@@ -1,0 +1,101 @@
+class e_u044_a extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter16
+		UseDirectionAs=PTDU_Up
+		Acceleration=(X=0.0,Y=0.0,Z=-700.0)
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		FadeOutStartTime=0.115
+		FadeOut=true
+		MaxParticles=150
+		RespawnDeadParticles=false
+		Name="SparkL"
+		StartLocationRange=(X=(Min=0.0,Max=0.0),Y=(Min=-20.0,Max=20.0),Z=(Min=0.0,Max=0.0))
+		StartLocationPolarRange=(X=(Min=-45.0,Max=45.0),Y=(Min=60.0,Max=120.0),Z=(Min=4.0,Max=4.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.0,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.37,RelativeSize=2.0)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=0.1)
+		StartSizeRange=(X=(Min=0.45,Max=0.6),Y=(Min=10.0,Max=22.0),Z=(Min=225.0,Max=225.0))
+		InitialParticlesPerSecond=250.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_Brighten
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0061'
+		TextureUSubdivisions=8
+		TextureVSubdivisions=8
+		SubdivisionStart=17
+		SubdivisionEnd=20
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=0.6,Max=0.6)
+		StartVelocityRange=(X=(Min=-300.0,Max=-20.0),Y=(Min=-500.0,Max=500.0),Z=(Min=300.0,Max=700.0))
+	End Object
+	Emitters(0)=SpriteEmitter'SpriteEmitter16'
+	Begin Object Class=MeshEmitter Name=MeshEmitter31
+		StaticMesh=StaticMesh'LineageEffectsStaticmeshes.Impact.sparkredcone00'
+		UseMeshBlendMode=false
+		RenderTwoSided=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		Opacity=0.6
+		FadeOutStartTime=0.032
+		FadeOut=true
+		MaxParticles=22
+		RespawnDeadParticles=false
+		Name="ConeL"
+		StartLocationRange=(X=(Min=-10.0,Max=5.0),Y=(Min=-20.0,Max=20.0),Z=(Min=0.0,Max=0.0))
+		SpinParticles=true
+		StartSpinRange=(X=(Min=0.5,Max=0.5),Y=(Min=0.0,Max=0.3),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.15,RelativeSize=2.2)
+		SizeScale(1)=(RelativeTime=0.32,RelativeSize=3.0)
+		SizeScale(2)=(RelativeTime=0.59,RelativeSize=3.5)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=4.0)
+		StartSizeRange=(X=(Min=0.3,Max=0.75),Y=(Min=0.15,Max=0.35),Z=(Min=0.15,Max=0.35))
+		InitialParticlesPerSecond=50.0
+		AutomaticInitialSpawning=false
+		LifetimeRange=(Min=0.3,Max=0.4)
+	End Object
+	Emitters(1)=MeshEmitter'MeshEmitter31'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter17
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorMultiplierRange=(X=(Min=0.664,Max=0.664),Y=(Min=0.621,Max=0.621),Z=(Min=0.494,Max=0.494))
+		Opacity=0.26
+		FadeOutStartTime=1.2
+		FadeOut=true
+		FadeInEndTime=0.33
+		FadeIn=true
+		CoordinateSystem=PTCS_Independent
+		MaxParticles=18
+		RespawnDeadParticles=false
+		Name="sm"
+		StartLocationRange=(X=(Min=-30.0,Max=30.0),Y=(Min=-30.0,Max=30.0),Z=(Min=0.0,Max=0.0))
+		StartLocationPolarRange=(X=(Min=-120.0,Max=120.0),Y=(Min=60.0,Max=120.0),Z=(Min=50.0,Max=50.0))
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=0.05,Max=0.2),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		StartSpinRange=(X=(Min=0.0,Max=1.0),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseSizeScale=true
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.1,RelativeSize=2.0)
+		SizeScale(1)=(RelativeTime=0.32,RelativeSize=2.8)
+		SizeScale(2)=(RelativeTime=1.0,RelativeSize=3.3)
+		StartSizeRange=(X=(Min=45.0,Max=65.0),Y=(Min=45.0,Max=65.0),Z=(Min=45.0,Max=65.0))
+		UniformSize=true
+		InitialParticlesPerSecond=12.0
+		AutomaticInitialSpawning=false
+		DrawStyle=PTDS_AlphaBlend
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0108'
+		LifetimeRange=(Min=1.84,Max=2.55)
+		StartVelocityRange=(X=(Min=-100.0,Max=-100.0),Y=(Min=-70.0,Max=70.0),Z=(Min=-70.0,Max=70.0))
+	End Object
+	Emitters(2)=SpriteEmitter'SpriteEmitter17'
+	AutoDestroy=true
+	bLightChanged=true
+	bNoDelete=false
+	Tag="Emitter"
+	bUnlit=false
+}

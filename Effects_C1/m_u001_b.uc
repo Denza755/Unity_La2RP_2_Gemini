@@ -1,0 +1,81 @@
+class m_u001_b extends Emitter;
+
+defaultproperties
+{
+	Begin Object Class=BeamEmitter Name=BeamEmitter0
+		BeamEndPoints(0)=(ActorTag=None,offset=(X=(Min=0.0,Max=0.0),Y=(Min=0.0,Max=0.0),Z=(Min=-190.0,Max=-190.0)),Weight=0.0)
+		DetermineEndPointBy=2
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.521429,Color=(B=231,G=231,R=231,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=10.0
+		ColorMultiplierRange=(X=(Min=0.5,Max=0.704),Y=(Min=0.5,Max=0.704),Z=(Min=0.5,Max=0.704))
+		Opacity=0.33
+		FadeOutStartTime=1.0
+		FadeOut=true
+		FadeInEndTime=0.5
+		FadeIn=true
+		MaxParticles=20
+		RespawnDeadParticles=false
+		Name="BeamEmitter0"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=150.0)
+		StartLocationRange=(X=(Min=-11.0,Max=11.0),Y=(Min=-11.0,Max=11.0),Z=(Min=-30.0,Max=30.0))
+		StartLocationPolarRange=(X=(Min=0.0,Max=360.0),Y=(Min=70.0,Max=110.0),Z=(Min=13.0,Max=13.0))
+		StartSizeRange=(X=(Min=6.0,Max=10.0),Y=(Min=100.0,Max=100.0),Z=(Min=100.0,Max=100.0))
+		InitialParticlesPerSecond=5.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0004'
+		LifetimeRange=(Min=2.0,Max=3.0)
+	End Object
+	Emitters(0)=BeamEmitter'BeamEmitter0'
+	Begin Object Class=SpriteEmitter Name=SpriteEmitter1
+		UseColorScale=true
+		ColorScale(0)=(RelativeTime=0.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScale(1)=(RelativeTime=0.539286,Color=(B=128,G=128,R=128,A=255))
+		ColorScale(2)=(RelativeTime=1.0,Color=(B=255,G=255,R=255,A=255))
+		ColorScaleRepeats=20.0
+		ColorMultiplierRange=(X=(Min=0.85,Max=1.0),Y=(Min=0.85,Max=1.0),Z=(Min=0.731,Max=0.859))
+		Opacity=0.6
+		FadeOutStartTime=1.5
+		FadeOut=true
+		FadeInEndTime=0.63
+		FadeIn=true
+		MaxParticles=25
+		RespawnDeadParticles=false
+		Name="BlueDust"
+		StartLocationOffset=(X=0.0,Y=0.0,Z=60.0)
+		StartLocationRange=(X=(Min=-5.0,Max=5.0),Y=(Min=-5.0,Max=5.0),Z=(Min=-20.0,Max=20.0))
+		SphereRadiusRange=(Min=8.0,Max=8.0)
+		SpinParticles=true
+		SpinsPerSecondRange=(X=(Min=-0.2,Max=0.2),Y=(Min=0.0,Max=0.0),Z=(Min=0.0,Max=0.0))
+		UseRegularSizeScale=false
+		SizeScale(0)=(RelativeTime=0.07,RelativeSize=3.0)
+		SizeScale(1)=(RelativeTime=0.24,RelativeSize=6.0)
+		SizeScale(2)=(RelativeTime=0.52,RelativeSize=8.5)
+		SizeScale(3)=(RelativeTime=1.0,RelativeSize=10.0)
+		StartSizeRange=(X=(Min=3.0,Max=5.0),Y=(Min=3.0,Max=5.0),Z=(Min=3.0,Max=5.0))
+		UniformSize=true
+		InitialParticlesPerSecond=8.0
+		AutomaticInitialSpawning=false
+		Texture=Texture'LineageEffectsTextures.Particles.fx_m_t0005'
+		TextureUSubdivisions=4
+		TextureVSubdivisions=4
+		SubdivisionStart=6
+		SubdivisionEnd=8
+		UseRandomSubdivision=true
+		LifetimeRange=(Min=2.0,Max=2.5)
+		InitialDelayRange=(Min=0.65,Max=0.65)
+		StartVelocityRange=(X=(Min=-6.0,Max=6.0),Y=(Min=-6.0,Max=6.0),Z=(Min=-12.199,Max=-5.048))
+		VelocityLossRange=(X=(Min=0.0,Max=1.368),Y=(Min=0.0,Max=1.368),Z=(Min=0.0,Max=0.0))
+	End Object
+	Emitters(1)=SpriteEmitter'SpriteEmitter1'
+	AutoDestroy=true
+	AutoReplay=true
+	Physics=10
+	bUseDynamicLights=false
+	bNoDelete=false
+	bTrailerPrePivot=true
+	bAcceptsProjectors=false
+	DrawScale=0.25
+}
