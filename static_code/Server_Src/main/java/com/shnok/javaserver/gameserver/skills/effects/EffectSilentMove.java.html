@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/effects/EffectSilentMove.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/effects/EffectSilentMove.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills.effects;
+
+import com.shnok.javaserver.gameserver.enums.skills.EffectFlag;
+import com.shnok.javaserver.gameserver.enums.skills.EffectType;
+import com.shnok.javaserver.gameserver.enums.skills.SkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+import com.shnok.javaserver.gameserver.skills.AbstractEffect;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class EffectSilentMove extends AbstractEffect
+{
+	public EffectSilentMove(EffectTemplate template, L2Skill skill, Creature effected, Creature effector)
+	{
+		super(template, skill, effected, effector);
+	}
+	
+	@Override
+	public EffectType getEffectType()
+	{
+		return EffectType.SILENT_MOVE;
+	}
+	
+	@Override
+	public boolean onActionTime()
+	{
+		// Only cont skills shouldn&#x27;t end
+		if (getSkill().getSkillType() != SkillType.CONT)
+			return false;
+		
+		if (getEffected().isDead())
+			return false;
+		
+		if (getTemplate().getValue() &gt; getEffected().getStatus().getMp())
+		{
+			getEffected().sendPacket(SystemMessage.getSystemMessage(SystemMessageId.SKILL_REMOVED_DUE_LACK_MP));
+			return false;
+		}
+		
+		getEffected().getStatus().reduceMp(getTemplate().getValue());
+		return true;
+	}
+	
+	@Override
+	public int getEffectFlags()
+	{
+		return EffectFlag.SILENT_MOVE.getMask();
+	}
+}</pre>
+            
+</body>
+</html>

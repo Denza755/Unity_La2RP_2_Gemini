@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/security/NewCrypt.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/security/NewCrypt.java</h1>
+            <pre>package com.shnok.javaserver.security;
+
+public final class NewCrypt {
+    private final BlowfishEngine _cipher;
+
+    public NewCrypt(byte[] blowfishKey) {
+        this._cipher = new BlowfishEngine();
+        this._cipher.init(blowfishKey);
+    }
+
+    public NewCrypt(String key) {
+        this(key.getBytes());
+    }
+
+    public static boolean verifyChecksum(byte[] raw) {
+        return verifyChecksum(raw, 0, raw.length);
+    }
+
+    public static boolean verifyChecksum(byte[] raw, int offset, int size) {
+        if ((size &amp; 3) == 0 &amp;&amp; size &gt; 4) {
+            long chksum = 0L;
+            int count = size - 4;
+
+            long check;
+            int i;
+            for(i = offset; i &lt; count; i += 4) {
+                check = (long)(raw[i] &amp; 255);
+                check |= (long)(raw[i + 1] &lt;&lt; 8 &amp; &#x27;\uff00&#x27;);
+                check |= (long)(raw[i + 2] &lt;&lt; 16 &amp; 16711680);
+                check |= (long)(raw[i + 3] &lt;&lt; 24 &amp; -16777216);
+                chksum ^= check;
+            }
+
+            check = (long)(raw[i] &amp; 255);
+            check |= (long)(raw[i + 1] &lt;&lt; 8 &amp; &#x27;\uff00&#x27;);
+            check |= (long)(raw[i + 2] &lt;&lt; 16 &amp; 16711680);
+            check |= (long)(raw[i + 3] &lt;&lt; 24 &amp; -16777216);
+            return check == chksum;
+        } else {
+            return false;
+        }
+    }
+
+    public static void appendChecksum(byte[] raw) {
+        appendChecksum(raw, 0, raw.length);
+    }
+
+    public static void appendChecksum(byte[] raw, int offset, int size) {
+        long chksum = 0L;
+        int count = size - 4;
+
+        long ecx;
+        int i;
+        for(i = offset; i &lt; count; i += 4) {
+            ecx = (long)(raw[i] &amp; 255);
+            ecx |= (long)(raw[i + 1] &lt;&lt; 8 &amp; &#x27;\uff00&#x27;);
+            ecx |= (long)(raw[i + 2] &lt;&lt; 16 &amp; 16711680);
+            ecx |= (long)(raw[i + 3] &lt;&lt; 24 &amp; -16777216);
+            chksum ^= ecx;
+        }
+
+        ecx = (long)(raw[i] &amp; 255);
+        ecx |= (long)(raw[i + 1] &lt;&lt; 8 &amp; &#x27;\uff00&#x27;);
+        ecx |= (long)(raw[i + 2] &lt;&lt; 16 &amp; 16711680);
+        long var10000 = ecx | (long)(raw[i + 3] &lt;&lt; 24 &amp; -16777216);
+        raw[i] = (byte)((int)(chksum &amp; 255L));
+        raw[i + 1] = (byte)((int)(chksum &gt;&gt; 8 &amp; 255L));
+        raw[i + 2] = (byte)((int)(chksum &gt;&gt; 16 &amp; 255L));
+        raw[i + 3] = (byte)((int)(chksum &gt;&gt; 24 &amp; 255L));
+    }
+
+    public static void encXORPass(byte[] raw, int key) {
+        encXORPass(raw, 0, raw.length, key);
+    }
+
+    public static void encXORPass(byte[] raw, int offset, int size, int key) {
+        int stop = size - 8;
+        int pos = 4 + offset;
+
+        int edx;
+        int ecx;
+        for(ecx = key; pos &lt; stop; raw[pos++] = (byte)(edx &gt;&gt; 24 &amp; 255)) {
+            edx = raw[pos] &amp; 255;
+            edx |= (raw[pos + 1] &amp; 255) &lt;&lt; 8;
+            edx |= (raw[pos + 2] &amp; 255) &lt;&lt; 16;
+            edx |= (raw[pos + 3] &amp; 255) &lt;&lt; 24;
+            ecx += edx;
+            edx ^= ecx;
+            raw[pos++] = (byte)(edx &amp; 255);
+            raw[pos++] = (byte)(edx &gt;&gt; 8 &amp; 255);
+            raw[pos++] = (byte)(edx &gt;&gt; 16 &amp; 255);
+        }
+
+        raw[pos++] = (byte)(ecx &amp; 255);
+        raw[pos++] = (byte)(ecx &gt;&gt; 8 &amp; 255);
+        raw[pos++] = (byte)(ecx &gt;&gt; 16 &amp; 255);
+        raw[pos] = (byte)(ecx &gt;&gt; 24 &amp; 255);
+    }
+
+    public void decrypt(byte[] raw, int offset, int size) {
+        for(int i = offset; i &lt; offset + size; i += 8) {
+            this._cipher.decryptBlock(raw, i);
+        }
+
+    }
+
+    public void crypt(byte[] raw, int offset, int size) {
+        for(int i = offset; i &lt; offset + size; i += 8) {
+            this._cipher.encryptBlock(raw, i);
+        }
+
+    }
+}
+</pre>
+            
+</body>
+</html>

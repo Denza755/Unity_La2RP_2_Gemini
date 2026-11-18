@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/BaseBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/BaseBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ShowBoard;
+
+public abstract class BaseBBSManager
+{
+	protected static final CLogger LOGGER = new CLogger(BaseBBSManager.class.getName());
+	
+	protected static final String CB_PATH = &quot;data/html/CommunityBoard/&quot;;
+	
+	public void parseCmd(String command, Player player)
+	{
+		separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The command: &quot; + command + &quot; isn&#x27;t implemented.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+	}
+	
+	public void parseWrite(String ar1, String ar2, String ar3, String ar4, String ar5, Player player)
+	{
+		separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The command: &quot; + ar1 + &quot; isn&#x27;t implemented.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+	}
+	
+	public static void separateAndSend(String html, Player player)
+	{
+		if (html == null || player == null)
+			return;
+		
+		if (html.length() &lt; 4090)
+		{
+			player.sendPacket(new ShowBoard(html, &quot;101&quot;));
+			player.sendPacket(ShowBoard.STATIC_SHOWBOARD_102);
+			player.sendPacket(ShowBoard.STATIC_SHOWBOARD_103);
+		}
+		else if (html.length() &lt; 8180)
+		{
+			player.sendPacket(new ShowBoard(html.substring(0, 4090), &quot;101&quot;));
+			player.sendPacket(new ShowBoard(html.substring(4090, html.length()), &quot;102&quot;));
+			player.sendPacket(ShowBoard.STATIC_SHOWBOARD_103);
+		}
+		else if (html.length() &lt; 12270)
+		{
+			player.sendPacket(new ShowBoard(html.substring(0, 4090), &quot;101&quot;));
+			player.sendPacket(new ShowBoard(html.substring(4090, 8180), &quot;102&quot;));
+			player.sendPacket(new ShowBoard(html.substring(8180, html.length()), &quot;103&quot;));
+		}
+	}
+	
+	protected static void send1001(String html, Player player)
+	{
+		if (html.length() &lt; 8180)
+			player.sendPacket(new ShowBoard(html, &quot;1001&quot;));
+	}
+	
+	protected static void send1002(Player player)
+	{
+		send1002(player, &quot; &quot;, &quot; &quot;, &quot;0&quot;);
+	}
+	
+	protected static void send1002(Player player, String string, String string2, String string3)
+	{
+		final List&lt;String&gt; params = new ArrayList&lt;&gt;();
+		params.add(&quot;0&quot;);
+		params.add(&quot;0&quot;);
+		params.add(&quot;0&quot;);
+		params.add(&quot;0&quot;);
+		params.add(&quot;0&quot;);
+		params.add(&quot;0&quot;);
+		params.add(player.getName());
+		params.add(Integer.toString(player.getObjectId()));
+		params.add(player.getAccountName());
+		params.add(&quot;9&quot;);
+		params.add(string2);
+		params.add(string2);
+		params.add(string);
+		params.add(string3);
+		params.add(string3);
+		params.add(&quot;0&quot;);
+		params.add(&quot;0&quot;);
+		
+		player.sendPacket(new ShowBoard(params));
+	}
+	
+	/**
+	 * Loads an HTM located in the default CB path.
+	 * @param file : the file to load.
+	 * @param player : the requester.
+	 */
+	protected void loadStaticHtm(String file, Player player)
+	{
+		separateAndSend(HtmCache.getInstance().getHtm(CB_PATH + getFolder() + file), player);
+	}
+	
+	/**
+	 * That method is overidden in every board type. It allows to switch of folders following the board.
+	 * @return the folder.
+	 */
+	protected String getFolder()
+	{
+		return &quot;&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Manipulators/Slot/SlotDragManipulator.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Manipulators/Slot/SlotDragManipulator.cs</h1>
+            <pre>using UnityEngine;
+using UnityEngine.UIElements;
+
+public class SlotDragManipulator : PointerManipulator
+{
+    private VisualElement _root;
+    private Vector2 _startMousePosition;
+    private Vector2 _startPosition;
+    private L2Slot _slot;
+    public bool dragged = false;
+    public bool enabled = false;
+
+    public SlotDragManipulator(VisualElement target, L2Slot slot)
+    {
+        _slot = slot;
+        _root = target;
+        this.target = target;
+    }
+
+    protected override void RegisterCallbacksOnTarget()
+    {
+        target.RegisterCallback&lt;PointerDownEvent&gt;(PointerDownHandler, TrickleDown.TrickleDown);
+        target.RegisterCallback&lt;PointerMoveEvent&gt;(PointerMoveHandler);
+        target.RegisterCallback&lt;PointerUpEvent&gt;(PointerUpHandler);
+    }
+
+    protected override void UnregisterCallbacksFromTarget()
+    {
+        target.UnregisterCallback&lt;PointerDownEvent&gt;(PointerDownHandler);
+        target.UnregisterCallback&lt;PointerMoveEvent&gt;(PointerMoveHandler);
+        target.UnregisterCallback&lt;PointerUpEvent&gt;(PointerUpHandler);
+    }
+
+    public void PointerDownHandler(PointerDownEvent evt)
+    {
+        if (!enabled)
+        {
+            return;
+        }
+
+        if (evt.button == 0)
+        {
+            UpdateFlotatingSlotAppearance();
+            dragged = false;
+            _startMousePosition = evt.position;
+            _startPosition = _root.worldBound.position // Element position on screen
+            - (_root.worldBound.position - _startMousePosition); // Adjust start position to mouse position
+            _root.CapturePointer(evt.pointerId);
+        }
+        evt.StopPropagation();
+    }
+
+    public void PointerMoveHandler(PointerMoveEvent evt)
+    {
+        if (!enabled)
+        {
+            return;
+        }
+
+        if (_root.HasPointerCapture(evt.pointerId))
+        {
+            dragged = true;
+            Vector2 diff = _startMousePosition
+            - new Vector2(evt.position.x, evt.position.y) // Apply mouse movement delta
+            + new Vector2(_root.layout.width / 2f, _root.layout.height / 2f); // center the slot
+            DragFlotatingSlot(diff);
+        }
+        evt.StopPropagation();
+    }
+
+    private void UpdateFlotatingSlotAppearance()
+    {
+        L2SlotManager.Instance.SetDraggedSlot(_slot);
+    }
+
+    private void DragFlotatingSlot(Vector2 diff)
+    {
+        float right = Screen.width - _startPosition.x - _root.layout.width + diff.x;
+        float bottom = Screen.height - _startPosition.y - _root.layout.height + diff.y;
+        L2SlotManager.Instance.DragSlot(right, bottom);
+    }
+
+    public void PointerUpHandler(PointerUpEvent evt)
+    {
+        if (_root.HasPointerCapture(evt.pointerId))
+        {
+            _root.ReleasePointer(evt.pointerId);
+            if (dragged)
+            {
+                L2SlotManager.Instance.ReleaseDrag();
+            }
+        }
+        evt.StopPropagation();
+    }
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q242_PossessorOfAPreciousSoul.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q242_PossessorOfAPreciousSoul.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.SocialAction;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q242_PossessorOfAPreciousSoul extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q242_PossessorOfAPreciousSoul&quot;;
+	
+	// NPCs
+	private static final int VIRGIL = 31742;
+	private static final int KASSANDRA = 31743;
+	private static final int OGMAR = 31744;
+	private static final int MYSTERIOUS_KNIGHT = 31751;
+	private static final int ANGEL_CORPSE = 31752;
+	private static final int KALIS = 30759;
+	private static final int MATILD = 30738;
+	private static final int CORNERSTONE = 31748;
+	private static final int FALLEN_UNICORN = 31746;
+	private static final int PURE_UNICORN = 31747;
+	
+	// Monsters
+	private static final int RESTRAINER_OF_GLORY = 27317;
+	
+	// Items
+	private static final int VIRGIL_LETTER = 7677;
+	private static final int GOLDEN_HAIR = 7590;
+	private static final int SORCERY_INGREDIENT = 7596;
+	private static final int ORB_OF_BINDING = 7595;
+	private static final int CARADINE_LETTER = 7678;
+	
+	private Npc _pureUnicorn;
+	
+	public Q242_PossessorOfAPreciousSoul()
+	{
+		super(242, &quot;Possessor of a Precious Soul - 2&quot;);
+		
+		setItemsIds(GOLDEN_HAIR, SORCERY_INGREDIENT, ORB_OF_BINDING);
+		
+		addQuestStart(VIRGIL);
+		addTalkId(VIRGIL, KASSANDRA, OGMAR, MYSTERIOUS_KNIGHT, ANGEL_CORPSE, KALIS, MATILD, CORNERSTONE, FALLEN_UNICORN, PURE_UNICORN);
+		
+		addMyDying(RESTRAINER_OF_GLORY);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		// Kasandra
+		if (event.equalsIgnoreCase(&quot;31743-05.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+		}
+		// Ogmar
+		else if (event.equalsIgnoreCase(&quot;31744-02.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+		}
+		// Mysterious Knight
+		else if (event.equalsIgnoreCase(&quot;31751-02.htm&quot;))
+		{
+			st.setCond(4);
+			playSound(player, SOUND_MIDDLE);
+		}
+		// Kalis
+		else if (event.equalsIgnoreCase(&quot;30759-02.htm&quot;))
+		{
+			st.setCond(7);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30759-05.htm&quot;))
+		{
+			if (player.getInventory().hasItem(SORCERY_INGREDIENT))
+			{
+				st.setCond(9);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, GOLDEN_HAIR, 1);
+				takeItems(player, SORCERY_INGREDIENT, 1);
+			}
+			else
+			{
+				st.setCond(7);
+				htmltext = &quot;30759-02.htm&quot;;
+			}
+		}
+		// Matild
+		else if (event.equalsIgnoreCase(&quot;30738-02.htm&quot;))
+		{
+			st.setCond(8);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, SORCERY_INGREDIENT, 1);
+		}
+		// Cornerstone
+		else if (event.equalsIgnoreCase(&quot;31748-03.htm&quot;))
+		{
+			if (player.getInventory().hasItem(ORB_OF_BINDING))
+			{
+				npc.deleteMe();
+				takeItems(player, ORB_OF_BINDING, 1);
+				
+				final int cornerstones = st.getInteger(&quot;cornerstone&quot;) + 1;
+				if (cornerstones == 4)
+				{
+					st.unset(&quot;orb&quot;);
+					st.unset(&quot;cornerstone&quot;);
+					st.setCond(10);
+					playSound(player, SOUND_MIDDLE);
+				}
+				else
+					st.set(&quot;cornerstone&quot;, cornerstones);
+			}
+			else
+				htmltext = null;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;fallen&quot;))
+		{
+			if (_pureUnicorn == null)
+			{
+				npc.deleteMe();
+				
+				// Spawn Pure Unicorn (spawn for 30 seconds)
+				_pureUnicorn = addSpawn(PURE_UNICORN, npc, false, 30000, true);
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;pure&quot;))
+		{
+			if (_pureUnicorn != null)
+			{
+				// Despawn Pure Unicorn
+				_pureUnicorn.deleteMe();
+				_pureUnicorn = null;
+			}
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getInventory().hasItem(VIRGIL_LETTER))
+				{
+					if (!player.isSubClassActive() || player.getStatus().getLevel() &lt; 60)
+						htmltext = &quot;31742-02.htm&quot;;
+					else
+					{
+						htmltext = &quot;31742-03.htm&quot;;
+						st.setState(QuestStatus.STARTED);
+						st.setCond(1);
+						playSound(player, SOUND_ACCEPT);
+						takeItems(player, VIRGIL_LETTER, 1);
+					}
+				}
+				break;
+			
+			case STARTED:
+				if (!player.isSubClassActive())
+					break;
+				
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case VIRGIL:
+						if (cond == 1)
+							htmltext = &quot;31742-04.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;31742-05.htm&quot;;
+						break;
+					
+					case KASSANDRA:
+						if (cond == 1)
+							htmltext = &quot;31743-01.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;31743-06.htm&quot;;
+						else if (cond == 11)
+						{
+							htmltext = &quot;31743-07.htm&quot;;
+							giveItems(player, CARADINE_LETTER, 1);
+							rewardExpAndSp(player, 455764, 0);
+							player.broadcastPacket(new SocialAction(player, 3));
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(false);
+						}
+						break;
+					
+					case OGMAR:
+						if (cond == 2)
+							htmltext = &quot;31744-01.htm&quot;;
+						else if (cond == 3)
+							htmltext = &quot;31744-03.htm&quot;;
+						break;
+					
+					case MYSTERIOUS_KNIGHT:
+						if (cond == 3)
+							htmltext = &quot;31751-01.htm&quot;;
+						else if (cond == 4)
+							htmltext = &quot;31751-03.htm&quot;;
+						else if (cond == 5)
+						{
+							if (player.getInventory().hasItem(GOLDEN_HAIR))
+							{
+								htmltext = &quot;31751-04.htm&quot;;
+								st.setCond(6);
+								playSound(player, SOUND_MIDDLE);
+							}
+							else
+							{
+								htmltext = &quot;31751-03.htm&quot;;
+								st.setCond(4);
+							}
+						}
+						else if (cond == 6)
+							htmltext = &quot;31751-05.htm&quot;;
+						break;
+					
+					case ANGEL_CORPSE:
+						if (cond == 4)
+						{
+							npc.deleteMe();
+							
+							final int angel = st.getInteger(&quot;angel&quot;) + 1;
+							if (angel == 4)
+							{
+								htmltext = &quot;31752-02.htm&quot;;
+								st.unset(&quot;angel&quot;);
+								st.setCond(5);
+								playSound(player, SOUND_MIDDLE);
+								giveItems(player, GOLDEN_HAIR, 1);
+							}
+							else
+							{
+								htmltext = &quot;31752-01.htm&quot;;
+								st.set(&quot;angel&quot;, angel);
+							}
+						}
+						else if (cond == 5)
+							htmltext = &quot;31752-01.htm&quot;;
+						break;
+					
+					case KALIS:
+						if (cond == 6)
+							htmltext = &quot;30759-01.htm&quot;;
+						else if (cond == 7)
+							htmltext = &quot;30759-03.htm&quot;;
+						else if (cond == 8)
+						{
+							if (player.getInventory().hasItem(SORCERY_INGREDIENT))
+								htmltext = &quot;30759-04.htm&quot;;
+							else
+							{
+								htmltext = &quot;30759-03.htm&quot;;
+								st.setCond(7);
+							}
+						}
+						else if (cond == 9)
+							htmltext = &quot;30759-06.htm&quot;;
+						break;
+					
+					case MATILD:
+						if (cond == 7)
+							htmltext = &quot;30738-01.htm&quot;;
+						else if (cond == 8)
+							htmltext = &quot;30738-03.htm&quot;;
+						break;
+					
+					case CORNERSTONE:
+						if (cond == 9)
+						{
+							if (player.getInventory().hasItem(ORB_OF_BINDING))
+								htmltext = &quot;31748-02.htm&quot;;
+							else
+								htmltext = &quot;31748-01.htm&quot;;
+						}
+						break;
+					
+					case FALLEN_UNICORN:
+						if (cond == 9)
+							htmltext = &quot;31746-01.htm&quot;;
+						else if (cond == 10)
+						{
+							htmltext = &quot;31746-02.htm&quot;;
+							startQuestTimer(&quot;fallen&quot;, npc, null, 3000);
+						}
+						break;
+					
+					case PURE_UNICORN:
+						if (cond == 10)
+						{
+							htmltext = &quot;31747-01.htm&quot;;
+							st.setCond(11);
+							playSound(player, SOUND_MIDDLE);
+							startQuestTimer(&quot;pure&quot;, npc, null, 3000);
+						}
+						else if (cond == 11)
+							htmltext = &quot;31747-02.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 9);
+		if (st == null || !player.isSubClassActive())
+			return;
+		
+		// Check orbs internally, because player can use them before he gets them all.
+		final int orbs = st.getInteger(&quot;orb&quot;);
+		if (orbs &lt; 4)
+		{
+			st.set(&quot;orb&quot;, orbs + 1);
+			playSound(player, SOUND_ITEMGET);
+			giveItems(player, ORB_OF_BINDING, 1);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

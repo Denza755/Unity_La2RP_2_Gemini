@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/type/OlympiadStadiumZone.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/type/OlympiadStadiumZone.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.zone.type;
+
+import com.shnok.javaserver.gameserver.enums.RestartType;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.Summon;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadGameTask;
+import com.shnok.javaserver.gameserver.model.zone.type.subtype.SpawnZoneType;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExOlympiadMatchEnd;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExOlympiadUserInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+/**
+ * A zone extending {@link SpawnZoneType}, used for olympiad event.&lt;br&gt;
+ * &lt;br&gt;
+ * Restart and the use of &quot;summoning friend&quot; skill aren&#x27;t allowed. The zone is considered a pvp zone.
+ */
+public class OlympiadStadiumZone extends SpawnZoneType
+{
+	OlympiadGameTask _task = null;
+	
+	public OlympiadStadiumZone(int id)
+	{
+		super(id);
+	}
+	
+	@Override
+	protected final void onEnter(Creature creature)
+	{
+		creature.setInsideZone(ZoneId.NO_SUMMON_FRIEND, true);
+		creature.setInsideZone(ZoneId.NO_RESTART, true);
+		
+		if (_task != null &amp;&amp; _task.isBattleStarted())
+		{
+			creature.setInsideZone(ZoneId.PVP, true);
+			
+			if (creature instanceof Player player)
+			{
+				player.sendPacket(SystemMessageId.ENTERED_COMBAT_ZONE);
+				
+				_task.getGame().sendOlympiadInfo(player);
+			}
+		}
+		
+		// Only participants, observers and GMs are allowed.
+		final Player player = creature.getActingPlayer();
+		if (player != null &amp;&amp; !player.isGM() &amp;&amp; !player.isInOlympiadMode() &amp;&amp; !player.isInObserverMode())
+		{
+			final Summon summon = player.getSummon();
+			if (summon != null)
+				summon.unSummon(player);
+			
+			player.teleportTo(RestartType.TOWN);
+		}
+	}
+	
+	@Override
+	protected final void onExit(Creature creature)
+	{
+		creature.setInsideZone(ZoneId.NO_SUMMON_FRIEND, false);
+		creature.setInsideZone(ZoneId.NO_RESTART, false);
+		
+		if (_task != null &amp;&amp; _task.isBattleStarted())
+		{
+			creature.setInsideZone(ZoneId.PVP, false);
+			
+			if (creature instanceof Player player)
+			{
+				player.sendPacket(SystemMessageId.LEFT_COMBAT_ZONE);
+				player.sendPacket(ExOlympiadMatchEnd.STATIC_PACKET);
+			}
+		}
+	}
+	
+	public final void updateZoneStatus()
+	{
+		if (_task == null)
+			return;
+		
+		for (Creature creature : _creatures)
+		{
+			if (_task.isBattleStarted())
+			{
+				creature.setInsideZone(ZoneId.PVP, true);
+				if (creature instanceof Player player)
+					player.sendPacket(SystemMessageId.ENTERED_COMBAT_ZONE);
+			}
+			else
+			{
+				creature.setInsideZone(ZoneId.PVP, false);
+				if (creature instanceof Player player)
+				{
+					player.sendPacket(SystemMessageId.LEFT_COMBAT_ZONE);
+					player.sendPacket(ExOlympiadMatchEnd.STATIC_PACKET);
+				}
+			}
+		}
+	}
+	
+	public final void registerTask(OlympiadGameTask task)
+	{
+		_task = task;
+	}
+	
+	public final void broadcastStatusUpdate(Player player)
+	{
+		final ExOlympiadUserInfo packet = new ExOlympiadUserInfo(player);
+		for (Player plyr : getKnownTypeInside(Player.class))
+		{
+			if (plyr.isInObserverMode() || plyr.getOlympiadSide() != player.getOlympiadSide())
+				plyr.sendPacket(packet);
+		}
+	}
+	
+	public final void broadcastPacketToObservers(L2GameServerPacket packet)
+	{
+		for (Player player : getKnownTypeInside(Player.class))
+		{
+			if (player.isInObserverMode())
+				player.sendPacket(packet);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

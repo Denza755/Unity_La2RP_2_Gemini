@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/db/repository/GameServerRepository.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/db/repository/GameServerRepository.java</h1>
+            <pre>package com.shnok.javaserver.db.repository;
+
+import com.shnok.javaserver.db.DbFactory;
+import com.shnok.javaserver.db.entity.DBGameServer;
+import com.shnok.javaserver.db.interfaces.GameServerDao;
+import lombok.extern.log4j.Log4j2;
+import org.hibernate.Session;
+
+import java.util.List;
+
+@Log4j2
+public class GameServerRepository implements GameServerDao {
+    private static GameServerRepository instance;
+    public static GameServerRepository getInstance() {
+        if (instance == null) {
+            instance = new GameServerRepository();
+        }
+        return instance;
+    }
+
+    @Override
+    public List&lt;DBGameServer&gt; getAllGameServers() {
+        try (Session session = DbFactory.getSessionFactory().openSession()) {
+            return session.createQuery(&quot;SELECT i FROM DBGameServer i&quot;, DBGameServer.class)
+                    .getResultList();
+        } catch (Exception e) {
+            log.error(&quot;SQL ERROR: {}&quot;, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public void addGameServer(DBGameServer gameServer) {
+        try (Session session = DbFactory.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            session.saveOrUpdate(gameServer);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            log.error(&quot;SQL ERROR: {}&quot;, e.getMessage(), e);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

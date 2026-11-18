@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/ShowBoard.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/ShowBoard.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.List;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class ShowBoard extends L2GameServerPacket
+{
+	public static final ShowBoard STATIC_SHOWBOARD_102 = new ShowBoard(null, &quot;102&quot;);
+	public static final ShowBoard STATIC_SHOWBOARD_103 = new ShowBoard(null, &quot;103&quot;);
+	
+	public static final ShowBoard STATIC_CLOSE = new ShowBoard();
+	
+	private static final String TOP = &quot;bypass _bbshome&quot;;
+	private static final String FAV = &quot;bypass _bbsgetfav&quot;;
+	private static final String REGION = &quot;bypass _bbsloc&quot;;
+	private static final String CLAN = &quot;bypass _bbsclan&quot;;
+	private static final String MEMO = &quot;bypass _bbsmemo&quot;;
+	private static final String MAIL = &quot;bypass _maillist_0_1_0_&quot;;
+	private static final String FRIENDS = &quot;bypass _friendlist_0_&quot;;
+	private static final String ADDFAV = &quot;bypass _bbsgetfav_add&quot;;
+	
+	private final StringBuilder _htmlCode = new StringBuilder();
+	
+	private boolean _canShow;
+	
+	public ShowBoard(String htmlCode, String id)
+	{
+		_canShow = true;
+		
+		StringUtil.append(_htmlCode, id, &quot;\u0008&quot;, htmlCode);
+	}
+	
+	public ShowBoard(List&lt;String&gt; arg)
+	{
+		_canShow = true;
+		
+		_htmlCode.append(&quot;1002\u0008&quot;);
+		for (String str : arg)
+			StringUtil.append(_htmlCode, str, &quot; \u0008&quot;);
+	}
+	
+	public ShowBoard()
+	{
+	}
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0x6e);
+		writeC(_canShow ? 0x01 : 0x00);
+		
+		if (_canShow)
+		{
+			writeS(TOP);
+			writeS(FAV);
+			writeS(REGION);
+			writeS(CLAN);
+			writeS(MEMO);
+			writeS(MAIL);
+			writeS(FRIENDS);
+			writeS(ADDFAV);
+			writeS(_htmlCode.toString());
+		}
+	}
+}</pre>
+            
+</body>
+</html>

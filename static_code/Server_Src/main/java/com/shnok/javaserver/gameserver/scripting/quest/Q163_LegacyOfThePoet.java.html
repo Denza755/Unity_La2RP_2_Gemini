@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q163_LegacyOfThePoet.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q163_LegacyOfThePoet.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.enums.actors.ClassRace;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q163_LegacyOfThePoet extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q163_LegacyOfThePoet&quot;;
+	
+	// NPC
+	private static final int STARDEN = 30220;
+	
+	// Items
+	private static final int[] RUMIELS_POEMS =
+	{
+		1038,
+		1039,
+		1040,
+		1041
+	};
+	
+	// Droplist
+	private static final int[][] DROPLIST =
+	{
+		{
+			RUMIELS_POEMS[0],
+			1,
+			1,
+			100000
+		},
+		{
+			RUMIELS_POEMS[1],
+			1,
+			1,
+			200000
+		},
+		{
+			RUMIELS_POEMS[2],
+			1,
+			1,
+			200000
+		},
+		{
+			RUMIELS_POEMS[3],
+			1,
+			1,
+			400000
+		}
+	};
+	
+	public Q163_LegacyOfThePoet()
+	{
+		super(163, &quot;Legacy of the Poet&quot;);
+		
+		setItemsIds(RUMIELS_POEMS);
+		
+		addQuestStart(STARDEN);
+		addTalkId(STARDEN);
+		
+		addMyDying(20372, 20373);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30220-07.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getRace() == ClassRace.DARK_ELF)
+					htmltext = &quot;30220-00.htm&quot;;
+				else if (player.getStatus().getLevel() &lt; 11)
+					htmltext = &quot;30220-02.htm&quot;;
+				else
+					htmltext = &quot;30220-03.htm&quot;;
+				break;
+			
+			case STARTED:
+				if (st.getCond() == 2)
+				{
+					htmltext = &quot;30220-09.htm&quot;;
+					
+					for (int poem : RUMIELS_POEMS)
+						takeItems(player, poem, -1);
+					
+					rewardItems(player, 57, 13890);
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(false);
+				}
+				else
+					htmltext = &quot;30220-08.htm&quot;;
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (dropMultipleItems(player, DROPLIST))
+			st.setCond(2);
+	}
+}</pre>
+            
+</body>
+</html>

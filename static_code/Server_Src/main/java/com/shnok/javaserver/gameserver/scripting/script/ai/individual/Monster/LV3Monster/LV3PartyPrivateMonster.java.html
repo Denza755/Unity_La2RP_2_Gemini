@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/LV3Monster/LV3PartyPrivateMonster.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/LV3Monster/LV3PartyPrivateMonster.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.LV3Monster;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class LV3PartyPrivateMonster extends LV3Monster
+{
+	public LV3PartyPrivateMonster()
+	{
+		super(&quot;ai/individual/Monster/LV3Monster&quot;);
+	}
+	
+	public LV3PartyPrivateMonster(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		27261,
+		27291,
+		27268
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._param1 = npc.getMaster()._param1;
+		npc._param2 = npc.getMaster()._param2;
+		npc._param3 = npc.getMaster()._param3;
+		
+		startQuestTimer(&quot;3007&quot;, npc, null, 5000);
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public void onPartyAttacked(Npc caller, Npc called, Creature target, int damage)
+	{
+		if (target instanceof Playable)
+			called.getAI().addAttackDesire(target, (((damage * 1.0) / called.getStatus().getMaxHp()) / 0.050000) * 50);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (!npc.hasMaster() || npc.getMaster().isDead())
+		{
+			if (attacker instanceof Playable)
+			{
+				if (damage == 0)
+				{
+					damage = 1;
+				}
+				npc.getAI().addAttackDesire(attacker, ((1.0 * damage) / (npc.getStatus().getLevel() + 7)) * 100);
+			}
+		}
+		else if (attacker instanceof Playable)
+		{
+			if (damage == 0)
+			{
+				damage = 1;
+			}
+			npc.getAI().addAttackDesire(attacker, ((1.0 * damage) / (npc.getStatus().getLevel() + 7)) * 10);
+		}
+		
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable)
+			called.getAI().addAttackDesire(attacker, ((1.0 * damage) / (called.getStatus().getLevel() + 7)) * 30);
+	}
+	
+	@Override
+	public void onSeeSpell(Npc npc, Player caster, L2Skill skill, Creature[] targets, boolean isPet)
+	{
+		if (!npc.hasMaster() || npc.getMaster().isDead())
+		{
+			if (skill.getAggroPoints() &gt; 0)
+			{
+				if (npc.getAttack().isAttackingNow() &amp;&amp; targets.length &gt; 0 &amp;&amp; npc.getAI().getTopDesireTarget() == targets[0])
+				{
+					final int i0 = skill.getAggroPoints();
+					double f0 = getHateRatio(npc, caster);
+					f0 = (((1.000000 * i0) / (npc.getStatus().getLevel() + 7)) + ((f0 / 100) * ((1.000000 * i0) / (npc.getStatus().getLevel() + 7))));
+					npc.getAI().addAttackDesire(caster, (f0 * 150));
+				}
+			}
+		}
+	}
+	
+	@Override
+	public void onPartyDied(Npc caller, Npc called)
+	{
+		if (caller == called.getMaster())
+			called.deleteMe();
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1005&quot;))
+		{
+			if (!npc.isInMyTerritory() &amp;&amp; npc.hasMaster() &amp;&amp; !npc.isInCombat())
+			{
+				npc.teleportTo(npc.getSpawnLocation(), 0);
+				npc.removeAllAttackDesire();
+			}
+			startQuestTimer(&quot;1005&quot;, npc, player, 120000);
+		}
+		if (name.equalsIgnoreCase(&quot;3007&quot;))
+		{
+			if (!npc.hasMaster() || npc.getMaster().isDead())
+				npc.deleteMe();
+			else
+				startQuestTimer(&quot;3007&quot;, npc, player, 5000);
+		}
+		return super.onTimer(name, npc, player);
+	}
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/records/Henna.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/records/Henna.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.records;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.util.ArraysUtil;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+public record Henna(int symbolId, int dyeId, int drawPrice, int INT, int STR, int CON, int MEN, int DEX, int WIT, int[] classes)
+{
+	
+	public static final int DRAW_AMOUNT = 10;
+	public static final int REMOVE_AMOUNT = 5;
+	
+	public Henna(StatSet set)
+	{
+		this(set.getInteger(&quot;symbolId&quot;), set.getInteger(&quot;dyeId&quot;), set.getInteger(&quot;price&quot;, 0), set.getInteger(&quot;INT&quot;, 0), set.getInteger(&quot;STR&quot;, 0), set.getInteger(&quot;CON&quot;, 0), set.getInteger(&quot;MEN&quot;, 0), set.getInteger(&quot;DEX&quot;, 0), set.getInteger(&quot;WIT&quot;, 0), set.getIntegerArray(&quot;classes&quot;));
+	}
+	
+	public int getRemovePrice()
+	{
+		return drawPrice / REMOVE_AMOUNT;
+	}
+	
+	public boolean canBeUsedBy(Player player)
+	{
+		return ArraysUtil.contains(classes, player.getClassId().getId());
+	}
+}</pre>
+            
+</body>
+</html>

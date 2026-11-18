@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/skillhandlers/Resurrect.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/skillhandlers/Resurrect.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.skillhandlers;
+
+import com.shnok.javaserver.gameserver.enums.items.ShotType;
+import com.shnok.javaserver.gameserver.enums.skills.SkillType;
+import com.shnok.javaserver.gameserver.handler.ISkillHandler;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.instance.Pet;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.skills.Formulas;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.taskmanager.DecayTaskManager;
+
+public class Resurrect implements ISkillHandler
+{
+	private static final SkillType[] SKILL_IDS =
+	{
+		SkillType.RESURRECT
+	};
+	
+	@Override
+	public void useSkill(Creature creature, L2Skill skill, WorldObject[] targets, ItemInstance item)
+	{
+		if (creature instanceof Player player)
+		{
+			for (WorldObject target : targets)
+			{
+				if (target instanceof Player targetPlayer)
+					targetPlayer.reviveRequest(player, skill, false);
+				else if (target instanceof Pet targetPet)
+				{
+					if (targetPet.getOwner() == player)
+						targetPet.doRevive(Formulas.calcRevivePower(player, skill.getPower()));
+					else
+						targetPet.getOwner().reviveRequest(player, skill, true);
+				}
+				else if (target instanceof Creature targetCreature)
+					targetCreature.doRevive(Formulas.calcRevivePower(player, skill.getPower()));
+			}
+		}
+		else
+		{
+			for (WorldObject target : targets)
+			{
+				if (target instanceof Creature targetCreature)
+				{
+					DecayTaskManager.getInstance().cancel(targetCreature);
+					targetCreature.doRevive(Formulas.calcRevivePower(creature, skill.getPower()));
+				}
+			}
+		}
+		creature.setChargedShot(creature.isChargedShot(ShotType.BLESSED_SPIRITSHOT) ? ShotType.BLESSED_SPIRITSHOT : ShotType.SPIRITSHOT, skill.isStaticReuse());
+	}
+	
+	@Override
+	public SkillType[] getSkillIds()
+	{
+		return SKILL_IDS;
+	}
+}</pre>
+            
+</body>
+</html>

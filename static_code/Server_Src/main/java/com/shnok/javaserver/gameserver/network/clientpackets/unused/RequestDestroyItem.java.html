@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestDestroyItem.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestDestroyItem.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.data.manager.CursedWeaponManager;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public final class RequestDestroyItem extends L2GameClientPacket
+{
+	private static final String DELETE_PET = &quot;DELETE FROM pets WHERE item_obj_id=?&quot;;
+	
+	private int _objectId;
+	private int _count;
+	
+	@Override
+	protected void readImpl()
+	{
+		_objectId = readD();
+		_count = readD();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		if (player.isProcessingTransaction() || player.isOperating())
+		{
+			player.sendPacket(SystemMessageId.CANNOT_TRADE_DISCARD_DROP_ITEM_WHILE_IN_SHOPMODE);
+			return;
+		}
+		
+		final ItemInstance itemToRemove = player.getInventory().getItemByObjectId(_objectId);
+		if (itemToRemove == null)
+			return;
+		
+		if (_count &lt; 1 || _count &gt; itemToRemove.getCount())
+		{
+			player.sendPacket(SystemMessageId.CANNOT_DESTROY_NUMBER_INCORRECT);
+			return;
+		}
+		
+		if (!itemToRemove.isStackable() &amp;&amp; _count &gt; 1)
+			return;
+		
+		final int itemId = itemToRemove.getItemId();
+		if (!itemToRemove.isDestroyable() || CursedWeaponManager.getInstance().isCursed(itemId))
+		{
+			player.sendPacket((itemToRemove.isHeroItem()) ? SystemMessageId.HERO_WEAPONS_CANT_DESTROYED : SystemMessageId.CANNOT_DISCARD_THIS_ITEM);
+			return;
+		}
+		
+		if (itemToRemove.isEquipped() &amp;&amp; (!itemToRemove.isStackable() || (itemToRemove.isStackable() &amp;&amp; _count &gt;= itemToRemove.getCount())))
+			player.useEquippableItem(itemToRemove, false);
+		
+		// if it&#x27;s a pet control item.
+		if (itemToRemove.isSummonItem())
+		{
+			// See if pet or mount is active ; can&#x27;t destroy item linked to that pet.
+			if ((player.getSummon() != null &amp;&amp; player.getSummon().getControlItemId() == _objectId) || (player.isMounted() &amp;&amp; player.getMountObjectId() == _objectId))
+			{
+				player.sendPacket(SystemMessageId.PET_SUMMONED_MAY_NOT_DESTROYED);
+				return;
+			}
+			
+			try (Connection con = ConnectionPool.getConnection();
+				PreparedStatement ps = con.prepareStatement(DELETE_PET))
+			{
+				ps.setInt(1, _objectId);
+				ps.execute();
+			}
+			catch (Exception e)
+			{
+				LOGGER.error(&quot;Couldn&#x27;t delete pet item with objectid {}.&quot;, e, _objectId);
+			}
+		}
+		
+		player.destroyItem(_objectId, _count, true);
+	}
+}</pre>
+            
+</body>
+</html>

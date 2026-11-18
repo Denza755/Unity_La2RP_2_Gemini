@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Skill/SkillWindowInfo.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Skill/SkillWindowInfo.cs</h1>
+            <pre>using UnityEngine;
+
+public class SkillWindowInfo
+{
+    public int SkillId { get; private set; }
+    public int Level { get; }
+    public string Name { get; }
+    public string Desc { get; private set; }
+    public string Icon { get; }
+    public string IconPanel { get; }
+    public int MpCost { get; }
+    public int SpCost { get; }
+    public int Range { get; }
+    public SkillMagicType IsMagic { get; }
+    public SkillType Type { get; }
+    public float HitTime { get; }
+    public float ReuseDelay { get; }
+    public SkillRequirement[] SkillRequirement { get; set; }
+    public string[] SkillDescParams { get; set; }
+
+    public SkillWindowInfo(int skillId, int lvl, int spCost, SkillRequirement[] skillRequirements)
+    {
+        Skillgrp skillgrp = SkillgrpTable.Instance.GetSkill(skillId, lvl);
+        SkillNameData skillNameData = SkillNameTable.Instance.GetName(skillId, lvl);
+        SkillId = skillId;
+        Level = skillNameData.Level;
+        Name = skillNameData.Name;
+        // Desc = string.IsNullOrEmpty(skillNameData.Desc) ? SkillNameTable.Instance.GetDescription(skillId) : skillNameData.Desc;
+        Desc = skillNameData.Desc;
+        Icon = skillgrp.Icon;
+        IconPanel = skillgrp.IconPanel;
+        MpCost = skillgrp.MpConsume;
+        SpCost = spCost;
+        Range = skillgrp.CastRange;
+        IsMagic = skillgrp.IsMagic;
+        Type = skillgrp.IconType;
+        HitTime = skillgrp.HitTime;
+        ReuseDelay = skillgrp.ReuseDelay;
+        SkillRequirement = skillRequirements;
+        SkillDescParams = skillNameData.DescParams;
+    }
+
+    public SkillWindowInfo(int skillId, int lvl)
+    {
+        Skillgrp skillgrp = SkillgrpTable.Instance.GetSkill(skillId, lvl);
+        SkillNameData skillNameData = SkillNameTable.Instance.GetName(skillId, lvl);
+        SkillId = skillId;
+        Level = skillNameData.Level;
+        Name = skillNameData.Name;
+        // Desc = string.IsNullOrEmpty(skillNameData.Desc) ? SkillNameTable.Instance.GetDescription(skillId) : skillNameData.Desc;
+        Desc = skillNameData.Desc;
+        Icon = skillgrp.Icon;
+        IconPanel = skillgrp.IconPanel;
+        MpCost = skillgrp.MpConsume;
+        Range = skillgrp.CastRange;
+        IsMagic = skillgrp.IsMagic;
+        Type = skillgrp.IconType;
+        HitTime = skillgrp.HitTime;
+        ReuseDelay = skillgrp.ReuseDelay;
+        SkillDescParams = skillNameData.DescParams;
+    }
+
+    public string ComposeDescription()
+    {
+        for (var i = 0; i &lt; SkillDescParams.Length; i++)
+        {
+            Desc = Desc.Replace($&quot;$s{i + 1}&quot;, SkillDescParams[i]);
+        }
+        return Desc;
+    }
+
+    public string GetSkillType() =&gt;
+        Type switch
+        {
+            SkillType.Passive or SkillType.EquipmentPassive or SkillType.AbilityPassive or SkillType.Clan =&gt; &quot;Passive Skill&quot;,
+            _ when Type is SkillType.Physical or SkillType.Toggle or SkillType.CraftAndItems &amp;&amp; IsMagic == SkillMagicType.None =&gt; &quot;Active Skill&quot;,
+            _ when Type is SkillType.Physical or SkillType.Magic &amp;&amp; IsMagic != SkillMagicType.None =&gt; &quot;Magic&quot;,
+            _ when Type is SkillType.Buff &amp;&amp; IsMagic == SkillMagicType.DamageBuffHeal =&gt; &quot;Synergy/Song/Dance&quot;,
+            _ =&gt; string.Empty
+        };
+
+    public bool IsMagicSkill() =&gt; IsMagic != SkillMagicType.None;
+
+    public bool IsPassiveSkill() =&gt;
+        Type is SkillType.Passive or SkillType.EquipmentPassive or SkillType.AbilityPassive or SkillType.Clan;
+}</pre>
+            
+</body>
+</html>

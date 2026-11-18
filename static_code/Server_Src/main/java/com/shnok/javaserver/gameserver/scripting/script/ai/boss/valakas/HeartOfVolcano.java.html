@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/valakas/HeartOfVolcano.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/valakas/HeartOfVolcano.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.valakas;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.memo.GlobalMemo;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+
+public class HeartOfVolcano extends DefaultNpc
+{
+	private static final int MAX_PLAYERS_ALLOWED = 200;
+	
+	public HeartOfVolcano()
+	{
+		super(&quot;ai/boss/valakas&quot;);
+		
+		addCreated(31385);
+		addFirstTalkId(31385);
+		addTalkId(31385);
+	}
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		if (!npc.getSpawn().getDBLoaded())
+		{
+			npc._i_ai0 = 0;
+			npc.getSpawn().getSpawnData().setDBValue(0);
+		}
+		else
+			npc._i_ai0 = npc.getSpawn().getSpawnData().getDBValue();
+		
+		startQuestTimerAtFixedRate(&quot;2002&quot;, npc, null, 60000, 60000);
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		return &quot;heart_of_volcano001.htm&quot;;
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = &quot;&quot;;
+		
+		if (event.equalsIgnoreCase(&quot;enter&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;3&quot;);
+			if (c0 != null &amp;&amp; !c0.isDead())
+			{
+				final int dbValue = c0.getSpawn().getSpawnData().getDBValue();
+				if (dbValue == 0)
+					c0.sendScriptEvent(0, 0, 0);
+				
+				if (dbValue == 0 || dbValue == 1)
+				{
+					if (npc._i_ai0 &gt;= MAX_PLAYERS_ALLOWED)
+						htmltext = &quot;heart_of_volcano004.htm&quot;;
+					else
+					{
+						final int telX = getNpcIntAIParam(npc, &quot;TelPosX&quot;);
+						final int telY = getNpcIntAIParam(npc, &quot;TelPosY&quot;);
+						final int telZ = getNpcIntAIParam(npc, &quot;TelPosZ&quot;);
+						
+						player.teleportTo(telX, telY, telZ, 0);
+						
+						npc._i_ai0++;
+						npc.getSpawn().getSpawnData().setDBValue(npc._i_ai0);
+					}
+				}
+				else if (dbValue == 2 || dbValue == 3)
+					htmltext = &quot;heart_of_volcano003.htm&quot;;
+			}
+			else
+				htmltext = &quot;heart_of_volcano002.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;2002&quot;))
+		{
+			final int npcDBValue = npc.getSpawn().getSpawnData().getDBValue();
+			if (npcDBValue != 0)
+			{
+				final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;3&quot;);
+				if (c0 != null &amp;&amp; !c0.isDead())
+				{
+					final int c0DBValue = c0.getSpawn().getSpawnData().getDBValue();
+					if (c0DBValue != 0)
+						return super.onTimer(name, npc, player);
+				}
+				
+				npc.getSpawn().getSpawnData().setDBValue(0);
+				npc._i_ai0 = 0;
+			}
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+}</pre>
+            
+</body>
+</html>

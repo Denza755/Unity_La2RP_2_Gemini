@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Curse/Poison/PoisonBlackClaw.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Curse/Poison/PoisonBlackClaw.shader</h1>
+            <pre>// UE bl_curse_poison_ta MeshEmitter4 &quot;blackclaw&quot;: PTDS_Darken, black_poison00 mesh burst on target.
+Shader &quot;L2/Effects/PoisonBlackClaw&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture (optional; mesh UV)&quot;, 2D) = &quot;white&quot; {}
+
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        [Toggle] _HasLifetime (&quot;Has Lifetime&quot;, Float) = 1
+        _InitialDelayRange (&quot;Initial Delay Range (Min,Max)&quot;, Vector) = (0.2, 0.2, 0, 0)
+        _LifetimeRange (&quot;Lifetime Range (Min,Max)&quot;, Vector) = (0.6, 0.6, 0, 0)
+        _Seed (&quot;Seed&quot;, Float) = 0
+
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 0
+        _FadeInEndTime (&quot;FadeIn End Time (sec)&quot;, Float) = 0
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 1
+        _FadeoutStartTime (&quot;FadeOut Start Time (sec)&quot;, Float) = 0.093
+
+        _ColorScale0 (&quot;ColorScale[0]&quot;, Color) = (1, 1, 1, 1)
+        _ColorScaleTime1 (&quot;ColorScale Time[1]&quot;, Range(0, 1)) = 1.0
+        _ColorScale1 (&quot;ColorScale[1]&quot;, Color) = (1, 1, 1, 1)
+        _ColorScaleCount (&quot;ColorScale Count&quot;, Int) = 2
+        [Toggle] _bAlphaBlend (&quot;AlphaBlend ColorScale&quot;, Float) = 1
+
+        _ColorMultMin (&quot;ColorMult Min&quot;, Color) = (0.844, 1, 0.652, 1)
+        _ColorMultMax (&quot;ColorMult Max&quot;, Color) = (0.844, 1, 0.652, 1)
+
+        _Opacity (&quot;Opacity&quot;, Range(0, 1)) = 0.82
+        _EmitterAlpha (&quot;Emitter Alpha&quot;, Range(0, 1)) = 1.0
+        [Toggle] _IgnoreMainTexAlpha (&quot;Ignore texture alpha&quot;, Float) = 0
+        [Toggle] _AlphaFromLuma (&quot;Alpha from luma (black bg → mask)&quot;, Float) = 1
+        _LumaAlphaFloor (&quot;Luma alpha trim&quot;, Range(0, 0.25)) = 0.02
+        [Toggle] _UseVertexColorMask (&quot;Also use mesh vertex color as mask&quot;, Float) = 0
+        [HDR] _ClawStreakColor (&quot;Claw streak color (#443340 ref)&quot;, Color) = (0.267, 0.204, 0.251, 1)
+        _StreakLumaVariation (&quot;Streak brightness variation from tex luma&quot;, Range(0, 0.5)) = 0.18
+        _AlphaEdgeFeather (&quot;Mask edge feather&quot;, Range(0, 0.25)) = 0.015
+
+        _StartSize (&quot;Start Size (mesh vertex scale)&quot;, Vector) = (1, 1, 1, 0)
+        [Toggle] _ApplyUuToStartSize (&quot;StartSize × 0.01 (mesh verts in raw UE UU)&quot;, Float) = 0
+        [Toggle] _UniformSize (&quot;Uniform Size&quot;, Float) = 1.0
+        [Toggle] _UseSizeScale (&quot;Use SizeScale&quot;, Float) = 1.0
+        [Toggle] _UseRegularSizeScale (&quot;Regular SizeScale&quot;, Float) = 0.0
+        _SizeScaleCount (&quot;SizeScale Count&quot;, Int) = 4
+        _SizeScaleRepeats (&quot;SizeScale Repeats (cycles/lifetime)&quot;, Float) = 1.0
+        _SizeScaleParam (&quot;SizeScale Param&quot;, Float) = 0.0
+        _SizeScaleTime0 (&quot;SizeScale Time[0]&quot;, Range(0, 1)) = 0.0
+        _SizeScaleVal0 (&quot;SizeScale Value[0]&quot;, Float) = 1.0
+        _SizeScaleTime1 (&quot;SizeScale Time[1]&quot;, Range(0, 1)) = 0.07
+        _SizeScaleVal1 (&quot;SizeScale Value[1]&quot;, Float) = 2.5
+        _SizeScaleTime2 (&quot;SizeScale Time[2]&quot;, Range(0, 1)) = 0.37
+        _SizeScaleVal2 (&quot;SizeScale Value[2]&quot;, Float) = 3.5
+        _SizeScaleTime3 (&quot;SizeScale Time[3]&quot;, Range(0, 1)) = 1.0
+        _SizeScaleVal3 (&quot;SizeScale Value[3]&quot;, Float) = 4.3
+
+        [Toggle] _SpinParticles (&quot;Spin Particles&quot;, Float) = 1.0
+        _StartSpinRange (&quot;Start Spin Range rev (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+        _SpinsPerSecond (&quot;Spins Per Second&quot;, Float) = 0.0
+        _SpinCCWorCW (&quot;Spin CCW(0) / CW(1)&quot;, Range(0, 1)) = 0.0
+
+        _StartLocationOffset (&quot;StartLocationOffset (UU)&quot;, Vector) = (0, 0, 0, 0)
+        _MeshYOffset (&quot;Lift above ground (m)&quot;, Float) = 0.01
+        _ClipDepthBias (&quot;Pull toward camera (NDC z)&quot;, Range(0, 0.01)) = 0.001
+
+        [Toggle] _UsePlanarMeshUv (&quot;Planar UV from mesh position&quot;, Float) = 0
+        _PlanarUvScale (&quot;Planar UV scale&quot;, Float) = 0.5
+        [Toggle] _PlanarUvUseXZ (&quot;Planar UV use XZ (off = XY)&quot;, Float) = 1
+        [Toggle] _PlanarUvNormalizeExtents (&quot;Planar UV fill mesh&quot;, Float) = 0
+        _PlanarUvMeshHalfExtents (&quot;Planar mesh half-extents OS&quot;, Vector) = (0.5, 0.5, 0, 0)
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot;
+            &quot;Queue&quot; = &quot;Transparent&quot;
+            &quot;RenderType&quot; = &quot;Transparent&quot;
+                    &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+
+        // UE PTDS_Darken ≈ min(dst, streakColor). URP: alpha-blend streak #443340 (min/multiply → pure black).
+        Blend SrcAlpha OneMinusSrcAlpha
+        Cull Off
+        ZWrite Off
+        ZTest LEqual
+
+        Pass
+        {
+            Name &quot;MeshEmitter4_BlackClaw&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+
+            #include &quot;../../Common/L2FxMeshEmitterUrp.hlsl&quot;
+            #include &quot;../../Common/L2FxMeshFragment.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _StartTime;
+                float _HasLifetime;
+                float4 _InitialDelayRange;
+                float4 _LifetimeRange;
+                float _Seed;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _Fadeout;
+                float _FadeoutStartTime;
+                float4 _ColorScale0;
+                float _ColorScaleTime1;
+                float4 _ColorScale1;
+                uint _ColorScaleCount;
+                float _bAlphaBlend;
+                float4 _ColorMultMin;
+                float4 _ColorMultMax;
+                float _Opacity;
+                float _EmitterAlpha;
+                float _IgnoreMainTexAlpha;
+                float _AlphaFromLuma;
+                float _LumaAlphaFloor;
+                float _UseVertexColorMask;
+                float4 _ClawStreakColor;
+                float _StreakLumaVariation;
+                float _AlphaEdgeFeather;
+                float4 _StartSize;
+                float _ApplyUuToStartSize;
+                float _UniformSize;
+                float _UseSizeScale;
+                float _UseRegularSizeScale;
+                uint _SizeScaleCount;
+                float _SizeScaleRepeats;
+                float _SizeScaleParam;
+                float _SizeScaleTime0;
+                float _SizeScaleVal0;
+                float _SizeScaleTime1;
+                float _SizeScaleVal1;
+                float _SizeScaleTime2;
+                float _SizeScaleVal2;
+                float _SizeScaleTime3;
+                float _SizeScaleVal3;
+                float _SpinParticles;
+                float4 _StartSpinRange;
+                float _SpinsPerSecond;
+                float _SpinCCWorCW;
+                float4 _StartLocationOffset;
+                float _MeshYOffset;
+                float _ClipDepthBias;
+                float _UsePlanarMeshUv;
+                float _PlanarUvScale;
+                float _PlanarUvUseXZ;
+                float _PlanarUvNormalizeExtents;
+                float4 _PlanarUvMeshHalfExtents;
+            CBUFFER_END
+
+            #include &quot;../../Common/L2FxInstancing.hlsl&quot;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                float4 color : COLOR;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float ageNorm : TEXCOORD1;
+                float4 meshColor : TEXCOORD2;
+            };
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+
+                float delay, lifetime, age, ageNorm;
+                L2Fx_MeshBuiltin_ComputeTiming(
+                    _Time.y, _InitialDelayRange, _LifetimeRange, _Seed, _StartTime,
+                    delay, lifetime, age, ageNorm);
+                OUT.ageNorm = ageNorm;
+                OUT.meshColor = IN.color;
+
+                float startSpinRev = L2Fx_RandomRange(_StartSpinRange.xy, _Seed, _StartTime, 91.0);
+
+                float3 posOS = IN.positionOS.xyz;
+                float3 nrmOS = IN.normalOS;
+                L2Fx_MeshBuiltin_TransformVertexOS(
+                    posOS, nrmOS,
+                    _SpinParticles, startSpinRev, _SpinsPerSecond, _SpinCCWorCW, age, ageNorm,
+                    _StartSize.xyz, _ApplyUuToStartSize,
+                    _UseSizeScale, _UseRegularSizeScale,
+                    _SizeScaleParam, _SizeScaleRepeats, _SizeScaleCount,
+                    _SizeScaleTime0, _SizeScaleVal0,
+                    _SizeScaleTime1, _SizeScaleVal1,
+                    _SizeScaleTime2, _SizeScaleVal2,
+                    _SizeScaleTime3, _SizeScaleVal3,
+                    1.0, 1.0,
+                    _StartLocationOffset.xyz, _MeshYOffset, 0.0);
+
+                OUT.positionHCS = L2Fx_MeshUrp_ObjectToHClip(posOS, _ClipDepthBias);
+
+                float2 uvMeshUnused;
+                L2Fx_MeshBuiltin_ResolveUv(
+                    IN.uv, IN.positionOS.xyz,
+                    _UsePlanarMeshUv, _PlanarUvScale, _PlanarUvUseXZ, _PlanarUvNormalizeExtents, _PlanarUvMeshHalfExtents,
+                    _MainTex_ST, 0.0, float4(0, 0, 1, 1),
+                    OUT.uv, uvMeshUnused);
+
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                float delay = L2Fx_RandomInitialDelay(_InitialDelayRange.xy, _Seed, _StartTime, 3.0);
+                float lifetime = L2Fx_RandomLifetime(_LifetimeRange.xy, _Seed, _StartTime, 7.0);
+                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+
+                half4 color = L2Fx_MeshBuiltin_SampleBaseTint(
+                    IN.ageNorm,
+                    0.0,
+                    _ColorScaleCount,
+                    _ColorScale0, _ColorScaleTime1, _ColorScale1,
+                    0.0, half4(1, 1, 1, 1),
+                    _bAlphaBlend,
+                    _ColorMultMin.rgb, _ColorMultMax.rgb,
+                    _Opacity, _EmitterAlpha);
+
+                float mask = L2Fx_MeshFrag_SampleTextureAlpha(
+                    texColor, _AlphaFromLuma, _LumaAlphaFloor, _IgnoreMainTexAlpha);
+                mask = L2Fx_MeshFrag_AlphaFeather(mask, _AlphaEdgeFeather);
+
+                if (_UseVertexColorMask &gt; 0.5)
+                {
+                    float vMask = saturate(dot(IN.meshColor.rgb, float3(0.299, 0.587, 0.114)));
+                    float vPart = (_IgnoreMainTexAlpha &lt; 0.5) ? max(vMask, IN.meshColor.a) : vMask;
+                    mask = max(mask, vPart);
+                }
+
+                float lifeAlpha = L2Fx_LifetimeAlpha(
+                    _Time.y, _HasLifetime, _StartTime, delay, lifetime,
+                    _FadeIn, _FadeInEndTime, _Fadeout, _FadeoutStartTime);
+                float strength = saturate(mask * color.a * lifeAlpha);
+
+                // Reference claw color #443340; UC ColorMultiplierRange; luma only shapes mask/brightness.
+                float lum = saturate(dot(texColor.rgb, float3(0.299, 0.587, 0.114)));
+                float3 clawRgb = _ClawStreakColor.rgb * _ColorMultMin.rgb;
+                float lumaMul = 1.0 - _StreakLumaVariation + lum * _StreakLumaVariation;
+                clawRgb *= lumaMul;
+
+                return half4((half3)saturate(clawRgb), (half)strength);
+            }
+
+            ENDHLSL
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/ExitWindow/ExitWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/ExitWindow/ExitWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; engine=&quot;UnityEngine.UIElements&quot; editor=&quot;UnityEditor.UIElements&quot; noNamespaceSchemaLocation=&quot;../../../../../../../UIElementsSchema/UIElements.xsd&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;WindowTemplate&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;amp;type=3#WindowTemplate&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ExitWindow/ExitWindow.uss?fileID=7433441132597879392&amp;amp;guid=41fc118377fcae544b8bce5a99b79d7f&amp;amp;type=3#ExitWindow&quot; /&gt;
+    &lt;ui:Instance template=&quot;WindowTemplate&quot; name=&quot;WindowTemplate&quot; class=&quot;exit-window&quot;&gt;
+        &lt;ui:VisualElement name=&quot;ContentContainer&quot; class=&quot;exit-window-content&quot;&gt;
+            &lt;ui:GroupBox name=&quot;InfoContainer&quot; class=&quot;exit-window-info-container&quot;&gt;
+                &lt;ui:VisualElement name=&quot;Wrapper&quot; class=&quot;exit-window-container-wrapper&quot;&gt;
+                    &lt;ui:GroupBox name=&quot;Bg&quot; class=&quot;exit-window-info-bg&quot; /&gt;
+                    &lt;ui:GroupBox name=&quot;ContentInside&quot; class=&quot;exit-window-info-inner&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Play Report&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; class=&quot;exit-window-label l2-color-4&quot; /&gt;
+                        &lt;ui:GroupBox name=&quot;BoxMenu&quot; class=&quot;exit-window-info-text-container&quot;&gt;
+                            &lt;ui:GroupBox name=&quot;FirstRow&quot; class=&quot;exit-window-info-row&quot;&gt;
+                                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;EXP Acquired&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Acquired&quot; class=&quot;exit-window-info-row-title l2-color-3&quot; /&gt;
+                                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0 Exp&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;CountExp&quot; class=&quot;exit-window-info-row-value l2-color-1&quot; /&gt;
+                            &lt;/ui:GroupBox&gt;
+                            &lt;ui:GroupBox name=&quot;TwoRow&quot; class=&quot;exit-window-info-row&quot;&gt;
+                                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Adena Acquired&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Adena&quot; class=&quot;exit-window-info-row-title l2-color-3&quot; /&gt;
+                                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0 Adena&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;CountAdena&quot; class=&quot;exit-window-info-row-value l2-color-1&quot; /&gt;
+                            &lt;/ui:GroupBox&gt;
+                            &lt;ui:GroupBox name=&quot;TreRow&quot; class=&quot;exit-window-info-row&quot;&gt;
+                                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Item Acquired&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Adena&quot; class=&quot;exit-window-info-row-title l2-color-3&quot; /&gt;
+                                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;CountItem&quot; class=&quot;exit-window-info-row-value l2-color-1&quot; /&gt;
+                            &lt;/ui:GroupBox&gt;
+                        &lt;/ui:GroupBox&gt;
+                        &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;InitializeButton&quot; class=&quot;initialize-button&quot; style=&quot;display: flex;&quot;&gt;
+                            &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Initialize&quot; /&gt;
+                        &lt;/ui:Instance&gt;
+                    &lt;/ui:GroupBox&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;Buttons&quot; class=&quot;exit-window-buttons&quot;&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;ExitButton&quot; class=&quot;l2-flex-button icon&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Exit Game&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;RestartButton&quot; class=&quot;l2-flex-button icon&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Restart Game&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;CancelButton&quot; class=&quot;l2-flex-button&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Cancel&quot; /&gt;
+                &lt;/ui:Instance&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:Instance&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Login/CharSelectWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Login/CharSelectWindow.cs</h1>
+            <pre>using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+using System.Linq;
+
+public class CharSelectWindow : L2Window
+{
+    private VisualTreeAsset _arrowInputTemplate;
+    private ArrowInputManipulator _charNameManipulator;
+    private List&lt;CharSelectionInfoPackage&gt; _characters;
+
+    private Label _levelLabel;
+    private Label _classLabel;
+    private Label _hpLabel;
+    private Label _mpLabel;
+    private Label _expLabel;
+    private Label _spLabel;
+    private Label _karmaLabel;
+
+    private VisualElement _HPBar;
+    private VisualElement _HPBarBG;
+    private VisualElement _MPBar;
+    private VisualElement _MPBarBG;
+    private VisualElement _ExpBarBG;
+    private VisualElement _ExpBar;
+
+    private static CharSelectWindow _instance;
+    public static CharSelectWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    private void Update()
+    {
+        if (!_isWindowHidden)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                AudioManager.Instance.PlayUISound(&quot;click_01&quot;);
+                ReLoginPressed();
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
+            {
+                AudioManager.Instance.PlayUISound(&quot;click_01&quot;);
+                StartGamePressed();
+            }
+        }
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Login/CharSelectWindow/CharSelectWindow&quot;);
+        _arrowInputTemplate = LoadAsset(&quot;Data/UI/_Elements/Components/L2ArrowInput/L2ArrowInput&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        Button loginButton = (Button)GetElementById(&quot;StartButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        loginButton.Query&lt;VisualElement&gt;().ForEach(child =&gt; child.pickingMode = PickingMode.Ignore);
+        loginButton.pickingMode = PickingMode.Position;
+        loginButton.AddManipulator(new ButtonClickSoundManipulator(loginButton));
+        loginButton.clicked += StartGamePressed;
+        loginButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; StartGamePressed());
+
+        Button deleteButton = (Button)GetElementById(&quot;DeleteButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        deleteButton.Query&lt;VisualElement&gt;().ForEach(child =&gt; child.pickingMode = PickingMode.Ignore);
+        deleteButton.pickingMode = PickingMode.Position;
+        deleteButton.AddManipulator(new ButtonClickSoundManipulator(deleteButton));
+        deleteButton.clicked += DeletePressed;
+        deleteButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; DeletePressed());
+
+        Button createButton = (Button)GetElementById(&quot;CreateButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        createButton.Query&lt;VisualElement&gt;().ForEach(child =&gt; child.pickingMode = PickingMode.Ignore);
+        createButton.pickingMode = PickingMode.Position;
+        createButton.AddManipulator(new ButtonClickSoundManipulator(createButton));
+        createButton.clicked += CreatePressed;
+        createButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; CreatePressed());
+
+        Button reloginButton = (Button)GetElementById(&quot;ReloginButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        reloginButton.Query&lt;VisualElement&gt;().ForEach(child =&gt; child.pickingMode = PickingMode.Ignore);
+        reloginButton.pickingMode = PickingMode.Position;
+        reloginButton.AddManipulator(new ButtonClickSoundManipulator(reloginButton));
+        reloginButton.clicked += ReLoginPressed;
+        reloginButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; ReLoginPressed());
+
+        VisualElement userNameInputContainer = GetElementById(&quot;UserSelectContainer&quot;);
+        VisualElement userNameInput = _arrowInputTemplate.Instantiate()[0];
+        _charNameManipulator = new ArrowInputManipulator(userNameInput, &quot;Name&quot;, new string[] { }, -1, (index, value) =&gt;
+        {
+            CharacterSelector.Instance.SelectCharacter(index);
+        });
+
+        _levelLabel = (Label)GetElementById(&quot;LevelLabel&quot;);
+        _classLabel = (Label)GetElementById(&quot;ClassLabel&quot;);
+        _spLabel = (Label)GetElementById(&quot;SPLabel&quot;);
+        _karmaLabel = (Label)GetElementById(&quot;KarmaLabel&quot;);
+
+        VisualElement hpBarContainer = GetElementById(&quot;HPBar&quot;);
+        _HPBar = hpBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _HPBarBG = hpBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        _hpLabel = hpBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+
+
+        VisualElement mpBarContainer = GetElementById(&quot;MPBar&quot;);
+        _MPBar = mpBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _MPBarBG = mpBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        _mpLabel = mpBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+
+        VisualElement expBarContainer = GetElementById(&quot;EXPBar&quot;);
+        _ExpBar = expBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _ExpBarBG = expBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        _expLabel = expBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+
+        userNameInput.AddManipulator(_charNameManipulator);
+        userNameInputContainer.Add(userNameInput);
+
+        L2LoginUI.Instance.WindowLoadComplete();
+    }
+
+    public void SetCharacterList(List&lt;CharSelectionInfoPackage&gt; characters)
+    {
+        _characters = characters;
+        string[] charArray = characters.Select(character =&gt; character.Name).ToArray();
+        _charNameManipulator.UpdateValues(charArray);
+    }
+
+    public void SelectSlot(int slot)
+    {
+        if (slot == _charNameManipulator.Index)
+        {
+            return;
+        }
+
+        if (slot == -1)
+        {
+            _levelLabel.text = &quot;0&quot;;
+            _classLabel.text = &quot;??&quot;;
+            _hpLabel.text = &quot;0/0&quot;;
+            _mpLabel.text = &quot;0/0&quot;;
+            _expLabel.text = &quot;0.00%&quot;;
+            _spLabel.text = &quot;0&quot;;
+            _karmaLabel.text = &quot;0&quot;;
+            _charNameManipulator.ClearInput();
+        }
+        else if (slot &lt; _characters.Count)
+        {
+            _levelLabel.text = _characters[slot].PlayerStats.Level.ToString();
+            _classLabel.text = ((CharacterClass)(_characters[slot].ClassId)).ToString();
+            _hpLabel.text = $&quot;{_characters[slot].PlayerStatus.Hp}/{_characters[slot].PlayerStats.MaxHp}&quot;;
+            _mpLabel.text = $&quot;{_characters[slot].PlayerStatus.Mp}/{_characters[slot].PlayerStats.MaxMp}&quot;;
+            _expLabel.text = (_characters[slot].ExpPercent * 100).ToString(&quot;0.00&quot;) + &quot;%&quot;;
+            _spLabel.text = _characters[slot].Sp.ToString();
+            _karmaLabel.text = _characters[slot].Karma.ToString();
+
+            StartCoroutine(UpdateBars(slot));
+
+            _charNameManipulator.SelectIndex(slot);
+        }
+    }
+
+    IEnumerator UpdateBars(int slot)
+    {
+
+        yield return new WaitForEndOfFrame();
+        if (_HPBarBG != null &amp;&amp; _HPBar != null)
+        {
+            float hpRatio = (float)_characters[slot].PlayerStatus.Hp / _characters[slot].PlayerStats.MaxHp;
+            float bgWidth = _HPBarBG.resolvedStyle.width;
+            float barWidth = bgWidth * hpRatio;
+            _HPBar.style.width = barWidth;
+        }
+
+        if (_MPBarBG != null &amp;&amp; _MPBar != null)
+        {
+            float mpRatio = (float)_characters[slot].PlayerStatus.Mp / _characters[slot].PlayerStats.MaxMp;
+            float bgWidth = _MPBarBG.resolvedStyle.width;
+            float barWidth = bgWidth * mpRatio;
+            _MPBar.style.width = barWidth;
+        }
+
+        if (_ExpBarBG != null &amp;&amp; _ExpBar != null)
+        {
+            float bgWidth = _ExpBarBG.resolvedStyle.width;
+            float barWidth = bgWidth * _characters[slot].ExpPercent;
+            _ExpBar.style.width = barWidth;
+        }
+    }
+
+    private void StartGamePressed()
+    {
+        L2ConfirmWindow.Instance.HideWindow(false);
+        CharacterSelector.Instance.ConfirmSelection();
+    }
+
+    private void ReLoginPressed()
+    {
+        L2ConfirmWindow.Instance.HideWindow(false);
+        GameClient.Instance.Disconnect();
+    }
+
+    private void CreatePressed()
+    {
+        L2ConfirmWindow.Instance.HideWindow(false);
+        GameManager.Instance.ChangeState(GameState.CHAR_CREATION);
+    }
+
+    private void DeletePressed()
+    {
+        CharacterSelector.Instance.DeleteCharacter();
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+
+        if (GameManager.Instance.AutoLogin)
+        {
+            StartCoroutine(AutoLogin());
+        }
+    }
+
+    private IEnumerator AutoLogin()
+    {
+        yield return new WaitForSeconds(1f);
+        StartGamePressed();
+    }
+}</pre>
+            
+</body>
+</html>

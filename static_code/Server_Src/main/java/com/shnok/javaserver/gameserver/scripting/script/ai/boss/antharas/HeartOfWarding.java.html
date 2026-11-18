@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/antharas/HeartOfWarding.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/antharas/HeartOfWarding.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.antharas;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.memo.GlobalMemo;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class HeartOfWarding extends Quest
+{
+	private static final int GM_ID1 = 4;
+	private static final int GM_ID2 = 5;
+	private static final int GM_ID3 = 6;
+	
+	public HeartOfWarding()
+	{
+		super(-1, &quot;ai/boss/antharas&quot;);
+		
+		addFirstTalkId(13001);
+		addTalkId(13001);
+		addCreated(13001);
+	}
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai0 = 0;
+		npc._i_ai1 = 0;
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		return &quot;13001-01.htm&quot;;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;3001&quot;))
+		{
+			if (npc._i_ai1 &lt;= 90)
+			{
+				final Npc c_ai0 = (Npc) npc._c_ai0;
+				if (c_ai0 != null)
+					c_ai0.sendScriptEvent(0, 0, 0);
+			}
+			else if (npc._i_ai1 &lt;= 135)
+			{
+				final Npc c_ai1 = (Npc) npc._c_ai1;
+				if (c_ai1 != null)
+					c_ai1.sendScriptEvent(0, 0, 0);
+			}
+			else
+			{
+				final Npc c_ai2 = (Npc) npc._c_ai2;
+				if (c_ai2 != null)
+					c_ai2.sendScriptEvent(0, 0, 0);
+			}
+			
+			npc._i_ai0 = 0;
+			npc._i_ai1 = 0;
+		}
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = &quot;&quot;;
+		
+		if (event.equalsIgnoreCase(&quot;enter&quot;))
+		{
+			final int i0 = GlobalMemo.getInstance().getInteger(String.valueOf(GM_ID1), -1);
+			final int i1 = GlobalMemo.getInstance().getInteger(String.valueOf(GM_ID2), -1);
+			final int i2 = GlobalMemo.getInstance().getInteger(String.valueOf(GM_ID3), -1);
+			
+			if (i0 != -1 &amp;&amp; i1 != -1 &amp;&amp; i2 != -1)
+			{
+				final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(String.valueOf(GM_ID1));
+				final Npc c1 = (Npc) GlobalMemo.getInstance().getCreature(String.valueOf(GM_ID2));
+				final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(String.valueOf(GM_ID3));
+				
+				if (!c0.isDead() &amp;&amp; !c1.isDead() &amp;&amp; !c2.isDead())
+				{
+					final int c0Value = c0.getSpawn().getSpawnData().getDBValue();
+					final int c1Value = c1.getSpawn().getSpawnData().getDBValue();
+					final int c2Value = c2.getSpawn().getSpawnData().getDBValue();
+					
+					if ((c0Value == 0 || c0Value == 1) &amp;&amp; ((c1Value == 0 || c1Value == 1) &amp;&amp; (c2Value == 0 || c2Value == 1)))
+					{
+						if (player.getInventory().hasItem(3865))
+						{
+							takeItems(player, 3865, 1);
+							
+							final int i3 = (179700 + Rnd.get(700));
+							final int i4 = (113800 + Rnd.get(2100));
+							
+							player.teleportTo(i3, i4, -7709, 0);
+							
+							npc._i_ai1++;
+							
+							if (npc._i_ai0 == 0)
+							{
+								startQuestTimer(&quot;3001&quot;, npc, player, Config.WAIT_TIME_ANTHARAS);
+								
+								npc._c_ai0 = c0;
+								npc._c_ai1 = c1;
+								npc._c_ai2 = c2;
+								
+								npc._i_ai0 = 1;
+							}
+						}
+						else
+							htmltext = &quot;13001-04.htm&quot;;
+					}
+					else if (c0Value == 2 || c0Value == 3 || c1Value == 2 || c1Value == 3 || c2Value == 2 || c2Value == 3)
+						htmltext = &quot;13001-03.htm&quot;;
+				}
+				else
+					htmltext = &quot;13001-02.htm&quot;;
+			}
+			else
+				htmltext = &quot;13001-02.htm&quot;;
+		}
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

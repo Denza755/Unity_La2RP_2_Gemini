@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminReload.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminReload.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.data.cache.CrestCache;
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.data.manager.BuyListManager;
+import com.shnok.javaserver.gameserver.data.manager.CursedWeaponManager;
+import com.shnok.javaserver.gameserver.data.manager.ZoneManager;
+import com.shnok.javaserver.gameserver.data.xml.AdminData;
+import com.shnok.javaserver.gameserver.data.xml.AnnouncementData;
+import com.shnok.javaserver.gameserver.data.xml.BoatData;
+import com.shnok.javaserver.gameserver.data.xml.DoorData;
+import com.shnok.javaserver.gameserver.data.xml.InstantTeleportData;
+import com.shnok.javaserver.gameserver.data.xml.ItemData;
+import com.shnok.javaserver.gameserver.data.xml.MultisellData;
+import com.shnok.javaserver.gameserver.data.xml.NpcData;
+import com.shnok.javaserver.gameserver.data.xml.ScriptData;
+import com.shnok.javaserver.gameserver.data.xml.TeleportData;
+import com.shnok.javaserver.gameserver.data.xml.WalkerRouteData;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+public class AdminReload implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_reload&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command);
+		st.nextToken();
+		
+		try
+		{
+			do
+			{
+				String type = st.nextToken();
+				if (type.startsWith(&quot;admin&quot;))
+				{
+					AdminData.getInstance().reload();
+					player.sendMessage(&quot;Admin data has been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;announcement&quot;))
+				{
+					AnnouncementData.getInstance().reload();
+					player.sendMessage(&quot;The content of announcements.xml has been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;boat&quot;))
+				{
+					BoatData.getInstance().reload();
+					player.sendMessage(&quot;Boat have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;buylist&quot;))
+				{
+					BuyListManager.getInstance().reload();
+					player.sendMessage(&quot;Buylists have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;config&quot;))
+				{
+					Config.loadGameServer();
+					player.sendMessage(&quot;Configs files have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;crest&quot;))
+				{
+					CrestCache.getInstance().reload();
+					player.sendMessage(&quot;Crests have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;cw&quot;))
+				{
+					CursedWeaponManager.getInstance().reload();
+					player.sendMessage(&quot;Cursed weapons have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;door&quot;))
+				{
+					DoorData.getInstance().reload();
+					player.sendMessage(&quot;Doors instance has been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;htm&quot;))
+				{
+					HtmCache.getInstance().reload();
+					player.sendMessage(&quot;The HTM cache has been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;item&quot;))
+				{
+					ItemData.getInstance().reload();
+					player.sendMessage(&quot;Items&#x27; templates have been reloaded.&quot;);
+				}
+				else if (type.equals(&quot;multisell&quot;))
+				{
+					MultisellData.getInstance().reload();
+					player.sendMessage(&quot;The multisell instance has been reloaded.&quot;);
+				}
+				else if (type.equals(&quot;npc&quot;))
+				{
+					NpcData.getInstance().reload();
+					ScriptData.getInstance().reload();
+					player.sendMessage(&quot;NPCs templates and Scripts have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;npcwalker&quot;))
+				{
+					WalkerRouteData.getInstance().reload();
+					player.sendMessage(&quot;Walking routes have been reloaded.&quot;);
+				}
+				else if (type.equals(&quot;script&quot;))
+				{
+					ScriptData.getInstance().reload();
+					player.sendMessage(&quot;Scripts have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;skill&quot;))
+				{
+					SkillTable.getInstance().reload();
+					player.sendMessage(&quot;Skills&#x27; XMLs have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;teleport&quot;))
+				{
+					InstantTeleportData.getInstance().reload();
+					TeleportData.getInstance().reload();
+					player.sendMessage(&quot;Teleport locations have been reloaded.&quot;);
+				}
+				else if (type.startsWith(&quot;zone&quot;))
+				{
+					ZoneManager.getInstance().reload();
+					player.sendMessage(&quot;Zones have been reloaded.&quot;);
+				}
+				else
+					sendUsage(player);
+			}
+			while (st.hasMoreTokens());
+		}
+		catch (Exception e)
+		{
+			sendUsage(player);
+		}
+	}
+	
+	public void sendUsage(Player player)
+	{
+		player.sendMessage(&quot;Usage : //reload &lt;admin|announcement|buylist|config&gt;&quot;);
+		player.sendMessage(&quot;Usage : //reload &lt;crest|cw|door|htm|item|multisell|npc&gt;&quot;);
+		player.sendMessage(&quot;Usage : //reload &lt;npcwalker|script|skill|teleport|zone&gt;&quot;);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

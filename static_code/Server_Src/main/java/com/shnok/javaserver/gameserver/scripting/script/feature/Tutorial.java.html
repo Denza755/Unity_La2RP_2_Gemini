@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/Tutorial.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/Tutorial.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.feature;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.records.TutorialEvent;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Tutorial extends Quest
+{
+	private static final String QUEST_NAME = &quot;Tutorial&quot;;
+	private static final String QUEST_NAME_101 = &quot;Q101_SwordOfSolidarity&quot;;
+	private static final String QUEST_NAME_102 = &quot;Q102_SeaOfSporesFever&quot;;
+	private static final String QUEST_NAME_103 = &quot;Q103_SpiritOfCraftsman&quot;;
+	private static final String QUEST_NAME_104 = &quot;Q104_SpiritOfMirrors&quot;;
+	private static final String QUEST_NAME_105 = &quot;Q105_SkirmishWithTheOrcs&quot;;
+	private static final String QUEST_NAME_106 = &quot;Q106_ForgottenTruth&quot;;
+	private static final String QUEST_NAME_107 = &quot;Q107_MercilessPunishment&quot;;
+	private static final String QUEST_NAME_108 = &quot;Q108_JumbleTumbleDiamondFuss&quot;;
+	
+	private static final Map&lt;Integer, TutorialEvent&gt; EVENTS = HashMap.newHashMap(9);
+	
+	// Table for Tutorial Close Link (26) 2nd class transfer [raceId, html]
+	private static final Map&lt;Integer, String&gt; TCLa = HashMap.newHashMap(18);
+	
+	// Table for Tutorial Close Link (23) 2nd class transfer [raceId, html]
+	private static final Map&lt;Integer, String&gt; TCLb = HashMap.newHashMap(11);
+	
+	// Table for Tutorial Close Link (24) 2nd class transfer [raceId, html]
+	private static final Map&lt;Integer, String&gt; TCLc = HashMap.newHashMap(11);
+	
+	private static final int TUTORIAL_GUIDE = 5588;
+	private static final int BLUE_GEMSTONE = 6353;
+	
+	public Tutorial()
+	{
+		super(-1, &quot;feature&quot;);
+		
+		EVENTS.put(0, new TutorialEvent(&quot;tutorial_voice_001a&quot;, &quot;tutorial_human_fighter001.htm&quot;, &quot;tutorial_human_fighter007.htm&quot;, new Location(-71424, 258336, -3109), &quot;tutorial_fighter017.htm&quot;, new Location(-83020, 242553, -3718), &quot;tutorial_newbie003a.htm&quot;, &quot;tutorial_21.htm&quot;, Location.DUMMY_LOC));
+		EVENTS.put(10, new TutorialEvent(&quot;tutorial_voice_001b&quot;, &quot;tutorial_human_mage001.htm&quot;, &quot;tutorial_human_mage007.htm&quot;, new Location(-91036, 248044, -3568), &quot;tutorial_mage017.htm&quot;, Location.DUMMY_LOC, &quot;tutorial_newbie003a.htm&quot;, &quot;tutorial_21a.htm&quot;, new Location(-84981, 244764, -3726)));
+		EVENTS.put(18, new TutorialEvent(&quot;tutorial_voice_001c&quot;, &quot;tutorial_elven_fighter001.htm&quot;, &quot;tutorial_elf007.htm&quot;, new Location(46112, 41200, -3504), &quot;tutorial_fighter017.htm&quot;, new Location(45061, 52468, -2796), &quot;tutorial_newbie003b.htm&quot;, &quot;tutorial_21b.htm&quot;, Location.DUMMY_LOC));
+		EVENTS.put(25, new TutorialEvent(&quot;tutorial_voice_001d&quot;, &quot;tutorial_elven_mage001.htm&quot;, &quot;tutorial_elf007.htm&quot;, new Location(46112, 41200, -3504), &quot;tutorial_mage017.htm&quot;, Location.DUMMY_LOC, &quot;tutorial_newbie003b.htm&quot;, &quot;tutorial_21c.htm&quot;, new Location(45701, 52459, -2796)));
+		EVENTS.put(31, new TutorialEvent(&quot;tutorial_voice_001e&quot;, &quot;tutorial_delf_fighter001.htm&quot;, &quot;tutorial_delf007.htm&quot;, new Location(28384, 11056, -4233), &quot;tutorial_fighter017.htm&quot;, new Location(10447, 14620, -4242), &quot;tutorial_newbie003c.htm&quot;, &quot;tutorial_21g.htm&quot;, Location.DUMMY_LOC));
+		EVENTS.put(38, new TutorialEvent(&quot;tutorial_voice_001f&quot;, &quot;tutorial_delf_mage001.htm&quot;, &quot;tutorial_delf007.htm&quot;, new Location(28384, 11056, -4233), &quot;tutorial_mage017.htm&quot;, Location.DUMMY_LOC, &quot;tutorial_newbie003c.htm&quot;, &quot;tutorial_21h.htm&quot;, new Location(10344, 14445, -4242)));
+		EVENTS.put(44, new TutorialEvent(&quot;tutorial_voice_001g&quot;, &quot;tutorial_orc_fighter001.htm&quot;, &quot;tutorial_orc007.htm&quot;, new Location(-56736, -113680, -672), &quot;tutorial_orc_fighter017.htm&quot;, new Location(-46389, -113905, -21), &quot;tutorial_newbie003d.htm&quot;, &quot;tutorial_21d.htm&quot;, Location.DUMMY_LOC));
+		EVENTS.put(49, new TutorialEvent(&quot;tutorial_voice_001h&quot;, &quot;tutorial_orc_mage001.htm&quot;, &quot;tutorial_orc007.htm&quot;, new Location(-56736, -113680, -672), &quot;tutorial_mage017.htm&quot;, Location.DUMMY_LOC, &quot;tutorial_newbie003d.htm&quot;, &quot;tutorial_21e.htm&quot;, new Location(-46225, -113312, -21)));
+		EVENTS.put(53, new TutorialEvent(&quot;tutorial_voice_001i&quot;, &quot;tutorial_dwarven_fighter001.htm&quot;, &quot;tutorial_dwarven_fighter007.htm&quot;, new Location(108567, -173994, -406), &quot;tutorial_dwarven017.htm&quot;, new Location(115271, -182692, -1445), &quot;tutorial_newbie003e.htm&quot;, &quot;tutorial_21f.htm&quot;, Location.DUMMY_LOC));
+		
+		TCLa.put(1, &quot;tutorial_22w.htm&quot;);
+		TCLa.put(4, &quot;tutorial_22.htm&quot;);
+		TCLa.put(7, &quot;tutorial_22b.htm&quot;);
+		TCLa.put(11, &quot;tutorial_22c.htm&quot;);
+		TCLa.put(15, &quot;tutorial_22d.htm&quot;);
+		TCLa.put(19, &quot;tutorial_22e.htm&quot;);
+		TCLa.put(22, &quot;tutorial_22f.htm&quot;);
+		TCLa.put(26, &quot;tutorial_22g.htm&quot;);
+		TCLa.put(29, &quot;tutorial_22h.htm&quot;);
+		TCLa.put(32, &quot;tutorial_22n.htm&quot;);
+		TCLa.put(35, &quot;tutorial_22o.htm&quot;);
+		TCLa.put(39, &quot;tutorial_22p.htm&quot;);
+		TCLa.put(42, &quot;tutorial_22q.htm&quot;);
+		TCLa.put(45, &quot;tutorial_22i.htm&quot;);
+		TCLa.put(47, &quot;tutorial_22j.htm&quot;);
+		TCLa.put(50, &quot;tutorial_22k.htm&quot;);
+		TCLa.put(54, &quot;tutorial_22l.htm&quot;);
+		TCLa.put(56, &quot;tutorial_22m.htm&quot;);
+		
+		TCLb.put(4, &quot;tutorial_22aa.htm&quot;);
+		TCLb.put(7, &quot;tutorial_22ba.htm&quot;);
+		TCLb.put(11, &quot;tutorial_22ca.htm&quot;);
+		TCLb.put(15, &quot;tutorial_22da.htm&quot;);
+		TCLb.put(19, &quot;tutorial_22ea.htm&quot;);
+		TCLb.put(22, &quot;tutorial_22fa.htm&quot;);
+		TCLb.put(26, &quot;tutorial_22ga.htm&quot;);
+		TCLb.put(32, &quot;tutorial_22na.htm&quot;);
+		TCLb.put(35, &quot;tutorial_22oa.htm&quot;);
+		TCLb.put(39, &quot;tutorial_22pa.htm&quot;);
+		TCLb.put(50, &quot;tutorial_22ka.htm&quot;);
+		
+		TCLc.put(4, &quot;tutorial_22ab.htm&quot;);
+		TCLc.put(7, &quot;tutorial_22bb.htm&quot;);
+		TCLc.put(11, &quot;tutorial_22cb.htm&quot;);
+		TCLc.put(15, &quot;tutorial_22db.htm&quot;);
+		TCLc.put(19, &quot;tutorial_22eb.htm&quot;);
+		TCLc.put(22, &quot;tutorial_22fb.htm&quot;);
+		TCLc.put(26, &quot;tutorial_22gb.htm&quot;);
+		TCLc.put(32, &quot;tutorial_22nb.htm&quot;);
+		TCLc.put(35, &quot;tutorial_22ob.htm&quot;);
+		TCLc.put(39, &quot;tutorial_22pb.htm&quot;);
+		TCLc.put(50, &quot;tutorial_22kb.htm&quot;);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.startsWith(&quot;QT&quot;))
+		{
+			final QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+			if (st == null)
+				return null;
+			
+			final int Ex = st.getInteger(&quot;Ex&quot;);
+			if (Ex == -2)
+			{
+				final TutorialEvent evt = EVENTS.get(player.getClassId().getId());
+				if (evt == null)
+					return null;
+				
+				if (!player.getInventory().hasItem(TUTORIAL_GUIDE))
+					giveItems(player, TUTORIAL_GUIDE, 1);
+				
+				st.set(&quot;Ex&quot;, -3);
+				playTutorialVoice(player, evt.initialVoice());
+				
+				cancelQuestTimers(&quot;QT&quot;);
+				startQuestTimer(&quot;QT&quot;, null, player, 30000);
+				
+				showTutorialHTML(player, evt.initialHtm());
+			}
+			else if (Ex == -3)
+			{
+				st.set(&quot;Ex&quot;, 0);
+				playTutorialVoice(player, &quot;tutorial_voice_002&quot;);
+			}
+			else if (Ex == -4)
+			{
+				st.set(&quot;Ex&quot;, -5);
+				playTutorialVoice(player, &quot;tutorial_voice_008&quot;);
+			}
+		}
+		return null;
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		final QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return null;
+		
+		String html = &quot;&quot;;
+		
+		final int classId = player.getClassId().getId();
+		
+		if (event.startsWith(&quot;UC&quot;))
+		{
+			if (player.getStatus().getLevel() &lt; 6 &amp;&amp; st.getInteger(&quot;onlyone&quot;) == 0)
+			{
+				switch (st.getInteger(&quot;ucMemo&quot;))
+				{
+					case 0:
+						st.set(&quot;Ex&quot;, -2);
+						st.set(&quot;ucMemo&quot;, 1);
+						
+						startQuestTimer(&quot;QT&quot;, null, player, 10000);
+						break;
+					
+					case 1:
+						showQuestionMark(player, 1);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_006&quot;);
+						break;
+					
+					case 2:
+						final QuestState qs101 = player.getQuestList().getQuestState(QUEST_NAME_101);
+						final QuestState qs102 = player.getQuestList().getQuestState(QUEST_NAME_102);
+						final QuestState qs103 = player.getQuestList().getQuestState(QUEST_NAME_103);
+						final QuestState qs104 = player.getQuestList().getQuestState(QUEST_NAME_104);
+						final QuestState qs105 = player.getQuestList().getQuestState(QUEST_NAME_105);
+						final QuestState qs106 = player.getQuestList().getQuestState(QUEST_NAME_106);
+						final QuestState qs107 = player.getQuestList().getQuestState(QUEST_NAME_107);
+						final QuestState qs108 = player.getQuestList().getQuestState(QUEST_NAME_108);
+						
+						if (qs101 != null || qs102 != null || qs103 != null || qs104 != null || qs105 != null || qs106 != null || qs107 != null || qs108 != null)
+						{
+							st.set(&quot;ucMemo&quot;, 5);
+							showQuestionMark(player, 6);
+						}
+						else
+							showQuestionMark(player, 2);
+						
+						playSound(player, SOUND_TUTORIAL);
+						break;
+					
+					case 3:
+						if (st.getInteger(&quot;Ex&quot;) == 2)
+							showQuestionMark(player, 3);
+						else if (player.getInventory().hasItem(BLUE_GEMSTONE))
+							showQuestionMark(player, 5);
+						
+						playSound(player, SOUND_TUTORIAL);
+						break;
+					
+					case 4:
+						showQuestionMark(player, 12);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_025&quot;);
+						break;
+				}
+				onTutorialClientEvent(player, 0);
+			}
+		}
+		// Tutorial close
+		else if (event.startsWith(&quot;TE&quot;))
+		{
+			cancelQuestTimers(&quot;TE&quot;);
+			
+			if (!event.equalsIgnoreCase(&quot;TE&quot;))
+			{
+				switch (Integer.valueOf(event.substring(2)))
+				{
+					case 0:
+						closeTutorialHtml(player);
+						break;
+					
+					case 1:
+						st.set(&quot;Ex&quot;, -4);
+						closeTutorialHtml(player);
+						showQuestionMark(player, 1);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_006&quot;);
+						
+						startQuestTimer(&quot;QT&quot;, null, player, 30000);
+						break;
+					
+					case 2:
+						html = &quot;tutorial_02.htm&quot;;
+						st.set(&quot;Ex&quot;, -5);
+						onTutorialClientEvent(player, 1);
+						playTutorialVoice(player, &quot;tutorial_voice_003&quot;);
+						break;
+					
+					case 3:
+						html = &quot;tutorial_03.htm&quot;;
+						onTutorialClientEvent(player, 2);
+						break;
+					
+					case 4:
+						html = &quot;tutorial_04.htm&quot;;
+						onTutorialClientEvent(player, 4);
+						break;
+					
+					case 5:
+						html = &quot;tutorial_05.htm&quot;;
+						onTutorialClientEvent(player, 8);
+						break;
+					
+					case 6:
+						html = &quot;tutorial_06.htm&quot;;
+						onTutorialClientEvent(player, 16);
+						break;
+					
+					case 7:
+						html = &quot;tutorial_100.htm&quot;;
+						onTutorialClientEvent(player, 0);
+						break;
+					
+					case 8:
+						html = &quot;tutorial_101.htm&quot;;
+						onTutorialClientEvent(player, 0);
+						break;
+					
+					case 9:
+						html = &quot;tutorial_102.htm&quot;;
+						onTutorialClientEvent(player, 0);
+						break;
+					
+					case 10:
+						html = &quot;tutorial_103.htm&quot;;
+						onTutorialClientEvent(player, 0);
+						break;
+					
+					case 11:
+						html = &quot;tutorial_104.htm&quot;;
+						onTutorialClientEvent(player, 0);
+						break;
+					
+					case 12:
+						closeTutorialHtml(player);
+						break;
+					
+					case 23:
+						html = TCLb.getOrDefault(classId, html);
+						break;
+					
+					case 24:
+						html = TCLc.getOrDefault(classId, html);
+						break;
+					
+					case 25:
+						html = &quot;tutorial_22cc.htm&quot;;
+						break;
+					
+					case 26:
+						html = TCLa.getOrDefault(classId, html);
+						break;
+					
+					case 27:
+						html = &quot;tutorial_29.htm&quot;;
+						break;
+					
+					case 28:
+						html = &quot;tutorial_28.htm&quot;;
+						break;
+					
+					case 29, 30:
+						html = &quot;tutorial_07a.htm&quot;;
+						break;
+				}
+			}
+		}
+		// Client Event
+		else if (event.startsWith(&quot;CE&quot;))
+		{
+			final int level = player.getStatus().getLevel();
+			
+			switch (Integer.valueOf(event.substring(2)))
+			{
+				case 1:
+					if (level &lt; 6)
+					{
+						html = &quot;tutorial_03.htm&quot;;
+						onTutorialClientEvent(player, 2);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_004&quot;);
+					}
+					break;
+				
+				case 2:
+					if (level &lt; 6)
+					{
+						html = &quot;tutorial_05.htm&quot;;
+						onTutorialClientEvent(player, 8);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_005&quot;);
+					}
+					break;
+				
+				case 8:
+					if (level &lt; 6)
+					{
+						final TutorialEvent evt = EVENTS.get(classId);
+						if (evt == null)
+							return null;
+						
+						html = evt.ce8Htm();
+						st.set(&quot;Ex&quot;, -5);
+						st.set(&quot;ucMemo&quot;, 1);
+						player.getRadarList().addMarker(evt.ce8Loc());
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_007&quot;);
+					}
+					break;
+				
+				case 30:
+					if (level &lt; 10 &amp;&amp; st.getInteger(&quot;Die&quot;) == 0)
+					{
+						st.set(&quot;Die&quot;, 1);
+						showQuestionMark(player, 8);
+						onTutorialClientEvent(player, 0);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_016&quot;);
+					}
+					break;
+				
+				case 40:
+					final int qLvl = st.getInteger(&quot;lvl&quot;);
+					switch (level)
+					{
+						case 5:
+							if (qLvl &lt; 5)
+							{
+								st.set(&quot;lvl&quot;, 5);
+								showQuestionMark(player, 9);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, (player.isMageClass()) ? &quot;tutorial_voice_015&quot; : &quot;tutorial_voice_014&quot;);
+							}
+							break;
+						
+						case 6:
+							if (qLvl &lt; 6)
+							{
+								st.set(&quot;lvl&quot;, 6);
+								showQuestionMark(player, 24);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_020&quot;);
+							}
+							break;
+						
+						case 7:
+							if (qLvl &lt; 7 &amp;&amp; player.isMageClass())
+							{
+								st.set(&quot;lvl&quot;, 7);
+								showQuestionMark(player, 11);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_019&quot;);
+								
+								final TutorialEvent evt = EVENTS.get(classId);
+								if (evt != null)
+									player.getRadarList().addMarker(evt.ce47Loc());
+							}
+							break;
+						
+						case 9:
+							if (qLvl &lt; 9 &amp;&amp; classId == 0)
+							{
+								st.set(&quot;lvl&quot;, 9);
+								showQuestionMark(player, 25);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_021&quot;);
+							}
+							break;
+						
+						case 10:
+							if (qLvl &lt; 10 &amp;&amp; classId != 0 &amp;&amp; classId != 44 &amp;&amp; classId != 49)
+							{
+								st.set(&quot;lvl&quot;, 10);
+								showQuestionMark(player, 25);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_021&quot;);
+							}
+							break;
+						
+						case 12:
+							if (qLvl &lt; 12 &amp;&amp; classId == 44 || classId == 49)
+							{
+								st.set(&quot;lvl&quot;, 12);
+								showQuestionMark(player, 25);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_021&quot;);
+							}
+							break;
+						
+						case 15:
+							if (qLvl &lt; 15)
+							{
+								st.set(&quot;lvl&quot;, 15);
+								showQuestionMark(player, 17);
+								playSound(player, SOUND_TUTORIAL);
+							}
+							break;
+						
+						case 19:
+							if (qLvl &lt; 19)
+							{
+								st.set(&quot;lvl&quot;, 19);
+								showQuestionMark(player, 13);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_022&quot;);
+							}
+							break;
+						
+						case 35:
+							if (qLvl &lt; 35)
+							{
+								st.set(&quot;lvl&quot;, 35);
+								showQuestionMark(player, 15);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_023&quot;);
+							}
+							break;
+						
+						case 75:
+							if (qLvl &lt; 75)
+							{
+								st.set(&quot;lvl&quot;, 75);
+								showQuestionMark(player, 16);
+								playSound(player, SOUND_TUTORIAL);
+								playTutorialVoice(player, &quot;tutorial_voice_024&quot;);
+							}
+							break;
+					}
+					break;
+				
+				case 45:
+					if (level &lt; 6 &amp;&amp; st.getInteger(&quot;HP&quot;) == 0)
+					{
+						st.set(&quot;HP&quot;, 1);
+						st.set(&quot;sit&quot;, 8388608);
+						showQuestionMark(player, 10);
+						onTutorialClientEvent(player, 8388608);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_017&quot;);
+					}
+					break;
+				
+				case 57:
+					if (level &lt; 6 &amp;&amp; st.getInteger(&quot;Adena&quot;) == 0)
+					{
+						st.set(&quot;Adena&quot;, 1);
+						showQuestionMark(player, 23);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_012&quot;);
+					}
+					break;
+				
+				case 6353:
+					if (level &lt; 6 &amp;&amp; st.getInteger(&quot;Gemstone&quot;) == 0)
+					{
+						st.set(&quot;Gemstone&quot;, 1);
+						showQuestionMark(player, 5);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_013&quot;);
+					}
+					break;
+				
+				case 1048576:
+					if (level &lt; 6)
+					{
+						showQuestionMark(player, 5);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_013&quot;);
+					}
+					break;
+				
+				case 8388608:
+					if (level &lt; 6 &amp;&amp; st.getInteger(&quot;sit&quot;) == 8388608)
+					{
+						html = &quot;tutorial_21z.htm&quot;;
+						st.set(&quot;sit&quot;, 1);
+						onTutorialClientEvent(player, 0);
+						playSound(player, SOUND_TUTORIAL);
+						playTutorialVoice(player, &quot;tutorial_voice_018&quot;);
+					}
+					break;
+			}
+		}
+		// Question mark clicked
+		else if (event.startsWith(&quot;QM&quot;))
+		{
+			switch (Integer.valueOf(event.substring(2)))
+			{
+				case 1:
+					TutorialEvent evt = EVENTS.get(classId);
+					if (evt == null)
+						return null;
+					
+					html = evt.ce8Htm();
+					st.set(&quot;Ex&quot;, -5);
+					st.set(&quot;ucMemo&quot;, 2);
+					player.getRadarList().addMarker(evt.ce8Loc());
+					playTutorialVoice(player, &quot;tutorial_voice_007&quot;);
+					break;
+				
+				case 2:
+					switch (player.getClassId())
+					{
+						case HUMAN_FIGHTER:
+							html = &quot;tutorial_human_fighter008.htm&quot;;
+							break;
+						
+						case HUMAN_MYSTIC:
+							html = &quot;tutorial_human_mage008.htm&quot;;
+							break;
+						
+						case ELVEN_FIGHTER, ELVEN_MYSTIC:
+							html = &quot;tutorial_elf008.htm&quot;;
+							break;
+						
+						case DARK_FIGHTER, DARK_MYSTIC:
+							html = &quot;tutorial_delf008.htm&quot;;
+							break;
+						
+						case ORC_FIGHTER, ORC_MYSTIC:
+							html = &quot;tutorial_orc008.htm&quot;;
+							break;
+						
+						case DWARVEN_FIGHTER:
+							html = &quot;tutorial_dwarven_fighter008.htm&quot;;
+							break;
+					}
+					break;
+				
+				case 3:
+					html = &quot;tutorial_09.htm&quot;;
+					onTutorialClientEvent(player, 1048576);
+					break;
+				
+				case 4:
+					html = &quot;tutorial_10.htm&quot;;
+					break;
+				
+				case 5:
+					evt = EVENTS.get(classId);
+					if (evt == null)
+						return null;
+					
+					html = &quot;tutorial_11.htm&quot;;
+					player.getRadarList().addMarker(evt.ce8Loc());
+					break;
+				
+				case 7:
+					html = &quot;tutorial_15.htm&quot;;
+					st.set(&quot;ucMemo&quot;, 5);
+					break;
+				
+				case 8:
+					html = &quot;tutorial_18.htm&quot;;
+					break;
+				
+				case 9:
+					evt = EVENTS.get(classId);
+					if (evt == null)
+						return null;
+					
+					html = evt.qmc9Htm();
+					if (!evt.qmc9Loc().equals(Location.DUMMY_LOC))
+						player.getRadarList().addMarker(evt.qmc9Loc());
+					break;
+				
+				case 10:
+					html = &quot;tutorial_19.htm&quot;;
+					break;
+				
+				case 11:
+					switch (player.getRace())
+					{
+						case HUMAN:
+							html = &quot;tutorial_mage020.htm&quot;;
+							break;
+						
+						case ELF, DARK_ELF:
+							html = &quot;tutorial_mage_elf020.htm&quot;;
+							break;
+						
+						case ORC:
+							html = &quot;tutorial_mage_orc020.htm&quot;;
+							break;
+					}
+					break;
+				
+				case 12:
+					html = &quot;tutorial_15.htm&quot;;
+					st.set(&quot;ucMemo&quot;, 4);
+					break;
+				
+				case 13:
+					evt = EVENTS.get(classId);
+					if (evt == null)
+						return null;
+					
+					html = evt.qmc35Htm();
+					break;
+				
+				case 15:
+					html = &quot;tutorial_28.htm&quot;;
+					break;
+				
+				case 16:
+					html = &quot;tutorial_30.htm&quot;;
+					break;
+				
+				case 17:
+					html = &quot;tutorial_27.htm&quot;;
+					break;
+				
+				case 19:
+					html = &quot;tutorial_07.htm&quot;;
+					break;
+				
+				case 22:
+					html = &quot;tutorial_14.htm&quot;;
+					break;
+				
+				case 23:
+					html = &quot;tutorial_24.htm&quot;;
+					break;
+				
+				case 24:
+					evt = EVENTS.get(classId);
+					if (evt == null)
+						return null;
+					
+					html = evt.qmc24Htm();
+					break;
+				
+				case 25:
+					switch (player.getClassId())
+					{
+						case HUMAN_FIGHTER:
+							html = &quot;tutorial_newbie002a.htm&quot;;
+							break;
+						
+						case HUMAN_MYSTIC:
+							html = &quot;tutorial_newbie002b.htm&quot;;
+							break;
+						
+						case ELVEN_FIGHTER, ELVEN_MYSTIC:
+							html = &quot;tutorial_newbie002c.htm&quot;;
+							break;
+						
+						case DARK_FIGHTER:
+							html = &quot;tutorial_newbie002e.htm&quot;;
+							break;
+						
+						case DARK_MYSTIC:
+							html = &quot;tutorial_newbie002d.htm&quot;;
+							break;
+						
+						case ORC_FIGHTER, ORC_MYSTIC:
+							html = &quot;tutorial_newbie002f.htm&quot;;
+							break;
+						
+						case DWARVEN_FIGHTER:
+							html = &quot;tutorial_newbie002g.htm&quot;;
+							break;
+					}
+					break;
+				
+				case 26:
+					if (player.isMageClass() &amp;&amp; classId != 49)
+						html = &quot;tutorial_newbie004a.htm&quot;;
+					else
+						html = &quot;tutorial_newbie004b.htm&quot;;
+					break;
+			}
+		}
+		
+		if (!html.isEmpty())
+			showTutorialHTML(player, html);
+		
+		return null;
+	}
+}</pre>
+            
+</body>
+</html>

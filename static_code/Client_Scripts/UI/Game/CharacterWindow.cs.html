@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/CharacterWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/CharacterWindow.cs</h1>
+            <pre>using System;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class CharacterInfoWindow : L2PopupWindow
+{
+    // player
+    private Label _nameLabel;
+    private Label _levelLabel;
+    private Label _classLabel;
+
+    //bars
+    private Label _hpLabel;
+    private Label _mpLabel;
+    private Label _spLabel;
+    private Label _expLabel;
+    private Label _weightLabel;
+    //private Label _cpLabel;
+    private VisualElement _hpBar;
+    private VisualElement _hpBarBg;
+    private VisualElement _mpBar;
+    private VisualElement _mpBarBg;
+    //private VisualElement _cpBar;
+    //private VisualElement _cpBarBg;
+    private VisualElement _weightBar;
+    private VisualElement _weightBarBg;
+    private VisualElement _expBar;
+    private VisualElement _expBarBg;
+    private VisualElement _weightBarContainer;
+
+    //combat
+    private Label _patkLabel;
+    private Label _pdefLabel;
+    private Label _paccLabel;
+    private Label _pevaLabel;
+    private Label _pcritLabel;
+    private Label _patkspdLabel;
+    private Label _speedLabel;
+    private Label _matkLabel;
+    private Label _mdefLabel;
+    //private Label _maccuracyLabel;
+    //private Label _mevasionLabel;
+   // private Label _mcritLabel;
+    private Label _castspeedLabel;
+
+    //stats
+    private Label _strLabel;
+    private Label _intLabel;
+    private Label _dexLabel;
+    private Label _witLabel;
+    private Label _conLabel;
+    private Label _menLabel;
+
+    //social
+    //private Label _repLabel;
+    private Label _pvpLabel;
+    private Label _recLabel;
+    //private Label _raidLabel;
+
+
+    private static CharacterInfoWindow _instance;
+    public static CharacterInfoWindow Instance
+    {
+        get { return _instance; }
+    }
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/CharacterInfoWindow/CharacterInfoWindow&quot;);
+    }
+
+    protected override void InitWindow(VisualElement root)
+    {
+        base.InitWindow(root);
+
+        var dragArea = GetElementByClass(&quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+        dragArea.AddManipulator(drag);
+
+        RegisterCloseWindowEvent(&quot;btn-close-frame&quot;);
+        RegisterClickWindowEvent(_windowEle, dragArea);
+    }
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        _windowEle.style.left = new Length(50, LengthUnit.Percent);
+        _windowEle.style.top = new Length(50, LengthUnit.Percent);
+        _windowEle.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent)));
+
+        Label _windowName = (Label)GetElementById(&quot;windows-name-label&quot;);
+        _windowName.text = &quot;Character Status&quot;;
+
+        // player
+        _nameLabel = GetLabelById(&quot;CharacterNameLabel&quot;);
+        _levelLabel = GetLabelById(&quot;LvlLabelName&quot;);
+        _classLabel = GetLabelById(&quot;ClassLabelName&quot;);
+
+        //bars
+        VisualElement HPBarContainer = GetElementById(&quot;HPBar&quot;);
+        VisualElement MPBarContainer = GetElementById(&quot;MPBar&quot;);
+       // VisualElement CPBarContainer = GetElementById(&quot;CPBar&quot;);
+        VisualElement EXPBarContainer = GetElementById(&quot;EXPBar&quot;);
+        _weightBarContainer = GetElementById(&quot;WeightBar&quot;);
+
+        _hpLabel = HPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        _mpLabel = MPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        _spLabel = GetLabelById(&quot;SpLabel&quot;);
+        _expLabel = EXPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        _weightLabel = _weightBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        
+        //_cpLabel = CPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        
+        _hpBar = HPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _hpBarBg = HPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        _mpBar = MPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _mpBarBg = MPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        //_cpBar = CPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        //_cpBarBg = CPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        _weightBar = _weightBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _weightBarBg = _weightBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        _expBar = EXPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _expBarBg = EXPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+
+        //combat
+        _patkLabel = GetLabelById(&quot;PAtkLabel&quot;);
+        _pdefLabel = GetLabelById(&quot;PDefLabel&quot;);
+        _paccLabel = GetLabelById(&quot;PAccuracyLabel&quot;);
+        _pevaLabel = GetLabelById(&quot;PEvasionLabel&quot;);
+        _pcritLabel = GetLabelById(&quot;PCriticalLabel&quot;);
+        _patkspdLabel = GetLabelById(&quot;PAtkSpdLabel&quot;);
+        _speedLabel = GetLabelById(&quot;PSpeedLabel&quot;);
+        _matkLabel = GetLabelById(&quot;MAtkLabel&quot;);
+        _mdefLabel = GetLabelById(&quot;MDefLabel&quot;);
+        //_maccuracyLabel = GetLabelById(&quot;MAccuracyLabel&quot;);
+        //_mevasionLabel = GetLabelById(&quot;MEvasionLabel&quot;);
+        //_mcritLabel = GetLabelById(&quot;MCriticalLabel&quot;);
+        _castspeedLabel = GetLabelById(&quot;MCastingLabel&quot;);
+
+        //stats
+        _strLabel = GetLabelById(&quot;StrLabel&quot;);
+        _intLabel = GetLabelById(&quot;IntLabel&quot;);
+        _dexLabel = GetLabelById(&quot;DEXLabel&quot;);
+        _witLabel = GetLabelById(&quot;WITLabel&quot;);
+        _conLabel = GetLabelById(&quot;CONLabel&quot;);
+        _menLabel = GetLabelById(&quot;MENLabel&quot;);
+
+        //social
+        //_repLabel = GetLabelById(&quot;RepLabel&quot;);
+        _pvpLabel = GetLabelById(&quot;PvpLabel&quot;);
+        _recLabel = GetLabelById(&quot;RecLabel&quot;);
+        //_raidLabel = GetLabelById(&quot;RaidLabel&quot;);
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    public void UpdateValues()
+    {
+        PlayerEntity player = PlayerEntity.Instance;
+
+        if (player == null)
+        {
+            Debug.LogWarning(&quot;Player entity is null, can&#x27;t update character window&quot;);
+            return;
+        }
+
+        StartCoroutine(UpdateWithDelay(player));
+    }
+
+    private IEnumerator UpdateWithDelay(PlayerEntity player)
+    {
+        yield return new WaitForSeconds(0.2f);
+
+        UpdatePlayer(player.Identity, (PlayerStats)player.Stats);
+
+        UpdateStats((PlayerStats)player.Stats);
+
+        UpdateCombatValues(player.Running, (PlayerStats)player.Stats);
+
+        UpdateBars((PlayerStatus)player.Status, (PlayerStats)player.Stats);
+
+        UpdateSocial((PlayerStats)player.Stats);
+    }
+
+    private void UpdatePlayer(NetworkIdentity identity, PlayerStats stats)
+    {
+        _nameLabel.text = identity.Name;
+        _classLabel.text = ((CharacterClass)(identity.PlayerClass)).ToString();
+        _levelLabel.text = stats.Level.ToString();
+
+    }
+    private void UpdateStats(PlayerStats stats)
+    {
+        _strLabel.text = stats.Str.ToString();
+        _intLabel.text = stats.Int.ToString();
+        _dexLabel.text = stats.Dex.ToString();
+        _witLabel.text = stats.Wit.ToString();
+        _conLabel.text = stats.Con.ToString();
+        _menLabel.text = stats.Men.ToString();
+    }
+
+    private void UpdateCombatValues(bool running, PlayerStats stats)
+    {
+        _patkLabel.text = stats.PAtk.ToString();
+        _pdefLabel.text = stats.PDef.ToString();
+        _paccLabel.text = stats.PAccuracy.ToString();
+        _pevaLabel.text = stats.PEvasion.ToString();
+        _pcritLabel.text = stats.PCritical.ToString();
+        _patkspdLabel.text = stats.PAtkSpd.ToString();
+        _speedLabel.text = running ? stats.RunSpeed.ToString() : stats.WalkSpeed.ToString();
+
+        _matkLabel.text = stats.MAtk.ToString();
+        _mdefLabel.text = stats.MDef.ToString();
+        //_maccuracyLabel.text = stats.MAccuracy.ToString();
+        //_mevasionLabel.text = stats.MEvasion.ToString();
+        //_mcritLabel.text = stats.MCritical.ToString();
+        _castspeedLabel.text = stats.MAtkSpd.ToString();
+    }
+
+    private void UpdateSocial(PlayerStats stats)
+    {
+        //_repLabel.text = stats.Karma.ToString();
+        _pvpLabel.text = $&quot;{stats.PvpKills} / {stats.PkKills}&quot;;
+        _recLabel.text = &quot;0 / 0&quot;;
+        //_raidLabel.text = &quot;0&quot;;
+    }
+
+    private void UpdateBars(PlayerStatus status, PlayerStats stats)
+    {
+        _hpLabel.text = $&quot;{status.Hp}/{stats.MaxHp}&quot;;
+        _mpLabel.text = $&quot;{status.Mp}/{stats.MaxMp}&quot;;
+        //_cpLabel.text = $&quot;{status.Cp}/{stats.MaxCp}&quot;;
+        _spLabel.text = stats.Sp.ToString();
+
+        if (stats.ExpPercent &gt; 0)
+        {
+            _expLabel.text = $&quot;{(stats.ExpPercent * 100f).ToString(&quot;0.00&quot;)}%&quot;;
+        }
+        else
+        {
+            _expLabel.text = $&quot;00.00%&quot;;
+        }
+
+        if (stats.CurrWeight &gt; 0)
+        {
+            _weightLabel.text = $&quot;{((float)stats.CurrWeight / stats.MaxWeight * 100f).ToString(&quot;0.00&quot;)}%&quot;;
+        }
+        else
+        {
+            _weightLabel.text = $&quot;00.00%&quot;;
+        }
+
+        if (_hpBarBg != null &amp;&amp; _hpBar != null)
+        {
+            float hpRatio = Math.Min(1, (float)status.Hp / stats.MaxHp);
+            float bgWidth = _hpBarBg.resolvedStyle.width;
+            float barWidth = bgWidth * hpRatio;
+            if (stats.MaxHp == 0)
+            {
+                barWidth = 0;
+            }
+            _hpBar.style.width = barWidth;
+        }
+
+        if (_mpBarBg != null &amp;&amp; _mpBar != null)
+        {
+            float mpRatio = Math.Min(1, (float)status.Mp / stats.MaxMp);
+            float bgWidth = _mpBarBg.resolvedStyle.width;
+            float barWidth = bgWidth * mpRatio;
+            if (stats.MaxMp == 0)
+            {
+                barWidth = 0;
+            }
+            _mpBar.style.width = barWidth;
+        }
+/*
+        if (_cpBarBg != null &amp;&amp; _cpBar != null)
+        {
+            float bgWidth = _cpBarBg.resolvedStyle.width;
+            float cpRatio = Math.Min(1, (float)status.Cp / stats.MaxCp);
+            float barWidth = bgWidth * cpRatio;
+            if (stats.MaxCp == 0)
+            {
+                barWidth = 0;
+            }
+            _cpBar.style.width = barWidth;
+        }
+*/
+        if (_expBarBg != null &amp;&amp; _expBar != null)
+        {
+            float bgWidth = _expBarBg.resolvedStyle.width;
+            float expRatio = stats.ExpPercent;
+            float barWidth = bgWidth * expRatio;
+            if (expRatio == 0)
+            {
+                barWidth = 0;
+            }
+            _expBar.style.width = barWidth;
+        }
+
+        if (_weightBarBg != null &amp;&amp; _weightBar != null)
+        {
+            float bgWidth = _weightBarBg.resolvedStyle.width;
+            float weightRatio = Math.Min(1, (float)stats.CurrWeight / stats.MaxWeight);
+
+            for (int i = 1; i &lt;= 5; i++)
+            {
+                _weightBarContainer.RemoveFromClassList(&quot;weight-&quot; + i);
+            }
+
+            _weightBarContainer.AddToClassList(&quot;weight-&quot; + ((int)Mathf.Floor(weightRatio / 0.25f) + 1));
+
+            float barWidth = bgWidth * weightRatio;
+            if (stats.MaxWeight == 0)
+            {
+                barWidth = 0;
+            }
+            _weightBar.style.width = barWidth;
+        }
+
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+        AudioManager.Instance.PlayUISound(&quot;charstat_open_01&quot;);
+        L2GameUI.Instance.WindowOpened(this);
+        UpdateValues();
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        base.HideWindow(silent);
+
+        if (!silent)
+            AudioManager.Instance.PlayUISound(&quot;charstat_close_01&quot;);
+
+        L2GameUI.Instance.WindowClosed(this);
+    }
+}
+</pre>
+            
+</body>
+</html>

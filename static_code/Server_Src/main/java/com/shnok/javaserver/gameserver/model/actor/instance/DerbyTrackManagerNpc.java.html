@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/DerbyTrackManagerNpc.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/DerbyTrackManagerNpc.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.Locale;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.DerbyTrackManager;
+import com.shnok.javaserver.gameserver.data.manager.DerbyTrackManager.RaceState;
+import com.shnok.javaserver.gameserver.model.HistoryInfo;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.DeleteObject;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+
+public class DerbyTrackManagerNpc extends Folk
+{
+	protected static final int[] TICKET_PRICES =
+	{
+		100,
+		500,
+		1000,
+		5000,
+		10000,
+		20000,
+		50000,
+		100000
+	};
+	
+	public DerbyTrackManagerNpc(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;BuyTicket&quot;))
+		{
+			if (DerbyTrackManager.getInstance().getCurrentRaceState() != RaceState.ACCEPTING_BETS)
+			{
+				player.sendPacket(SystemMessageId.MONSRACE_TICKETS_NOT_AVAILABLE);
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			int val = Integer.parseInt(command.substring(10));
+			if (val == 0)
+			{
+				player.setRace(0, 0);
+				player.setRace(1, 0);
+			}
+			
+			if ((val == 10 &amp;&amp; player.getRace(0) == 0) || (val == 20 &amp;&amp; player.getRace(0) == 0 &amp;&amp; player.getRace(1) == 0))
+				val = 0;
+			
+			int npcId = getTemplate().getNpcId();
+			
+			String search;
+			String replace;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			if (val &lt; 10)
+			{
+				html.setFile(getHtmlPath(npcId, 2));
+				for (int i = 0; i &lt; 8; i++)
+				{
+					int n = i + 1;
+					search = &quot;Mob&quot; + n;
+					html.replace(search, DerbyTrackManager.getInstance().getRunnerName(i));
+				}
+				search = &quot;No1&quot;;
+				if (val == 0)
+					html.replace(search, &quot;&quot;);
+				else
+				{
+					html.replace(search, val);
+					player.setRace(0, val);
+				}
+			}
+			else if (val &lt; 20)
+			{
+				if (player.getRace(0) == 0)
+					return;
+				
+				html.setFile(getHtmlPath(npcId, 3));
+				html.replace(&quot;0place&quot;, player.getRace(0));
+				search = &quot;Mob1&quot;;
+				replace = DerbyTrackManager.getInstance().getRunnerName(player.getRace(0) - 1);
+				html.replace(search, replace);
+				search = &quot;0adena&quot;;
+				
+				if (val == 10)
+					html.replace(search, &quot;&quot;);
+				else
+				{
+					html.replace(search, TICKET_PRICES[val - 11]);
+					player.setRace(1, val - 10);
+				}
+			}
+			else if (val == 20)
+			{
+				if (player.getRace(0) == 0 || player.getRace(1) == 0)
+					return;
+				
+				html.setFile(getHtmlPath(npcId, 4));
+				html.replace(&quot;0place&quot;, player.getRace(0));
+				search = &quot;Mob1&quot;;
+				replace = DerbyTrackManager.getInstance().getRunnerName(player.getRace(0) - 1);
+				html.replace(search, replace);
+				search = &quot;0adena&quot;;
+				int price = TICKET_PRICES[player.getRace(1) - 1];
+				html.replace(search, price);
+				search = &quot;0tax&quot;;
+				int tax = 0;
+				html.replace(search, tax);
+				search = &quot;0total&quot;;
+				int total = price + tax;
+				html.replace(search, total);
+			}
+			else
+			{
+				if (player.getRace(0) == 0 || player.getRace(1) == 0)
+					return;
+				
+				final int lane = player.getRace(0);
+				final int priceId = player.getRace(1);
+				
+				if (!player.reduceAdena(TICKET_PRICES[priceId - 1], true))
+					return;
+				
+				player.setRace(0, 0);
+				player.setRace(1, 0);
+				
+				final ItemInstance ticket = player.addItem(4443, 1, false);
+				ticket.setEnchantLevel(DerbyTrackManager.getInstance().getRaceNumber(), player);
+				ticket.setCustomType1(lane);
+				ticket.setCustomType2(TICKET_PRICES[priceId - 1] / 100);
+				
+				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.ACQUIRED_S1_S2).addNumber(DerbyTrackManager.getInstance().getRaceNumber()).addItemName(4443));
+				
+				// Refresh lane bet.
+				DerbyTrackManager.getInstance().setBetOnLane(lane, TICKET_PRICES[priceId - 1], true);
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			html.replace(&quot;1race&quot;, DerbyTrackManager.getInstance().getRaceNumber());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.equals(&quot;ShowOdds&quot;))
+		{
+			if (DerbyTrackManager.getInstance().getCurrentRaceState() == RaceState.ACCEPTING_BETS)
+			{
+				player.sendPacket(SystemMessageId.MONSRACE_NO_PAYOUT_INFO);
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(getHtmlPath(getTemplate().getNpcId(), 5));
+			for (int i = 0; i &lt; 8; i++)
+			{
+				final int n = i + 1;
+				
+				html.replace(&quot;Mob&quot; + n, DerbyTrackManager.getInstance().getRunnerName(i));
+				
+				// Odd
+				final double odd = DerbyTrackManager.getInstance().getOdds().get(i);
+				html.replace(&quot;Odd&quot; + n, (odd &gt; 0D) ? String.format(Locale.ENGLISH, &quot;%.1f&quot;, odd) : &quot;&amp;$804;&quot;);
+			}
+			html.replace(&quot;1race&quot;, DerbyTrackManager.getInstance().getRaceNumber());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.equals(&quot;ShowInfo&quot;))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(getHtmlPath(getTemplate().getNpcId(), 6));
+			
+			for (int i = 0; i &lt; 8; i++)
+			{
+				int n = i + 1;
+				String search = &quot;Mob&quot; + n;
+				html.replace(search, DerbyTrackManager.getInstance().getRunnerName(i));
+			}
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.equals(&quot;ShowTickets&quot;))
+		{
+			// Generate data.
+			final StringBuilder sb = new StringBuilder();
+			
+			// Retrieve player&#x27;s tickets.
+			for (ItemInstance ticket : player.getInventory().getAllItemsByItemId(4443))
+			{
+				// Don&#x27;t list current race tickets.
+				if (ticket.getEnchantLevel() == DerbyTrackManager.getInstance().getRaceNumber())
+					continue;
+				
+				StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;&lt;a action=\&quot;bypass -h npc_%objectId%_ShowTicket &quot;, ticket.getObjectId(), &quot;\&quot;&gt;&quot;, ticket.getEnchantLevel(), &quot; Race Number&lt;/a&gt;&lt;/td&gt;&lt;td align=right&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, ticket.getCustomType1(), &quot;&lt;/font&gt; Number&lt;/td&gt;&lt;td align=right&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, ticket.getCustomType2() * 100, &quot;&lt;/font&gt; Adena&lt;/td&gt;&lt;/tr&gt;&quot;);
+			}
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(getHtmlPath(getTemplate().getNpcId(), 7));
+			html.replace(&quot;%tickets%&quot;, sb.toString());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.startsWith(&quot;ShowTicket&quot;))
+		{
+			// Retrieve ticket objectId.
+			final int val = Integer.parseInt(command.substring(11));
+			if (val == 0)
+			{
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			// Retrieve ticket on player&#x27;s inventory.
+			final ItemInstance ticket = player.getInventory().getItemByObjectId(val);
+			if (ticket == null)
+			{
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			final int raceId = ticket.getEnchantLevel();
+			final int lane = ticket.getCustomType1();
+			final int bet = ticket.getCustomType2() * 100;
+			
+			// Retrieve HistoryInfo for that race.
+			final HistoryInfo info = DerbyTrackManager.getInstance().getHistoryInfo(raceId);
+			if (info == null)
+			{
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(getHtmlPath(getTemplate().getNpcId(), 8));
+			html.replace(&quot;%raceId%&quot;, raceId);
+			html.replace(&quot;%lane%&quot;, lane);
+			html.replace(&quot;%bet%&quot;, bet);
+			html.replace(&quot;%firstLane%&quot;, info.getFirst() + 1);
+			html.replace(&quot;%odd%&quot;, (lane == info.getFirst() + 1) ? String.format(Locale.ENGLISH, &quot;%.2f&quot;, info.getOddRate()) : &quot;0.01&quot;);
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			html.replace(&quot;%ticketObjectId%&quot;, val);
+			player.sendPacket(html);
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.startsWith(&quot;CalculateWin&quot;))
+		{
+			// Retrieve ticket objectId.
+			final int val = Integer.parseInt(command.substring(13));
+			if (val == 0)
+			{
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			// Delete ticket on player&#x27;s inventory.
+			final ItemInstance ticket = player.getInventory().getItemByObjectId(val);
+			if (ticket == null)
+			{
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			final int raceId = ticket.getEnchantLevel();
+			final int lane = ticket.getCustomType1();
+			final int bet = ticket.getCustomType2() * 100;
+			
+			// Retrieve HistoryInfo for that race.
+			final HistoryInfo info = DerbyTrackManager.getInstance().getHistoryInfo(raceId);
+			if (info == null)
+			{
+				super.onBypassFeedback(player, &quot;Chat 0&quot;);
+				return;
+			}
+			
+			// Destroy the ticket.
+			if (player.destroyItem(ticket, true))
+				player.addAdena((int) (bet * ((lane == info.getFirst() + 1) ? info.getOddRate() : 0.01)), true);
+			
+			super.onBypassFeedback(player, &quot;Chat 0&quot;);
+		}
+		else if (command.equals(&quot;ViewHistory&quot;))
+		{
+			// Generate data.
+			final StringBuilder sb = new StringBuilder();
+			
+			// Retrieve current race number.
+			final int raceNumber = DerbyTrackManager.getInstance().getRaceNumber();
+			
+			// Retrieve the few latest entries.
+			for (HistoryInfo info : DerbyTrackManager.getInstance().getLastHistoryEntries())
+				StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, info.getRaceId(), &quot;&lt;/font&gt; th&lt;/td&gt;&lt;td&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, (raceNumber == info.getRaceId()) ? 0 : info.getFirst() + 1, &quot;&lt;/font&gt; Lane &lt;/td&gt;&lt;td&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, (raceNumber == info.getRaceId()) ? 0 : info.getSecond() + 1, &quot;&lt;/font&gt; Lane&lt;/td&gt;&lt;td align=right&gt;&lt;font color=00ffff&gt;&quot;, String.format(Locale.ENGLISH, &quot;%.2f&quot;, info.getOddRate()), &quot;&lt;/font&gt; Times&lt;/td&gt;&lt;/tr&gt;&quot;);
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(getHtmlPath(getTemplate().getNpcId(), 9));
+			html.replace(&quot;%infos%&quot;, sb.toString());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void addKnownObject(WorldObject object)
+	{
+		if (object instanceof Player objectPlayer)
+			objectPlayer.sendPacket(DerbyTrackManager.getInstance().getRacePacket());
+	}
+	
+	@Override
+	public void removeKnownObject(WorldObject object)
+	{
+		super.removeKnownObject(object);
+		
+		if (object instanceof Player objectPlayer)
+		{
+			for (Npc npc : DerbyTrackManager.getInstance().getRunners())
+				objectPlayer.sendPacket(new DeleteObject(npc));
+		}
+	}
+}</pre>
+            
+</body>
+</html>

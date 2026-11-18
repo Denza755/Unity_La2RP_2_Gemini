@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Importer/L2T3DStaticMeshImporter.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Importer/L2T3DStaticMeshImporter.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using UnityEditor;
+using UnityEngine;
+
+public class L2T3DStaticMeshImporter : AssetImporter
+{
+
+    private static int missingTexturesCount = 0;
+
+    [MenuItem(&quot;Shnok/01. [StaticMeshes] Import Textures and models&quot;)]
+    static void ImportStaticMeshes()
+    {
+        string title = &quot;Select StaticMeshes list&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;txt,t3d&quot;;
+
+        string dataFolder = @&quot;D:\Stock\Projects\L2-Unity\umodel_win32\export&quot;;
+        bool overwrite = false;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            L2TerrainInfo terrainInfo = L2T3DInfoParser.LoadStaticMeshInfo(fileToProcess);
+            List&lt;string&gt; files = ProcessStaticMeshInfo(dataFolder, terrainInfo.staticMeshes);
+            //List&lt;string&gt; files = ProcessDataFile(dataFolder, fileToProcess);
+            ImportFiles(dataFolder, files, overwrite);
+        }
+    }
+
+    private static List&lt;string&gt; ProcessStaticMeshInfo(string dataFolder, List&lt;L2StaticMesh&gt; staticMeshes)
+    {
+        List&lt;string&gt; files = new List&lt;string&gt;();
+        int staticMeshCount = 0;
+        int textureInfoCount = 0;
+        int missingMeshCount = 0;
+        int missingTextureInfoCount = 0;
+
+        foreach (L2StaticMesh mesh in staticMeshes)
+        {
+            if (mesh.staticMesh == null || mesh.staticMesh.Length == 0) continue;
+            string[] parts = mesh.staticMesh.Split(&#x27;.&#x27;);
+            string folder = parts[0];
+            string file = parts[parts.Length - 1];
+
+            string staticMeshPath = Path.Combine(dataFolder, folder, file + &quot;.fbx&quot;);
+
+            if (!File.Exists(staticMeshPath))
+            {
+                missingMeshCount++;
+                Debug.LogWarning(&quot;Mesh missing:&quot; + staticMeshPath);
+            }
+            else
+            {
+                staticMeshCount++;
+                files.Add(staticMeshPath);
+                string textureInfoPath = Path.Combine(dataFolder, folder, &quot;StaticMesh&quot;, file + &quot;.props.txt&quot;);
+                if (!File.Exists(textureInfoPath))
+                {
+                    missingTextureInfoCount++;
+                    Debug.LogWarning(&quot;Texture info missing:&quot; + textureInfoPath);
+                }
+                else
+                {
+                    List&lt;string&gt; textures = ParseTextureInfo(dataFolder, textureInfoPath);
+                    textureInfoCount += textures.Count;
+                    files.AddRange(textures);
+                }
+            }
+
+
+        }
+
+        files = files.Distinct().ToList();
+
+        //files.ForEach((f) =&gt; Debug.Log(f)); 
+
+        Debug.Log($&quot;{staticMeshCount} staticmesh(es) FBX will be imported.&quot;);
+        Debug.Log($&quot;{missingMeshCount} missing staticmesh(es) FBX.&quot;);
+        Debug.Log($&quot;{textureInfoCount} texture(s) will be imported.&quot;);
+        Debug.Log($&quot;{missingTextureInfoCount} missing staticmesh(es) textureinfo.&quot;);
+
+        Debug.LogWarning($&quot;{files.Count} distinct files(s) will be imported.&quot;);
+
+        return files;
+    }
+
+    //private static List&lt;string&gt; ProcessDataFile(string dataFolder, string fileToProcess) {
+    //    List&lt;string&gt; files = new List&lt;string&gt;();
+
+    //    using (StreamReader reader = new StreamReader(fileToProcess)) {
+    //        string line;
+    //        while ((line = reader.ReadLine()) != null) {
+    //            Debug.Log(&quot;Processing:&quot; + line);
+
+    //            string[] parts = line.Split(&#x27;.&#x27;);
+    //            string folder = parts[0];
+    //            string file = parts[parts.Length - 1];
+
+    //            string staticMeshPath = Path.Combine(dataFolder, folder, file + &quot;.fbx&quot;);
+
+    //            if (!File.Exists(staticMeshPath)) {
+    //                Debug.LogWarning(&quot;Mesh missing:&quot; + staticMeshPath);
+    //            } else {
+    //                files.Add(staticMeshPath);
+    //                string textureInfoPath = Path.Combine(dataFolder, folder, &quot;StaticMesh&quot;, file + &quot;.props.txt&quot;);
+    //                if (!File.Exists(textureInfoPath)) {
+    //                    Debug.LogWarning(&quot;Texture info missing:&quot; + textureInfoPath);
+    //                } else {
+    //                    files.AddRange(ParseTextureInfo(textureInfoPath));
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    files = files.Distinct().ToList();
+    //    Debug.LogWarning(&quot;Total files to import: &quot; + files.Count);
+
+    //    return files;
+    //}
+
+    static List&lt;string&gt; ParseTextureInfo(string baseFolder, string path)
+    {
+        List&lt;string&gt; filesToExport = new List&lt;string&gt;();
+
+        string inputText = File.ReadAllText(path);
+        string meshFolder = GetParentFolder(path);
+        string textureFolderName = GetFolderName(meshFolder);
+        if (textureFolderName.ToLower().EndsWith(&quot;_s&quot;))
+        {
+            textureFolderName = textureFolderName.Substring(0, textureFolderName.Length - 2) + &quot;_t&quot;;
+        }
+        if (textureFolderName.ToLower().EndsWith(&quot;_us&quot;))
+        {
+            textureFolderName = textureFolderName.Substring(0, textureFolderName.Length - 3) + &quot;_tx&quot;;
+        }
+
+        string textureFolder = Path.Combine(baseFolder, textureFolderName);
+        List&lt;string&gt; textures = GetTextureNames(inputText, @&quot;Texture&#x27;([^&#x27;]+)&quot;);
+        foreach (var texture in textures)
+        {
+            //Debug.Log(&quot;Texture:       &quot; + texture);
+            string[] parts = texture.Split(&#x27;.&#x27;);
+            string name = parts[parts.Length - 1];
+
+            string texturePath = Path.Combine(meshFolder, name + &quot;.png&quot;);
+            if (!File.Exists(texturePath))
+            {
+                texturePath = Path.Combine(textureFolder, name + &quot;.png&quot;);
+                if (!File.Exists(texturePath))
+                {
+                    texturePath = FixPath(baseFolder, name + &quot;.png&quot;, false);
+                    if (!File.Exists(texturePath))
+                    {
+                        missingTexturesCount++;
+                        Debug.LogWarning(&quot;Could find not texture at &quot; + texturePath);
+                        continue;
+                    }
+                }
+            }
+
+            filesToExport.Add(texturePath);
+
+        }
+
+        string materialInfoFolder = Path.Combine(textureFolder, &quot;Materials&quot;);
+        List&lt;string&gt; shaders = GetTextureNames(inputText, @&quot;Shader&#x27;([^&#x27;]+)&quot;);
+        foreach (var shader in shaders)
+        {
+            //Debug.Log(&quot;Shader:       &quot; + shader);
+            string[] parts = shader.Split(&#x27;.&#x27;);
+            string name = parts[parts.Length - 1];
+
+            string materialInfoProps = Path.Combine(materialInfoFolder, name + &quot;.props.txt&quot;);
+            if (!File.Exists(materialInfoProps))
+            {
+                materialInfoProps = FixPath(baseFolder, name + &quot;.props.txt&quot;, true);
+                if (!File.Exists(materialInfoProps))
+                {
+                    continue;
+                }
+            }
+
+            filesToExport.Add(materialInfoProps);
+
+            using (StreamReader reader = new StreamReader(materialInfoProps))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.StartsWith(&quot;Diffuse&quot;) || line.StartsWith(&quot;Material&quot;))
+                    {
+                        string value = line.Split(&quot;=&quot;)[1].Trim();
+                        if (value.StartsWith(&quot;Texture&quot;))
+                        {
+                            string texRef = value.Substring(8);
+                            texRef = texRef.Substring(0, texRef.Length - 1);
+                            string[] texRefEntries = texRef.Split(&#x27;.&#x27;);
+                            string textureToImport = texRefEntries[texRefEntries.Length - 1];
+
+                            string texturePath = Path.Combine(GetParentFolder(materialInfoProps), textureToImport + &quot;.png&quot;);
+                            if (File.Exists(texturePath))
+                            {
+                                filesToExport.Add(texturePath);
+                            }
+                            else
+                            {
+                                Debug.LogError(&quot;Could not find texture at &quot; + texturePath + &quot; props file: &quot; + materialInfoProps);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Debug.Log($&quot;Found {filesToExport.Count} texture(s) for props file {path}.&quot;);
+
+        return filesToExport;
+    }
+
+    static List&lt;string&gt; GetTextureNames(string inputText, string pattern)
+    {
+
+        List&lt;string&gt; items = new List&lt;string&gt;();
+
+        Regex regex = new Regex(pattern);
+
+        MatchCollection matches = regex.Matches(inputText);
+
+        foreach (Match match in matches)
+        {
+            if (!items.Contains(match.Value))
+            {
+                items.Add(match.Value
+                    .Replace(&quot;Texture&#x27;&quot;, string.Empty)
+                    .Replace(&quot;Shader&#x27;&quot;, string.Empty));
+            }
+        }
+
+        return items;
+    }
+
+    static string FixPath(string baseFolder, string fileName, bool shader)
+    {
+        string pathToTest = string.Empty;
+        string origFileName = fileName;
+        if (shader)
+        {
+            fileName = &quot;Materials/&quot; + fileName;
+        }
+
+        if (fileName.ToLower().StartsWith(&quot;interior_&quot;))
+        {
+            string[] interiorParts = fileName.Split(&#x27;_&#x27;);
+            string folder = interiorParts[0] + &quot;_&quot; + interiorParts[1] + (interiorParts[2].StartsWith(&quot;ch&quot;) ? &quot;CH_T&quot; : &quot;_T&quot;);
+            pathToTest = Path.Combine(baseFolder, folder, fileName);
+        }
+
+        if (!File.Exists(pathToTest))
+        {
+            pathToTest = Path.Combine(baseFolder, &quot;FX_E_T&quot;, fileName);
+        }
+        if (!File.Exists(pathToTest))
+        {
+            pathToTest = Path.Combine(baseFolder, &quot;SI_V_T&quot;, fileName);
+        }
+        if (!File.Exists(pathToTest))
+        {
+            pathToTest = Path.Combine(baseFolder, &quot;speakingfighter_t&quot;, fileName);
+        }
+        if (!File.Exists(pathToTest))
+        {
+            pathToTest = Path.Combine(baseFolder, &quot;Gludio_Port_T&quot;, fileName);
+        }
+        if (!File.Exists(pathToTest))
+        {
+            string searchedFile = FindInSubDirectories(baseFolder, origFileName);
+            //Debug.LogWarning(&quot;Searched and found &quot; + searchedFile);
+
+            if (searchedFile == null &amp;&amp; shader)
+            {
+                Debug.LogWarning(&quot;Could not find material props at path &quot; + pathToTest);
+            }
+
+            pathToTest = searchedFile;
+        }
+
+        return pathToTest;
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

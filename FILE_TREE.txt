@@ -1,8 +1,8 @@
 .gitattributes
 .gitignore
-FILE_TREE.txt
-LATEST_GIT_DIFF.txt
+index.html
 PROJECT_CONTEXT.md
+_sidebar.md
 Client_Scripts\Animation\SkinnedMeshSync.cs
 Client_Scripts\Animation\Container\IL2HumanoidAnimation.cs
 Client_Scripts\Animation\Container\L2HumanoidAnimation.cs
@@ -198,6 +198,7 @@ Client_Scripts\Game\Item\Weapon.cs
 Client_Scripts\Game\Manager\DontDestroyOnLoad.cs
 Client_Scripts\Game\Manager\SceneListObject.cs
 Client_Scripts\Game\Manager\SceneLoader.cs
+Client_Scripts\Game\Manager\Effect\ModernSpellEffects.cs
 Client_Scripts\Game\Manager\Effect\ParticleManager.cs
 Client_Scripts\Game\Manager\Effect\PooledEffect.cs
 Client_Scripts\Game\Manager\Effect\ProjectileManager.cs

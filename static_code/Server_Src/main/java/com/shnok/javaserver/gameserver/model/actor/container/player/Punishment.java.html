@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/container/player/Punishment.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/container/player/Punishment.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.container.player;
+
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.enums.PunishmentType;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadManager;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.EtcStatusUpdate;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.PlaySound;
+
+public class Punishment
+{
+	private final Player _owner;
+	
+	private PunishmentType _type = PunishmentType.NONE;
+	private long _timer;
+	private ScheduledFuture&lt;?&gt; _task;
+	
+	public Punishment(Player owner)
+	{
+		_owner = owner;
+	}
+	
+	public Player getOwner()
+	{
+		return _owner;
+	}
+	
+	public PunishmentType getType()
+	{
+		return _type;
+	}
+	
+	/**
+	 * Set the {@link PunishmentType} for this {@link Player}. If state is out of range, do nothing.
+	 * @param type : The PunishmentType to apply.
+	 */
+	public void setType(int type)
+	{
+		if (type &lt; 0 || type &gt; PunishmentType.VALUES.length)
+			return;
+		
+		_type = PunishmentType.VALUES[type];
+	}
+	
+	/**
+	 * Sets the {@link PunishmentType} for this {@link Player}, based on a delay.
+	 * @param state : The PunishmentType to apply.
+	 * @param delayInMinutes : A time in minutes, 0 for infinite.
+	 */
+	public void setType(PunishmentType state, int delayInMinutes)
+	{
+		switch (state)
+		{
+			case NONE: // Remove Punishments
+				switch (_type)
+				{
+					case CHAT:
+						_type = state;
+						
+						stopTask(true);
+						
+						_owner.sendPacket(new EtcStatusUpdate(_owner));
+						_owner.sendMessage(&quot;Chatting is now available.&quot;);
+						_owner.sendPacket(new PlaySound(&quot;systemmsg_e.345&quot;));
+						break;
+					
+					case JAIL:
+						_type = state;
+						
+						// Open a Html message to inform the player
+						final NpcHtmlMessage html = new NpcHtmlMessage(0);
+						html.setFile(&quot;data/html/jail_out.htm&quot;);
+						_owner.sendPacket(html);
+						
+						stopTask(true);
+						_owner.teleportTo(17836, 170178, -3507, 20); // Floran village
+						break;
+				}
+				break;
+			
+			case CHAT: // Chat ban
+				// not allow player to escape jail using chat ban
+				if (_type == PunishmentType.JAIL)
+					break;
+				
+				_type = state;
+				_timer = 0;
+				_owner.sendPacket(new EtcStatusUpdate(_owner));
+				
+				// Remove the task if any
+				stopTask(false);
+				
+				if (delayInMinutes &gt; 0)
+				{
+					_timer = delayInMinutes * 60000L;
+					
+					// start the countdown
+					_task = ThreadPool.schedule(() -&gt; setType(PunishmentType.NONE, 0), _timer);
+					_owner.sendMessage(&quot;Chatting has been suspended for &quot; + delayInMinutes + &quot; minute(s).&quot;);
+				}
+				else
+					_owner.sendMessage(&quot;Chatting has been suspended.&quot;);
+				
+				// Send same sound packet in both &quot;delay&quot; cases.
+				_owner.sendPacket(new PlaySound(&quot;systemmsg_e.346&quot;));
+				break;
+			
+			case JAIL: // Jail Player
+				_type = state;
+				_timer = 0;
+				
+				// Remove the task if any
+				stopTask(false);
+				
+				if (delayInMinutes &gt; 0)
+				{
+					_timer = delayInMinutes * 60000L;
+					
+					// start the countdown
+					_task = ThreadPool.schedule(() -&gt; setType(PunishmentType.NONE, 0), _timer);
+					_owner.sendMessage(&quot;You are jailed for &quot; + delayInMinutes + &quot; minutes.&quot;);
+				}
+				
+				if (OlympiadManager.getInstance().isRegisteredInComp(_owner))
+					OlympiadManager.getInstance().removeDisconnectedCompetitor(_owner);
+				
+				// Open a Html message to inform the player
+				final NpcHtmlMessage html = new NpcHtmlMessage(0);
+				html.setFile(&quot;data/html/jail_in.htm&quot;);
+				_owner.sendPacket(html);
+				
+				_owner.setIsIn7sDungeon(false);
+				_owner.teleportTo(-114356, -249645, -2984, 0); // Jail
+				break;
+			
+			case CHAR: // Ban Character
+				_owner.setAccessLevel(-1);
+				_owner.logout(false);
+				break;
+			
+			case ACC: // Ban Account
+				_owner.setAccountAccesslevel(-100);
+				_owner.logout(false);
+				break;
+			
+			default:
+				_type = state;
+				break;
+		}
+		
+		// store in database
+		_owner.storeCharBase();
+	}
+	
+	public long getTimer()
+	{
+		return _timer;
+	}
+	
+	/**
+	 * Set the {@link Punishment} data on {@link Player} load.
+	 * @param type : The PunishmentType ordinal to set.
+	 * @param timer : The time to set, under ms.
+	 */
+	public void load(int type, long timer)
+	{
+		// Set the PunishmentType based on their ordinal.
+		setType(type);
+		
+		// Set the timer, based on PunishmentType.
+		_timer = (_type == PunishmentType.NONE) ? 0 : timer;
+	}
+	
+	/**
+	 * Handle {@link Punishment} actions.
+	 */
+	public void handle()
+	{
+		if (_type != PunishmentType.NONE)
+		{
+			// If punish timer exists, restart the task.
+			if (_timer &gt; 0)
+			{
+				_task = ThreadPool.schedule(() -&gt; setType(PunishmentType.NONE, 0), _timer);
+				_owner.sendMessage(&quot;You are still &quot; + _type.getDescription() + &quot; for &quot; + Math.round(_timer / 60000f) + &quot; minutes.&quot;);
+			}
+			
+			// If player escaped, put him back in jail.
+			if (_type == PunishmentType.JAIL &amp;&amp; !_owner.isInsideZone(ZoneId.JAIL))
+				_owner.teleportTo(-114356, -249645, -2984, 20);
+		}
+	}
+	
+	/**
+	 * Stop the {@link Punishment} task.
+	 * @param save : If true, we save the task timer.
+	 */
+	public void stopTask(boolean save)
+	{
+		if (_task != null)
+		{
+			if (save)
+			{
+				long delay = _task.getDelay(TimeUnit.MILLISECONDS);
+				if (delay &lt; 0)
+					delay = 0;
+				
+				_timer = delay;
+			}
+			
+			_task.cancel(false);
+			_task = null;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -118,9 +118,17 @@ public class ProjectileManager : MonoBehaviour
                     }
                     else
                     {
-                        //TODO: ignore hit effect on first target when skill is shot from skill shot packet?
-                        WorldCombat.Instance.SkillProjectileHitTarget(effect.Caster, effect.Target, effect.Skill);
-                        SpellDynamicLight.TriggerHitFlash(effect.Target, effect.Skill, effect.EffectClass, effect.TargetPosition);
+                        if (effect.IsDrainReturn)
+                        {
+                            effect.OnArrival?.Invoke();
+                            SpellDynamicLight.TriggerHitFlash(effect.Target, effect.Skill, effect.EffectClass, effect.TargetPosition);
+                        }
+                        else
+                        {
+                            //TODO: ignore hit effect on first target when skill is shot from skill shot packet?
+                            WorldCombat.Instance.SkillProjectileHitTarget(effect.Caster, effect.Target, effect.Skill);
+                            SpellDynamicLight.TriggerHitFlash(effect.Target, effect.Skill, effect.EffectClass, effect.TargetPosition);
+                        }
                     }
                 }
             }

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestOlympiadMatchList.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestOlympiadMatchList.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.olympiad.Olympiad;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadGameManager;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadGameTask;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public final class RequestOlympiadMatchList extends L2GameClientPacket
+{
+	@Override
+	protected void readImpl()
+	{
+		// Do nothing.
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null || !player.isInObserverMode())
+			return;
+		
+		int i = 0;
+		
+		final StringBuilder sb = new StringBuilder(1500);
+		for (OlympiadGameTask task : OlympiadGameManager.getInstance().getOlympiadTasks())
+		{
+			StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td fixwidth=10&gt;&lt;a action=\&quot;bypass arenachange &quot;, i, &quot;\&quot;&gt;&quot;, ++i, &quot;&lt;/a&gt;&lt;/td&gt;&lt;td fixwidth=80&gt;&quot;);
+			
+			if (task.isGameStarted())
+			{
+				if (task.isInTimerTime())
+					StringUtil.append(sb, &quot;&amp;$907;&quot;); // Counting In Progress
+				else if (task.isBattleStarted())
+					StringUtil.append(sb, &quot;&amp;$829;&quot;); // In Progress
+				else
+					StringUtil.append(sb, &quot;&amp;$908;&quot;); // Terminate
+					
+				StringUtil.append(sb, &quot;&lt;/td&gt;&lt;td&gt;&quot;, task.getGame().getPlayerNames()[0], &quot;&amp;nbsp; / &amp;nbsp;&quot;, task.getGame().getPlayerNames()[1]);
+			}
+			else
+				StringUtil.append(sb, &quot;&amp;$906;&quot;, &quot;&lt;/td&gt;&lt;td&gt;&amp;nbsp;&quot;); // Initial State
+				
+			StringUtil.append(sb, &quot;&lt;/td&gt;&lt;td&gt;&lt;font color=\&quot;aaccff\&quot;&gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&quot;);
+		}
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;olympiad_arena_observe_list.htm&quot;);
+		html.replace(&quot;%list%&quot;, sb.toString());
+		player.sendPacket(html);
+	}
+}</pre>
+            
+</body>
+</html>

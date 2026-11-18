@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/model/Post.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/model/Post.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+public class Post
+{
+	private static final CLogger LOGGER = new CLogger(Post.class.getName());
+	
+	private static final String UPDATE_TEXT = &quot;UPDATE bbs_post SET txt=? WHERE id=? AND topic_id=? AND forum_id=?&quot;;
+	
+	private final int _id;
+	private final String _owner;
+	private final int _ownerId;
+	private final long _date;
+	private final int _topicId;
+	private final int _forumId;
+	
+	private String _text;
+	
+	public Post(int id, String owner, int ownerId, long date, int topicId, int forumId, String text)
+	{
+		_id = id;
+		_owner = owner;
+		_ownerId = ownerId;
+		_date = date;
+		_topicId = topicId;
+		_forumId = forumId;
+		_text = text;
+	}
+	
+	public Post(ResultSet rs) throws SQLException
+	{
+		_id = rs.getInt(&quot;id&quot;);
+		_owner = rs.getString(&quot;owner_name&quot;);
+		_ownerId = rs.getInt(&quot;owner_id&quot;);
+		_date = rs.getLong(&quot;date&quot;);
+		_topicId = rs.getInt(&quot;topic_id&quot;);
+		_forumId = rs.getInt(&quot;forum_id&quot;);
+		_text = rs.getString(&quot;txt&quot;);
+	}
+	
+	public int getId()
+	{
+		return _id;
+	}
+	
+	public String getOwner()
+	{
+		return _owner;
+	}
+	
+	public int getOwnerId()
+	{
+		return _ownerId;
+	}
+	
+	public long getDate()
+	{
+		return _date;
+	}
+	
+	public int getTopicId()
+	{
+		return _topicId;
+	}
+	
+	public int getForumId()
+	{
+		return _forumId;
+	}
+	
+	public String getText()
+	{
+		return _text;
+	}
+	
+	public void setText(String text)
+	{
+		_text = text;
+	}
+	
+	public void updateText(int index, String text)
+	{
+		_text = text;
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_TEXT))
+		{
+			ps.setString(1, _text);
+			ps.setInt(2, _id);
+			ps.setInt(3, _topicId);
+			ps.setInt(4, _forumId);
+			ps.execute();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t update Post text.&quot;, e);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

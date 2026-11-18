@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Manipulators/Slot/TooltipManipulator.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Manipulators/Slot/TooltipManipulator.cs</h1>
+            <pre>using UnityEngine.UIElements;
+
+public class TooltipManipulator : Manipulator
+{
+
+    private object _value;
+    private readonly L2Slot.SlotType _type;
+    private bool _pointerOver;
+
+    public TooltipManipulator(VisualElement target, L2Slot.SlotType type, object value)
+    {
+        this.target = target;
+        _type = type;
+        _value = value;
+    }
+
+    protected override void RegisterCallbacksOnTarget()
+    {
+        target.RegisterCallback&lt;PointerEnterEvent&gt;(PointerInHandler, TrickleDown.TrickleDown);
+        target.RegisterCallback&lt;PointerOutEvent&gt;(PointerOutHandler, TrickleDown.TrickleDown);
+    }
+
+    protected override void UnregisterCallbacksFromTarget()
+    {
+        target.UnregisterCallback&lt;PointerEnterEvent&gt;(PointerInHandler, TrickleDown.TrickleDown);
+        target.UnregisterCallback&lt;PointerOutEvent&gt;(PointerOutHandler, TrickleDown.TrickleDown);
+    }
+
+    private void PointerInHandler(PointerEnterEvent evt)
+    {
+        if (!_pointerOver &amp;&amp; L2ToolTip.Instance != null)
+        {
+            L2ToolTip.Instance.UpdateTooltip(_type, _value, target);
+        }
+        _pointerOver = true;
+    }
+
+    private void PointerOverHandler(MouseOverEvent evt)
+    {
+        _pointerOver = true;
+    }
+
+    private void PointerOutHandler(PointerOutEvent evt)
+    {
+        _pointerOver = false;
+        if (_value is not null &amp;&amp; L2ToolTip.Instance != null) L2ToolTip.Instance.HideWindow(target);
+    }
+
+    public void SetValue(string value)
+    {
+        _value = value;
+    }
+
+    public void SetValue(ItemTooltipData value)
+    {
+        _value = value;
+    }
+    
+    public void SetValue(SkillWindowInfo value)
+    {
+        _value = value;
+    }
+
+    public void SetValue(Buff value)
+    {
+        _value = value;
+    }
+
+    public void Clear()
+    {
+        if (_pointerOver &amp;&amp; L2ToolTip.Instance != null)
+        {
+            L2ToolTip.Instance.HideWindow(target);
+        }
+        _pointerOver = false;
+    }
+}
+
+/// &lt;summary&gt;Tooltip payload for item slots carrying both display title and numeric item ID.&lt;/summary&gt;
+public sealed class ItemTooltipData
+{
+    public int ItemId { get; }
+    public string Title { get; }
+
+    public ItemTooltipData(int itemId, string title)
+    {
+        ItemId = itemId;
+        Title = title;
+    }
+}
+</pre>
+            
+</body>
+</html>

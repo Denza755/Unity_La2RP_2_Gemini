@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Actor/RelationChangedPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Actor/RelationChangedPacket.cs</h1>
+            <pre>using UnityEngine;
+
+public class RelationChangedPacket : ServerPacket
+{
+    public static int RELATION_PVP_FLAG = 0x00002; // pvp ???
+    public static int RELATION_HAS_KARMA = 0x00004; // karma ???
+    public static int RELATION_LEADER = 0x00080; // leader
+    public static int RELATION_INSIEGE = 0x00200; // true if in siege
+    public static int RELATION_ATTACKER = 0x00400; // true when attacker
+    public static int RELATION_ALLY = 0x00800; // blue siege icon, cannot have if red
+    public static int RELATION_ENEMY = 0x01000; // true when red icon, doesn&#x27;t matter with blue
+    public static int RELATION_MUTUAL_WAR = 0x08000; // double fist
+    public static int RELATION_1SIDED_WAR = 0x10000; // single fist
+
+    public int Owner { get; private set; }
+    public int Relation { get; private set; }
+    public bool AutoAttackable { get; private set; }
+    public int Karma { get; private set; }
+    public int PvpFlag { get; private set; }
+
+    public RelationChangedPacket(byte[] d) : base(d)
+    {
+        Parse();
+    }
+
+    public override void Parse()
+    {
+        Owner = ReadI();
+        Relation = ReadI();
+        AutoAttackable = ReadI() == 1;
+        Karma = ReadI();
+        PvpFlag = ReadI();
+
+        // Debug.LogWarning(ToString());
+    }
+
+    public override string ToString()
+    {
+        return $&quot;RelationChanged\n Owner: {Owner}\n Relation: {Relation}\nAutoAttackable: {AutoAttackable}\nKarma: {Karma}\n PvpFlag: {PvpFlag}&quot;;
+    }
+}</pre>
+            
+</body>
+</html>

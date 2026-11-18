@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q320_BonesTellTheFuture.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q320_BonesTellTheFuture.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.enums.actors.ClassRace;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q320_BonesTellTheFuture extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q320_BonesTellTheFuture&quot;;
+	
+	// Quest item
+	private static final int BONE_FRAGMENT = 809;
+	
+	public Q320_BonesTellTheFuture()
+	{
+		super(320, &quot;Bones Tell the Future&quot;);
+		
+		setItemsIds(BONE_FRAGMENT);
+		
+		addQuestStart(30359); // Kaitar
+		addTalkId(30359);
+		
+		addMyDying(20517, 20518);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30359-04.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		
+		return event;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getRace() != ClassRace.DARK_ELF)
+					htmltext = &quot;30359-00.htm&quot;;
+				else if (player.getStatus().getLevel() &lt; 10)
+					htmltext = &quot;30359-02.htm&quot;;
+				else
+					htmltext = &quot;30359-03.htm&quot;;
+				break;
+			
+			case STARTED:
+				if (st.getCond() == 1)
+					htmltext = &quot;30359-05.htm&quot;;
+				else
+				{
+					htmltext = &quot;30359-06.htm&quot;;
+					takeItems(player, BONE_FRAGMENT, -1);
+					rewardItems(player, 57, 8470);
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(true);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (dropItems(player, BONE_FRAGMENT, 1, 10, (npc.getNpcId() == 20517) ? 180000 : 200000))
+			st.setCond(2);
+	}
+}</pre>
+            
+</body>
+</html>

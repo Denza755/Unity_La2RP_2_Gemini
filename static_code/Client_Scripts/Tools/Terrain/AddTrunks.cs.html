@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/AddTrunks.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/AddTrunks.cs</h1>
+            <pre>#if (UNITY_EDITOR)
+using UnityEditor;
+using UnityEngine;
+
+public class AddTrunks
+{
+
+    [MenuItem(&quot;Shnok/[Debug] Add trunks to trees&quot;)]
+    private static void AddTrunksToTrees()
+    {
+        string treeName = &quot;speaking_tree_s&quot;;
+        GameObject[] foundObjects = GameObject.FindObjectsByType&lt;GameObject&gt;(FindObjectsSortMode.None);
+        foreach(var gameObj in foundObjects) {
+            if (!gameObj.activeSelf)
+                continue;
+
+            if(gameObj.name.Contains(treeName)) {
+                gameObj.GetComponent&lt;MeshCollider&gt;().enabled = false;
+
+                GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+
+                float cylinderHeight = 1.5f;
+                // Set the cylinder&#x27;s position
+                cylinder.transform.position = gameObj.transform.position + Vector3.up * cylinderHeight / 2f;
+
+                // Adjust the cylinder&#x27;s scale to set its size
+                cylinder.transform.localScale = new Vector3(1.25f, cylinderHeight, 1.25f);
+
+                cylinder.AddComponent&lt;MeshCollider&gt;();
+                cylinder.GetComponent&lt;MeshRenderer&gt;().enabled = false;
+
+                cylinder.transform.parent = gameObj.transform;
+                cylinder.transform.name = &quot;trunk&quot;;
+                  
+            }
+        }
+    }
+
+}
+#endif
+</pre>
+            
+</body>
+</html>

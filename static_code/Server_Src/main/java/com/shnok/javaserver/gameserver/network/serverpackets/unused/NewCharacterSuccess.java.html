@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/NewCharacterSuccess.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/NewCharacterSuccess.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.data.xml.PlayerData;
+import com.shnok.javaserver.gameserver.enums.actors.ClassId;
+import com.shnok.javaserver.gameserver.model.actor.template.PlayerTemplate;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class NewCharacterSuccess extends L2GameServerPacket
+{
+	private final List&lt;PlayerTemplate&gt; _templates = new ArrayList&lt;&gt;();
+	
+	public static final NewCharacterSuccess STATIC_PACKET = new NewCharacterSuccess();
+	
+	private NewCharacterSuccess()
+	{
+		_templates.add(PlayerData.getInstance().getTemplate(0));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.HUMAN_FIGHTER));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.HUMAN_MYSTIC));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.ELVEN_FIGHTER));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.ELVEN_MYSTIC));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.DARK_FIGHTER));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.DARK_MYSTIC));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.ORC_FIGHTER));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.ORC_MYSTIC));
+		_templates.add(PlayerData.getInstance().getTemplate(ClassId.DWARVEN_FIGHTER));
+	}
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0x17);
+		writeD(_templates.size());
+		
+		for (PlayerTemplate template : _templates)
+		{
+			writeD(template.getRace().ordinal());
+			writeD(template.getClassId().getId());
+			writeD(0x46);
+			writeD(template.getBaseSTR());
+			writeD(0x0a);
+			writeD(0x46);
+			writeD(template.getBaseDEX());
+			writeD(0x0a);
+			writeD(0x46);
+			writeD(template.getBaseCON());
+			writeD(0x0a);
+			writeD(0x46);
+			writeD(template.getBaseINT());
+			writeD(0x0a);
+			writeD(0x46);
+			writeD(template.getBaseWIT());
+			writeD(0x0a);
+			writeD(0x46);
+			writeD(template.getBaseMEN());
+			writeD(0x0a);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

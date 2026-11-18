@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Importer/L2JSONAmbientSoundImporter.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Importer/L2JSONAmbientSoundImporter.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+
+[System.Serializable]
+public class AmbientDataContainer
+{
+    public AmbientSound[] data;
+}
+
+public class L2JSONAmbientSoundImporter : AssetImporter
+{
+
+    // umodel export folder
+    static string dataFolder = @&quot;D:\Stock\Projects\L2-Unity\umodel_win32\export_sound&quot;;
+    // copy ambient sounds to
+    static string scriptExportFolder = @&quot;D:\Stock\Projects\L2-Unity\umodel_win32\export_sound\unityexport&quot;;
+
+    [MenuItem(&quot;Shnok/[AmbientSound] (JSON) Import sounds&quot;)]
+    static void ImportSoundsMenu()
+    {
+        string title = &quot;Select ambient sound list&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;json&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            AmbientSound[] sounds = L2TerrainInfoParser.ParseAmbientSoundFile(fileToProcess);
+            ImportAmbientSoundFiles(sounds, dataFolder);
+        }
+    }
+
+
+    [MenuItem(&quot;Shnok/09. [AmbientSound] (T3D) Import sounds&quot;)]
+    static void ImportSoundsMenuT3D()
+    {
+        string title = &quot;Select ambient sound list&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;t3d&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+
+            List&lt;AmbientSound&gt; sounds = L2T3DInfoParser.ParseAmbientSounds(fileToProcess);
+            ImportAmbientSoundFiles(sounds.ToArray(), dataFolder);
+        }
+    }
+
+    private static void ImportAmbientSoundFiles(AmbientSound[] sounds, string dataFolder)
+    {
+        List&lt;string&gt; soundNames = new List&lt;string&gt;();
+        foreach (AmbientSound sound in sounds)
+        {
+            Debug.Log(sound);
+            Debug.Log(sound.ambientSoundName);
+            string[] parts = sound.ambientSoundName.Split(&quot;.&quot;);
+            soundNames.Add(parts[0].Trim() + &quot;.&quot; + parts[2].Trim());
+        }
+
+        soundNames = soundNames.Distinct().ToList();
+        foreach (string soundname in soundNames)
+        {
+            Debug.Log(soundname);
+            string[] parts = soundname.Split(&quot;.&quot;);
+            string fileToCopy = Path.Combine(dataFolder, parts[0], &quot;Sound&quot;, parts[1] + &quot;.wav&quot;);
+            Debug.Log(fileToCopy);
+            if (!File.Exists(fileToCopy))
+            {
+                Debug.LogError($&quot;File missing at {fileToCopy}&quot;);
+            }
+            else
+            {
+                string outputFolder = Path.Combine(scriptExportFolder, parts[0]);
+                string outputFile = Path.Combine(outputFolder, parts[1] + &quot;.wav&quot;);
+                if (!Directory.Exists(outputFolder))
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
+                File.Copy(fileToCopy, outputFile, true);
+            }
+        }
+        Debug.LogWarning($&quot;Need to {soundNames.Count} load ambient sounds.&quot;);
+
+        Debug.LogWarning($&quot;Ambient {soundNames.Count} sound files individually copied into folder {scriptExportFolder}&quot;);
+    }
+
+}
+#endif</pre>
+            
+</body>
+</html>

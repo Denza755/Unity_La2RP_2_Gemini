@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Ice/L2IceFrag.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Ice/L2IceFrag.shader</h1>
+            <pre>Shader &quot;L2/Effects/L2IceFrag&quot;
+{
+    Properties
+    {
+        _MainTexture(&quot;Ice Base (fx_m_t0037)&quot;, 2D) = &quot;white&quot; {}
+        _SpecMask(&quot;Spec Mask (fx_m_t0038)&quot;, 2D) = &quot;white&quot; {}
+        _EnvCube(&quot;Environment Cubemap&quot;, Cube) = &quot;&quot; {}
+        _Tint(&quot;Tint&quot;, Color) = (0.95, 0.97, 1.0, 1.0)
+        _Alpha(&quot;Global Alpha&quot;, Range(0, 2)) = 1.0
+
+        _HasLifetime(&quot;Has Lifetime&quot;, Float) = 1
+        _StartTime(&quot;Start Time&quot;, Float) = 0
+        _InitialDelayRange(&quot;Initial Delay Range (Min,Max)&quot;, Vector) = (0, 0, 0, 0)
+        _LifetimeRange(&quot;Lifetime Range (Min,Max)&quot;, Vector) = (1, 1, 0, 0)
+        _FadeIn(&quot;Fade In Enabled&quot;, Float) = 0
+        _FadeInEndTime(&quot;Fade In End Time&quot;, Float) = 0
+        _Fadeout(&quot;Fade Out Enabled&quot;, Float) = 1
+        _FadeoutStartTime(&quot;Fade Out Start Time&quot;, Float) = 0.4
+
+        _StartLocationOffset(&quot;Start Location Offset XYZ&quot;, Vector) = (0, 4, 0, 0)
+        _PolarAzimuthDeg(&quot;Polar Azimuth Deg (Min,Max)&quot;, Vector) = (0, 360, 0, 0)
+        _PolarFromYDeg(&quot;Polar From +Y Deg (Min,Max)&quot;, Vector) = (30, 150, 0, 0)
+        _PolarRadius(&quot;Polar Radius (Min,Max)&quot;, Vector) = (10, 10, 0, 0)
+        _SpawnUnitScale(&quot;UE Unit Scale&quot;, Float) = 0.01904762
+
+        _OutwardSpeed(&quot;Outward Speed (Min,Max)&quot;, Vector) = (200, 200, 0, 0)
+        _UpVelocity(&quot;Up Velocity (Min,Max)&quot;, Vector) = (150, 240, 0, 0)
+        _Acceleration(&quot;Acceleration XYZ&quot;, Vector) = (0, -350, 0, 0)
+        _VelocityLossRange(&quot;Velocity Loss (Min,Max)&quot;, Vector) = (2, 2, 0, 0)
+        _OwnerWorldPos(&quot;Owner World Pos&quot;, Vector) = (0, 0, 0, 0)
+
+        _SizeRangeX(&quot;Start Size Range X (Min,Max)&quot;, Vector) = (0.06, 0.19, 0, 0)
+        _SizeRangeY(&quot;Start Size Range Y (Min,Max)&quot;, Vector) = (0.03, 0.15, 0, 0)
+        _SizeRangeZ(&quot;Start Size Range Z (Min,Max)&quot;, Vector) = (0.03, 0.15, 0, 0)
+        _ExtraRandomSizeMultiplier(&quot;Extra Random Size Multiplier (Min,Max)&quot;, Vector) = (0.9, 1.1, 0, 0)
+        _UniformSize(&quot;Uniform Size&quot;, Float) = 1
+        _UseSizeScale(&quot;Use Size Scale&quot;, Float) = 0
+        _SizeScale0(&quot;Size Scale 0 (Time,Scale)&quot;, Vector) = (0.0, 1.0, 0, 0)
+        _SizeScale1(&quot;Size Scale 1 (Time,Scale)&quot;, Vector) = (1.0, 1.0, 0, 0)
+        _SizeScale2(&quot;Size Scale 2 (Time,Scale)&quot;, Vector) = (1.0, 1.0, 0, 0)
+
+        _Seed(&quot;Seed&quot;, Float) = 0
+        _SpinParticles(&quot;Spin Particles&quot;, Float) = 1
+        _SpinsPerSecondRangeX(&quot;Spin Per Sec X (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+        _SpinsPerSecondRangeY(&quot;Spin Per Sec Y (Min,Max)&quot;, Vector) = (1, 2, 0, 0)
+        _SpinsPerSecondRangeZ(&quot;Spin Per Sec Z (Min,Max)&quot;, Vector) = (1, 2, 0, 0)
+        _StartSpinRangeX(&quot;Start Spin X (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+        _StartSpinRangeY(&quot;Start Spin Y (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+        _StartSpinRangeZ(&quot;Start Spin Z (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+
+        _SpecMaskStrength(&quot;Spec Mask Strength&quot;, Range(0, 2)) = 1.026
+        _FresnelPower(&quot;Fresnel Power&quot;, Range(0.1, 8)) = 0.1
+        _FresnelStrength(&quot;Fresnel Strength&quot;, Range(0, 2)) = 0.852
+        _EdgeColor(&quot;Edge Glow Color&quot;, Color) = (0.986, 0.993, 1.0, 1.0)
+        _EnvTint(&quot;Env Tint&quot;, Color) = (1, 1, 1, 1)
+        _EnvStrength(&quot;Env Strength&quot;, Range(0, 4)) = 0.83
+        _UVScroll(&quot;UV Scroll XY&quot;, Vector) = (0.0, 0.0, 0, 0)
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot;=&quot;UniversalPipeline&quot;
+            &quot;RenderType&quot;=&quot;Transparent&quot;
+            &quot;Queue&quot;=&quot;Transparent&quot;
+                    &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+
+        Blend SrcAlpha OneMinusSrcAlpha
+        ZWrite Off
+        Cull Off
+
+        Pass
+        {
+            Name &quot;ForwardUnlit&quot;
+            Tags { &quot;LightMode&quot;=&quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+
+            #include &quot;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&quot;
+            #include &quot;../Common/L2FxMeshParticleMotion.hlsl&quot;
+            #include &quot;L2IceLook.hlsl&quot;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv          : TEXCOORD0;
+                float3 normalWS    : TEXCOORD1;
+                float3 viewDirWS   : TEXCOORD2;
+            };
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTexture_ST;
+                float4 _SpecMask_ST;
+                float4 _Tint;
+                float  _Alpha;
+                float  _HasLifetime;
+                float  _StartTime;
+                float4 _InitialDelayRange;
+                float4 _LifetimeRange;
+                float  _FadeIn;
+                float  _FadeInEndTime;
+                float  _Fadeout;
+                float  _FadeoutStartTime;
+                float4 _StartLocationOffset;
+                float4 _PolarAzimuthDeg;
+                float4 _PolarFromYDeg;
+                float4 _PolarRadius;
+                float  _SpawnUnitScale;
+                float4 _OutwardSpeed;
+                float4 _UpVelocity;
+                float4 _Acceleration;
+                float4 _VelocityLossRange;
+                float4 _OwnerWorldPos;
+                float4 _SizeRangeX;
+                float4 _SizeRangeY;
+                float4 _SizeRangeZ;
+                float4 _ExtraRandomSizeMultiplier;
+                float  _UniformSize;
+                float  _UseSizeScale;
+                float4 _SizeScale0;
+                float4 _SizeScale1;
+                float4 _SizeScale2;
+                float  _Seed;
+                float  _SpinParticles;
+                float4 _SpinsPerSecondRangeX;
+                float4 _SpinsPerSecondRangeY;
+                float4 _SpinsPerSecondRangeZ;
+                float4 _StartSpinRangeX;
+                float4 _StartSpinRangeY;
+                float4 _StartSpinRangeZ;
+                float  _SpecMaskStrength;
+                float  _FresnelPower;
+                float  _FresnelStrength;
+                float4 _EdgeColor;
+                float4 _EnvTint;
+                float  _EnvStrength;
+                float4 _UVScroll;
+            CBUFFER_END
+
+            #include &quot;../Common/L2FxInstancing.hlsl&quot;
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+
+                float delay = L2Fx_RandomInitialDelay(_InitialDelayRange.xy, _Seed, _StartTime, 3.0);
+                float lifetime = L2Fx_RandomLifetime(_LifetimeRange.xy, _Seed, _StartTime, 7.0);
+                float age = L2Fx_AgeSeconds(_Time.y, _StartTime, delay);
+                float normalizedAge = saturate(age / max(lifetime, 1e-4));
+
+                float3 baseSize = L2Fx_StartSize(_SizeRangeX.xy, _SizeRangeY.xy, _SizeRangeZ.xy, _UniformSize, _Seed, _StartTime);
+                float extraSize = L2Fx_RandomRange(_ExtraRandomSizeMultiplier.xy, _Seed, _StartTime, 151.0);
+                float sizeScale = L2Fx_SizeScale(normalizedAge, _UseSizeScale, _SizeScale0, _SizeScale1, _SizeScale2);
+                float3 localPos = IN.positionOS.xyz * (baseSize * max(0.001, extraSize) * sizeScale);
+                float3 localNormal = IN.normalOS;
+
+                L2Fx_ApplyMeshParticleSpin(
+                    localPos,
+                    localNormal,
+                    _SpinParticles,
+                    age,
+                    _StartSpinRangeX.xy,
+                    _StartSpinRangeY.xy,
+                    _StartSpinRangeZ.xy,
+                    _SpinsPerSecondRangeX.xy,
+                    _SpinsPerSecondRangeY.xy,
+                    _SpinsPerSecondRangeZ.xy,
+                    _Seed,
+                    _StartTime);
+
+                float3 spawn = _StartLocationOffset.xyz;
+                spawn += L2Fx_SpawnOffsetPolarYDegrees(_PolarAzimuthDeg.xy, _PolarFromYDeg.xy, _PolarRadius.xy, _Seed, _StartTime);
+                spawn *= _SpawnUnitScale;
+
+                float2 horizontalDir = L2Fx_OutwardDirectionXZ(spawn, _PolarAzimuthDeg.xy, _Seed, _StartTime, 181.0);
+                float outwardSpeed = L2Fx_RandomRange(_OutwardSpeed.xy, _Seed, _StartTime, 191.0);
+                float upVelocity = L2Fx_RandomRange(_UpVelocity.xy, _Seed, _StartTime, 193.0);
+                float velocityLoss = L2Fx_RandomRange(_VelocityLossRange.xy, _Seed, _StartTime, 197.0);
+                float3 velocity = float3(horizontalDir.x * outwardSpeed, upVelocity, horizontalDir.y * outwardSpeed) * _SpawnUnitScale;
+                float3 acceleration = _Acceleration.xyz * _SpawnUnitScale;
+                float3 displacement = L2Fx_DampedDisplacement(velocity, acceleration, velocityLoss, age);
+
+                float3 posWS = TransformObjectToWorld(localPos + spawn + displacement);
+                OUT.positionHCS = TransformWorldToHClip(posWS);
+                OUT.uv = TRANSFORM_TEX(IN.uv, _MainTexture) + _UVScroll.xy * _Time.y;
+                OUT.normalWS = normalize(TransformObjectToWorldNormal(localNormal));
+                OUT.viewDirWS = normalize(GetWorldSpaceViewDir(posWS));
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                float delay = L2Fx_RandomInitialDelay(_InitialDelayRange.xy, _Seed, _StartTime, 3.0);
+                float lifetime = L2Fx_RandomLifetime(_LifetimeRange.xy, _Seed, _StartTime, 7.0);
+                half lifeAlpha = (half)L2Fx_LifetimeAlpha(
+                    _Time.y,
+                    _HasLifetime,
+                    _StartTime,
+                    delay,
+                    lifetime,
+                    _FadeIn,
+                    _FadeInEndTime,
+                    _Fadeout,
+                    _FadeoutStartTime);
+
+                L2IceLookInput lookInput;
+                lookInput.uvMain = IN.uv;
+                lookInput.uvMask = TRANSFORM_TEX(IN.uv, _SpecMask) + _UVScroll.xy * _Time.y;
+                lookInput.normalWS = IN.normalWS;
+                lookInput.viewDirWS = IN.viewDirWS;
+                return L2IceLook_Fragment(
+                    lookInput,
+                    lifeAlpha,
+                    _Tint,
+                    _Alpha,
+                    _SpecMaskStrength,
+                    _FresnelPower,
+                    _FresnelStrength,
+                    _EdgeColor,
+                    _EnvTint,
+                    _EnvStrength);
+            }
+            ENDHLSL
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/WyvernManagerNpc.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/WyvernManagerNpc.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcTalkCond;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+/**
+ * This instance leads the behavior of Wyvern Managers.&lt;br&gt;
+ * Those NPCs allow Castle Lords to mount a wyvern in return for B Crystals.&lt;br&gt;
+ * Three configs exist so far :&lt;br&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;WYVERN_ALLOW_UPGRADER : spawn instances of Wyvern Manager through the world, or no;&lt;/li&gt;
+ * &lt;li&gt;WYVERN_REQUIRED_LEVEL : the strider&#x27;s required level;&lt;/li&gt;
+ * &lt;li&gt;WYVERN_REQUIRED_CRYSTALS : the B-crystals&#x27; required amount;&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public class WyvernManagerNpc extends CastleChamberlain
+{
+	public WyvernManagerNpc(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (player.getCurrentFolk() == null || player.getCurrentFolk().getObjectId() != getObjectId())
+			return;
+		
+		if (command.startsWith(&quot;RideWyvern&quot;))
+		{
+			if (!isLordOwner(player))
+			{
+				sendHtm(player, &quot;2&quot;);
+				return;
+			}
+			
+			// Verify if Dusk owns the Seal of Strife (if true, CLs can&#x27;t mount Wyvern).
+			if (SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE) == CabalType.DUSK)
+			{
+				sendHtm(player, &quot;3&quot;);
+				return;
+			}
+			
+			// Check if the Player is mounted on a Strider.
+			if (!player.isMounted() || (player.getMountNpcId() != 12526 &amp;&amp; player.getMountNpcId() != 12527 &amp;&amp; player.getMountNpcId() != 12528))
+			{
+				player.sendPacket(SystemMessageId.YOU_MAY_ONLY_RIDE_WYVERN_WHILE_RIDING_STRIDER);
+				sendHtm(player, &quot;1&quot;);
+				return;
+			}
+			
+			// Check for strider level.
+			if (player.getMountLevel() &lt; Config.WYVERN_REQUIRED_LEVEL)
+			{
+				sendHtm(player, &quot;6&quot;);
+				return;
+			}
+			
+			// Check for items consumption.
+			if (!player.destroyItemByItemId(1460, Config.WYVERN_REQUIRED_CRYSTALS, true))
+			{
+				sendHtm(player, &quot;5&quot;);
+				return;
+			}
+			
+			// Dismount the Strider.
+			player.dismount();
+			
+			// Mount a Wyvern. If successful, call an HTM.
+			if (player.mount(12621, 0))
+				sendHtm(player, &quot;4&quot;);
+		}
+		else if (command.startsWith(&quot;Chat&quot;))
+		{
+			// Default send you to error HTM.
+			String val = &quot;1&quot;;
+			try
+			{
+				val = command.substring(5);
+			}
+			catch (IndexOutOfBoundsException ioobe)
+			{
+				// Do nothing.
+			}
+			
+			sendHtm(player, val);
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player)
+	{
+		switch (getNpcTalkCond(player))
+		{
+			case OWNER:
+				sendHtm(player, (player.isFlying()) ? &quot;4&quot; : &quot;0&quot;);
+				break;
+			
+			case CLAN_MEMBER:
+				sendHtm(player, &quot;2&quot;);
+				break;
+			
+			default:
+				sendHtm(player, &quot;0a&quot;);
+				break;
+		}
+	}
+	
+	@Override
+	protected NpcTalkCond getNpcTalkCond(Player player)
+	{
+		if (player.getClan() != null &amp;&amp; getResidence() != null &amp;&amp; getResidence().getOwnerId() == player.getClanId())
+			return (player.isClanLeader()) ? NpcTalkCond.OWNER : NpcTalkCond.CLAN_MEMBER;
+		
+		return NpcTalkCond.NONE;
+	}
+	
+	private void sendHtm(Player player, String val)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/wyvernmanager/wyvernmanager-&quot; + val + &quot;.htm&quot;);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		html.replace(&quot;%npcname%&quot;, getName());
+		html.replace(&quot;%wyvern_level%&quot;, Config.WYVERN_REQUIRED_LEVEL);
+		html.replace(&quot;%needed_crystals%&quot;, Config.WYVERN_REQUIRED_CRYSTALS);
+		player.sendPacket(html);
+		
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/thread/GameServerThread.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/thread/GameServerThread.java</h1>
+            <pre>package com.shnok.javaserver.thread;
+
+import com.shnok.javaserver.dto.SendablePacket;
+import com.shnok.javaserver.dto.internal.loginserverpackets.InitLSPacket;
+import com.shnok.javaserver.dto.internal.loginserverpackets.KickPlayerPacket;
+import com.shnok.javaserver.dto.internal.loginserverpackets.LoginServerFailPacket;
+import com.shnok.javaserver.dto.internal.loginserverpackets.RequestCharactersPacket;
+import com.shnok.javaserver.enums.GameServerState;
+import com.shnok.javaserver.enums.packettypes.internal.LoginServerPacketType;
+import com.shnok.javaserver.model.GameServerInfo;
+import com.shnok.javaserver.security.NewCrypt;
+import com.shnok.javaserver.service.GameServerController;
+import com.shnok.javaserver.service.GameServerListenerService;
+import com.shnok.javaserver.service.ThreadPoolManagerService;
+import com.shnok.javaserver.util.ServerNameDAO;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
+
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.KeyPair;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.shnok.javaserver.config.Configuration.server;
+
+@Getter
+@Setter
+@Log4j2
+public class GameServerThread extends Thread {
+    private InputStream in;
+    private OutputStream out;
+    private Socket connection;
+    private RSAPublicKey publicKey;
+    private RSAPrivateKey privateKey;
+    private NewCrypt blowfish;
+    private GameServerState loginConnectionState = GameServerState.CONNECTED;
+    private final String connectionIp;
+    private GameServerInfo gameServerInfo;
+
+    /**
+     * Authed Clients on a GameServer
+     */
+    private final Set&lt;String&gt; accountsOnGameServer = ConcurrentHashMap.newKeySet();
+
+    private String _connectionIPAddress;
+
+    public GameServerThread(Socket con) {
+        connection = con;
+        connectionIp = con.getInetAddress().getHostAddress();
+
+        try {
+            in = connection.getInputStream();
+            out = new BufferedOutputStream(connection.getOutputStream());
+            log.debug(&quot;New gameserver connection: {}&quot;, connectionIp);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        KeyPair pair = GameServerController.getInstance().getKeyPair();
+        privateKey = (RSAPrivateKey) pair.getPrivate();
+        publicKey = (RSAPublicKey) pair.getPublic();
+        blowfish = new NewCrypt(&quot;_;v.]05-31!|+-%xT!^[$\00&quot;);
+        setName(getClass().getSimpleName() + &quot;-&quot; + Thread.currentThread().getId() + &quot;@&quot; + connectionIp);
+    }
+
+    @Override
+    public void run() {
+        startReadingPackets();
+    }
+
+    private void startReadingPackets() {
+        int lengthHi;
+        int lengthLo;
+        int length;
+
+        try {
+            sendPacket(new InitLSPacket(publicKey.getModulus().toByteArray()));
+
+            for (; ; ) {
+                lengthLo = in.read();
+                lengthHi = in.read();
+                length = (lengthHi * 256) + lengthLo;
+
+                if ((lengthHi &lt; 0) || connection.isClosed()) {
+                    log.warn(&quot;Gameserver terminated the connection!&quot;);
+                    break;
+                }
+
+                length = length - 2;
+
+                byte[] data = new byte[length];
+
+                int receivedBytes = 0;
+                int newBytes = 0;
+                while ((newBytes != -1) &amp;&amp; (receivedBytes &lt; (length))) {
+                    newBytes = in.read(data, 0, length);
+                    receivedBytes = receivedBytes + newBytes;
+                }
+
+                handlePacket(data);
+            }
+        } catch (Exception e) {
+        } finally {
+            log.info(&quot;Gameserver {} connection closed.&quot;, connectionIp);
+            disconnect();
+        }
+    }
+
+    private void handlePacket(byte[] data) {
+        ThreadPoolManagerService.getInstance().handlePacket(new GameServerPacketHandler(this, data));
+    }
+
+    public void sendPacket(SendablePacket packet) {
+        LoginServerPacketType packetType = LoginServerPacketType.fromByte(packet.getType());
+
+        if(server.printSentPackets()) {
+            log.debug(&quot;[GAME] Sent packet: {}&quot;, packetType);
+        }
+
+        NewCrypt.appendChecksum(packet.getData());
+
+        if(server.printCryptography()) {
+            log.debug(&quot;---&gt; [GAME] Clear packet {} : {}&quot;, packet.getData().length, Arrays.toString(packet.getData()));
+        }
+        blowfish.crypt(packet.getData(), 0, packet.getData().length);
+        if(server.printCryptography()) {
+            log.debug(&quot;---&gt; [GAME] Encrypted packet {} : {}&quot;, packet.getData().length, Arrays.toString(packet.getData()));
+        }
+
+        try {
+            synchronized (out) {
+                int len = packet.getData().length + 2;
+                out.write((byte)(len) &amp; 0xff);
+                out.write((byte)((len) &gt;&gt; 8) &amp; 0xff);
+
+                for (byte b : packet.getData()) {
+                    out.write(b &amp; 0xFF);
+                }
+                out.flush();
+            }
+
+        } catch (IOException e) {
+            log.warn(&quot;Trying to send packet to a gameserver connection.&quot;);
+        }
+    }
+
+    public void disconnect() {
+        try {
+            if (gameServerInfo.isAuthed()) {
+                gameServerInfo.setDown();
+
+                log.info(&quot;Server {}[{}] is now disconnected.&quot;, ServerNameDAO.getServer(gameServerInfo.getId()),
+                        gameServerInfo.getId());
+            }
+
+            GameServerListenerService.getInstance().removeGameServer(this);
+
+            connection.close();
+        } catch (IOException e) {
+            log.error(&quot;Error while closing connection.&quot;, e);
+        }
+    }
+
+    public void attachGameServerInfo(GameServerInfo gsi, int port, String host, int maxPlayers) {
+        log.debug(&quot;Attaching gameserver with ID: {}.&quot;, gsi.getId());
+
+        setGameServerInfo(gsi);
+        gsi.setGameServerThread(this);
+        gsi.setPort(port);
+        setGameHosts(host);
+        gsi.setMaxPlayers(maxPlayers);
+        gsi.setAuthed(true);
+    }
+
+    public void setGameHosts(String hosts) {
+        log.info(&quot;Updated game server {}[{}] IPs.&quot;, gameServerInfo.getName(), gameServerInfo.getId());
+
+        if (!hosts.equals(&quot;*&quot;))
+        {
+            try
+            {
+                gameServerInfo.setHostname(InetAddress.getByName(hosts).getHostAddress());
+            }
+            catch (UnknownHostException e)
+            {
+                log.error(&quot;Couldn&#x27;t resolve hostname &#x27;{}&#x27;.&quot;, hosts, e);
+                gameServerInfo.setHostname(connectionIp);
+            }
+        }
+        else
+            gameServerInfo.setHostname(connectionIp);
+
+        log.info(&quot;Gameserver hostname updated to [{}].&quot;, gameServerInfo.getHostname());
+    }
+
+    public void forceClose(int reason) {
+        sendPacket(new LoginServerFailPacket(reason));
+
+        disconnect();
+    }
+
+    public static boolean isBannedGameServerIP(String ipAddress) {
+        return false;
+    }
+
+    public int getPlayerCount() {
+        return accountsOnGameServer.size();
+    }
+
+    public boolean hasAccountOnGameServer(String account) {
+        return accountsOnGameServer.contains(account);
+    }
+
+    public void addAccountOnGameServer(String account) {
+        accountsOnGameServer.add(account);
+    }
+
+    public void removeAccountOnGameServer(String account) {
+        accountsOnGameServer.remove(account);
+    }
+
+    public void setBlowfish(NewCrypt newCrypt) {
+        log.info(&quot;New BlowFish key received, Blowfish Engine initialized.&quot;);
+        blowfish = newCrypt;
+    }
+
+    public void setLoginConnectionState(GameServerState state) {
+        log.info(&quot;New gameserver connection state: {}&quot;, state);
+        loginConnectionState = state;
+    }
+
+    public int getServerId() {
+        return gameServerInfo.getId();
+    }
+
+    public String getServerName() {
+        return gameServerInfo.getName();
+    }
+
+    public void requestCharacters(String account) {
+        sendPacket(new RequestCharactersPacket(account));
+    }
+
+    public void kickPlayer(String account) {
+        sendPacket(new KickPlayerPacket(account));
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/data/MemoSet.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/data/MemoSet.java</h1>
+            <pre>package com.shnok.javaserver.commons.data;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * A {@link ConcurrentHashMap} used to store solely {@link String} pairs.&lt;br&gt;
+ * &lt;br&gt;
+ * It is used for SQL data storage purpose, and allow {@link String}, boolean, int, long and double manipulation.
+ */
+public abstract class MemoSet extends ConcurrentHashMap&lt;String, String&gt;
+{
+	private static final long serialVersionUID = 1L;
+	
+	protected abstract void onSet(String key, String value);
+	
+	protected abstract void onUnset(String key);
+	
+	protected MemoSet()
+	{
+		super();
+	}
+	
+	protected MemoSet(final int size)
+	{
+		super(size);
+	}
+	
+	protected MemoSet(final Map&lt;String, String&gt; m)
+	{
+		super(m);
+	}
+	
+	public final void set(final String key, final String value)
+	{
+		onSet(key, value);
+		
+		put(key, value);
+	}
+	
+	public void set(final String key, final boolean value)
+	{
+		set(key, String.valueOf(value));
+	}
+	
+	public void set(final String key, final int value)
+	{
+		set(key, String.valueOf(value));
+	}
+	
+	public void set(final String key, final long value)
+	{
+		set(key, String.valueOf(value));
+	}
+	
+	public void set(final String key, final double value)
+	{
+		set(key, String.valueOf(value));
+	}
+	
+	public void set(final String key, final Enum&lt;?&gt; value)
+	{
+		set(key, String.valueOf(value));
+	}
+	
+	public final void unset(String key)
+	{
+		onUnset(key);
+		
+		remove(key);
+	}
+	
+	public boolean getBool(final String key)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Boolean.parseBoolean(val);
+		
+		throw new IllegalArgumentException(&quot;MemoSet : Boolean value required, but found: &quot; + val + &quot; for key: &quot; + key + &quot;.&quot;);
+	}
+	
+	public boolean getBool(final String key, final boolean defaultValue)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Boolean.parseBoolean(val);
+		
+		return defaultValue;
+	}
+	
+	public int getInteger(final String key)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Integer.parseInt(val);
+		
+		throw new IllegalArgumentException(&quot;MemoSet : Integer value required, but found: &quot; + val + &quot; for key: &quot; + key + &quot;.&quot;);
+	}
+	
+	public int getInteger(final String key, final int defaultValue)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Integer.parseInt(val);
+		
+		return defaultValue;
+	}
+	
+	public long getLong(final String key)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Long.parseLong(val);
+		
+		throw new IllegalArgumentException(&quot;MemoSet : Long value required, but found: &quot; + val + &quot; for key: &quot; + key + &quot;.&quot;);
+	}
+	
+	public long getLong(final String key, final long defaultValue)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Long.parseLong(val);
+		
+		return defaultValue;
+	}
+	
+	public double getDouble(final String key)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Double.parseDouble(val);
+		
+		throw new IllegalArgumentException(&quot;MemoSet : Double value required, but found: &quot; + val + &quot; for key: &quot; + key + &quot;.&quot;);
+	}
+	
+	public double getDouble(final String key, final double defaultValue)
+	{
+		final String val = get(key);
+		if (val != null)
+			return Double.parseDouble(val);
+		
+		return defaultValue;
+	}
+	
+	public &lt;E extends Enum&lt;E&gt;&gt; E getEnum(final String name, final Class&lt;E&gt; enumClass)
+	{
+		final String val = get(name);
+		
+		if (val != null)
+			return Enum.valueOf(enumClass, val);
+		
+		throw new IllegalArgumentException(&quot;Enum value of type &quot; + enumClass.getName() + &quot; required, but found: &quot; + val + &quot;.&quot;);
+	}
+	
+	public &lt;E extends Enum&lt;E&gt;&gt; E getEnum(final String name, final Class&lt;E&gt; enumClass, final E defaultValue)
+	{
+		final String val = get(name);
+		
+		if (val != null)
+			return Enum.valueOf(enumClass, val);
+		
+		return defaultValue;
+	}
+}</pre>
+            
+</body>
+</html>

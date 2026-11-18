@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/status/PlayableStatus.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/status/PlayableStatus.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.status;
+
+import com.shnok.javaserver.gameserver.data.manager.ZoneManager;
+import com.shnok.javaserver.gameserver.data.xml.PlayerLevelData;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.enums.skills.Stats;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.zone.type.SwampZone;
+
+public class PlayableStatus&lt;T extends Playable&gt; extends CreatureStatus&lt;T&gt;
+{
+	private long _exp = 0;
+	private int _sp = 0;
+	
+	protected int _level = 1;
+	
+	public PlayableStatus(T actor)
+	{
+		super(actor);
+	}
+	
+	@Override
+	public int getLevel()
+	{
+		return _level;
+	}
+	
+	public void setLevel(int value)
+	{
+		_level = value;
+	}
+	
+	@Override
+	public float getMoveSpeed()
+	{
+		// Get base value.
+		float baseValue = getBaseMoveSpeed();
+		
+		// Calculate swamp area malus.
+		if (_actor.isInsideZone(ZoneId.SWAMP))
+		{
+			final SwampZone zone = ZoneManager.getInstance().getZone(_actor, SwampZone.class);
+			if (zone != null)
+				baseValue *= (100 + zone.getMoveBonus()) / 100.0;
+		}
+		
+		return (float) calcStat(Stats.RUN_SPEED, baseValue, null, null);
+	}
+	
+	public long getExp()
+	{
+		return _exp;
+	}
+	
+	public void setExp(long value)
+	{
+		_exp = value;
+	}
+	
+	public int getSp()
+	{
+		return _sp;
+	}
+	
+	public void setSp(int value)
+	{
+		_sp = value;
+	}
+	
+	public boolean addExp(long value)
+	{
+		if ((getExp() + value) &lt; 0)
+			return true;
+		
+		if (getExp() + value &gt;= PlayerLevelData.getInstance().getRequiredExpForHighestLevel())
+			value = PlayerLevelData.getInstance().getRequiredExpForHighestLevel() - 1 - getExp();
+		
+		setExp(getExp() + value);
+		
+		byte level = 0;
+		for (level = 1; level &lt;= PlayerLevelData.getInstance().getMaxLevel(); level++)
+		{
+			if (getExp() &gt;= getExpForLevel(level))
+				continue;
+			
+			level--;
+			break;
+		}
+		
+		if (level != getLevel())
+			addLevel((byte) (level - getLevel()));
+		
+		return true;
+	}
+	
+	public boolean removeExp(long value)
+	{
+		if ((getExp() - value) &lt; 0)
+			value = getExp() - 1;
+		
+		setExp(getExp() - value);
+		
+		byte level = 0;
+		for (level = 1; level &lt;= PlayerLevelData.getInstance().getMaxLevel(); level++)
+		{
+			if (getExp() &gt;= getExpForLevel(level))
+				continue;
+			
+			level--;
+			break;
+		}
+		
+		if (level != getLevel())
+			addLevel((byte) (level - getLevel()));
+		
+		return true;
+	}
+	
+	public boolean addExpAndSp(long addToExp, int addToSp)
+	{
+		boolean expAdded = false;
+		boolean spAdded = false;
+		
+		if (addToExp &gt;= 0)
+			expAdded = addExp(addToExp);
+		
+		if (addToSp &gt;= 0)
+			spAdded = addSp(addToSp);
+		
+		return expAdded || spAdded;
+	}
+	
+	public boolean removeExpAndSp(long removeExp, int removeSp)
+	{
+		boolean expRemoved = false;
+		boolean spRemoved = false;
+		
+		if (removeExp &gt; 0)
+			expRemoved = removeExp(removeExp);
+		
+		if (removeSp &gt; 0)
+			spRemoved = removeSp(removeSp);
+		
+		return expRemoved || spRemoved;
+	}
+	
+	public boolean addLevel(byte value)
+	{
+		if (getLevel() + value &gt; PlayerLevelData.getInstance().getRealMaxLevel())
+		{
+			if (getLevel() &lt; PlayerLevelData.getInstance().getRealMaxLevel())
+				value = (byte) (PlayerLevelData.getInstance().getRealMaxLevel() - getLevel());
+			else
+				return false;
+		}
+		
+		boolean levelIncreased = (getLevel() + value &gt; getLevel());
+		value += getLevel();
+		setLevel(value);
+		
+		// Sync up exp with current level
+		if (getExp() &gt;= getExpForLevel(getLevel() + 1) || getExpForLevel(getLevel()) &gt; getExp())
+			setExp(getExpForLevel(getLevel()));
+		
+		if (!levelIncreased)
+			return false;
+		
+		setMaxHpMp();
+		
+		return true;
+	}
+	
+	public boolean addSp(int value)
+	{
+		if (value &lt; 0)
+			return false;
+		
+		int currentSp = getSp();
+		if (currentSp == Integer.MAX_VALUE)
+			return false;
+		
+		if (currentSp &gt; Integer.MAX_VALUE - value)
+			value = Integer.MAX_VALUE - currentSp;
+		
+		setSp(currentSp + value);
+		return true;
+	}
+	
+	public boolean removeSp(int value)
+	{
+		setSp(Math.max(0, getSp() - value));
+		return true;
+	}
+	
+	public long getExpForLevel(int level)
+	{
+		return 0;
+	}
+	
+	public long getExpForThisLevel()
+	{
+		return 0;
+	}
+	
+	public long getExpForNextLevel()
+	{
+		return 0;
+	}
+}</pre>
+            
+</body>
+</html>

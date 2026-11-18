@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/UModelExtractor.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/UModelExtractor.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using UnityEngine;
+
+public static class UModelExtractor
+{
+    static string SilentWorkDir =&gt; Path.Combine(ViewerPaths.ViewerCacheDir, &quot;umodel-work&quot;);
+
+    public static bool IsAvailable
+    {
+        get
+        {
+            ViewerPaths.EnsureLoaded();
+            return !string.IsNullOrEmpty(ViewerPaths.Config.umodelExe)
+                   &amp;&amp; File.Exists(ViewerPaths.Config.umodelExe);
+        }
+    }
+
+    public static string ExtractObject(string packagePath, string objectName, string classHint, out string log)
+    {
+        log = &quot;&quot;;
+        ViewerPaths.EnsureLoaded();
+        if (!IsAvailable || string.IsNullOrEmpty(packagePath) || !File.Exists(packagePath))
+            return null;
+
+        string outDir = Path.Combine(
+            ViewerPaths.ExtractDir,
+            Path.GetFileNameWithoutExtension(packagePath),
+            Sanitize(objectName));
+        Directory.CreateDirectory(outDir);
+        EnsureSilentConfig();
+
+        var classes = BuildClassOrder(classHint);
+        var combined = new StringBuilder();
+        foreach (string cls in classes)
+        {
+            int code = Run(packagePath, objectName, cls, outDir, combined);
+            string found = FindExported(outDir, objectName);
+            if (found != null)
+            {
+                log = combined.ToString();
+                File.WriteAllText(Path.Combine(outDir, objectName + &quot;.umodel.log.txt&quot;), log);
+                return outDir;
+            }
+            combined.AppendLine($&quot;// class={cls} exit={code}&quot;);
+        }
+
+        log = combined.ToString();
+        return Directory.Exists(outDir) ? outDir : null;
+    }
+
+    static List&lt;string&gt; BuildClassOrder(string classHint)
+    {
+        var list = new List&lt;string&gt;();
+        void add(string c)
+        {
+            if (!string.IsNullOrEmpty(c) &amp;&amp; !list.Contains(c))
+                list.Add(c);
+        }
+        add(classHint);
+        if (string.Equals(classHint, &quot;Texture&quot;, StringComparison.OrdinalIgnoreCase))
+            add(&quot;Texture&quot;);
+        else
+        {
+            add(&quot;StaticMesh&quot;);
+            add(&quot;VertMesh&quot;);
+            add(&quot;SkeletalMesh&quot;);
+        }
+        add(null);
+        return list;
+    }
+
+    static int Run(string packagePath, string objectName, string classHint, string outDir, StringBuilder log)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = ViewerPaths.Config.umodelExe,
+            WorkingDirectory = SilentWorkDir,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        psi.ArgumentList.Add(&quot;-export&quot;);
+        psi.ArgumentList.Add(&quot;-png&quot;);
+        psi.ArgumentList.Add(&quot;-psk&quot;);
+        psi.ArgumentList.Add(&quot;-game=l2&quot;);
+        // umodel keeps only the last -path. Mesh .usx/.ukx is passed by full path;
+        // texture dir must be the search path so StaticMesh materials resolve (fx_m_t*).
+        string searchPath = UModelSearchPath(packagePath);
+        if (!string.IsNullOrEmpty(searchPath))
+            psi.ArgumentList.Add(&quot;-path=&quot; + searchPath);
+        psi.ArgumentList.Add(&quot;-out=&quot; + outDir);
+        psi.ArgumentList.Add(packagePath);
+        psi.ArgumentList.Add(objectName);
+        if (!string.IsNullOrEmpty(classHint))
+            psi.ArgumentList.Add(classHint);
+
+        using var process = Process.Start(psi);
+        if (process == null)
+        {
+            log.AppendLine(&quot;failed to start umodel&quot;);
+            return -1;
+        }
+
+        log.Append(process.StandardOutput.ReadToEnd());
+        log.Append(process.StandardError.ReadToEnd());
+        if (!process.WaitForExit(180000))
+        {
+            try { process.Kill(); } catch { }
+            log.AppendLine(&quot;umodel timed out&quot;);
+            return -2;
+        }
+        return process.ExitCode;
+    }
+
+    static string UModelSearchPath(string packagePath)
+    {
+        ViewerPaths.EnsureLoaded();
+        string texDir = ViewerPaths.Config.texturePackageDir;
+        if (!string.IsNullOrEmpty(texDir) &amp;&amp; Directory.Exists(texDir))
+            return texDir;
+        string packageDir = Path.GetDirectoryName(packagePath);
+        return Directory.Exists(packageDir) ? packageDir : &quot;&quot;;
+    }
+
+    static string FindExported(string dir, string objectName)
+    {
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+            return null;
+        string[] exts = { &quot;.png&quot;, &quot;.tga&quot;, &quot;.psk&quot;, &quot;.pskx&quot; };
+        foreach (string ext in exts)
+        {
+            string[] hits = Directory.GetFiles(dir, objectName + ext, SearchOption.AllDirectories);
+            if (hits.Length &gt; 0)
+                return hits[0];
+        }
+        return null;
+    }
+
+    static void EnsureSilentConfig()
+    {
+        Directory.CreateDirectory(SilentWorkDir);
+        string cfg = Path.Combine(SilentWorkDir, &quot;umodel.cfg&quot;);
+        if (File.Exists(cfg))
+            return;
+        File.WriteAllText(cfg,
+            &quot;Export =\n{\n    ExportDdsTexture = false\n    TextureFormat = 2\n    DontOverwriteFiles = false\n}\n&quot; +
+            &quot;bShowExportOptions = false\n&quot; +
+            &quot;bShowSaveOptions = false\n&quot;);
+    }
+
+    static string Sanitize(string name)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, &#x27;_&#x27;);
+        return name;
+    }
+}
+</pre>
+            
+</body>
+</html>

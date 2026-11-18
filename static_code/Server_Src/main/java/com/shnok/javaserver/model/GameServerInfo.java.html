@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/model/GameServerInfo.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/model/GameServerInfo.java</h1>
+            <pre>package com.shnok.javaserver.model;
+
+import com.shnok.javaserver.enums.ServerStatus;
+import com.shnok.javaserver.thread.GameServerThread;
+import com.shnok.javaserver.util.ServerNameDAO;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+
+@Getter
+@Setter
+@Log4j2
+public class GameServerInfo {
+    // auth
+    private int id;
+    private final byte[] hexId;
+    private boolean isAuthed;
+    // status
+    private GameServerThread gameServerThread;
+    private int status;
+    // network
+    private String hostname;
+    private int port;
+    // config
+    private final boolean isPvp = true;
+    private int maxPlayers;
+
+    /**
+     * Instantiates a new game server info.
+     * @param id the id
+     * @param hexId the hex id
+     * @param gameServerThread the gst
+     */
+    public GameServerInfo(int id, byte[] hexId, GameServerThread gameServerThread) {
+        this.id = id;
+        this.hexId = hexId;
+        this.gameServerThread = gameServerThread;
+        status = ServerStatus.STATUS_DOWN.getCode();
+    }
+
+    /**
+     * Instantiates a new game server info.
+     * @param id the id
+     * @param hexId the hex id
+     */
+    public GameServerInfo(int id, byte[] hexId) {
+        this(id, hexId, null);
+    }
+
+    public String getName() {
+        return ServerNameDAO.getServer(id);
+    }
+
+    public void setStatus(int value) {
+        status = value;
+        log.info(&quot;Server {}[{}] status changed to {}.&quot;, getName(),
+                getId(), getStatusName());
+    }
+
+    public String getStatusName() {
+         switch (status) {
+            case 0: return &quot;Light&quot;;
+            case 1: return &quot;Normal&quot;;
+            case 2: return &quot;Heavy&quot;;
+            case 3: return &quot;Full&quot;;
+            case 4: return &quot;Down&quot;;
+            case 5: return &quot;GM Only&quot;;
+            default: return &quot;Unknown&quot;;
+        }
+    }
+
+    /**
+     * Gets the current player count.
+     * @return the current player count
+     */
+    public int getCurrentPlayerCount() {
+        if (gameServerThread == null) {
+            return 0;
+        }
+        return gameServerThread.getPlayerCount();
+    }
+
+    /**
+     * Sets the down.
+     */
+    public void setDown() {
+        setAuthed(false);
+        setPort(0);
+        setGameServerThread(null);
+        setStatus(ServerStatus.STATUS_DOWN.getCode());
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/db/entity/DBAccountInfo.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/db/entity/DBAccountInfo.java</h1>
+            <pre>package com.shnok.javaserver.db.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = &quot;ACCOUNTS&quot;)
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class DBAccountInfo {
+    @Id
+    @Column(name = &quot;login&quot;)
+    private String login;
+    @Column(name = &quot;password&quot;)
+    private String passHash;
+    @Column(name = &quot;access_level&quot;)
+    private int accessLevel;
+    @Column(name = &quot;last_server&quot;)
+    private int lastServer;
+    @Column(name = &quot;last_ip&quot;)
+    private String lastIp;
+    @Column(name = &quot;last_active&quot;)
+    private Long lastActive;
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q021_HiddenTruth.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q021_HiddenTruth.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q021_HiddenTruth extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q021_HiddenTruth&quot;;
+	
+	// NPCs
+	private static final int MYSTERIOUS_WIZARD = 31522;
+	private static final int TOMBSTONE = 31523;
+	private static final int VON_HELLMAN_DUKE = 31524;
+	private static final int VON_HELLMAN_PAGE = 31525;
+	private static final int BROKEN_BOOKSHELF = 31526;
+	private static final int AGRIPEL = 31348;
+	private static final int DOMINIC = 31350;
+	private static final int BENEDICT = 31349;
+	private static final int INNOCENTIN = 31328;
+	
+	// Items
+	private static final int CROSS_OF_EINHASAD = 7140;
+	private static final int CROSS_OF_EINHASAD_NEXT_QUEST = 7141;
+	
+	// Sounds
+	private static final String SOUND_HORROR = &quot;SkillSound5.horror_02&quot;;
+	private static final String SOUND_ITEM_DROP = &quot;ItemSound.item_drop_equip_armor_cloth&quot;;
+	
+	private Npc _duke;
+	private Npc _page;
+	
+	public Q021_HiddenTruth()
+	{
+		super(21, &quot;Hidden Truth&quot;);
+		
+		setItemsIds(CROSS_OF_EINHASAD);
+		
+		addQuestStart(MYSTERIOUS_WIZARD);
+		addTalkId(MYSTERIOUS_WIZARD, TOMBSTONE, VON_HELLMAN_DUKE, VON_HELLMAN_PAGE, BROKEN_BOOKSHELF, AGRIPEL, DOMINIC, BENEDICT, INNOCENTIN);
+		
+		addDecayed(VON_HELLMAN_DUKE, VON_HELLMAN_PAGE);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31522-02.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31523-03.htm&quot;))
+		{
+			if (_duke == null)
+			{
+				if (st.getCond() == 1)
+					st.setCond(2);
+				
+				_duke = addSpawn(VON_HELLMAN_DUKE, 51432, -54570, -3136, 0, false, 300000, true);
+				_duke.broadcastNpcSay(NpcStringId.ID_2150);
+			}
+			else
+				htmltext = &quot;31523-04.htm&quot;;
+			
+			playSound(player, SOUND_HORROR);
+		}
+		else if (event.equalsIgnoreCase(&quot;31524-06.htm&quot;))
+		{
+			if (spawnThePage(player))
+			{
+				st.setCond(3);
+				playSound(player, SOUND_MIDDLE);
+			}
+			else
+				htmltext = &quot;31524-06a.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;31526-03.htm&quot;))
+		{
+			playSound(player, SOUND_ITEM_DROP);
+		}
+		else if (event.equalsIgnoreCase(&quot;31526-07.htm&quot;))
+		{
+			st.set(&quot;truth&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31526-08.htm&quot;))
+		{
+			st.setCond(5);
+			st.unset(&quot;end_walk&quot;);
+			st.unset(&quot;truth&quot;);
+			
+			if (_page != null)
+				_page.deleteMe();
+			
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31526-14.htm&quot;))
+		{
+			st.setCond(6);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, CROSS_OF_EINHASAD, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31328-05.htm&quot;))
+		{
+			if (player.getInventory().hasItem(CROSS_OF_EINHASAD))
+			{
+				takeItems(player, CROSS_OF_EINHASAD, 1);
+				giveItems(player, CROSS_OF_EINHASAD_NEXT_QUEST, 1);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(false);
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;2102&quot;))
+		{
+			npc.broadcastNpcSay(NpcStringId.ID_2151, player.getName());
+			
+			startQuestTimer(&quot;2103&quot;, npc, player, 9000);
+		}
+		else if (name.equalsIgnoreCase(&quot;2103&quot;))
+		{
+			npc.broadcastNpcSay(NpcStringId.ID_2152, player.getName());
+			
+			QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+			if (st != null)
+				st.set(&quot;end_walk&quot;, 1);
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 63) ? &quot;31522-03.htm&quot; : &quot;31522-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case MYSTERIOUS_WIZARD:
+						htmltext = &quot;31522-05.htm&quot;;
+						break;
+					
+					case TOMBSTONE:
+						if (cond == 1 || cond == 2 || cond == 3)
+							htmltext = &quot;31523-01.htm&quot;;
+						break;
+					
+					case VON_HELLMAN_DUKE:
+						if (cond == 2)
+							htmltext = &quot;31524-01.htm&quot;;
+						else if (cond == 3)
+						{
+							if (st.getInteger(&quot;end_walk&quot;) == 0)
+							{
+								if (spawnThePage(player))
+								{
+									st.set(&quot;end_walk&quot;, 0);
+									htmltext = &quot;31524-07.htm&quot;;
+								}
+								else
+									htmltext = &quot;31524-07a.htm&quot;;
+							}
+							else
+							{
+								htmltext = &quot;31524-07b.htm&quot;;
+								st.setCond(4);
+								playSound(player, SOUND_MIDDLE);
+							}
+						}
+						else if (cond == 4)
+							htmltext = &quot;31524-07b.htm&quot;;
+						else if (cond &gt; 4)
+							htmltext = &quot;31524-07c.htm&quot;;
+						break;
+					
+					case VON_HELLMAN_PAGE:
+						if (cond == 3)
+						{
+							if (st.getInteger(&quot;end_walk&quot;) == 1)
+							{
+								htmltext = &quot;31525-02.htm&quot;;
+								st.setCond(4);
+								playSound(player, SOUND_MIDDLE);
+							}
+							else
+								htmltext = &quot;31525-01.htm&quot;;
+						}
+						else if (cond == 4)
+							htmltext = &quot;31525-02.htm&quot;;
+						break;
+					
+					case BROKEN_BOOKSHELF:
+						if ((cond == 3 &amp;&amp; st.getInteger(&quot;end_walk&quot;) == 1))
+							htmltext = &quot;31526-01.htm&quot;;
+						else if (cond == 4)
+						{
+							if (st.getInteger(&quot;truth&quot;) == 0)
+								htmltext = &quot;31526-01.htm&quot;;
+							else
+							{
+								htmltext = &quot;31526-10.htm&quot;;
+								
+								st.setCond(5);
+								st.unset(&quot;end_walk&quot;);
+								st.unset(&quot;truth&quot;);
+								
+								if (_page != null)
+									_page.deleteMe();
+								
+								playSound(player, SOUND_MIDDLE);
+							}
+						}
+						else if (cond == 5)
+							htmltext = &quot;31526-11.htm&quot;;
+						else if (cond == 6)
+							htmltext = &quot;31526-15.htm&quot;;
+						break;
+					
+					case AGRIPEL, BENEDICT, DOMINIC:
+						if ((cond == 6 || cond == 7) &amp;&amp; player.getInventory().hasItem(CROSS_OF_EINHASAD))
+						{
+							int npcId = npc.getNpcId();
+							
+							// For cond 6, make checks until cond 7 is activated.
+							if (cond == 6)
+							{
+								int npcId1 = 0;
+								int npcId2 = 0;
+								
+								if (npcId == AGRIPEL)
+								{
+									npcId1 = BENEDICT;
+									npcId2 = DOMINIC;
+								}
+								else if (npcId == BENEDICT)
+								{
+									npcId1 = AGRIPEL;
+									npcId2 = DOMINIC;
+								}
+								else if (npcId == DOMINIC)
+								{
+									npcId1 = AGRIPEL;
+									npcId2 = BENEDICT;
+								}
+								
+								if (st.getInteger(String.valueOf(npcId1)) == 1 &amp;&amp; st.getInteger(String.valueOf(npcId2)) == 1)
+								{
+									st.setCond(7);
+									playSound(player, SOUND_MIDDLE);
+								}
+								else
+									st.set(String.valueOf(npcId), 1);
+							}
+							
+							htmltext = npcId + &quot;-01.htm&quot;;
+						}
+						break;
+					
+					case INNOCENTIN:
+						if (cond == 7 &amp;&amp; player.getInventory().hasItem(CROSS_OF_EINHASAD))
+							htmltext = &quot;31328-01.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				if (npc.getNpcId() == INNOCENTIN)
+					htmltext = &quot;31328-06.htm&quot;;
+				else
+					htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onDecayed(Npc npc)
+	{
+		if (npc == _duke)
+		{
+			_duke = null;
+		}
+		else if (npc == _page)
+		{
+			cancelQuestTimers(_page);
+			_page = null;
+		}
+	}
+	
+	private boolean spawnThePage(Player player)
+	{
+		if (_page == null)
+		{
+			_page = addSpawn(VON_HELLMAN_PAGE, 51608, -54520, -3168, 0, false, 90000, true);
+			
+			startQuestTimer(&quot;2102&quot;, _page, player, 500);
+			return true;
+		}
+		
+		return false;
+	}
+}</pre>
+            
+</body>
+</html>

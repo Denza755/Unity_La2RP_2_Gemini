@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/ActionWindow/ActionWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/ActionWindow/ActionWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xmlns=&quot;UnityEngine.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;WindowTemplate&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;amp;type=3#WindowTemplate&quot; /&gt;
+    &lt;ui:Template name=&quot;L2SlotContainer&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2SlotContainer/L2SlotContainer.uxml?fileID=9197481963319205126&amp;amp;guid=67f2ae460501d60439fd529481631728&amp;amp;type=3#L2SlotContainer&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ActionWindow/ActionWindow.uss?fileID=7433441132597879392&amp;amp;guid=f4d84007fdeb6b546a816ff6abeec917&amp;amp;type=3#ActionWindow&quot; /&gt;
+    &lt;ui:Instance template=&quot;WindowTemplate&quot; name=&quot;WindowTemplate&quot; class=&quot;action-window&quot; style=&quot;height: 564px; width: 315px; position: absolute;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Content&quot; class=&quot;action-window-content&quot;&gt;
+            &lt;ui:VisualElement name=&quot;Category&quot; class=&quot;action-window-category&quot;&gt;
+                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Basic&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Title&quot; class=&quot;action-window-category-title l2-color-3&quot; /&gt;
+                &lt;ui:Instance template=&quot;L2SlotContainer&quot; name=&quot;BasicSlots&quot; class=&quot;action-window-category-slots&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;Category&quot; class=&quot;action-window-category&quot; style=&quot;margin-top: 4px;&quot;&gt;
+                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Party&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Title&quot; class=&quot;action-window-category-title l2-color-3&quot; /&gt;
+                &lt;ui:Instance template=&quot;L2SlotContainer&quot; name=&quot;PartySlots&quot; class=&quot;action-window-category-slots&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;Category&quot; class=&quot;action-window-category&quot; style=&quot;margin-top: 4px;&quot;&gt;
+                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Token Action&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Title&quot; class=&quot;action-window-category-title l2-color-3&quot; /&gt;
+                &lt;ui:Instance template=&quot;L2SlotContainer&quot; name=&quot;TokenSlots&quot; class=&quot;action-window-category-slots&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;Category&quot; class=&quot;action-window-category&quot; style=&quot;margin-top: 4px;&quot;&gt;
+                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Social&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Title&quot; class=&quot;action-window-category-title l2-color-3&quot; /&gt;
+                &lt;ui:Instance template=&quot;L2SlotContainer&quot; name=&quot;SocialSlots&quot; class=&quot;action-window-category-slots&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:Instance&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

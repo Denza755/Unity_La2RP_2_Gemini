@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Animation/SkinnedMeshSync.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Animation/SkinnedMeshSync.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+[ExecuteInEditMode]
+public class SkinnedMeshSync : MonoBehaviour
+{
+    [SerializeField] private Transform _bodyPartsContainer;
+    [SerializeField] private SkinnedMeshRenderer _rootSkinnedRenderer;
+    [SerializeField] private SkinnedMeshRenderer[] _destSkinnedRenderer;
+    [SerializeField] private Transform _rootBone;
+
+    public Transform RootBone { get { return _rootBone; } }
+
+    private static readonly string[] OrcHead1Bone = new string[] {
+        &quot;Bip01_head&quot;
+    };
+
+    private static readonly string[] OrcHead7Bones = new string[] {
+        &quot;Bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;
+    };
+
+    private static readonly string[] OrcHead9Bones = new string[] {
+        &quot;Bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_R_Clavicle&quot;
+    };
+
+    private static readonly Dictionary&lt;string, string[]&gt; KnownPartBones = new Dictionary&lt;string, string[]&gt;(StringComparer.OrdinalIgnoreCase)
+    {
+        // === MOrc Body ===
+        { &quot;morc_m000_u&quot;, new string[] { &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;bip01_spine&quot;, &quot;Bip01_head&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot; } },
+        { &quot;morc_m000_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot; } },
+        { &quot;morc_m000_g&quot;, new string[] { &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot; } },
+        { &quot;morc_m000_b&quot;, new string[] { &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot; } },
+        { &quot;morc_m001_u&quot;, new string[] { &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;bip01_spine&quot;, &quot;Bip01_head&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot; } },
+        { &quot;morc_m001_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bone08&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bone16&quot;, &quot;Bone04&quot;, &quot;Bone14&quot;, &quot;Bone15&quot;, &quot;Bone21&quot;, &quot;Bone22&quot;, &quot;Bip01_L_Calf&quot;, &quot;Bone12&quot;, &quot;Bone13&quot;, &quot;Bone23&quot;, &quot;Bone24&quot;, &quot;Bone17&quot;, &quot;Bone18&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot; } },
+        { &quot;morc_m001_g&quot;, new string[] { &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot; } },
+        { &quot;morc_m001_b&quot;, new string[] { &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot; } },
+
+        // === MOrc Face &amp; Hair ===
+        { &quot;morc_m000_f&quot;, OrcHead1Bone },
+        { &quot;morc_m000_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m001_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m002_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m003_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m004_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m008_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m009_m00_bh&quot;, OrcHead1Bone },
+        { &quot;morc_m000_m00_ah&quot;, OrcHead1Bone },
+
+        // === FOrc Body ===
+        { &quot;forc_m000_u&quot;, new string[] { &quot;Bip01_Neck&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;bip01_spine&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_head&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_R_Bone&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot; } },
+        { &quot;forc_m000_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot; } },
+        { &quot;forc_m000_g&quot;, new string[] { &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot; } },
+        { &quot;forc_m000_b&quot;, new string[] { &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_R_Toe0&quot; } },
+        { &quot;forc_m001_u&quot;, new string[] { &quot;Bip01_Neck&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;bip01_spine&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_head&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_R_Bone&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot; } },
+        { &quot;forc_m001_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;Bone21&quot;, &quot;Bone43&quot;, &quot;Bone44&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Bone50&quot;, &quot;Bone51&quot;, &quot;Bone41&quot;, &quot;Bone05&quot;, &quot;Bone45&quot;, &quot;Bone46&quot;, &quot;Bone47&quot;, &quot;Bone48&quot; } },
+        { &quot;forc_m001_g&quot;, new string[] { &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot; } },
+        { &quot;forc_m001_b&quot;, new string[] { &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_R_Toe0&quot; } },
+
+        // === FOrc Face &amp; Hair ===
+        { &quot;forc_m000_f&quot;, OrcHead1Bone },
+        { &quot;forc_m000_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m001_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m002_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m003_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m004_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m005_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m006_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m008_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m009_m00_bh&quot;, OrcHead1Bone },
+        { &quot;forc_m000_m00_ah&quot;, OrcHead1Bone },
+
+        // === MShaman Body ===
+        { &quot;mshaman_m000_u&quot;, new string[] { &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot; } },
+        { &quot;mshaman_m000_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot; } },
+        { &quot;mshaman_m000_g&quot;, new string[] { &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot; } },
+        { &quot;mshaman_m000_b&quot;, new string[] { &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot; } },
+        { &quot;mshaman_m001_u&quot;, new string[] { &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot; } },
+        { &quot;mshaman_m001_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;Bone02_01&quot;, &quot;Bone02_02&quot;, &quot;Bone02_03&quot;, &quot;Bone02_04&quot;, &quot;Bone03_01&quot;, &quot;Bone03_02&quot;, &quot;Bone03_03&quot;, &quot;Bone03_04&quot;, &quot;bip01_spine&quot;, &quot;Bone05_01&quot;, &quot;Bone05_02&quot;, &quot;Bone05_03&quot;, &quot;Bone05_04&quot;, &quot;Bone001&quot;, &quot;Bone04_01&quot;, &quot;Bone04_02&quot;, &quot;Bone04_03&quot;, &quot;Bone04_04&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot; } },
+        { &quot;mshaman_m001_g&quot;, new string[] { &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot; } },
+        { &quot;mshaman_m001_b&quot;, new string[] { &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot; } },
+
+        // === MShaman Face &amp; Hair ===
+        { &quot;mshaman_m000_f&quot;, OrcHead1Bone },
+        { &quot;mshaman_m000_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m001_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m002_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m003_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m004_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m008_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m009_m00_bh&quot;, OrcHead1Bone },
+        { &quot;mshaman_m000_m00_ah&quot;, OrcHead1Bone },
+
+        // === FShaman Body ===
+        { &quot;fshaman_m000_u&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_R_Bone&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot; } },
+        { &quot;fshaman_m000_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot; } },
+        { &quot;fshaman_m000_g&quot;, new string[] { &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot; } },
+        { &quot;fshaman_m000_b&quot;, new string[] { &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot; } },
+        { &quot;fshaman_m001_u&quot;, new string[] { &quot;Breast_L_Bone&quot;, &quot;Breast_R_Bone&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot; } },
+        { &quot;fshaman_m001_l&quot;, new string[] { &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bone09_01&quot;, &quot;Bone001&quot;, &quot;Bone09_02&quot;, &quot;Bone09_03&quot;, &quot;Bone09_04&quot;, &quot;Bone08_01&quot;, &quot;Bone08_02&quot;, &quot;Bone08_03&quot;, &quot;Bone08_04&quot;, &quot;Bone07_01&quot;, &quot;Bone07_02&quot;, &quot;Bone07_03&quot;, &quot;Bone07_04&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot; } },
+        { &quot;fshaman_m001_g&quot;, new string[] { &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot; } },
+        { &quot;fshaman_m001_b&quot;, new string[] { &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot; } },
+
+        // === FShaman Face &amp; Hair ===
+        { &quot;fshaman_m000_f&quot;, OrcHead1Bone },
+        { &quot;fshaman_m000_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m001_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m002_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m003_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m004_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m005_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m006_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m008_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m009_m00_bh&quot;, OrcHead1Bone },
+        { &quot;fshaman_m000_m00_ah&quot;, OrcHead1Bone },
+
+        // === mfighter Gloves (70 bones) ===
+        { &quot;mfighter_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Bone02&quot;, &quot;Bone04&quot;, &quot;Dummy01&quot;, &quot;Bone17&quot;, &quot;Bone18&quot;, &quot;Dummy11&quot;, &quot;Bone06&quot;, &quot;Bone07&quot;, &quot;Dummy12&quot;, &quot;Bone23&quot;, &quot;Bone24&quot;, &quot;Dummy16&quot;, &quot;Bone21&quot;, &quot;Bone22&quot;, &quot;Dummy15&quot;, &quot;Bone19&quot;, &quot;Bone20&quot;, &quot;Dummy14&quot; } },
+        { &quot;mfighter_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Bone02&quot;, &quot;Bone04&quot;, &quot;Dummy01&quot;, &quot;Bone17&quot;, &quot;Bone18&quot;, &quot;Dummy11&quot;, &quot;Bone06&quot;, &quot;Bone07&quot;, &quot;Dummy12&quot;, &quot;Bone23&quot;, &quot;Bone24&quot;, &quot;Dummy16&quot;, &quot;Bone21&quot;, &quot;Bone22&quot;, &quot;Dummy15&quot;, &quot;Bone19&quot;, &quot;Bone20&quot;, &quot;Dummy14&quot; } },
+
+        // === ffighter Gloves (76 bones) ===
+        { &quot;ffighter_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_L_Bone_Dummy&quot;, &quot;Breast_R_Bone&quot;, &quot;Breast_R_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone21&quot;, &quot;Bone07&quot;, &quot;Bone40&quot;, &quot;Bone41&quot;, &quot;Dummy01&quot;, &quot;Bone43&quot;, &quot;Bone44&quot;, &quot;Dummy02&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Dummy03&quot;, &quot;Bone47&quot;, &quot;Bone48&quot;, &quot;Dummy05&quot;, &quot;Bone49&quot;, &quot;Bone50&quot;, &quot;Dummy06&quot;, &quot;Bone45&quot;, &quot;Bone46&quot;, &quot;Dummy04&quot;, &quot;Bone03&quot;, &quot;Dummy07&quot; } },
+        { &quot;ffighter_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_L_Bone_Dummy&quot;, &quot;Breast_R_Bone&quot;, &quot;Breast_R_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone21&quot;, &quot;Bone07&quot;, &quot;Bone40&quot;, &quot;Bone41&quot;, &quot;Dummy01&quot;, &quot;Bone43&quot;, &quot;Bone44&quot;, &quot;Dummy02&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Dummy03&quot;, &quot;Bone47&quot;, &quot;Bone48&quot;, &quot;Dummy05&quot;, &quot;Bone49&quot;, &quot;Bone50&quot;, &quot;Dummy06&quot;, &quot;Bone45&quot;, &quot;Bone46&quot;, &quot;Dummy04&quot;, &quot;Bone03&quot;, &quot;Dummy07&quot; } },
+
+        // === melf Gloves (66 bones) ===
+        { &quot;melf_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone08&quot;, &quot;Bone06&quot;, &quot;Dummy02&quot;, &quot;Bone05&quot;, &quot;Dummy03&quot;, &quot;Bone18&quot;, &quot;Bone02&quot;, &quot;Dummy10&quot;, &quot;Bone19&quot;, &quot;Dummy11&quot;, &quot;Bone20&quot;, &quot;Dummy12&quot;, &quot;Bone11&quot;, &quot;Bone01&quot;, &quot;Dummy01&quot;, &quot;Bone09&quot; } },
+        { &quot;melf_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone08&quot;, &quot;Bone06&quot;, &quot;Dummy02&quot;, &quot;Bone05&quot;, &quot;Dummy03&quot;, &quot;Bone18&quot;, &quot;Bone02&quot;, &quot;Dummy10&quot;, &quot;Bone19&quot;, &quot;Dummy11&quot;, &quot;Bone20&quot;, &quot;Dummy12&quot;, &quot;Bone11&quot;, &quot;Bone01&quot;, &quot;Dummy01&quot;, &quot;Bone09&quot; } },
+
+        // === felf Gloves (70 bones) ===
+        { &quot;felf_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Bone03&quot;, &quot;Bone04&quot;, &quot;Skirt_RS_Bone_Dummy02&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Skirt_RS_Bone_Dummy03&quot;, &quot;Skirt L Bone&quot;, &quot;Bone05&quot;, &quot;Dummy02&quot;, &quot;Skirt R Bone&quot;, &quot;Bone10&quot;, &quot;Dummy16&quot;, &quot;Bone06&quot;, &quot;Bone07&quot;, &quot;Skirt_B_Bone_Dummy&quot;, &quot;Bone11&quot;, &quot;Bone12&quot;, &quot;Skirt_B_Bone_Dummy01&quot; } },
+        { &quot;felf_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Bone03&quot;, &quot;Bone04&quot;, &quot;Skirt_RS_Bone_Dummy02&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Skirt_RS_Bone_Dummy03&quot;, &quot;Skirt L Bone&quot;, &quot;Bone05&quot;, &quot;Dummy02&quot;, &quot;Skirt R Bone&quot;, &quot;Bone10&quot;, &quot;Dummy16&quot;, &quot;Bone06&quot;, &quot;Bone07&quot;, &quot;Skirt_B_Bone_Dummy&quot;, &quot;Bone11&quot;, &quot;Bone12&quot;, &quot;Skirt_B_Bone_Dummy01&quot; } },
+
+        // === mdarkelf Gloves (82 bones) ===
+        { &quot;mdarkelf_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Shield_L_Bone&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Collar_L_Bone&quot;, &quot;Collar_L_Bone_Dummy&quot;, &quot;Collar_R_Bone&quot;, &quot;Collar_R_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone03&quot;, &quot;Bone07&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Bone10&quot;, &quot;Dummy02&quot;, &quot;Bone36&quot;, &quot;Bone37&quot;, &quot;Bone38&quot;, &quot;Bone39&quot;, &quot;Dummy15&quot;, &quot;Bone40&quot;, &quot;Bone41&quot;, &quot;Bone42&quot;, &quot;Dummy16&quot;, &quot;Bone43&quot;, &quot;Bone44&quot;, &quot;Bone45&quot;, &quot;Dummy17&quot;, &quot;Bone33&quot;, &quot;Bone34&quot;, &quot;Bone35&quot;, &quot;Dummy14&quot;, &quot;Bone19&quot;, &quot;Bone23&quot;, &quot;Bone29&quot;, &quot;Dummy12&quot; } },
+        { &quot;mdarkelf_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Shield_L_Bone&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Collar_L_Bone&quot;, &quot;Collar_L_Bone_Dummy&quot;, &quot;Collar_R_Bone&quot;, &quot;Collar_R_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone03&quot;, &quot;Bone07&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Bone10&quot;, &quot;Dummy02&quot;, &quot;Bone36&quot;, &quot;Bone37&quot;, &quot;Bone38&quot;, &quot;Bone39&quot;, &quot;Dummy15&quot;, &quot;Bone40&quot;, &quot;Bone41&quot;, &quot;Bone42&quot;, &quot;Dummy16&quot;, &quot;Bone43&quot;, &quot;Bone44&quot;, &quot;Bone45&quot;, &quot;Dummy17&quot;, &quot;Bone33&quot;, &quot;Bone34&quot;, &quot;Bone35&quot;, &quot;Dummy14&quot;, &quot;Bone19&quot;, &quot;Bone23&quot;, &quot;Bone29&quot;, &quot;Dummy12&quot; } },
+
+        // === fdarkelf Gloves (84 bones) ===
+        { &quot;fdarkelf_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Collar_L_Bone&quot;, &quot;Collar_L_Bone_Dummy&quot;, &quot;Collar_R_Bone&quot;, &quot;Collar_R_Bone_Dummy&quot;, &quot;Breast_R_Bone&quot;, &quot;Breast_R_Bone_Dummy&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_L_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;skirt_Bone01&quot;, &quot;skirt_Bone02&quot;, &quot;LF_skirt_bone01&quot;, &quot;LF_skirt_bone02&quot;, &quot;LF_skirt_bone03&quot;, &quot;LF_skirt_bone04&quot;, &quot;LF_skirt_bone05&quot;, &quot;RF_skirt_bone01&quot;, &quot;RF_skirt_bone02&quot;, &quot;RF_skirt_bone03&quot;, &quot;RF_skirt_bone04&quot;, &quot;RF_skirt_bone05&quot;, &quot;RB_skirt_bone01&quot;, &quot;RB_skirt_bone02&quot;, &quot;RB_skirt_bone03&quot;, &quot;RB_skirt_bone04&quot;, &quot;LB_skirt_bone01&quot;, &quot;LB_skirt_bone02&quot;, &quot;LB_skirt_bone03&quot;, &quot;LB_skirt_bone04&quot;, &quot;RS_skirt_bone01&quot;, &quot;RS_skirt_bone02&quot;, &quot;RS_skirt_bone03&quot;, &quot;LS_skirt_bone01&quot;, &quot;LS_skirt_bone02&quot;, &quot;LS_skirt_bone03&quot; } },
+        { &quot;fdarkelf_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Collar_L_Bone&quot;, &quot;Collar_L_Bone_Dummy&quot;, &quot;Collar_R_Bone&quot;, &quot;Collar_R_Bone_Dummy&quot;, &quot;Breast_R_Bone&quot;, &quot;Breast_R_Bone_Dummy&quot;, &quot;Breast_L_Bone&quot;, &quot;Breast_L_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;skirt_Bone01&quot;, &quot;skirt_Bone02&quot;, &quot;LF_skirt_bone01&quot;, &quot;LF_skirt_bone02&quot;, &quot;LF_skirt_bone03&quot;, &quot;LF_skirt_bone04&quot;, &quot;LF_skirt_bone05&quot;, &quot;RF_skirt_bone01&quot;, &quot;RF_skirt_bone02&quot;, &quot;RF_skirt_bone03&quot;, &quot;RF_skirt_bone04&quot;, &quot;RF_skirt_bone05&quot;, &quot;RB_skirt_bone01&quot;, &quot;RB_skirt_bone02&quot;, &quot;RB_skirt_bone03&quot;, &quot;RB_skirt_bone04&quot;, &quot;LB_skirt_bone01&quot;, &quot;LB_skirt_bone02&quot;, &quot;LB_skirt_bone03&quot;, &quot;LB_skirt_bone04&quot;, &quot;RS_skirt_bone01&quot;, &quot;RS_skirt_bone02&quot;, &quot;RS_skirt_bone03&quot;, &quot;LS_skirt_bone01&quot;, &quot;LS_skirt_bone02&quot;, &quot;LS_skirt_bone03&quot; } },
+
+        // === mdwarf Gloves (76 bones) ===
+        { &quot;mdwarf_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01 Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Shield_L_Bone&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Bone03&quot;, &quot;Bone06&quot;, &quot;Dummy13&quot;, &quot;Bone15&quot;, &quot;Bone16&quot;, &quot;Dummy16&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Dummy10&quot;, &quot;Bone17&quot;, &quot;Bone18&quot;, &quot;Dummy17&quot;, &quot;Bone07&quot;, &quot;Bone14&quot;, &quot;Dummy15&quot;, &quot;Bone12&quot;, &quot;Bone13&quot;, &quot;Dummy14&quot;, &quot;Bone10&quot;, &quot;Bone11&quot;, &quot;Dummy11&quot;, &quot;Bone04&quot;, &quot;Bone05&quot;, &quot;Dummy12&quot; } },
+        { &quot;mdwarf_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01 Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Shield_L_Bone&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone08&quot;, &quot;Bone09&quot;, &quot;Bone03&quot;, &quot;Bone06&quot;, &quot;Dummy13&quot;, &quot;Bone15&quot;, &quot;Bone16&quot;, &quot;Dummy16&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Dummy10&quot;, &quot;Bone17&quot;, &quot;Bone18&quot;, &quot;Dummy17&quot;, &quot;Bone07&quot;, &quot;Bone14&quot;, &quot;Dummy15&quot;, &quot;Bone12&quot;, &quot;Bone13&quot;, &quot;Dummy14&quot;, &quot;Bone10&quot;, &quot;Bone11&quot;, &quot;Dummy11&quot;, &quot;Bone04&quot;, &quot;Bone05&quot;, &quot;Dummy12&quot; } },
+
+        // === fdwarf Gloves (86 bones) ===
+        { &quot;fdwarf_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Shield_L_Bone&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Bone03&quot;, &quot;Bone04&quot;, &quot;Bone09&quot;, &quot;Dummy05&quot;, &quot;Bone05&quot;, &quot;Bone08&quot;, &quot;Bone15&quot;, &quot;Dummy06&quot;, &quot;Bone65&quot;, &quot;Bone66&quot;, &quot;Bone67&quot;, &quot;Dummy04&quot;, &quot;Bone62&quot;, &quot;Bone63&quot;, &quot;Bone64&quot;, &quot;Dummy08&quot;, &quot;Bone59&quot;, &quot;Bone60&quot;, &quot;Bone61&quot;, &quot;Dummy07&quot;, &quot;Bone06&quot;, &quot;Bone07&quot;, &quot;Bone10&quot;, &quot;Dummy03&quot;, &quot;Bone68&quot;, &quot;Bone69&quot;, &quot;Bone70&quot;, &quot;Bone71&quot;, &quot;Dummy10&quot;, &quot;Bone11&quot;, &quot;Bone12&quot;, &quot;Bone13&quot;, &quot;Bone14&quot;, &quot;Dummy09&quot; } },
+        { &quot;fdwarf_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Shield_L_Bone&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0R&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1R&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone02&quot;, &quot;Bone03&quot;, &quot;Bone04&quot;, &quot;Bone09&quot;, &quot;Dummy05&quot;, &quot;Bone05&quot;, &quot;Bone08&quot;, &quot;Bone15&quot;, &quot;Dummy06&quot;, &quot;Bone65&quot;, &quot;Bone66&quot;, &quot;Bone67&quot;, &quot;Dummy04&quot;, &quot;Bone62&quot;, &quot;Bone63&quot;, &quot;Bone64&quot;, &quot;Dummy08&quot;, &quot;Bone59&quot;, &quot;Bone60&quot;, &quot;Bone61&quot;, &quot;Dummy07&quot;, &quot;Bone06&quot;, &quot;Bone07&quot;, &quot;Bone10&quot;, &quot;Dummy03&quot;, &quot;Bone68&quot;, &quot;Bone69&quot;, &quot;Bone70&quot;, &quot;Bone71&quot;, &quot;Dummy10&quot;, &quot;Bone11&quot;, &quot;Bone12&quot;, &quot;Bone13&quot;, &quot;Bone14&quot;, &quot;Dummy09&quot; } },
+
+        // === mmagic Gloves (86 bones) ===
+        { &quot;mmagic_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone01-01&quot;, &quot;Bone01-02&quot;, &quot;Bone01-03&quot;, &quot;Bone01-04&quot;, &quot;Bone01-05&quot;, &quot;Dummy01&quot;, &quot;Bone02-01&quot;, &quot;Bone02-02&quot;, &quot;Bone02-03&quot;, &quot;Bone02-04&quot;, &quot;Dummy02&quot;, &quot;Bone03-01&quot;, &quot;Bone03-02&quot;, &quot;Bone03-03&quot;, &quot;Bone03-04&quot;, &quot;Bone03-05&quot;, &quot;Dummy03&quot;, &quot;Bone04-01&quot;, &quot;Bone04-02&quot;, &quot;Bone04-03&quot;, &quot;Bone04-04&quot;, &quot;Bone04-05&quot;, &quot;Dummy04&quot;, &quot;Bone05-01&quot;, &quot;Bone05-02&quot;, &quot;Bone05-03&quot;, &quot;Bone05-04&quot;, &quot;Dummy05&quot;, &quot;Bone06-01&quot;, &quot;Bone06-02&quot;, &quot;Bone06-03&quot;, &quot;Bone06-04&quot;, &quot;Bone06-05&quot;, &quot;Dummy06&quot;, &quot;Bone02&quot; } },
+        { &quot;mmagic_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone01-01&quot;, &quot;Bone01-02&quot;, &quot;Bone01-03&quot;, &quot;Bone01-04&quot;, &quot;Bone01-05&quot;, &quot;Dummy01&quot;, &quot;Bone02-01&quot;, &quot;Bone02-02&quot;, &quot;Bone02-03&quot;, &quot;Bone02-04&quot;, &quot;Dummy02&quot;, &quot;Bone03-01&quot;, &quot;Bone03-02&quot;, &quot;Bone03-03&quot;, &quot;Bone03-04&quot;, &quot;Bone03-05&quot;, &quot;Dummy03&quot;, &quot;Bone04-01&quot;, &quot;Bone04-02&quot;, &quot;Bone04-03&quot;, &quot;Bone04-04&quot;, &quot;Bone04-05&quot;, &quot;Dummy04&quot;, &quot;Bone05-01&quot;, &quot;Bone05-02&quot;, &quot;Bone05-03&quot;, &quot;Bone05-04&quot;, &quot;Dummy05&quot;, &quot;Bone06-01&quot;, &quot;Bone06-02&quot;, &quot;Bone06-03&quot;, &quot;Bone06-04&quot;, &quot;Bone06-05&quot;, &quot;Dummy06&quot;, &quot;Bone02&quot; } },
+        { &quot;mmagic_m005_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shield_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone01&quot;, &quot;Bone01-01&quot;, &quot;Bone01-02&quot;, &quot;Bone01-03&quot;, &quot;Bone01-04&quot;, &quot;Bone01-05&quot;, &quot;Dummy01&quot;, &quot;Bone02-01&quot;, &quot;Bone02-02&quot;, &quot;Bone02-03&quot;, &quot;Bone02-04&quot;, &quot;Dummy02&quot;, &quot;Bone03-01&quot;, &quot;Bone03-02&quot;, &quot;Bone03-03&quot;, &quot;Bone03-04&quot;, &quot;Bone03-05&quot;, &quot;Dummy03&quot;, &quot;Bone04-01&quot;, &quot;Bone04-02&quot;, &quot;Bone04-03&quot;, &quot;Bone04-04&quot;, &quot;Bone04-05&quot;, &quot;Dummy04&quot;, &quot;Bone05-01&quot;, &quot;Bone05-02&quot;, &quot;Bone05-03&quot;, &quot;Bone05-04&quot;, &quot;Dummy05&quot;, &quot;Bone06-01&quot;, &quot;Bone06-02&quot;, &quot;Bone06-03&quot;, &quot;Bone06-04&quot;, &quot;Bone06-05&quot;, &quot;Dummy06&quot;, &quot;Bone02&quot; } },
+
+        // === fmagic Gloves (90 bones) ===
+        { &quot;fmagic_m000_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone03&quot;, &quot;Bone03-01&quot;, &quot;Bone03-02&quot;, &quot;Bone03-03&quot;, &quot;Bone03-04&quot;, &quot;Bone03-05&quot;, &quot;Dummy03&quot;, &quot;Bone02-01&quot;, &quot;Bone02-02&quot;, &quot;Bone02-03&quot;, &quot;Bone02-04&quot;, &quot;Bone02-05&quot;, &quot;Dummy02&quot;, &quot;Bone04-01&quot;, &quot;Bone04-02&quot;, &quot;Bone04-03&quot;, &quot;Bone04-04&quot;, &quot;Bone04-05&quot;, &quot;Dummy04&quot;, &quot;Bone05-01&quot;, &quot;Bone05-02&quot;, &quot;Bone05-03&quot;, &quot;Bone05-04&quot;, &quot;Bone05-05&quot;, &quot;Dummy05&quot;, &quot;Bone06-01&quot;, &quot;Bone06-02&quot;, &quot;Bone06-03&quot;, &quot;Bone06-04&quot;, &quot;Bone06-05&quot;, &quot;Bone06-06&quot;, &quot;Dummy06&quot;, &quot;Bone72&quot;, &quot;Bone01-01&quot;, &quot;Bone01-02&quot;, &quot;Bone01-03&quot;, &quot;Bone01-04&quot;, &quot;Bone01-05&quot;, &quot;Bone01-06&quot;, &quot;Dummy01&quot; } },
+        { &quot;fmagic_m001_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone03&quot;, &quot;Bone03-01&quot;, &quot;Bone03-02&quot;, &quot;Bone03-03&quot;, &quot;Bone03-04&quot;, &quot;Bone03-05&quot;, &quot;Dummy03&quot;, &quot;Bone02-01&quot;, &quot;Bone02-02&quot;, &quot;Bone02-03&quot;, &quot;Bone02-04&quot;, &quot;Bone02-05&quot;, &quot;Dummy02&quot;, &quot;Bone04-01&quot;, &quot;Bone04-02&quot;, &quot;Bone04-03&quot;, &quot;Bone04-04&quot;, &quot;Bone04-05&quot;, &quot;Dummy04&quot;, &quot;Bone05-01&quot;, &quot;Bone05-02&quot;, &quot;Bone05-03&quot;, &quot;Bone05-04&quot;, &quot;Bone05-05&quot;, &quot;Dummy05&quot;, &quot;Bone06-01&quot;, &quot;Bone06-02&quot;, &quot;Bone06-03&quot;, &quot;Bone06-04&quot;, &quot;Bone06-05&quot;, &quot;Bone06-06&quot;, &quot;Dummy06&quot;, &quot;Bone72&quot;, &quot;Bone01-01&quot;, &quot;Bone01-02&quot;, &quot;Bone01-03&quot;, &quot;Bone01-04&quot;, &quot;Bone01-05&quot;, &quot;Bone01-06&quot;, &quot;Dummy01&quot; } },
+        { &quot;fmagic_m003_g&quot;, new string[] { &quot;bip01&quot;, &quot;Bip01_Pelvis&quot;, &quot;bip01_spine&quot;, &quot;Bip01_L_Thigh&quot;, &quot;Bip01_L_Calf&quot;, &quot;bip01_l_foot&quot;, &quot;Bip01_L_Toe0&quot;, &quot;Bip01_L_Toe0Nub&quot;, &quot;Bip01_R_Thigh&quot;, &quot;Bip01_R_Calf&quot;, &quot;bip01_r_foot&quot;, &quot;Bip01_R_Toe0&quot;, &quot;Bip01_R_Toe0Nub&quot;, &quot;Bip01_Spine1&quot;, &quot;bip01_spine2&quot;, &quot;Bip01_Neck&quot;, &quot;Bip01_head&quot;, &quot;Bip01_HeadNub&quot;, &quot;Bip01_L_Clavicle&quot;, &quot;Bip01_L_UpperArm&quot;, &quot;Bip01_L_Forearm&quot;, &quot;Bip01_L_Hand&quot;, &quot;Bip01_L_Finger0&quot;, &quot;Bip01_L_Finger01&quot;, &quot;Bip01_L_Finger0Nub&quot;, &quot;Bip01_L_Finger1&quot;, &quot;Bip01_L_Finger11&quot;, &quot;Bip01_L_Finger1Nub&quot;, &quot;Weapon_L_Bone&quot;, &quot;Shield_L_Bone&quot;, &quot;Shoulder_L_Bone&quot;, &quot;Shoulder_L_Bone_Dummy&quot;, &quot;Bip01_R_Clavicle&quot;, &quot;Bip01_R_UpperArm&quot;, &quot;Bip01_R_Forearm&quot;, &quot;Bip01_R_Hand&quot;, &quot;Bip01_R_Finger0&quot;, &quot;Bip01_R_Finger01&quot;, &quot;Bip01_R_Finger0Nub&quot;, &quot;Bip01_R_Finger1&quot;, &quot;Bip01_R_Finger11&quot;, &quot;Bip01_R_Finger1Nub&quot;, &quot;Shield_R_Bone&quot;, &quot;Weapon_R_Bone&quot;, &quot;Shoulder_R_Bone&quot;, &quot;Shoulder_R_Bone_Dummy&quot;, &quot;Cape_Bone&quot;, &quot;Cape_Bone_Dummy&quot;, &quot;Sheath_L_Bone&quot;, &quot;Sheath_L_Bone_Dummy&quot;, &quot;Bone03&quot;, &quot;Bone03-01&quot;, &quot;Bone03-02&quot;, &quot;Bone03-03&quot;, &quot;Bone03-04&quot;, &quot;Bone03-05&quot;, &quot;Dummy03&quot;, &quot;Bone02-01&quot;, &quot;Bone02-02&quot;, &quot;Bone02-03&quot;, &quot;Bone02-04&quot;, &quot;Bone02-05&quot;, &quot;Dummy02&quot;, &quot;Bone04-01&quot;, &quot;Bone04-02&quot;, &quot;Bone04-03&quot;, &quot;Bone04-04&quot;, &quot;Bone04-05&quot;, &quot;Dummy04&quot;, &quot;Bone05-01&quot;, &quot;Bone05-02&quot;, &quot;Bone05-03&quot;, &quot;Bone05-04&quot;, &quot;Bone05-05&quot;, &quot;Dummy05&quot;, &quot;Bone06-01&quot;, &quot;Bone06-02&quot;, &quot;Bone06-03&quot;, &quot;Bone06-04&quot;, &quot;Bone06-05&quot;, &quot;Bone06-06&quot;, &quot;Dummy06&quot;, &quot;Bone72&quot;, &quot;Bone01-01&quot;, &quot;Bone01-02&quot;, &quot;Bone01-03&quot;, &quot;Bone01-04&quot;, &quot;Bone01-05&quot;, &quot;Bone01-06&quot;, &quot;Dummy01&quot; } },
+    };
+
+    void Start()
+    {
+        SyncMesh();
+    }
+
+    void Update()
+    {
+#if (UNITY_EDITOR)
+        if (!EditorApplication.isPlaying)
+        {
+            SyncMesh();
+        }
+#endif
+    }
+
+    public void SyncMesh()
+    {
+        if (this.gameObject.activeSelf &amp;&amp; this.gameObject.activeInHierarchy)
+        {
+            StartCoroutine(SyncTask());
+        }
+    }
+
+    private IEnumerator SyncTask()
+    {
+        if (_bodyPartsContainer == null &amp;&amp; transform.parent != null &amp;&amp; transform.parent.childCount &gt; 1)
+        {
+            _bodyPartsContainer = transform.parent.GetChild(1);
+        }
+        if (_rootSkinnedRenderer == null &amp;&amp; transform.childCount &gt; 1)
+        {
+            _rootSkinnedRenderer = transform.GetChild(1).GetComponentInChildren&lt;SkinnedMeshRenderer&gt;();
+        }
+
+        yield return new WaitForEndOfFrame();
+
+        DoSync();
+    }
+
+    private void DoSync()
+    {
+        if (_bodyPartsContainer == null)
+        {
+            if (transform.parent != null &amp;&amp; transform.parent.childCount &gt; 1)
+            {
+                _bodyPartsContainer = transform.parent.GetChild(1);
+            }
+            if (_bodyPartsContainer == null)
+            {
+                _bodyPartsContainer = transform.FindRecursive(&quot;Bodyparts&quot;);
+            }
+        }
+        if (_bodyPartsContainer == null) return;
+        _bodyPartsContainer.gameObject.SetActive(true);
+
+        if (_rootSkinnedRenderer == null)
+        {
+            if (transform.childCount &gt; 1)
+            {
+                _rootSkinnedRenderer = transform.GetChild(1).GetComponentInChildren&lt;SkinnedMeshRenderer&gt;(true);
+            }
+            if (_rootSkinnedRenderer == null)
+            {
+                _rootSkinnedRenderer = GetComponentInChildren&lt;SkinnedMeshRenderer&gt;(true);
+            }
+            if (_rootSkinnedRenderer == null &amp;&amp; transform.parent != null)
+            {
+                _rootSkinnedRenderer = transform.parent.GetComponentInChildren&lt;SkinnedMeshRenderer&gt;(true);
+            }
+        }
+
+        // Retrieve ALL SkinnedMeshRenderers (including children)
+        _destSkinnedRenderer = _bodyPartsContainer.GetComponentsInChildren&lt;SkinnedMeshRenderer&gt;(true);
+
+        // Build bone map strictly from this character&#x27;s animated skeleton
+        Animator anim = GetComponentInChildren&lt;Animator&gt;(true);
+        if (anim == null &amp;&amp; transform.parent != null)
+        {
+            anim = transform.parent.GetComponentInChildren&lt;Animator&gt;(true);
+        }
+        Transform searchRoot = anim != null ? anim.transform : transform;
+        Transform[] allTransforms = searchRoot.GetComponentsInChildren&lt;Transform&gt;(true);
+        var boneMap = new Dictionary&lt;string, Transform&gt;(StringComparer.OrdinalIgnoreCase);
+        foreach (var t in allTransforms)
+        {
+            if (_bodyPartsContainer != null &amp;&amp; t.IsChildOf(_bodyPartsContainer)) continue;
+            if (!boneMap.ContainsKey(t.name))
+            {
+                boneMap[t.name] = t;
+            }
+        }
+
+        // Also search in parent/root (excluding body parts)
+        Transform topRoot = transform.parent != null ? transform.parent : transform;
+        foreach (var t in topRoot.GetComponentsInChildren&lt;Transform&gt;(true))
+        {
+            if (_bodyPartsContainer != null &amp;&amp; t.IsChildOf(_bodyPartsContainer)) continue;
+            if (!boneMap.ContainsKey(t.name))
+            {
+                boneMap[t.name] = t;
+            }
+        }
+
+        Transform charRootBone = null;
+        if (boneMap.TryGetValue(&quot;Bip01&quot;, out Transform bip))
+        {
+            charRootBone = bip;
+        }
+        else if (boneMap.TryGetValue(&quot;Bip01 Pelvis&quot;, out Transform pelvis))
+        {
+            charRootBone = pelvis;
+        }
+        else if (boneMap.TryGetValue(&quot;bip01_spine&quot;, out Transform spine))
+        {
+            charRootBone = spine;
+        }
+        else if (_rootSkinnedRenderer != null &amp;&amp; _rootSkinnedRenderer.rootBone != null)
+        {
+            if (boneMap.TryGetValue(_rootSkinnedRenderer.rootBone.name, out Transform liveRoot))
+            {
+                charRootBone = liveRoot;
+            }
+            else
+            {
+                charRootBone = _rootSkinnedRenderer.rootBone;
+            }
+        }
+        else if (_rootBone != null)
+        {
+            charRootBone = _rootBone;
+        }
+        _rootBone = charRootBone;
+
+        Transform headBone = null;
+        if (!boneMap.TryGetValue(&quot;Bip01_head&quot;, out headBone))
+        {
+            if (!boneMap.TryGetValue(&quot;Bip01 Head&quot;, out headBone))
+            {
+                if (!boneMap.TryGetValue(&quot;bip01_head&quot;, out headBone))
+                {
+                    foreach (var kvp in boneMap)
+                    {
+                        if (kvp.Key.IndexOf(&quot;head&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+                        {
+                            headBone = kvp.Value;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        Bounds bounds = new Bounds(Vector3.zero, new Vector3(5f, 5f, 5f));
+
+        foreach (var renderer in _destSkinnedRenderer)
+        {
+            if (renderer == null || renderer.sharedMesh == null) continue;
+
+            renderer.enabled = true;
+            renderer.transform.localScale = Vector3.one;
+            renderer.localBounds = bounds;
+            renderer.updateWhenOffscreen = true;
+
+            int bindposeCount = renderer.sharedMesh.bindposes != null ? renderer.sharedMesh.bindposes.Length : 0;
+            if (bindposeCount == 0) continue;
+
+            string partKey = renderer.gameObject.name.ToLowerInvariant().Replace(&quot;(clone)&quot;, &quot;&quot;).Trim();
+            string meshKey = renderer.sharedMesh.name.ToLowerInvariant().Trim();
+            bool isHeadOrHair = partKey.Contains(&quot;_f&quot;) || partKey.Contains(&quot;_h&quot;) || partKey.Contains(&quot;face&quot;) || partKey.Contains(&quot;hair&quot;) ||
+                               meshKey.Contains(&quot;_f&quot;) || meshKey.Contains(&quot;_h&quot;) || meshKey.Contains(&quot;face&quot;) || meshKey.Contains(&quot;hair&quot;);
+            bool isOrcOrShaman = partKey.StartsWith(&quot;morc&quot;) || partKey.StartsWith(&quot;forc&quot;) || partKey.StartsWith(&quot;mshaman&quot;) || partKey.StartsWith(&quot;fshaman&quot;) ||
+                                 meshKey.StartsWith(&quot;morc&quot;) || meshKey.StartsWith(&quot;forc&quot;) || meshKey.StartsWith(&quot;mshaman&quot;) || meshKey.StartsWith(&quot;fshaman&quot;);
+            Transform targetHeadOrRoot = (isHeadOrHair &amp;&amp; headBone != null) ? headBone : charRootBone;
+
+            // Strategy 1: Look up bone names by part/mesh name from KnownPartBones
+            string[] boneNames = null;
+            if (!KnownPartBones.TryGetValue(partKey, out boneNames))
+            {
+                KnownPartBones.TryGetValue(meshKey, out boneNames);
+            }
+
+            // Strategy 1b: Fallback for other armor tiers of known parts (e.g. morc_m002_u -&gt; morc_m000_u)
+            if (boneNames == null &amp;&amp; partKey.Contains(&quot;_m00&quot;) &amp;&amp; partKey.Length &gt;= 10)
+            {
+                int lastUnder = partKey.LastIndexOf(&#x27;_&#x27;);
+                if (lastUnder &gt; 0)
+                {
+                    string slot = partKey.Substring(lastUnder);
+                    string racePrefix = partKey.Split(&#x27;_&#x27;)[0];
+                    if (KnownPartBones.TryGetValue($&quot;{racePrefix}_m000{slot}&quot;, out string[] fb) &amp;&amp; fb.Length == bindposeCount)
+                    {
+                        boneNames = fb;
+                    }
+                    else if (KnownPartBones.TryGetValue($&quot;{racePrefix}_m001{slot}&quot;, out fb) &amp;&amp; fb.Length == bindposeCount)
+                    {
+                        boneNames = fb;
+                    }
+                    else if (KnownPartBones.TryGetValue($&quot;{racePrefix}_m003{slot}&quot;, out fb) &amp;&amp; fb.Length == bindposeCount)
+                    {
+                        boneNames = fb;
+                    }
+                    else if (KnownPartBones.TryGetValue($&quot;{racePrefix}_m005{slot}&quot;, out fb) &amp;&amp; fb.Length == bindposeCount)
+                    {
+                        boneNames = fb;
+                    }
+                }
+            }
+
+            // Strategy 1c: Generic Orc / Head / Hair dynamic detection
+            if (boneNames == null || boneNames.Length != bindposeCount)
+            {
+                if (bindposeCount == 1 &amp;&amp; (isHeadOrHair || isOrcOrShaman))
+                {
+                    boneNames = OrcHead1Bone;
+                }
+                else if (bindposeCount == 7 &amp;&amp; (isHeadOrHair || isOrcOrShaman))
+                {
+                    boneNames = OrcHead7Bones;
+                }
+                else if (bindposeCount == 9 &amp;&amp; (isHeadOrHair || isOrcOrShaman))
+                {
+                    boneNames = OrcHead9Bones;
+                }
+            }
+
+            if (boneNames != null &amp;&amp; boneNames.Length == bindposeCount)
+            {
+                Transform[] newBones = new Transform[boneNames.Length];
+                for (int i = 0; i &lt; boneNames.Length; i++)
+                {
+                    string bName = boneNames[i];
+                    if (boneMap.TryGetValue(bName, out Transform matched) ||
+                        boneMap.TryGetValue(bName.Replace(&quot; &quot;, &quot;_&quot;), out matched) ||
+                        boneMap.TryGetValue(bName.Replace(&quot;_&quot;, &quot; &quot;), out matched))
+                    {
+                        newBones[i] = matched;
+                    }
+                    else
+                    {
+                        newBones[i] = targetHeadOrRoot;
+                    }
+                }
+                renderer.bones = newBones;
+                if (targetHeadOrRoot != null) renderer.rootBone = targetHeadOrRoot;
+                continue;
+            }
+
+            // Strategy 2: Standard Lineage 2 race skeleton (Human, Elf, Dark Elf, Dwarf)
+            // Where _rootSkinnedRenderer.bones contains the full matching skeleton
+            if (_rootSkinnedRenderer != null &amp;&amp; _rootSkinnedRenderer.bones != null &amp;&amp;
+                _rootSkinnedRenderer.bones.Length == bindposeCount &amp;&amp;
+                _rootSkinnedRenderer.bones.Length &gt; 0 &amp;&amp;
+                _rootSkinnedRenderer.bones[0] != null)
+            {
+                Transform[] matchedBones = new Transform[_rootSkinnedRenderer.bones.Length];
+                bool allMatched = true;
+                for (int i = 0; i &lt; _rootSkinnedRenderer.bones.Length; i++)
+                {
+                    Transform b = _rootSkinnedRenderer.bones[i];
+                    if (b != null &amp;&amp; (boneMap.TryGetValue(b.name, out Transform liveB) ||
+                                      boneMap.TryGetValue(b.name.Replace(&quot; &quot;, &quot;_&quot;), out liveB) ||
+                                      boneMap.TryGetValue(b.name.Replace(&quot;_&quot;, &quot; &quot;), out liveB)))
+                    {
+                        matchedBones[i] = liveB;
+                    }
+                    else if (b != null)
+                    {
+                        matchedBones[i] = b;
+                    }
+                    else
+                    {
+                        allMatched = false;
+                        break;
+                    }
+                }
+
+                renderer.bones = allMatched ? matchedBones : _rootSkinnedRenderer.bones;
+
+                if (_rootSkinnedRenderer.rootBone != null &amp;&amp;
+                    (boneMap.TryGetValue(_rootSkinnedRenderer.rootBone.name, out Transform liveRoot) ||
+                     boneMap.TryGetValue(_rootSkinnedRenderer.rootBone.name.Replace(&quot; &quot;, &quot;_&quot;), out liveRoot) ||
+                     boneMap.TryGetValue(_rootSkinnedRenderer.rootBone.name.Replace(&quot;_&quot;, &quot; &quot;), out liveRoot)))
+                {
+                    renderer.rootBone = liveRoot;
+                }
+                else if (_rootSkinnedRenderer.rootBone != null)
+                {
+                    renderer.rootBone = _rootSkinnedRenderer.rootBone;
+                }
+                else if (charRootBone != null)
+                {
+                    renderer.rootBone = charRootBone;
+                }
+
+                continue;
+            }
+
+            // Strategy 3: Renderer already has live non-null bone array of matching length with named bones
+            if (renderer.bones != null &amp;&amp; renderer.bones.Length == bindposeCount &amp;&amp; renderer.bones.Length &gt; 0)
+            {
+                bool anyNonNull = false;
+                for (int i = 0; i &lt; renderer.bones.Length; i++)
+                {
+                    if (renderer.bones[i] != null)
+                    {
+                        anyNonNull = true;
+                        break;
+                    }
+                }
+
+                if (anyNonNull)
+                {
+                    Transform[] newBones = new Transform[renderer.bones.Length];
+                    for (int i = 0; i &lt; renderer.bones.Length; i++)
+                    {
+                        Transform b = renderer.bones[i];
+                        if (b != null &amp;&amp; (boneMap.TryGetValue(b.name, out Transform matched) ||
+                                          boneMap.TryGetValue(b.name.Replace(&quot; &quot;, &quot;_&quot;), out matched) ||
+                                          boneMap.TryGetValue(b.name.Replace(&quot;_&quot;, &quot; &quot;), out matched)))
+                        {
+                            newBones[i] = matched;
+                        }
+                        else if (b != null)
+                        {
+                            newBones[i] = b;
+                        }
+                        else
+                        {
+                            newBones[i] = targetHeadOrRoot;
+                        }
+                    }
+                    renderer.bones = newBones;
+                    if (targetHeadOrRoot != null) renderer.rootBone = targetHeadOrRoot;
+                    continue;
+                }
+            }
+
+            // Strategy 4: Fallback - ensure renderer.bones is non-null, correct length, and has no null entries
+            if (renderer.bones == null || renderer.bones.Length == 0 || renderer.bones.Length != bindposeCount)
+            {
+                Transform[] fallbackBones = new Transform[bindposeCount];
+                for (int i = 0; i &lt; bindposeCount; i++)
+                {
+                    fallbackBones[i] = targetHeadOrRoot;
+                }
+                renderer.bones = fallbackBones;
+            }
+            else
+            {
+                Transform[] curBones = renderer.bones;
+                bool hasNull = false;
+                for (int i = 0; i &lt; curBones.Length; i++)
+                {
+                    if (curBones[i] == null)
+                    {
+                        curBones[i] = targetHeadOrRoot;
+                        hasNull = true;
+                    }
+                }
+                if (hasNull)
+                {
+                    renderer.bones = curBones;
+                }
+            }
+            if (targetHeadOrRoot != null)
+            {
+                renderer.rootBone = targetHeadOrRoot;
+            }
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

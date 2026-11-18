@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCorpseZombie/WarriorCorpseZombie.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCorpseZombie/WarriorCorpseZombie.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.WarriorCorpseZombie;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.Warrior;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WarriorCorpseZombie extends Warrior
+{
+	public WarriorCorpseZombie()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/WarriorCorpseZombie&quot;);
+	}
+	
+	public WarriorCorpseZombie(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21554,
+		21548
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai0 = 0;
+		
+		if (getNpcIntAIParam(npc, &quot;IsPrivate&quot;) == 1)
+			startQuestTimerAtFixedRate(&quot;1004&quot;, npc, null, 20000, 20000);
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public void onNoDesire(Npc npc)
+	{
+		if (getNpcIntAIParam(npc, &quot;IsPrivate&quot;) == 1)
+		{
+			final Npc master = npc.getMaster();
+			if (master != null &amp;&amp; !master.isDead())
+				npc.getAI().addFollowDesire(master, 50);
+			else
+				npc.getAI().addWanderDesire(5, 5);
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1004&quot;))
+		{
+			final Npc master = npc.getMaster();
+			if (master != null &amp;&amp; master.isDead() &amp;&amp; getNpcIntAIParam(npc, &quot;IsPrivate&quot;) == 1)
+			{
+				if (npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST)
+				{
+					npc.decayMe();
+					return null;
+				}
+			}
+		}
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		if (Rnd.get(100) &lt; 10)
+			npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DEBUFF), 1000000);
+		
+		super.onMyDying(npc, killer);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (getNpcIntAIParam(npc, &quot;IsTeleport&quot;) != 0)
+		{
+			if (npc.distance2D(attacker) &gt; 100)
+			{
+				final Creature mostHated = npc.getAI().getAggroList().getMostHatedCreature();
+				if (mostHated == attacker &amp;&amp; Rnd.get(100) &lt; 10)
+				{
+					npc.abortAll(false);
+					npc.instantTeleportTo(attacker.getPosition().clone(), 0);
+					
+					final L2Skill avTeleport = SkillTable.getInstance().getInfo(4671, 1);
+					npc.getAI().addCastDesire(attacker, avTeleport, 1000000);
+					
+					if (attacker instanceof Playable)
+					{
+						double f0 = getHateRatio(npc, attacker);
+						f0 = (((1.0 * damage) / (npc.getStatus().getLevel() + 7)) + ((f0 / 100) * ((1.0 * damage) / (npc.getStatus().getLevel() + 7))));
+						
+						npc.getAI().addAttackDesire(attacker, f0 * 30);
+					}
+				}
+			}
+		}
+		
+		if (npc.getStatus().getHpRatio() &lt; 0.1 &amp;&amp; npc._i_ai0 == 0 &amp;&amp; Rnd.get(100) &lt; 10)
+		{
+			final L2Skill selfRangeDebuff = getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DEBUFF);
+			npc.getAI().addCastDesire(npc, selfRangeDebuff, 1000000);
+			
+			npc._i_ai0 = 1;
+		}
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (getNpcIntAIParam(called, &quot;IsTeleport&quot;) != 0)
+		{
+			if (called.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; called.distance2D(attacker) &gt; 100 &amp;&amp; Rnd.get(100) &lt; 10)
+			{
+				called.abortAll(false);
+				called.instantTeleportTo(attacker.getPosition().clone(), 0);
+				
+				final L2Skill avTeleport = SkillTable.getInstance().getInfo(4671, 1);
+				called.getAI().addCastDesire(attacker, avTeleport, 1000000);
+				
+				if (attacker instanceof Playable)
+				{
+					double f0 = getHateRatio(called, attacker);
+					f0 = (((1.0 * damage) / (called.getStatus().getLevel() + 7)) + ((f0 / 100) * ((1.0 * damage) / (called.getStatus().getLevel() + 7))));
+					
+					called.getAI().addAttackDesire(attacker, (int) (f0 * 30));
+				}
+			}
+		}
+		super.onClanAttacked(caller, called, attacker, damage, skill);
+	}
+}</pre>
+            
+</body>
+</html>

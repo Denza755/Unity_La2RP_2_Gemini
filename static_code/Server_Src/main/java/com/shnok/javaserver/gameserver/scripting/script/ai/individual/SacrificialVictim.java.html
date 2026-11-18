@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/SacrificialVictim.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/SacrificialVictim.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+public class SacrificialVictim extends DefaultNpc
+{
+	public SacrificialVictim()
+	{
+		super(&quot;ai/individual&quot;);
+	}
+	
+	public SacrificialVictim(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		32038
+	};
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (eventId == 3)
+		{
+			startQuestTimer(&quot;998&quot;, npc, null, 10000);
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;998&quot;))
+		{
+			npc.getAI().addSocialDesire(1, 7000, 1000);
+			startQuestTimer(&quot;999&quot;, npc, player, 5000);
+		}
+		else if (name.equalsIgnoreCase(&quot;999&quot;))
+		{
+			createOnePrivateEx(npc, 22145, npc.getX(), npc.getY(), npc.getZ(), 0, 0, true);
+			npc.deleteMe();
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+}
+</pre>
+            
+</body>
+</html>

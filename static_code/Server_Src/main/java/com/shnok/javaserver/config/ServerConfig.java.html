@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/config/ServerConfig.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/config/ServerConfig.java</h1>
+            <pre>package com.shnok.javaserver.config;
+
+import org.aeonbits.owner.Config.HotReload;
+import org.aeonbits.owner.Config.LoadPolicy;
+import org.aeonbits.owner.Config.Sources;
+import org.aeonbits.owner.Mutable;
+import org.aeonbits.owner.Reloadable;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.aeonbits.owner.Config.HotReloadType.ASYNC;
+import static org.aeonbits.owner.Config.LoadType.MERGE;
+
+@Sources({
+        &quot;file:./conf/server.properties&quot;,
+        &quot;classpath:conf/server.properties&quot;
+})
+@LoadPolicy(MERGE)
+@HotReload(value = 20, unit = MINUTES, type = ASYNC)
+public interface ServerConfig extends Mutable, Reloadable {
+    // Connection
+    @Key(&quot;loginserver.host&quot;)
+    String loginserverHost();
+    @Key(&quot;loginserver.port&quot;)
+    Integer loginserverPort();
+    @Key(&quot;gameserver.host&quot;)
+    String gameserverHost();
+    @Key(&quot;gameserver.port&quot;)
+    Integer gameserverPort();
+    @Key(&quot;revision&quot;)
+    Integer revision();
+    @Key(&quot;server.connection.timeout.ms&quot;)
+    Integer serverConnectionTimeoutMs();
+    @Key(&quot;accept.new.gameserver&quot;)
+    Boolean acceptNewGameserver();
+    @Key(&quot;server.account.autocreate&quot;)
+    Boolean autoCreateAccount();
+    @Key(&quot;server.account.autocreate.access.level&quot;)
+    Integer autoCreateAccountAccessLevel();
+    @Key(&quot;server.account.inactive.access.level&quot;)
+    Integer accountInactiveLevel();
+    @Key(&quot;server.show.license&quot;)
+    Boolean showLicense();
+    @Key(&quot;rsa.padding.mode.gameserver&quot;)
+    String gameserverRsaPaddingMode();
+    @Key(&quot;rsa.padding.mode.client&quot;)
+    String clientRsaPaddingMode();
+
+    // Database
+    @Key(&quot;database.jdbc.url&quot;)
+    String jdbcUrl();
+    @Key(&quot;database.jdbc.username&quot;)
+    String jdbcUsername();
+    @Key(&quot;database.jdbc.password&quot;)
+    @DefaultValue(&quot;&quot;)
+    String jdbcPassword();
+
+    //Logger
+    @Key(&quot;logger.print.received-packets&quot;)
+    Boolean printReceivedPackets();
+    @Key(&quot;logger.print.sent-packets&quot;)
+    Boolean printSentPackets();
+    @Key(&quot;logger.print.cryptography&quot;)
+    Boolean printCryptography();
+}
+</pre>
+            
+</body>
+</html>

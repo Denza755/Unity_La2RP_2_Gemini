@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminTeleport.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminTeleport.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.gameserver.enums.RestartType;
+import com.shnok.javaserver.gameserver.enums.TeleportMode;
+import com.shnok.javaserver.gameserver.geoengine.GeoEngine;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+
+public class AdminTeleport implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_instant_move&quot;, // alt+G menu
+		&quot;admin_recall&quot;, // alt+G menu
+		&quot;admin_sendhome&quot;, // alt+G menu
+		&quot;admin_tele&quot;,
+		&quot;admin_teleport&quot;,
+		&quot;admin_teleportto&quot; // alt+G menu
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		if (command.equals(&quot;admin_tele&quot;))
+		{
+			sendFile(player, &quot;teleports.htm&quot;);
+			return;
+		}
+		
+		final StringTokenizer st = new StringTokenizer(command);
+		st.nextToken();
+		
+		if (command.startsWith(&quot;admin_instant_move&quot;))
+		{
+			if (!st.hasMoreTokens())
+				player.setTeleportMode(TeleportMode.ONE_TIME);
+			else
+			{
+				try
+				{
+					final int mode = Integer.parseInt(st.nextToken());
+					if (mode &lt; 0 || mode &gt; 2)
+					{
+						player.sendMessage(&quot;Usage: //instant_move [0|1|2]&quot;);
+						return;
+					}
+					
+					player.setTeleportMode(TeleportMode.VALUES[mode]);
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //instant_move [0|1|2]&quot;);
+				}
+			}
+		}
+		else if (command.startsWith(&quot;admin_recall&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendPacket(SystemMessageId.INVALID_TARGET);
+				return;
+			}
+			
+			final String param = st.nextToken();
+			switch (param)
+			{
+				case &quot;clan&quot;:
+					if (!st.hasMoreTokens())
+					{
+						player.sendPacket(SystemMessageId.INVALID_TARGET);
+						return;
+					}
+					
+					Player worldPlayer = World.getInstance().getPlayer(st.nextToken());
+					if (worldPlayer == null)
+					{
+						player.sendPacket(SystemMessageId.INVALID_TARGET);
+						return;
+					}
+					
+					final Clan clan = worldPlayer.getClan();
+					if (clan == null)
+						worldPlayer.teleportTo(player.getPosition(), 0);
+					else
+					{
+						for (Player clanMember : clan.getOnlineMembers())
+							clanMember.teleportTo(player.getPosition(), 0);
+					}
+					
+					// Clean target to avoid to get &quot;ghost&quot; target upon worldPlayer.
+					player.setTarget(null);
+					break;
+				
+				case &quot;party&quot;:
+					if (!st.hasMoreTokens())
+					{
+						player.sendPacket(SystemMessageId.INVALID_TARGET);
+						return;
+					}
+					
+					worldPlayer = World.getInstance().getPlayer(st.nextToken());
+					if (worldPlayer == null)
+					{
+						player.sendPacket(SystemMessageId.INVALID_TARGET);
+						return;
+					}
+					
+					final Party party = worldPlayer.getParty();
+					if (party == null)
+						worldPlayer.teleportTo(player.getPosition(), 0);
+					else
+					{
+						for (Player partyMember : party.getMembers())
+							partyMember.teleportTo(player.getPosition(), 0);
+					}
+					
+					// Clean target to avoid to get &quot;ghost&quot; target upon worldPlayer.
+					player.setTarget(null);
+					break;
+				
+				default:
+					worldPlayer = World.getInstance().getPlayer(param);
+					if (worldPlayer == null)
+					{
+						player.sendPacket(SystemMessageId.INVALID_TARGET);
+						return;
+					}
+					
+					worldPlayer.teleportTo(player.getPosition(), 0);
+					
+					// Clean target to avoid to get &quot;ghost&quot; target upon worldPlayer.
+					player.setTarget(null);
+					break;
+			}
+		}
+		else if (command.startsWith(&quot;admin_sendhome&quot;))
+		{
+			Player targetPlayer;
+			
+			if (st.hasMoreTokens())
+			{
+				targetPlayer = World.getInstance().getPlayer(st.nextToken());
+				if (targetPlayer == null)
+				{
+					player.sendPacket(SystemMessageId.INVALID_TARGET);
+					return;
+				}
+			}
+			else
+				targetPlayer = getTargetPlayer(player, true);
+			
+			targetPlayer.teleportTo(RestartType.TOWN);
+			targetPlayer.setIsIn7sDungeon(false);
+		}
+		else if (command.startsWith(&quot;admin_teleportto&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendPacket(SystemMessageId.INVALID_TARGET);
+				return;
+			}
+			
+			final Player worldPlayer = World.getInstance().getPlayer(st.nextToken());
+			if (worldPlayer == null)
+			{
+				player.sendPacket(SystemMessageId.INVALID_TARGET);
+				return;
+			}
+			
+			player.teleportTo(worldPlayer.getPosition(), 0);
+		}
+		else if (command.startsWith(&quot;admin_teleport&quot;))
+		{
+			try
+			{
+				final int x = Integer.parseInt(st.nextToken());
+				final int y = Integer.parseInt(st.nextToken());
+				final int z = (st.hasMoreTokens()) ? Integer.parseInt(st.nextToken()) : GeoEngine.getInstance().getHeight(x, y, player.getZ());
+				
+				player.teleportTo(x, y, z, 0);
+			}
+			catch (Exception e)
+			{
+				sendFile(player, &quot;teleports.htm&quot;);
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

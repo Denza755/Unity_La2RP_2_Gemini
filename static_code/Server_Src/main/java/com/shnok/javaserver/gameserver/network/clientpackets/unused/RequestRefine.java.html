@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestRefine.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestRefine.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import com.shnok.javaserver.gameserver.data.xml.AugmentationData;
+import com.shnok.javaserver.gameserver.enums.ShortcutType;
+import com.shnok.javaserver.gameserver.model.Augmentation;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.item.LifeStone;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExVariationResult;
+
+public final class RequestRefine extends AbstractRefinePacket
+{
+	private int _targetItemObjId;
+	private int _refinerItemObjId;
+	private int _gemStoneItemObjId;
+	private int _gemStoneCount;
+	
+	@Override
+	protected void readImpl()
+	{
+		_targetItemObjId = readD();
+		_refinerItemObjId = readD();
+		_gemStoneItemObjId = readD();
+		_gemStoneCount = readD();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		final ItemInstance targetItem = player.getInventory().getItemByObjectId(_targetItemObjId);
+		if (targetItem == null)
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		final ItemInstance refinerItem = player.getInventory().getItemByObjectId(_refinerItemObjId);
+		if (refinerItem == null)
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		final ItemInstance gemStoneItem = player.getInventory().getItemByObjectId(_gemStoneItemObjId);
+		if (gemStoneItem == null)
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		if (!isValid(player, targetItem, refinerItem, gemStoneItem))
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		final LifeStone ls = getLifeStone(refinerItem.getItemId());
+		if (ls == null)
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		if (_gemStoneCount != targetItem.getItem().getCrystalType().getGemstoneCount())
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		// unequip item
+		if (targetItem.isEquipped())
+		{
+			player.getInventory().unequipItemInSlotAndRecord(targetItem.getLocationSlot());
+			player.broadcastUserInfo();
+		}
+		
+		// Consume the life stone
+		if (!player.destroyItem(refinerItem, 1, false))
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		// Consume gemstones
+		if (!player.destroyItem(gemStoneItem, _gemStoneCount, false))
+		{
+			player.sendPacket(ExVariationResult.RESULT_FAILED);
+			player.sendPacket(SystemMessageId.AUGMENTATION_FAILED_DUE_TO_INAPPROPRIATE_CONDITIONS);
+			return;
+		}
+		
+		final Augmentation aug = AugmentationData.getInstance().generateRandomAugmentation(ls.level(), ls.grade());
+		targetItem.setAugmentation(aug, player);
+		
+		final int stat12 = 0x0000FFFF &amp; aug.getId();
+		final int stat34 = aug.getId() &gt;&gt; 16;
+		player.sendPacket(new ExVariationResult(stat12, stat34, 1));
+		
+		// Refresh shortcuts.
+		player.getShortcutList().refreshShortcuts(s -&gt; targetItem.getObjectId() == s.getId() &amp;&amp; s.getType() == ShortcutType.ITEM);
+	}
+}</pre>
+            
+</body>
+</html>

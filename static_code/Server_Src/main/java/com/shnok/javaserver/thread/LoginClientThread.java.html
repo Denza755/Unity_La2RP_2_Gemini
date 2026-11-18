@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/thread/LoginClientThread.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/thread/LoginClientThread.java</h1>
+            <pre>package com.shnok.javaserver.thread;
+
+import com.shnok.javaserver.dto.SendablePacket;
+import com.shnok.javaserver.dto.external.serverpackets.*;
+import com.shnok.javaserver.enums.AccountKickedReason;
+import com.shnok.javaserver.enums.LoginClientState;
+import com.shnok.javaserver.enums.LoginFailReason;
+import com.shnok.javaserver.enums.PlayFailReason;
+import com.shnok.javaserver.enums.packettypes.external.ServerPacketType;
+import com.shnok.javaserver.model.SessionKey;
+import com.shnok.javaserver.security.LoginCrypt;
+import com.shnok.javaserver.security.Rnd;
+import com.shnok.javaserver.security.ScrambledKeyPair;
+import com.shnok.javaserver.service.LoginServerController;
+import com.shnok.javaserver.service.ThreadPoolManagerService;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
+
+import javax.swing.*;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.shnok.javaserver.config.Configuration.server;
+
+@Getter
+@Setter
+@Log4j2
+public class LoginClientThread extends Thread {
+    private final Socket connection;
+    private final String connectionIp;
+    public boolean authenticated;
+    private InputStream in;
+    private OutputStream out;
+    private String username;
+    private boolean clientReady = false;
+    private long lastEcho;
+    private Timer watchDog;
+    private LoginClientState loginClientState;
+    private final LoginCrypt loginCrypt;
+    private final ScrambledKeyPair scrambledPair;
+    private final byte[] blowfishKey;
+    private int accessLevel;
+    private int lastGameserver;
+    private boolean joinedGS;
+    private int sessionId;
+    private SessionKey sessionKey;
+    private Map&lt;Integer, Integer&gt; charsOnServers;
+    private Map&lt;Integer, long[]&gt; charsToDelete;
+    private int connectionTimeoutMs;
+    private int expectedCharacterCount;
+
+    public LoginClientThread(Socket con) {
+        connection = con;
+        connectionIp = con.getInetAddress().getHostAddress();
+        scrambledPair = LoginServerController.getInstance().getScrambledRSAKeyPair();
+        blowfishKey = LoginServerController.getInstance().getBlowfishKey();
+        loginCrypt = new LoginCrypt();
+        loginCrypt.setKey(blowfishKey);
+        sessionId = Rnd.nextInt();
+        connectionTimeoutMs = server.serverConnectionTimeoutMs();
+
+        try {
+            in = connection.getInputStream();
+            out = new BufferedOutputStream(connection.getOutputStream());
+            log.debug(&quot;New connection: {}&quot; + connectionIp);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        startReadingPackets();
+    }
+
+    private void startReadingPackets() {
+        int lengthHi;
+        int lengthLo;
+        int length;
+
+        try {
+//            System.out.println(&quot;MODULUS &quot; + ((RSAPublicKey) scrambledPair.getPair().getPublic()).getModulus().toByteArray().length +   &quot; : &quot; + Arrays.toString(((RSAPublicKey) scrambledPair.getPair().getPublic()).getModulus().toByteArray()));
+//            System.out.println(&quot;EXP: &quot; + Arrays.toString(((RSAPublicKey) scrambledPair.getPair().getPublic()).getPublicExponent().toByteArray()));
+//            System.out.println(&quot;SCRAMBLED: &quot; + Arrays.toString(getScrambledPair().getScrambledModulus()));
+
+            sendPacket(new InitPacket(getScrambledPair().getScrambledModulus(), getBlowfishKey(), sessionId));
+
+            for (; ; ) {
+                lengthLo = in.read();
+                lengthHi = in.read();
+                length = (lengthHi * 256) + lengthLo;
+
+                if ((lengthHi &lt; 0) || connection.isClosed()) {
+                    log.warn(&quot;Loginserver terminated the connection!&quot;);
+                    break;
+                }
+
+                int len = length - 2;
+                byte[] data = new byte[len];
+
+                int receivedBytes = 0;
+                int newBytes = 0;
+                while ((newBytes != -1) &amp;&amp; (receivedBytes &lt; (len))) {
+                    newBytes = in.read(data, 0, len);
+                    receivedBytes = receivedBytes + newBytes;
+                }
+
+                handlePacket(data);
+            }
+        } catch (Exception e) {
+            log.error(&quot;Exception while reading client packets.&quot;);
+        } finally {
+            log.info(&quot;User {} disconnected&quot;, connectionIp);
+            disconnect();
+        }
+    }
+
+    public void close(AccountKickedReason kickedReason) {
+        sendPacket(new AccountKickedPacket(kickedReason));
+        disconnect();
+    }
+
+    public void close(LoginFailReason failReason) {
+        sendPacket(new LoginFailPacket(failReason));
+        disconnect();
+    }
+
+    public void close(PlayFailReason failReason) {
+        sendPacket(new PlayFailPacket(failReason));
+        disconnect();
+    }
+
+    public void disconnect() {
+        try {
+            removeSelf();
+            connection.close();
+        } catch (IOException e) {
+            log.error(&quot;Error while closing connection.&quot;, e);
+        }
+    }
+
+    public boolean sendPacket(SendablePacket packet) {
+        ServerPacketType packetType = ServerPacketType.fromByte(packet.getType());
+
+        if(server.printSentPackets() &amp;&amp; packetType != ServerPacketType.Ping) {
+            log.debug(&quot;[CLIENT] Sent packet: {}&quot;, packetType);
+        }
+
+        if(server.printCryptography()) {
+            log.debug(&quot;---&gt; [CLIENT] Clear packet {} : {}&quot;, packet.getData().length, Arrays.toString(packet.getData()));
+        }
+        if(!encrypt(packet.getData(), packet.getData().length)) {
+            return false;
+        }
+        if(server.printCryptography()) {
+            log.debug(&quot;---&gt; [CLIENT] Encrypted packet {} : {}&quot;, packet.getData().length, Arrays.toString(packet.getData()));
+        }
+
+        try {
+            synchronized (out) {
+                int len = packet.getData().length + 2;
+                out.write((byte)(len) &amp; 0xff);
+                out.write((byte)((len) &gt;&gt; 8) &amp; 0xff);
+
+                for (byte b : packet.getData()) {
+                    out.write(b &amp; 0xFF);
+                }
+                out.flush();
+            }
+
+            return true;
+        } catch (IOException e) {
+            log.warn(&quot;Trying to send packet to a closed game client.&quot;);
+        }
+
+        return false;
+    }
+
+    void handlePacket(byte[] data) {
+        ThreadPoolManagerService.getInstance().handlePacket(new ClientPacketHandler(this, data));
+    }
+
+    public void setLastEcho(long lastEcho, Timer watchDog) {
+        if(this.watchDog != null) {
+            watchDog.stop();
+        }
+
+        this.lastEcho = lastEcho;
+        this.watchDog = watchDog;
+    }
+
+    void authenticate() {
+        log.debug(&quot;Authenticating new player.&quot;);
+
+    }
+
+    private void removeSelf() {
+        if (authenticated) {
+            authenticated = false;
+
+            if(!clientReady) {
+                return;
+            }
+        }
+
+        LoginServerController.getInstance().removeClient(this);
+        this.interrupt();
+    }
+
+    public RSAPrivateKey getRSAPrivateKey() {
+        return (RSAPrivateKey) scrambledPair.getPair().getPrivate();
+    }
+
+    public boolean decrypt(byte[] packetData, int size) {
+        try {
+            if (!loginCrypt.decrypt(packetData, 0, size)) {
+                log.warn(&quot;Wrong checksum from client {}!&quot;, this);
+                //super.getConnection().close((SendablePacket&lt;L2LoginClient&gt;) null);
+                disconnect();
+                return false;
+            }
+            return true;
+        } catch (IOException ex) {
+            log.warn(&quot;There has been an error decrypting message!&quot;, ex);
+            //super.getConnection().close((SendablePacket&lt;L2LoginClient&gt;) null);
+            disconnect();
+            return false;
+        }
+    }
+
+    public boolean encrypt(byte[] packetData, int size) {
+        try {
+            loginCrypt.encrypt(packetData, 0, size);
+        } catch (IOException ex) {
+            log.warn(&quot;There has been an error encrypting message!&quot;, ex);
+            return false;
+        }
+
+        return true;
+    }
+
+    public void setLoginClientState(LoginClientState newState) {
+        if(getLoginClientState() != newState) {
+            loginClientState = newState;
+
+            log.debug(&quot;Account {} state updated to {}.&quot;, getUsername(), newState);
+        }
+    }
+
+    public void setCharsOnServ(int servId, int chars) {
+        if (charsOnServers == null) {
+            charsOnServers = new HashMap&lt;&gt;();
+        }
+        charsOnServers.put(servId, chars);
+
+        if(charsOnServers.size() &gt;= expectedCharacterCount) {
+            if (server.showLicense()) {
+                sendPacket(new LoginOkPacket(getSessionKey()));
+            } else {
+                sendPacket(new ServerListPacket(this));
+            }
+        }
+    }
+
+    public Map&lt;Integer, Integer&gt; getCharsOnServ() {
+        return charsOnServers;
+    }
+
+    public void serCharsWaitingDelOnServ(int servId, long[] charsToDel) {
+        if (charsToDelete == null) {
+            charsToDelete = new HashMap&lt;&gt;();
+        }
+        charsToDelete.put(servId, charsToDel);
+    }
+
+    public Map&lt;Integer, long[]&gt; getCharsWaitingDelOnServ() {
+        return charsToDelete;
+    }
+}
+</pre>
+            
+</body>
+</html>

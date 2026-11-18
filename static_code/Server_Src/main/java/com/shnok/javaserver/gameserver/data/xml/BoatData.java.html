@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/BoatData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/BoatData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.enums.boats.BoatDock;
+import com.shnok.javaserver.gameserver.idfactory.IdFactory;
+import com.shnok.javaserver.gameserver.model.actor.Boat;
+import com.shnok.javaserver.gameserver.model.actor.template.CreatureTemplate;
+import com.shnok.javaserver.gameserver.model.boat.BoatEngine;
+import com.shnok.javaserver.gameserver.model.boat.BoatItinerary;
+import com.shnok.javaserver.gameserver.model.location.BoatLocation;
+import com.shnok.javaserver.gameserver.taskmanager.BoatTaskManager;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+public class BoatData implements IXmlReader
+{
+	private final List&lt;BoatItinerary&gt; _itineraries = new ArrayList&lt;&gt;();
+	private final Map&lt;Integer, Boat&gt; _boats = new HashMap&lt;&gt;();
+	
+	private final CreatureTemplate _template;
+	
+	protected BoatData()
+	{
+		final StatSet set = new StatSet();
+		
+		set.set(&quot;str&quot;, 0);
+		set.set(&quot;con&quot;, 0);
+		set.set(&quot;dex&quot;, 0);
+		set.set(&quot;int&quot;, 0);
+		set.set(&quot;wit&quot;, 0);
+		set.set(&quot;men&quot;, 0);
+		
+		set.set(&quot;hp&quot;, 50000);
+		
+		set.set(&quot;hpRegen&quot;, 3.e-3f);
+		set.set(&quot;mpRegen&quot;, 3.e-3f);
+		
+		set.set(&quot;radius&quot;, 0);
+		set.set(&quot;height&quot;, 0);
+		
+		set.set(&quot;pAtk&quot;, 0);
+		set.set(&quot;mAtk&quot;, 0);
+		set.set(&quot;pDef&quot;, 100);
+		set.set(&quot;mDef&quot;, 100);
+		
+		set.set(&quot;runSpd&quot;, 0);
+		
+		_template = new CreatureTemplate(set);
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;itinerary&quot;, itineraryNode -&gt;
+		{
+			final NamedNodeMap attrs = itineraryNode.getAttributes();
+			
+			final BoatDock dock1 = parseEnum(attrs, BoatDock.class, &quot;dock1&quot;);
+			final BoatDock dock2 = parseEnum(attrs, BoatDock.class, &quot;dock2&quot;, null);
+			
+			final int item1 = parseInteger(attrs, &quot;item1&quot;, 0);
+			final int item2 = parseInteger(attrs, &quot;item2&quot;, 0);
+			
+			final int heading = parseInteger(attrs, &quot;heading&quot;);
+			
+			final List&lt;BoatLocation[]&gt; routes = new ArrayList&lt;&gt;();
+			
+			forEach(itineraryNode, &quot;route&quot;, routeNode -&gt;
+			{
+				final List&lt;BoatLocation&gt; nodes = new ArrayList&lt;&gt;();
+				
+				forEach(routeNode, &quot;node&quot;, nodeNode -&gt; nodes.add(new BoatLocation(parseAttributes(nodeNode))));
+				
+				routes.add(nodes.toArray(new BoatLocation[0]));
+			});
+			
+			_itineraries.add(new BoatItinerary(dock1, dock2, item1, item2, heading, routes.toArray(new BoatLocation[0][])));
+		}));
+	}
+	
+	public void reload()
+	{
+		_itineraries.clear();
+		
+		_boats.values().forEach(Boat::deleteMe);
+		_boats.clear();
+		
+		for (BoatDock dock : BoatDock.VALUES)
+			dock.setBusy(false);
+		
+		BoatTaskManager.getInstance().clear();
+		
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/boatRoutes.xml&quot;);
+		LOGGER.info(&quot;Loaded {} boat itineraries.&quot;, _itineraries.size());
+		
+		_itineraries.forEach(itinerary -&gt; BoatTaskManager.getInstance().add(new BoatEngine(itinerary)));
+	}
+	
+	public List&lt;BoatItinerary&gt; getItineraries()
+	{
+		return _itineraries;
+	}
+	
+	public Boat getBoat(int boatId)
+	{
+		return _boats.get(boatId);
+	}
+	
+	public Boat getNewBoat(BoatItinerary itinerary)
+	{
+		final Boat boat = new Boat(IdFactory.getInstance().getNextId(), _template);
+		boat.spawnMe(itinerary);
+		
+		_boats.put(boat.getObjectId(), boat);
+		
+		return boat;
+	}
+	
+	public static final BoatData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final BoatData INSTANCE = new BoatData();
+	}
+}</pre>
+            
+</body>
+</html>

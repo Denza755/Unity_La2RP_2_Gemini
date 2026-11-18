@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/_TO_IMPLEMENT/ToolTips/ToolTipAction.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/_TO_IMPLEMENT/ToolTips/ToolTipAction.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; engine=&quot;UnityEngine.UIElements&quot; editor=&quot;UnityEditor.UIElements&quot; noNamespaceSchemaLocation=&quot;../UIElementsSchema/UIElements.xsd&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:GroupBox name=&quot;BoxContent&quot; class=&quot;content&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; width: auto; height: auto; min-width: auto; min-height: auto; background-color: rgba(22, 21, 18, 0); position: absolute; opacity: 1; align-self: flex-start; justify-content: space-between; align-items: flex-start; max-height: none; max-width: none;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Background&quot; style=&quot;flex-grow: 1; width: 100%; height: 100px; background-color: rgba(22, 21, 18, 0.99); position: absolute; align-self: auto; justify-content: flex-start; align-items: auto; display: none; visibility: hidden; overflow: hidden;&quot; /&gt;
+        &lt;ui:GroupBox name=&quot;Box&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; width: auto; height: auto; border-left-color: rgba(149, 149, 149, 0.5); border-right-color: rgba(149, 149, 149, 0.5); border-top-color: rgba(149, 149, 149, 0.5); border-bottom-color: rgba(149, 149, 149, 0.5); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; align-self: flex-start; background-color: rgba(22, 21, 18, 0.99);&quot;&gt;
+            &lt;ui:GroupBox name=&quot;Top&quot; style=&quot;margin-top: 2px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 5px; padding-left: 0; border-left-color: rgba(149, 149, 149, 0); border-right-color: rgba(149, 149, 149, 0); border-top-color: rgba(149, 149, 149, 0); border-bottom-color: rgba(149, 149, 149, 0); border-bottom-width: 1px;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;Box&quot; style=&quot;margin-top: 3px; margin-right: 0; margin-bottom: 0; margin-left: 3px; padding-top: 0; padding-bottom: 0; padding-left: 0; flex-direction: row;&quot;&gt;
+                    &lt;ui:GroupBox name=&quot;Grow&quot; style=&quot;min-width: auto; min-height: auto; width: 34px; height: 34px; max-width: 34px; max-height: 34px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                        &lt;ui:GroupBox name=&quot;icon&quot; class=&quot;Icon&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; background-image: resource(&amp;apos;Data/UI/Assets/Window/Action/Row/button_img/action003&amp;apos;); width: 100%; height: 100%; min-width: 34px; min-height: 34px; max-width: 34px; max-height: 34px;&quot; /&gt;
+                    &lt;/ui:GroupBox&gt;
+                    &lt;ui:GroupBox name=&quot;Header&quot; style=&quot;width: auto; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0;&quot;&gt;
+                        &lt;ui:GroupBox name=&quot;Name&quot; style=&quot;margin-top: -3px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; flex-direction: row;&quot;&gt;
+                            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Attack&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;nameAction&quot; class=&quot;NameSkill&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; color: rgb(223, 222, 222); padding-left: 5px; font-size: 12px;&quot; /&gt;
+                        &lt;/ui:GroupBox&gt;
+                        &lt;ui:GroupBox name=&quot;SettingType&quot; class=&quot;TypeText&quot; style=&quot;margin-top: 5px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 5px; min-width: auto; min-height: auto;&quot; /&gt;
+                    &lt;/ui:GroupBox&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;Footer&quot; style=&quot;margin-top: 3px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; width: auto; height: auto; align-items: flex-start;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;descriptedText&quot; class=&quot;DescriptedText&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 3px; padding-top: 0; padding-bottom: 3px; padding-left: 0; max-height: none; max-width: none; height: auto; width: 143px; align-items: flex-start; justify-content: flex-end;&quot;&gt;
+                    &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Attacks selected target(s), or takes a general action if the target cannot be attacked. Hold down the Cntrl key and click to attack by force&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;descriptedLabel&quot; class=&quot;DescriptedLabel&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; font-size: 10px; color: rgb(169, 180, 196); width: auto; height: auto; -unity-text-align: upper-left; white-space: normal; max-height: none; max-width: none; word-spacing: 0; letter-spacing: 0; -unity-paragraph-spacing: 0; text-shadow: 0.3px 0.3px 3px rgba(0, 0, 0, 0); -unity-text-outline-width: 0.3px; align-self: auto; align-items: flex-start;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+    &lt;/ui:GroupBox&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

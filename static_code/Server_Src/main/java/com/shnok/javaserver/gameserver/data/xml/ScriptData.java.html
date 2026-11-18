@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/ScriptData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/ScriptData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.ScheduledQuest;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores {@link Quest}s - being regular quests, AI scripts or scheduled scripts.
+ */
+public final class ScriptData implements IXmlReader, Runnable
+{
+	public static final int PERIOD = 5 * 60 * 1000; // 5 minutes
+	
+	private final List&lt;Quest&gt; _quests = new ArrayList&lt;&gt;();
+	private final List&lt;ScheduledQuest&gt; _scheduled = new LinkedList&lt;&gt;();
+	
+	private ScheduledFuture&lt;?&gt; _scheduledTask;
+	
+	public ScriptData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/scripts.xml&quot;);
+		LOGGER.info(&quot;Loaded {} regular scripts and {} scheduled scripts.&quot;, _quests.size(), _scheduled.size());
+		
+		_scheduledTask = ThreadPool.scheduleAtFixedRate(this, 0, PERIOD);
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path p)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;script&quot;, scriptNode -&gt;
+		{
+			final NamedNodeMap params = scriptNode.getAttributes();
+			final String path = parseString(params, &quot;path&quot;);
+			if (path == null)
+			{
+				LOGGER.warn(&quot;One of the script path isn&#x27;t defined.&quot;);
+				return;
+			}
+			
+			try
+			{
+				// Create the script.
+				Quest instance = (Quest) Class.forName(&quot;com.shnok.javaserver.gameserver.scripting.&quot; + path).getDeclaredConstructor().newInstance();
+				
+				// Add quest, script, AI or any other custom type of script.
+				_quests.add(instance);
+				
+				// If script is part of AI, try to parse EventHandlers.
+				if (instance instanceof DefaultNpc)
+					instance.feedEventHandlers();
+				
+				// The script has been identified as a scheduled script, make proper checks and schedule the launch.
+				if (instance instanceof ScheduledQuest sq)
+				{
+					// Get schedule parameter, when not exist, script is not scheduled.
+					final String type = parseString(params, &quot;schedule&quot;);
+					if (type == null)
+						return;
+					
+					// Get mandatory start parameter, when not exist, script is not scheduled.
+					final String start = parseString(params, &quot;start&quot;);
+					if (start == null)
+					{
+						LOGGER.warn(&quot;Missing &#x27;start&#x27; parameter for scheduled script &#x27;{}&#x27;.&quot;, path);
+						return;
+					}
+					
+					// Get optional end parameter, when not exist, script is one-event type.
+					final String end = parseString(params, &quot;end&quot;);
+					
+					// Schedule script, when successful, register it.
+					if (sq.setSchedule(type, start, end))
+						_scheduled.add(sq);
+				}
+			}
+			catch (Exception e)
+			{
+				LOGGER.error(&quot;Script &#x27;{}&#x27; is missing.&quot;, e, path);
+			}
+		}));
+	}
+	
+	@Override
+	public void run()
+	{
+		// For each PERIOD.
+		final long next = System.currentTimeMillis() + PERIOD;
+		
+		// Check all scheduled scripts.
+		for (ScheduledQuest script : _scheduled)
+		{
+			// When next action triggers in closest period, schedule the script action.
+			final long eta = next - script.getTimeNext();
+			if (eta &gt; 0)
+				script.setTask(ThreadPool.schedule(new Scheduler(script), PERIOD - eta));
+		}
+	}
+	
+	public void reload()
+	{
+		// Stop the general 5min task.
+		if (_scheduledTask != null)
+		{
+			_scheduledTask.cancel(false);
+			_scheduledTask = null;
+		}
+		
+		_quests.clear();
+		
+		// Stop the individual scheduled tasks.
+		for (ScheduledQuest script : _scheduled)
+			script.cleanTask();
+		
+		_scheduled.clear();
+		
+		load();
+	}
+	
+	/**
+	 * Notifies all {@link ScheduledQuest} to stop.&lt;br&gt;
+	 * &lt;br&gt;
+	 * Note: Can be used to store script values and variables.
+	 */
+	public final void stopAllScripts()
+	{
+		for (ScheduledQuest sq : _scheduled)
+			sq.stop();
+	}
+	
+	/**
+	 * Returns the {@link Quest} by given quest name.
+	 * @param questName : The name of the quest.
+	 * @return Quest : Quest to be returned, null if quest does not exist.
+	 */
+	public final Quest getQuest(String questName)
+	{
+		return _quests.stream().filter(q -&gt; q.getName().equalsIgnoreCase(questName)).findFirst().orElse(null);
+	}
+	
+	/**
+	 * Returns the {@link Quest} by given quest id.
+	 * @param questId : The id of the quest.
+	 * @return Quest : Quest to be returned, null if quest does not exist.
+	 */
+	public final Quest getQuest(int questId)
+	{
+		return _quests.stream().filter(q -&gt; q.getQuestId() == questId).findFirst().orElse(null);
+	}
+	
+	/**
+	 * @return the {@link List} of {@link Quest}s.
+	 */
+	public final List&lt;Quest&gt; getQuests()
+	{
+		return _quests;
+	}
+	
+	private final class Scheduler implements Runnable
+	{
+		private final ScheduledQuest _script;
+		
+		protected Scheduler(ScheduledQuest script)
+		{
+			_script = script;
+		}
+		
+		@Override
+		public void run()
+		{
+			// Notify script.
+			_script.notifyAndSchedule();
+			
+			// In case the next action is triggered before the resolution, schedule the the action again.
+			final long eta = System.currentTimeMillis() + PERIOD - _script.getTimeNext();
+			if (eta &gt; 0)
+				_script.setTask(ThreadPool.schedule(this, PERIOD - eta));
+		}
+	}
+	
+	public static ScriptData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final ScriptData INSTANCE = new ScriptData();
+	}
+}</pre>
+            
+</body>
+</html>

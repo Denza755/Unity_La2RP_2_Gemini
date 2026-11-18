@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/auth/AuthLogin.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/auth/AuthLogin.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.auth;
+
+import com.shnok.javaserver.gameserver.LoginServerThread;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public final class AuthLogin extends L2GameClientPacket
+{
+	private String _loginName;
+	private int _playKey1;
+	private int _playKey2;
+	private int _loginKey1;
+	private int _loginKey2;
+	
+	@Override
+	protected void readImpl()
+	{
+		_loginName = readS().toLowerCase();
+		_playKey2 = readD();
+		_playKey1 = readD();
+		_loginKey1 = readD();
+		_loginKey2 = readD();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		LoginServerThread.getInstance().addClient(_loginName, _loginKey1, _loginKey2, _playKey1, _playKey2, getClient());
+	}
+}</pre>
+            
+</body>
+</html>

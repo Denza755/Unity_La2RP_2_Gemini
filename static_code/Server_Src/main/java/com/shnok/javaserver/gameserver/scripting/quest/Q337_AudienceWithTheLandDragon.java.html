@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q337_AudienceWithTheLandDragon.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q337_AudienceWithTheLandDragon.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class Q337_AudienceWithTheLandDragon extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q337_AudienceWithTheLandDragon&quot;;
+	
+	// Variables
+	private boolean _jewel1 = false;
+	private boolean _jewel2 = false;
+	private boolean _jewel3 = false;
+	
+	// NPCs
+	private static final int GABRIELLE = 30753;
+	private static final int ORVEN = 30857; // 1
+	private static final int KENDRA = 30851; // 2
+	private static final int CHAKIRIS = 30705; // 3
+	private static final int KAIENA = 30720; // 4
+	private static final int MOKE = 30498; // 1st abyssal
+	private static final int HELTON = 30678; // 2nd abyssal
+	private static final int GILMORE = 30754; // 3rd abyssal
+	private static final int THEODRIC = 30755;
+	
+	// Mobs
+	private static final int BLOOD_QUEEN = 18001; // 1
+	private static final int SACRIFICE_OF_THE_SACRIFICED = 27171; // 1
+	private static final int HARIT_LIZARDMAN_SHAMAN = 20644; // 2
+	private static final int HARIT_LIZARDMAN_MATRIARCH = 20645; // 2
+	private static final int HARIT_LIZARDMAN_ZEALOT = 27172; // 2
+	private static final int KRANROT = 20650; // 3
+	private static final int HAMRUT = 20649; // 3
+	private static final int MARSH_DRAKE = 20680; // 4
+	private static final int MARSH_STALKER = 20679; // 4
+	private static final int ABYSSAL_JEWEL_1 = 27165; // 1st abyssal
+	private static final int JEWEL_GUARDIAN_MARA = 27168;
+	private static final int ABYSSAL_JEWEL_2 = 27166; // 2nd abyssal
+	private static final int JEWEL_GUARDIAN_MUSFEL = 27169;
+	private static final int CAVE_MAIDEN_1 = 20134; // 3rd abyssal
+	private static final int CAVE_MAIDEN_2 = 20287;
+	private static final int CAVE_KEEPER_1 = 20246;
+	private static final int CAVE_KEEPER_2 = 20277;
+	private static final int ABYSSAL_JEWEL_3 = 27167;
+	private static final int JEWEL_GUARDIAN_PYTON = 27170;
+	
+	// Items
+	private static final int FEATHER_OF_GABRIELLE = 3852;
+	private static final int MARK_OF_WATCHMAN = 3864;
+	private static final int REMAINS_OF_SACRIFIED = 3857; // 1
+	private static final int TOTEM_OF_LAND_DRAGON = 3858; // 2
+	private static final int KRANROT_SKIN = 3855; // 3
+	private static final int HAMRUT_LEG = 3856; // 3
+	private static final int MARSH_DRAKE_TALONS = 3854; // 4
+	private static final int MARSH_STALKER_HORN = 3853; // 4
+	private static final int FIRST_FRAGMENT_OF_ABYSS_JEWEL = 3859; // 1st abyssal
+	private static final int MARA_FANG = 3862;
+	private static final int SECOND_FRAGMENT_OF_ABYSS_JEWEL = 3860; // 2nd abyssal
+	private static final int MUSFEL_FANG = 3863;
+	private static final int HERALD_OF_SLAYER = 3890;
+	private static final int THIRD_FRAGMENT_OF_ABYSS_JEWEL = 3861; // 3rd abyssal
+	private static final int PORTAL_STONE = 3865;
+	
+	/**
+	 * 0..npcId, 1..cond, 2..cond2, 3..chance, 4..itemId
+	 */
+	private static final int[][] DROPS_ON_KILL =
+	{
+		{
+			SACRIFICE_OF_THE_SACRIFICED,
+			1,
+			1,
+			REMAINS_OF_SACRIFIED
+		},
+		{
+			HARIT_LIZARDMAN_ZEALOT,
+			1,
+			2,
+			TOTEM_OF_LAND_DRAGON
+		},
+		{
+			KRANROT,
+			1,
+			3,
+			KRANROT_SKIN
+		},
+		{
+			HAMRUT,
+			1,
+			3,
+			HAMRUT_LEG
+		},
+		{
+			MARSH_DRAKE,
+			1,
+			4,
+			MARSH_DRAKE_TALONS
+		},
+		{
+			MARSH_STALKER,
+			1,
+			4,
+			MARSH_STALKER_HORN
+		},
+		{
+			JEWEL_GUARDIAN_MARA,
+			2,
+			5,
+			MARA_FANG
+		},
+		{
+			JEWEL_GUARDIAN_MUSFEL,
+			2,
+			6,
+			MUSFEL_FANG
+		}
+	};
+	
+	/**
+	 * 0..npcId, 1..cond, 2..cond2, 3..itemId, 4..amount of mobs, 5..mob
+	 */
+	private static final int[][] DROP_ON_ATTACK =
+	{
+		{
+			ABYSSAL_JEWEL_1,
+			2,
+			5,
+			FIRST_FRAGMENT_OF_ABYSS_JEWEL,
+			20,
+			JEWEL_GUARDIAN_MARA
+		},
+		{
+			ABYSSAL_JEWEL_2,
+			2,
+			6,
+			SECOND_FRAGMENT_OF_ABYSS_JEWEL,
+			20,
+			JEWEL_GUARDIAN_MUSFEL
+		},
+		{
+			ABYSSAL_JEWEL_3,
+			4,
+			7,
+			THIRD_FRAGMENT_OF_ABYSS_JEWEL,
+			3,
+			JEWEL_GUARDIAN_PYTON
+		},
+	};
+	
+	public Q337_AudienceWithTheLandDragon()
+	{
+		super(337, &quot;Audience with the Land Dragon&quot;);
+		
+		setItemsIds(FEATHER_OF_GABRIELLE, MARK_OF_WATCHMAN, REMAINS_OF_SACRIFIED, TOTEM_OF_LAND_DRAGON, KRANROT_SKIN, HAMRUT_LEG, MARSH_DRAKE_TALONS, MARSH_STALKER_HORN, FIRST_FRAGMENT_OF_ABYSS_JEWEL, MARA_FANG, SECOND_FRAGMENT_OF_ABYSS_JEWEL, MUSFEL_FANG, HERALD_OF_SLAYER, THIRD_FRAGMENT_OF_ABYSS_JEWEL);
+		
+		addQuestStart(GABRIELLE);
+		addTalkId(GABRIELLE, ORVEN, KENDRA, CHAKIRIS, KAIENA, MOKE, HELTON, GILMORE, THEODRIC);
+		
+		addAttacked(ABYSSAL_JEWEL_1, ABYSSAL_JEWEL_2, ABYSSAL_JEWEL_3);
+		addMyDying(BLOOD_QUEEN, SACRIFICE_OF_THE_SACRIFICED, HARIT_LIZARDMAN_SHAMAN, HARIT_LIZARDMAN_MATRIARCH, HARIT_LIZARDMAN_ZEALOT, KRANROT, HAMRUT, MARSH_DRAKE, MARSH_STALKER, JEWEL_GUARDIAN_MARA, JEWEL_GUARDIAN_MUSFEL, CAVE_MAIDEN_1, CAVE_MAIDEN_2, CAVE_KEEPER_1, CAVE_KEEPER_2, JEWEL_GUARDIAN_PYTON);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		// Gabrielle
+		if (event.equalsIgnoreCase(&quot;30753-05.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			st.set(&quot;drop1&quot;, 1);
+			st.set(&quot;drop2&quot;, 1);
+			st.set(&quot;drop3&quot;, 1);
+			st.set(&quot;drop4&quot;, 1);
+			playSound(player, SOUND_ACCEPT);
+			giveItems(player, FEATHER_OF_GABRIELLE, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;30753-09.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &gt;= 4)
+			{
+				st.setCond(2);
+				st.set(&quot;drop5&quot;, 2);
+				st.set(&quot;drop6&quot;, 2);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, MARK_OF_WATCHMAN, 4);
+			}
+			else
+				htmltext = null;
+		}
+		// Theodric
+		else if (event.equalsIgnoreCase(&quot;30755-05.htm&quot;))
+		{
+			if (player.getInventory().hasItem(THIRD_FRAGMENT_OF_ABYSS_JEWEL))
+			{
+				takeItems(player, THIRD_FRAGMENT_OF_ABYSS_JEWEL, 1);
+				takeItems(player, HERALD_OF_SLAYER, 1);
+				giveItems(player, PORTAL_STONE, 1);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(true);
+			}
+			else
+				htmltext = null;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 50) ? &quot;30753-02.htm&quot; : &quot;30753-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case GABRIELLE:
+						if (cond == 1)
+							htmltext = (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 4) ? &quot;30753-06.htm&quot; : &quot;30753-08.htm&quot;;
+						else if (cond == 2)
+						{
+							if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 2)
+								htmltext = &quot;30753-10.htm&quot;;
+							else
+							{
+								htmltext = &quot;30753-11.htm&quot;;
+								st.setCond(3);
+								playSound(player, SOUND_MIDDLE);
+								takeItems(player, FEATHER_OF_GABRIELLE, 1);
+								takeItems(player, MARK_OF_WATCHMAN, 1);
+								giveItems(player, HERALD_OF_SLAYER, 1);
+							}
+						}
+						else if (cond == 3)
+							htmltext = &quot;30753-12.htm&quot;;
+						else if (cond == 4)
+							htmltext = &quot;30753-13.htm&quot;;
+						break;
+					
+					case ORVEN:
+						if (cond == 1)
+						{
+							if (st.getInteger(&quot;drop1&quot;) == 1)
+							{
+								if (player.getInventory().hasItem(REMAINS_OF_SACRIFIED))
+								{
+									htmltext = &quot;30857-02.htm&quot;;
+									st.unset(&quot;drop1&quot;);
+									playSound(player, SOUND_MIDDLE);
+									takeItems(player, REMAINS_OF_SACRIFIED, 1);
+									giveItems(player, MARK_OF_WATCHMAN, 1);
+								}
+								else
+									htmltext = &quot;30857-01.htm&quot;;
+							}
+							else if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 4)
+								htmltext = &quot;30857-03.htm&quot;;
+							else
+								htmltext = &quot;30857-04.htm&quot;;
+						}
+						break;
+					
+					case KENDRA:
+						if (cond == 1)
+						{
+							if (st.getInteger(&quot;drop2&quot;) == 1)
+							{
+								if (player.getInventory().hasItem(TOTEM_OF_LAND_DRAGON))
+								{
+									htmltext = &quot;30851-02.htm&quot;;
+									st.unset(&quot;drop2&quot;);
+									playSound(player, SOUND_MIDDLE);
+									takeItems(player, TOTEM_OF_LAND_DRAGON, 1);
+									giveItems(player, MARK_OF_WATCHMAN, 1);
+								}
+								else
+									htmltext = &quot;30851-01.htm&quot;;
+							}
+							else if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 4)
+								htmltext = &quot;30851-03.htm&quot;;
+							else
+								htmltext = &quot;30851-04.htm&quot;;
+						}
+						break;
+					
+					case CHAKIRIS:
+						if (cond == 1)
+						{
+							if (st.getInteger(&quot;drop3&quot;) == 1)
+							{
+								if (player.getInventory().hasItems(KRANROT_SKIN, HAMRUT_LEG))
+								{
+									htmltext = &quot;30705-02.htm&quot;;
+									st.unset(&quot;drop3&quot;);
+									playSound(player, SOUND_MIDDLE);
+									takeItems(player, KRANROT_SKIN, 1);
+									takeItems(player, HAMRUT_LEG, 1);
+									giveItems(player, MARK_OF_WATCHMAN, 1);
+								}
+								else
+									htmltext = &quot;30705-01.htm&quot;;
+							}
+							else if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 4)
+								htmltext = &quot;30705-03.htm&quot;;
+							else
+								htmltext = &quot;30705-04.htm&quot;;
+						}
+						break;
+					
+					case KAIENA:
+						if (cond == 1)
+						{
+							if (st.getInteger(&quot;drop4&quot;) == 1)
+							{
+								if (player.getInventory().hasItems(MARSH_DRAKE_TALONS, MARSH_STALKER_HORN))
+								{
+									htmltext = &quot;30720-02.htm&quot;;
+									st.unset(&quot;drop4&quot;);
+									playSound(player, SOUND_MIDDLE);
+									takeItems(player, MARSH_DRAKE_TALONS, 1);
+									takeItems(player, MARSH_STALKER_HORN, 1);
+									giveItems(player, MARK_OF_WATCHMAN, 1);
+								}
+								else
+									htmltext = &quot;30720-01.htm&quot;;
+							}
+							else if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 4)
+								htmltext = &quot;30720-03.htm&quot;;
+							else
+								htmltext = &quot;30720-04.htm&quot;;
+						}
+						break;
+					
+					case MOKE:
+						if (cond == 2)
+						{
+							switch (st.getInteger(&quot;drop5&quot;))
+							{
+								case 2:
+									htmltext = &quot;30498-01.htm&quot;;
+									st.set(&quot;drop5&quot;, 1);
+									break;
+								
+								case 1:
+									if (player.getInventory().hasItems(FIRST_FRAGMENT_OF_ABYSS_JEWEL, MARA_FANG))
+									{
+										htmltext = &quot;30498-03.htm&quot;;
+										st.unset(&quot;drop5&quot;);
+										playSound(player, SOUND_MIDDLE);
+										takeItems(player, FIRST_FRAGMENT_OF_ABYSS_JEWEL, 1);
+										takeItems(player, MARA_FANG, 1);
+										giveItems(player, MARK_OF_WATCHMAN, 1);
+									}
+									else
+										htmltext = &quot;30498-02.htm&quot;;
+									break;
+								
+								case 0:
+									if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 2)
+										htmltext = &quot;30498-04.htm&quot;;
+									else
+										htmltext = &quot;30498-05.htm&quot;;
+									break;
+							}
+						}
+						break;
+					
+					case HELTON:
+						if (cond == 2)
+						{
+							switch (st.getInteger(&quot;drop6&quot;))
+							{
+								case 2:
+									htmltext = &quot;30678-01.htm&quot;;
+									st.set(&quot;drop6&quot;, 1);
+									break;
+								
+								case 1:
+									if (player.getInventory().hasItems(SECOND_FRAGMENT_OF_ABYSS_JEWEL, MUSFEL_FANG))
+									{
+										htmltext = &quot;30678-03.htm&quot;;
+										st.unset(&quot;drop6&quot;);
+										playSound(player, SOUND_MIDDLE);
+										takeItems(player, SECOND_FRAGMENT_OF_ABYSS_JEWEL, 1);
+										takeItems(player, MUSFEL_FANG, 1);
+										giveItems(player, MARK_OF_WATCHMAN, 1);
+									}
+									else
+										htmltext = &quot;30678-02.htm&quot;;
+									break;
+								
+								case 0:
+									if (player.getInventory().getItemCount(MARK_OF_WATCHMAN) &lt; 2)
+										htmltext = &quot;30678-04.htm&quot;;
+									else
+										htmltext = &quot;30678-05.htm&quot;;
+									break;
+							}
+						}
+						break;
+					
+					case GILMORE:
+						if (cond == 1 || cond == 2)
+							htmltext = &quot;30754-01.htm&quot;;
+						else if (cond == 3)
+						{
+							htmltext = &quot;30754-02.htm&quot;;
+							st.setCond(4);
+							st.set(&quot;drop7&quot;, 1);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else if (cond == 4)
+							htmltext = (!player.getInventory().hasItem(THIRD_FRAGMENT_OF_ABYSS_JEWEL)) ? &quot;30754-04.htm&quot; : &quot;30754-05.htm&quot;;
+						break;
+					
+					case THEODRIC:
+						if (cond == 1 || cond == 2)
+							htmltext = &quot;30755-01.htm&quot;;
+						else if (cond == 3)
+							htmltext = &quot;30755-02.htm&quot;;
+						else if (cond == 4)
+							htmltext = (!player.getInventory().hasItem(THIRD_FRAGMENT_OF_ABYSS_JEWEL)) ? &quot;30755-03.htm&quot; : &quot;30755-04.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		final Player player = attacker.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		final int npcId = npc.getNpcId();
+		
+		for (int[] npcInfo : DROP_ON_ATTACK)
+		{
+			if (npcInfo[0] != npcId)
+				continue;
+			
+			if (npcInfo[1] != st.getCond())
+				break;
+			
+			final double hpRatio = (npc.getStatus().getHp() + damage) / npc.getStatus().getMaxHp();
+			
+			// reward jewel fragment
+			if (hpRatio &lt; 0.33)
+			{
+				if (Rnd.get(100) &lt; 33 &amp;&amp; st.getInteger(&quot;drop&quot; + npcInfo[2]) == 1)
+				{
+					int itemId = npcInfo[3];
+					if (!player.getInventory().hasItem(itemId))
+					{
+						giveItems(player, itemId, 1);
+						playSound(player, SOUND_ITEMGET);
+					}
+				}
+			}
+			// spawn monsters and register spawned
+			else if (hpRatio &lt; 0.66)
+			{
+				if (Rnd.get(100) &lt; 33 &amp;&amp; st.getInteger(&quot;drop&quot; + npcInfo[2]) == 1)
+				{
+					boolean spawn;
+					if (npcId == ABYSSAL_JEWEL_3)
+						spawn = _jewel3;
+					else if (npcId == ABYSSAL_JEWEL_2)
+						spawn = _jewel2;
+					else
+						spawn = _jewel1;
+					
+					if (spawn)
+					{
+						for (int i = 0; i &lt; npcInfo[4]; i++)
+						{
+							final Npc mob = addSpawn(npcInfo[5], npc.getX() + Rnd.get(-150, 150), npc.getY() + Rnd.get(-150, 150), npc.getZ(), npc.getHeading(), true, 60000, false);
+							mob.getAI().addAttackDesire(attacker, 200);
+						}
+						
+						if (npcId == ABYSSAL_JEWEL_3)
+							_jewel3 = false;
+						else if (npcId == ABYSSAL_JEWEL_2)
+							_jewel2 = false;
+						else
+							_jewel1 = false;
+					}
+				}
+				
+			}
+			// reset spawned if npc regenerated to 90% HP and more
+			else if (hpRatio &gt; 0.9)
+			{
+				if (npcId == ABYSSAL_JEWEL_3)
+					_jewel3 = true;
+				else if (npcId == ABYSSAL_JEWEL_2)
+					_jewel2 = true;
+				else
+					_jewel1 = true;
+			}
+			break;
+		}
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		final int cond = st.getCond();
+		final int npcId = npc.getNpcId();
+		
+		switch (npcId)
+		{
+			case SACRIFICE_OF_THE_SACRIFICED, HARIT_LIZARDMAN_ZEALOT, KRANROT, HAMRUT, MARSH_DRAKE, MARSH_STALKER, JEWEL_GUARDIAN_MARA, JEWEL_GUARDIAN_MUSFEL:
+				for (int[] npcInfo : DROPS_ON_KILL)
+				{
+					if (npcInfo[0] != npcId)
+						continue;
+					
+					if (npcInfo[1] == cond &amp;&amp; st.getInteger(&quot;drop&quot; + npcInfo[2]) == 1)
+					{
+						int itemId = npcInfo[3];
+						if (!player.getInventory().hasItem(itemId))
+						{
+							giveItems(player, itemId, 1);
+							playSound(player, SOUND_ITEMGET);
+						}
+					}
+					break;
+				}
+				break;
+			
+			case BLOOD_QUEEN:// Orven&#x27;s request
+				if (cond == 1 &amp;&amp; st.getInteger(&quot;drop1&quot;) == 1 &amp;&amp; !player.getInventory().hasItem(REMAINS_OF_SACRIFIED))
+				{
+					for (int i = 0; i &lt; 8; i++)
+						addSpawn(SACRIFICE_OF_THE_SACRIFICED, npc.getX() + Rnd.get(-100, 100), npc.getY() + Rnd.get(-100, 100), npc.getZ(), npc.getHeading(), true, 60000, false);
+				}
+				break;
+			
+			case HARIT_LIZARDMAN_SHAMAN, HARIT_LIZARDMAN_MATRIARCH:// Kendra&#x27;s request
+				if (cond == 1 &amp;&amp; Rnd.get(5) == 0 &amp;&amp; st.getInteger(&quot;drop2&quot;) == 1 &amp;&amp; !player.getInventory().hasItem(TOTEM_OF_LAND_DRAGON))
+				{
+					for (int i = 0; i &lt; 3; i++)
+						addSpawn(HARIT_LIZARDMAN_ZEALOT, npc.getX() + Rnd.get(-50, 50), npc.getY() + Rnd.get(-50, 50), npc.getZ(), npc.getHeading(), true, 60000, false);
+				}
+				break;
+			
+			case CAVE_MAIDEN_1, CAVE_MAIDEN_2, CAVE_KEEPER_1, CAVE_KEEPER_2:// Gilmore&#x27;s request
+				if (cond == 4 &amp;&amp; Rnd.get(5) == 0 &amp;&amp; !player.getInventory().hasItem(THIRD_FRAGMENT_OF_ABYSS_JEWEL))
+					addSpawn(ABYSSAL_JEWEL_3, npc.getX() + Rnd.get(-50, 50), npc.getY() + Rnd.get(-50, 50), npc.getZ(), npc.getHeading(), true, 60000, false);
+				break;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/item/RequestBuyItem.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/item/RequestBuyItem.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.item;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.data.manager.BuyListManager;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.instance.Fisherman;
+import com.shnok.javaserver.gameserver.model.actor.instance.MercenaryManagerNpc;
+import com.shnok.javaserver.gameserver.model.actor.instance.Merchant;
+import com.shnok.javaserver.gameserver.model.buylist.NpcBuyList;
+import com.shnok.javaserver.gameserver.model.buylist.Product;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+import com.shnok.javaserver.gameserver.network.serverpackets.item.ItemList;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+
+public final class RequestBuyItem extends L2GameClientPacket
+{
+	private static final int BATCH_LENGTH = 8; // length of the one item
+	
+	private int _listId;
+	private IntIntHolder[] _items = null;
+	
+	@Override
+	protected void readImpl()
+	{
+		_listId = readD();
+		int count = readD();
+		if (count &lt;= 0 || count &gt; Config.MAX_ITEM_IN_PACKET || count * BATCH_LENGTH != _buf.remaining() - 4)
+			return;
+		
+		_items = new IntIntHolder[count];
+		for (int i = 0; i &lt; count; i++)
+		{
+			int itemId = readD();
+			int cnt = readD();
+			
+			if (itemId &lt; 1 || cnt &lt; 1)
+			{
+				_items = null;
+				return;
+			}
+			
+			_items[i] = new IntIntHolder(itemId, cnt);
+		}
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		if (_items == null)
+			return;
+		
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		// We retrieve the buylist.
+		final NpcBuyList buyList = BuyListManager.getInstance().getBuyList(_listId);
+		if (buyList == null)
+			return;
+		
+		double castleTaxRate = 0;
+		Npc merchant = null;
+		
+		// If buylist is associated to a NPC, we retrieve the target.
+		if (buyList.getNpcId() &gt; 0)
+		{
+			final WorldObject target = player.getTarget();
+			if (target instanceof Merchant || target instanceof MercenaryManagerNpc)
+				merchant = (Npc) target;
+			
+			if (merchant == null || !buyList.isNpcAllowed(merchant.getNpcId()) || !player.getAI().canDoInteract(merchant))
+				return;
+			
+			if (merchant.getCastle() != null)
+				castleTaxRate = merchant.getCastle().getTaxRate();
+		}
+		
+		long subTotal = 0;
+		long slots = 0;
+		long weight = 0;
+		
+		for (IntIntHolder i : _items)
+		{
+			int price = -1;
+			
+			final Product product = buyList.get(i.getId());
+			if (product == null)
+				return;
+			
+			if (!product.getItem().isStackable() &amp;&amp; i.getValue() &gt; 1)
+			{
+				sendPacket(SystemMessage.getSystemMessage(SystemMessageId.YOU_HAVE_EXCEEDED_QUANTITY_THAT_CAN_BE_INPUTTED));
+				return;
+			}
+			
+			price = product.getPrice();
+			if (i.getId() &gt;= 3960 &amp;&amp; i.getId() &lt;= 4026)
+				price *= Config.RATE_SIEGE_GUARDS_PRICE;
+			
+			if (price &lt; 0)
+				return;
+			
+			if (price == 0 &amp;&amp; !player.isGM())
+				return;
+			
+			if (product.hasLimitedStock())
+			{
+				// trying to buy more then available
+				if (i.getValue() &gt; product.getCount())
+					return;
+			}
+			
+			if ((Integer.MAX_VALUE / i.getValue()) &lt; price)
+				return;
+			
+			// first calculate price per item with tax, then multiply by count
+			price = (int) (price * (1 + castleTaxRate));
+			subTotal += i.getValue() * price;
+			
+			if (subTotal &gt; Integer.MAX_VALUE)
+				return;
+			
+			weight += i.getValue() * product.getItem().getWeight();
+			if (!product.getItem().isStackable())
+				slots += i.getValue();
+			else if (player.getInventory().getItemByItemId(i.getId()) == null)
+				slots++;
+		}
+		
+		if (weight &gt; Integer.MAX_VALUE || weight &lt; 0 || !player.getInventory().validateWeight((int) weight))
+		{
+			sendPacket(SystemMessage.getSystemMessage(SystemMessageId.WEIGHT_LIMIT_EXCEEDED));
+			return;
+		}
+		
+		if (slots &gt; Integer.MAX_VALUE || slots &lt; 0 || !player.getInventory().validateCapacity((int) slots))
+		{
+			sendPacket(SystemMessage.getSystemMessage(SystemMessageId.SLOTS_FULL));
+			return;
+		}
+		
+		// Charge buyer and add tax to castle treasury if not owned by npc clan
+		if (subTotal &lt; 0 || !player.reduceAdena((int) subTotal, false))
+		{
+			sendPacket(SystemMessage.getSystemMessage(SystemMessageId.YOU_NOT_ENOUGH_ADENA));
+			return;
+		}
+		
+		// Proceed the purchase
+		for (IntIntHolder i : _items)
+		{
+			final Product product = buyList.get(i.getId());
+			if (product == null)
+				continue;
+			
+			if (product.hasLimitedStock())
+			{
+				if (product.decreaseCount(i.getValue()))
+					player.getInventory().addItem(i.getId(), i.getValue());
+			}
+			else
+				player.getInventory().addItem(i.getId(), i.getValue());
+		}
+		
+		// Add to castle treasury and send the htm, if existing.
+		if (merchant != null)
+		{
+			if (merchant.getCastle() != null)
+				merchant.getCastle().riseTaxRevenue((int) (subTotal * castleTaxRate));
+			
+			String htmlFolder = &quot;&quot;;
+			if (merchant instanceof Fisherman)
+				htmlFolder = &quot;fisherman&quot;;
+			else if (merchant instanceof Merchant)
+				htmlFolder = &quot;merchant&quot;;
+			
+			if (!htmlFolder.isEmpty())
+			{
+				final String content = HtmCache.getInstance().getHtm(&quot;data/html/&quot; + htmlFolder + &quot;/&quot; + merchant.getNpcId() + &quot;-bought.htm&quot;);
+				if (content != null)
+				{
+					final NpcHtmlMessage html = new NpcHtmlMessage(merchant.getObjectId());
+					html.setHtml(content);
+					html.replace(&quot;%objectId%&quot;, merchant.getObjectId());
+					player.sendPacket(html);
+				}
+			}
+		}
+		player.sendPacket(new ItemList(player, true));
+	}
+}
+</pre>
+            
+</body>
+</html>

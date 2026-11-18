@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Model/L2StaticMesh.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Model/L2StaticMesh.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using UnityEngine;
+
+public class L2StaticMesh {
+    public string staticMesh { get; set; }
+    public string actorClass { get; set; }
+    public float y { get; set; }
+    public float x { get; set; }
+    public float z { get; set; }
+    //public int yaw { get; set; }
+    //public int roll { get; set; }
+    //public int pitch { get; set; }
+    public Vector3 eulerAngles;
+    public float scale { get; set; }
+    public float scaleX { get; set; }
+    public float scaleY { get; set; }
+    public float scaleZ { get; set; }
+}
+#endif
+</pre>
+            
+</body>
+</html>

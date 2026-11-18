@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Ruler/RulerGridOverlay.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Ruler/RulerGridOverlay.cs</h1>
+            <pre>using UnityEngine;
+
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+public class RulerGridOverlay : MonoBehaviour
+{
+    private static RulerGridOverlay _instance;
+    public static RulerGridOverlay Instance =&gt; _instance;
+
+    [Header(&quot;Grid Size&quot;)]
+    [SerializeField] private int _gridRadius = 12; // 24x24 cells
+    [SerializeField] private float _heightOffset = 0.08f;
+
+    private MeshFilter _meshFilter;
+    private MeshRenderer _meshRenderer;
+    private Mesh _mesh;
+    private Material _gridMaterial;
+
+    private Vector3 _lastCenterGridPos = new Vector3(float.MaxValue, 0, float.MaxValue);
+    private bool _isVisible = false;
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _meshFilter = GetComponent&lt;MeshFilter&gt;();
+        _meshRenderer = GetComponent&lt;MeshRenderer&gt;();
+
+        CreateGridMaterial();
+
+        _mesh = new Mesh();
+        _mesh.name = &quot;RulerGridMesh&quot;;
+        _meshFilter.mesh = _mesh;
+
+        SetVisible(false);
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    private void CreateGridMaterial()
+    {
+        Shader shader = Shader.Find(&quot;Sprites/Default&quot;);
+        if (shader == null)
+        {
+            shader = Shader.Find(&quot;Universal Render Pipeline/Unlit&quot;);
+        }
+        if (shader == null)
+        {
+            shader = Shader.Find(&quot;Hidden/Internal-Colored&quot;);
+        }
+
+        _gridMaterial = new Material(shader);
+        Color gridColor = new Color(0.85f, 0.9f, 1.0f, 0.45f);
+        _gridMaterial.color = gridColor;
+        if (_gridMaterial.HasProperty(&quot;_Color&quot;))
+        {
+            _gridMaterial.SetColor(&quot;_Color&quot;, gridColor);
+        }
+        if (_gridMaterial.HasProperty(&quot;_BaseColor&quot;))
+        {
+            _gridMaterial.SetColor(&quot;_BaseColor&quot;, gridColor);
+        }
+
+        _gridMaterial.SetFloat(&quot;_Surface&quot;, 1f); // 1 = Transparent
+        _gridMaterial.SetFloat(&quot;_Blend&quot;, 0f); // 0 = Alpha
+        _gridMaterial.SetInt(&quot;_SrcBlend&quot;, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        _gridMaterial.SetInt(&quot;_DstBlend&quot;, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        _gridMaterial.SetInt(&quot;_ZWrite&quot;, 0);
+        _gridMaterial.renderQueue = 3000;
+        _gridMaterial.EnableKeyword(&quot;_SURFACE_TYPE_TRANSPARENT&quot;);
+
+        _gridRendererSetup();
+    }
+
+    private void _gridRendererSetup()
+    {
+        _meshRenderer.material = _gridMaterial;
+        _meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        _meshRenderer.receiveShadows = false;
+    }
+
+    public void SetVisible(bool visible)
+    {
+        _isVisible = visible;
+        if (_meshRenderer != null)
+        {
+            _meshRenderer.enabled = visible;
+        }
+
+        if (!visible)
+        {
+            _lastCenterGridPos = new Vector3(float.MaxValue, 0, float.MaxValue);
+        }
+    }
+
+    public void UpdateGridPosition(Vector3 worldCursorPos)
+    {
+        if (!_isVisible) return;
+
+        float cellSize = RulerManager.Instance != null ? RulerManager.Instance.CellSize : 1.0f;
+        float snappedX = Mathf.Round(worldCursorPos.x / cellSize) * cellSize;
+        float snappedZ = Mathf.Round(worldCursorPos.z / cellSize) * cellSize;
+        Vector3 snappedCenter = new Vector3(snappedX, 0, snappedZ);
+
+        if (Vector3.SqrMagnitude(snappedCenter - _lastCenterGridPos) &lt; 0.01f)
+        {
+            return;
+        }
+
+        _lastCenterGridPos = snappedCenter;
+        RebuildGridMesh(snappedCenter, cellSize);
+    }
+
+    private void RebuildGridMesh(Vector3 center, float cellSize)
+    {
+        LayerMask mask = RulerManager.GetTerrainRaycastMask();
+
+        int linesCount = (_gridRadius * 2 + 1);
+        int totalSegments = linesCount * 2; // lines in X and Z
+        int totalVertices = totalSegments * (_gridRadius * 2 + 1);
+
+        // We generate lines as a series of connected points conforming to terrain
+        System.Collections.Generic.List&lt;Vector3&gt; verts = new System.Collections.Generic.List&lt;Vector3&gt;();
+        System.Collections.Generic.List&lt;int&gt; indices = new System.Collections.Generic.List&lt;int&gt;();
+
+        float minCoord = -_gridRadius * cellSize;
+        float maxCoord = _gridRadius * cellSize;
+
+        // Lines parallel to Z (varying X)
+        for (int i = -_gridRadius; i &lt;= _gridRadius; i++)
+        {
+            float lineX = center.x + i * cellSize;
+            int startIndex = verts.Count;
+
+            for (int step = -_gridRadius; step &lt;= _gridRadius; step++)
+            {
+                float lineZ = center.z + step * cellSize;
+                float y = SampleTerrainHeight(lineX, lineZ, mask);
+                verts.Add(new Vector3(lineX, y + _heightOffset, lineZ));
+
+                if (step &gt; -_gridRadius)
+                {
+                    indices.Add(verts.Count - 2);
+                    indices.Add(verts.Count - 1);
+                }
+            }
+        }
+
+        // Lines parallel to X (varying Z)
+        for (int i = -_gridRadius; i &lt;= _gridRadius; i++)
+        {
+            float lineZ = center.z + i * cellSize;
+
+            for (int step = -_gridRadius; step &lt;= _gridRadius; step++)
+            {
+                float lineX = center.x + step * cellSize;
+                float y = SampleTerrainHeight(lineX, lineZ, mask);
+                verts.Add(new Vector3(lineX, y + _heightOffset, lineZ));
+
+                if (step &gt; -_gridRadius)
+                {
+                    indices.Add(verts.Count - 2);
+                    indices.Add(verts.Count - 1);
+                }
+            }
+        }
+
+        _mesh.Clear();
+        _mesh.SetVertices(verts);
+
+        Color32[] lineColors = new Color32[verts.Count];
+        Color32 col32 = new Color(0.85f, 0.9f, 1.0f, 0.45f);
+        for (int c = 0; c &lt; lineColors.Length; c++)
+        {
+            lineColors[c] = col32;
+        }
+        _mesh.SetColors(lineColors);
+
+        _mesh.SetIndices(indices, MeshTopology.Lines, 0);
+    }
+
+    private float SampleTerrainHeight(float x, float z, LayerMask mask)
+    {
+        Ray ray = new Ray(new Vector3(x, 1500f, z), Vector3.down);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 3000f, mask);
+        if (hits != null &amp;&amp; hits.Length &gt; 0)
+        {
+            System.Array.Sort(hits, (a, b) =&gt; a.distance.CompareTo(b.distance));
+            for (int i = 0; i &lt; hits.Length; i++)
+            {
+                var h = hits[i];
+                if (h.collider == null || h.collider.isTrigger) continue;
+                if (BuildingPlacementSystem.Instance != null &amp;&amp; BuildingPlacementSystem.Instance.IsGhostTransform(h.transform)) continue;
+                return h.point.y;
+            }
+        }
+
+        if (World.Instance != null)
+        {
+            return World.Instance.GetGroundHeight(new Vector3(x, 0, z));
+        }
+
+        return 0f;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/itemhandlers/ItemSkills.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/itemhandlers/ItemSkills.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.itemhandlers;
+
+import com.shnok.javaserver.commons.util.ArraysUtil;
+
+import com.shnok.javaserver.gameserver.handler.IItemHandler;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.instance.Pet;
+import com.shnok.javaserver.gameserver.model.actor.instance.Servitor;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.skills.effects.EffectTemplate;
+
+public class ItemSkills implements IItemHandler
+{
+	
+	private static final int[] HP_POTION_SKILL_IDS =
+	{
+		2031, // Lesser Healing Potion
+		2032, // Healing potion
+		2037 // Greater Healing Potion
+	};
+	
+	@Override
+	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
+	{
+		if (playable instanceof Servitor)
+			return;
+		
+		final boolean isPet = playable instanceof Pet;
+		final Player player = playable.getActingPlayer();
+		final Creature target = (playable.getTarget() instanceof Creature targetCreature) ? targetCreature : null;
+		
+		// Pets can only use tradable items.
+		if (isPet &amp;&amp; !item.isTradable())
+		{
+			player.sendPacket(SystemMessageId.ITEM_NOT_FOR_PETS);
+			return;
+		}
+		
+		final IntIntHolder[] skills = item.getEtcItem().getSkills();
+		if (skills == null)
+		{
+			LOGGER.warn(&quot;{} doesn&#x27;t have any registered skill for handler.&quot;, item.getName());
+			return;
+		}
+		
+		for (final IntIntHolder skillInfo : skills)
+		{
+			if (skillInfo == null)
+				continue;
+			
+			final L2Skill itemSkill = skillInfo.getSkill();
+			if (itemSkill == null)
+				continue;
+			
+			if (!itemSkill.checkCondition(playable, target, false))
+				return;
+			
+			// The skill is currently under reuse.
+			if (playable.isSkillDisabled(itemSkill))
+			{
+				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_PREPARED_FOR_REUSE).addSkillName(itemSkill));
+				return;
+			}
+			
+			// Potions and Energy Stones bypass the AI system. The rest does not.
+			if (itemSkill.isPotion() || itemSkill.isSimultaneousCast())
+			{
+				playable.getCast().doInstantCast(itemSkill, item);
+				
+				if (!isPet &amp;&amp; item.isHerb() &amp;&amp; player.hasServitor())
+					player.getSummon().getCast().doInstantCast(itemSkill, item);
+			}
+			else
+				playable.getAI().tryToCast(target, itemSkill, forceUse, false, (item.isEtcItem() ? item.getObjectId() : 0));
+			
+			// Send message to owner.
+			if (isPet)
+				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.PET_USES_S1).addSkillName(itemSkill));
+			// Buff icon for healing potions.
+			else if (ArraysUtil.contains(HP_POTION_SKILL_IDS, skillInfo.getId()) &amp;&amp; skillInfo.getId() &gt;= player.getShortBuffTaskSkillId())
+			{
+				final EffectTemplate template = itemSkill.getEffectTemplates().get(0);
+				if (template != null)
+					player.shortBuffStatusUpdate(skillInfo.getId(), skillInfo.getValue(), template.getCounter() * template.getPeriod());
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Inventory/InventorySlot.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Inventory/InventorySlot.cs</h1>
+            <pre>using UnityEngine;
+using UnityEngine.UIElements;
+
+public class InventorySlot : L2DraggableSlot
+{
+    protected L2SlotContainer _currentSlotContainer;
+    private int _count;
+    private long _remainingTime;
+    private SlotClickSoundManipulator _slotClickSoundManipulator;
+    private int _objectId;
+    private ItemName _assignedItem;
+    private ItemType1 _type1;
+    private ItemType2 _type2;
+    public int Count { get { return _count; } }
+    public long RemainingTime { get { return _remainingTime; } }
+    public ItemType1 Type1 { get { return _type1; } }
+    public ItemType2 Type2 { get { return _type2; } }
+    public int ObjectId { get { return _objectId; } }
+
+    public ItemName ItemName { get { return _assignedItem; } }
+    public L2SlotContainer SlotContainer { get { return _currentSlotContainer; } }
+
+    public InventorySlot(int position, VisualElement slotElement, L2SlotContainer slotContainer, SlotType slotType)
+    : base(position, slotElement, slotType, false, true)
+    {
+        _currentSlotContainer = slotContainer;
+        _empty = true;
+
+        if (_slotClickSoundManipulator == null)
+        {
+            _slotClickSoundManipulator = new SlotClickSoundManipulator(_slotElement);
+            _slotElement.AddManipulator(_slotClickSoundManipulator);
+        }
+    }
+
+    public InventorySlot(int position, VisualElement slotElement, SlotType slotType)
+    : base(position, slotElement, slotType, true, false)
+    {
+        _empty = true;
+    }
+
+    public virtual void AssignItem(ItemInstance item)
+    {
+        _slotElement.RemoveFromClassList(&quot;empty&quot;);
+
+        if (item.ItemData != null)
+        {
+            _id = item.ItemData.Id;
+            _name = item.ItemData.ItemName.Name;
+            _description = item.ItemData.ItemName.Description;
+            _icon = item.ItemData.Icon;
+            _objectId = item.ObjectId;
+            _empty = false;
+            _type1 = item.Type1;
+            _assignedItem = item.ItemData.ItemName;
+        }
+        else
+        {
+            Debug.LogWarning($&quot;Item data is null for item {item.ItemId}.&quot;);
+            _id = 0;
+            _name = &quot;Unkown&quot;;
+            _description = &quot;Unkown item.&quot;;
+            _icon = &quot;&quot;;
+            _objectId = -1;
+            _type1 = Type1;
+            _assignedItem = new ItemName();
+        }
+
+        _count = item.Count;
+        _remainingTime = item.RemainingTime;
+
+        if (_slotElement != null)
+        {
+            StyleBackground background = new StyleBackground(IconTable.Instance.GetIcon(_id));
+            _slotBg.style.backgroundImage = background;
+
+            AddTooltip(item);
+
+            _slotDragManipulator.enabled = true;
+        }
+    }
+
+    protected virtual void AddTooltip(ItemInstance item)
+    {
+        string tooltipText = _name;
+        if (_count &gt; 0)
+        {
+            tooltipText = $&quot;{_name} ({_count:n0})&quot;;
+        }
+
+        if (item.Type2 == ItemType2.TYPE2_WEAPON ||
+            item.Type2 == ItemType2.TYPE2_ACCESSORY ||
+            item.Type2 == ItemType2.TYPE2_SHIELD_ARMOR)
+        {
+            tooltipText = _name;
+        }
+
+        int itemId = _id &gt; 0 ? _id : (item != null ? item.ItemId : 0);
+        if (_tooltipManipulator != null)
+        {
+            _tooltipManipulator.SetValue(new ItemTooltipData(itemId, tooltipText));
+        }
+    }
+
+    public override void ClearManipulators()
+    {
+        base.ClearManipulators();
+
+        if (_slotClickSoundManipulator != null)
+        {
+            _slotElement.RemoveManipulator(_slotClickSoundManipulator);
+            _slotClickSoundManipulator = null;
+        }
+    }
+
+    protected override void HandleLeftClick()
+    {
+        if (_currentSlotContainer != null)
+        {
+            _currentSlotContainer.SelectSlot(_position);
+        }
+    }
+
+    protected override void HandleRightClick()
+    {
+        UseItem();
+    }
+
+    protected override void HandleMiddleClick()
+    {
+        if (!_empty)
+        {
+            PlayerInventory.Instance.DestroyItem(_objectId, 1);
+        }
+    }
+
+    public virtual void UseItem()
+    {
+        if (!_empty)
+        {
+            PlayerInventory.Instance.UseItem(_objectId);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

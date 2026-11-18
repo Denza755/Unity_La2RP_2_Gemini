@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/L2Tooltip.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/L2Tooltip.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Globalization;
+using System.Text;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class L2ToolTip : L2PopupWindow
+{
+
+    private VisualElement _skillTooltip;
+    private VisualElement _labelTooltip;
+    private VisualElement _effectTooltip;
+    private VisualElement _value;
+    private Label _itemIdLabel;
+    private VisualElement _tooltipTarget;
+    private Coroutine _updateStyleCoroutine;
+    private Coroutine _updateTimerCoroutine;
+
+    private static L2ToolTip _instance;
+    public static L2ToolTip Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_updateStyleCoroutine != null) StopCoroutine(_updateStyleCoroutine);
+        if (_updateTimerCoroutine != null) StopCoroutine(_updateTimerCoroutine);
+
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Components/L2Tooltip/L2Tooltip&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        _value = GetElementById(&quot;Content&quot;);
+        _skillTooltip = GetElementById(&quot;SkillTooltip&quot;);
+        _labelTooltip = GetElementById(&quot;LabelTooltip&quot;);
+        _effectTooltip = GetElementById(&quot;EffectTooltip&quot;);
+        _itemIdLabel = GetLabelById(&quot;ItemIdLabel&quot;);
+    }
+
+    public void UpdateTooltip&lt;T&gt;(L2Slot.SlotType type, T value, VisualElement target)
+    {
+        _windowEle.style.left = -1000;
+        _windowEle.style.opacity = 0;
+
+        _tooltipTarget = target;
+
+        _skillTooltip.style.display = DisplayStyle.None;
+        _labelTooltip.style.display = DisplayStyle.None;
+        _effectTooltip.style.display = DisplayStyle.None;
+        UpdateItemIdLabel(0);
+
+        switch (type)
+        {
+            case L2Slot.SlotType.Skill:
+                DisplaySkillTooltip(value);
+                break;
+            case L2Slot.SlotType.Effect:
+                DisplayEffectTooltip(value);
+                break;
+            default:
+                DisplayDefaultTooltip(value);
+                break;
+        }
+
+        ShowWindow();
+
+        if (_updateStyleCoroutine != null)
+        {
+            StopCoroutine(_updateStyleCoroutine);
+        }
+
+        _updateStyleCoroutine = StartCoroutine(UpdateToolTipCoroutine(target));
+    }
+
+    private void DisplaySkillTooltip&lt;T&gt;(T value)
+    {
+        SkillWindowInfo val = value as SkillWindowInfo;
+        if (val is null)
+        {
+            _skillTooltip.style.display = DisplayStyle.None;
+            return;
+        }
+
+        AddSkillTooltip(val);
+        _skillTooltip.style.display = DisplayStyle.Flex;
+    }
+
+    private void DisplayDefaultTooltip&lt;T&gt;(T value)
+    {
+        int itemId = 0;
+        string stringVal;
+
+        if (value is ItemTooltipData itemData)
+        {
+            stringVal = itemData.Title;
+            itemId = itemData.ItemId;
+        }
+        else if (value is SkillWindowInfo info)
+        {
+            stringVal = info.Name;
+        }
+        else
+        {
+            stringVal = value as string;
+        }
+
+        if (!string.IsNullOrEmpty(stringVal))
+        {
+            GetLabelById(&quot;Content&quot;).text = stringVal;
+            UpdateItemIdLabel(itemId);
+            _labelTooltip.style.display = DisplayStyle.Flex;
+        }
+        else
+        {
+            UpdateItemIdLabel(0);
+            _labelTooltip.style.display = DisplayStyle.None;
+        }
+    }
+
+    private void UpdateItemIdLabel(int itemId)
+    {
+        if (_itemIdLabel == null)
+        {
+            return;
+        }
+
+        if (itemId &gt; 0)
+        {
+            _itemIdLabel.text = $&quot;ID: {itemId}&quot;;
+            _itemIdLabel.style.display = DisplayStyle.Flex;
+        }
+        else
+        {
+            _itemIdLabel.text = string.Empty;
+            _itemIdLabel.style.display = DisplayStyle.None;
+        }
+    }
+
+    IEnumerator UpdateToolTipCoroutine(VisualElement target)
+    {
+        while (true)
+        {
+            if (_isWindowHidden)
+            {
+                yield return new WaitForEndOfFrame();
+                continue;
+            }
+
+            yield return new WaitForEndOfFrame();
+
+            int margin = 0;
+            float leftPos = Math.Min(target.worldBound.x, Math.Max(Screen.width - _windowEle.resolvedStyle.width, 0));
+            float topPosUp = Math.Max(target.worldBound.y - _windowEle.resolvedStyle.height - margin, 0);
+            float topPosDown = target.worldBound.y + target.resolvedStyle.height + margin;
+            float topPos = (target.worldBound.y &gt;= _windowEle.resolvedStyle.height + margin) ? topPosUp : topPosDown;
+
+            _windowEle.style.left = leftPos;
+            _windowEle.style.top = topPos;
+            _windowEle.style.opacity = 1;
+        }
+    }
+
+    IEnumerator UpdateTimerCoroutine(Buff effect)
+    {
+        VisualElement durationContainer = GetElementById(&quot;EffectTooltipDurationContainer&quot;);
+        Label durationLabel = GetLabelById(&quot;EffectTooltipDurationValue&quot;);
+
+        while (true)
+        {
+            if (_isWindowHidden || _effectTooltip.style.display == DisplayStyle.None || durationContainer.style.display == DisplayStyle.None)
+            {
+                yield return new WaitForEndOfFrame();
+                continue;
+            }
+
+            float duration = effect.StartTime + effect.Duration - Time.unscaledTime;
+            if (duration &lt;= 0)
+            {
+                durationLabel.text = &quot;0s&quot;;
+                yield return new WaitForSeconds(1);
+                continue;
+            }
+            float hours = duration * 0.00027777778f;
+            float remainderAfterHours = duration - ((int)hours * 3600);
+            float minutes = Mathf.Floor(remainderAfterHours * 0.0166666667f);
+            float seconds = duration - ((int)hours * 3600) - (minutes * 60);
+            StringBuilder durationStr = new();
+            if ((int)hours &gt; 0)
+            {
+                durationStr.Append((int)hours);
+                durationStr.Append(&quot;h &quot;);
+            }
+            if ((int)minutes &gt; 0)
+            {
+                durationStr.Append((int)minutes);
+                durationStr.Append(&quot;m &quot;);
+            }
+            durationStr.Append(Mathf.Ceil(seconds + 0.8f));
+            durationStr.Append(&quot;s&quot;);
+            durationLabel.text = durationStr.ToString();
+
+            yield return new WaitForSeconds(1);
+        }
+    }
+
+    public void HideWindow(VisualElement exitElement)
+    {
+        if (exitElement == _tooltipTarget)
+        {
+            base.HideWindow(false);
+
+            if (_updateStyleCoroutine != null)
+            {
+                StopCoroutine(_updateStyleCoroutine);
+            }
+        }
+    }
+
+    public void AddSkillTooltip(SkillWindowInfo skill)
+    {
+        StyleBackground background = new StyleBackground(IconTable.Instance.LoadTextureByName(skill.Icon));
+        GetElementById(&quot;SkillTooltipIcon&quot;).style.backgroundImage = background;
+        GetLabelById(&quot;SkillTooltipName&quot;).text = skill.Name;
+        GetLabelById(&quot;SkillTooltipLevelValue&quot;).text = skill.Level.ToString();
+        GetLabelById(&quot;SkillTooltipType&quot;).text = skill.GetSkillType();
+        Label desc = GetLabelById(&quot;SkillTooltipDescription&quot;);
+        desc.text = skill.ComposeDescription();
+
+        if (skill.MpCost &gt; 0)
+        {
+            GetLabelById(&quot;SkillTooltipMpCostValue&quot;).text = skill.MpCost.ToString();
+            GetElementById(&quot;SkillTooltipMpCost&quot;).style.display = DisplayStyle.Flex;
+        }
+        else
+        {
+            GetElementById(&quot;SkillTooltipMpCost&quot;).style.display = DisplayStyle.None;
+        }
+
+        if (skill.Range &gt; 0)
+        {
+            GetLabelById(&quot;SkillTooltipRangeValue&quot;).text = skill.Range.ToString();
+            GetElementById(&quot;SkillTooltipRange&quot;).style.display = DisplayStyle.Flex;
+        }
+        else
+        {
+            GetElementById(&quot;SkillTooltipRange&quot;).style.display = DisplayStyle.None;
+        }
+
+        if (skill.HitTime &gt; 0)
+        {
+            GetLabelById(&quot;SkillTooltipCastingTimeValue&quot;).text = skill.HitTime.ToString(CultureInfo.InvariantCulture);
+            GetElementById(&quot;SkillTooltipCastingTime&quot;).style.display = DisplayStyle.Flex;
+        }
+        else
+        {
+            GetElementById(&quot;SkillTooltipCastingTime&quot;).style.display = DisplayStyle.None;
+        }
+
+        if (skill.IsPassiveSkill() || skill.Type == SkillType.CraftAndItems)
+        {
+            GetElementById(&quot;SkillTooltipReuseTime&quot;).style.display = DisplayStyle.None;
+        }
+        else
+        {
+            GetLabelById(&quot;SkillTooltipReuseTimeValue&quot;).text = skill.ReuseDelay.ToString(CultureInfo.InvariantCulture);
+            GetElementById(&quot;SkillTooltipReuseTime&quot;).style.display = DisplayStyle.Flex;
+        }
+    }
+
+    private void DisplayEffectTooltip&lt;T&gt;(T value)
+    {
+        Buff val = value as Buff;
+        if (val is null)
+        {
+            _effectTooltip.style.display = DisplayStyle.None;
+            return;
+        }
+
+        AddEffectTooltip(val);
+
+        _effectTooltip.style.display = DisplayStyle.Flex;
+    }
+
+    public void AddEffectTooltip(Buff effect)
+    {
+        if (_updateTimerCoroutine != null)
+        {
+            StopCoroutine(_updateTimerCoroutine);
+        }
+
+        GetLabelById(&quot;EffectTooltipName&quot;).text = effect.Name;
+        GetLabelById(&quot;EffectTooltipLevelValue&quot;).text = effect.Level.ToString();
+        VisualElement durationContainer = GetElementById(&quot;EffectTooltipDurationContainer&quot;);
+
+        if (effect.Duration &lt;= -1)
+        {
+            durationContainer.style.display = DisplayStyle.None;
+        }
+        else
+        {
+            _updateTimerCoroutine = StartCoroutine(UpdateTimerCoroutine(effect));
+            durationContainer.style.display = DisplayStyle.Flex;
+        }
+
+
+        GetLabelById(&quot;EffectTooltipDescription&quot;).text = effect.Description;
+    }
+}
+</pre>
+            
+</body>
+</html>

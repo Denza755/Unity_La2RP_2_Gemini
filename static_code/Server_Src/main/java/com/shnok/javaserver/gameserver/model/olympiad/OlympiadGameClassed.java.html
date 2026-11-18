@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/olympiad/OlympiadGameClassed.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/olympiad/OlympiadGameClassed.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.olympiad;
+
+import java.util.List;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.enums.OlympiadType;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+
+public class OlympiadGameClassed extends OlympiadGameNormal
+{
+	private OlympiadGameClassed(int id, Participant[] opponents)
+	{
+		super(id, opponents);
+	}
+	
+	@Override
+	public final OlympiadType getType()
+	{
+		return OlympiadType.CLASSED;
+	}
+	
+	@Override
+	protected final int getDivider()
+	{
+		return Config.OLY_DIVIDER_CLASSED;
+	}
+	
+	@Override
+	protected final IntIntHolder[] getReward()
+	{
+		return Config.OLY_CLASSED_REWARD;
+	}
+	
+	protected static final OlympiadGameClassed createGame(int id, List&lt;List&lt;Integer&gt;&gt; classList)
+	{
+		if (classList == null || classList.isEmpty())
+			return null;
+		
+		List&lt;Integer&gt; list;
+		Participant[] opponents;
+		while (!classList.isEmpty())
+		{
+			list = Rnd.get(classList);
+			if (list == null || list.size() &lt; 2)
+			{
+				classList.remove(list);
+				continue;
+			}
+			
+			opponents = OlympiadGameNormal.createListOfParticipants(list);
+			if (opponents == null)
+			{
+				classList.remove(list);
+				continue;
+			}
+			
+			return new OlympiadGameClassed(id, opponents);
+		}
+		return null;
+	}
+}</pre>
+            
+</body>
+</html>

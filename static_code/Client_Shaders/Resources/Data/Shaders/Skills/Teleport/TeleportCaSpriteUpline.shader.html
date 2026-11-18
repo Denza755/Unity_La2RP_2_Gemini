@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Teleport/TeleportCaSpriteUpline.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Teleport/TeleportCaSpriteUpline.shader</h1>
+            <pre>// e_u031_a SpriteEmitter2 &quot;upline&quot;: fx_m_t0059, PTDU_Up, polar ring, One+One additive.
+// SPIR-V FF decomp: out = sample(t0, uv) * in_Color0; consts.textureFactor read but unused.
+// UV = PointCoord when sprite flag set, else in_Texcoord0.xy (flipbook atlas baked in VS here).
+// Optional fog + alpha-test demote; blend One+One.
+Shader &quot;L2/Effects/TeleportCaSpriteUpline&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture (fx_m_t0059)&quot;, 2D) = &quot;white&quot; {}
+
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        [Toggle] _HasLifetime (&quot;Has Lifetime&quot;, Float) = 1
+        _InitialDelayRange (&quot;Initial Delay Range (Min,Max) sec&quot;, Vector) = (3, 3, 0, 0)
+        _LifetimeRange (&quot;Lifetime Range (Min,Max) sec&quot;, Vector) = (1.2, 1.2, 0, 0)
+        _Seed (&quot;Seed&quot;, Float) = 0
+
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 0
+        _FadeInEndTime (&quot;FadeIn End Time (sec)&quot;, Float) = 0.05
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 1
+        _FadeoutStartTime (&quot;FadeOut Start Time (sec)&quot;, Float) = 0.3
+        _FadeOutPower (&quot;FadeOut Power (&gt;1 faster early dim)&quot;, Range(0.25, 4)) = 1
+
+        _Opacity (&quot;Opacity (keep 1; brightness is in in_Color0 / ColorMult)&quot;, Range(0, 2)) = 1
+        _EmitterAlpha (&quot;Emitter Alpha&quot;, Range(0, 1)) = 1
+        _RgbBoost (&quot;RGB Boost (Unity tune; FF uses in_Color0 only)&quot;, Range(0, 4)) = 1
+        [Toggle] _bAlphaBlend (&quot;AlphaBlend ColorScale&quot;, Float) = 1
+        [Toggle] _UseAlphaTest (&quot;D3D9 alpha test (demote)&quot;, Float) = 0
+        _AlphaRef (&quot;Alpha test reference&quot;, Range(0, 1)) = 0
+
+        _ColorScaleCount (&quot;ColorScale Count&quot;, Int) = 2
+        _ColorScaleRepeats (&quot;ColorScale Repeats&quot;, Float) = 1
+        _ColorScale0 (&quot;ColorScale[0]&quot;, Color) = (1, 1, 1, 1)
+        _ColorScaleTime1 (&quot;ColorScale Time[1]&quot;, Range(0, 1)) = 1
+        _ColorScale1 (&quot;ColorScale[1]&quot;, Color) = (1, 1, 1, 1)
+        _ColorMultMin (&quot;ColorMult Min (RGB, .uc ColorMultiplierRange)&quot;, Color) = (0.5, 0.5, 0.8, 1)
+        _ColorMultMax (&quot;ColorMult Max (RGB, .uc ColorMultiplierRange)&quot;, Color) = (0.7, 0.7, 1.0, 1)
+
+        _StartLocationOffset (&quot;StartLocationOffset UE (X,Y,Z)&quot;, Vector) = (0, 0, -20, 0)
+        _PolarAzimuthDeg (&quot;Polar Azimuth Deg (Min,Max)&quot;, Vector) = (0, 360, 0, 0)
+        _PolarPitchDeg (&quot;Polar Pitch from +Z Deg (Min,Max)&quot;, Vector) = (90, 90, 0, 0)
+        _PolarRadius (&quot;Polar Radius UU (Min,Max)&quot;, Vector) = (20, 20, 0, 0)
+        _SpawnUnitScale (&quot;Spawn/velocity UU-&gt;Unity (0.01)&quot;, Float) = 0.01
+        _UcPolarRadiusScale (&quot;UC PolarRadius Scale&quot;, Float) = 1
+        _UcStartLocationOffsetScale (&quot;UC StartLocationOffset Scale&quot;, Float) = 1
+        _UcVelocityScale (&quot;UC StartVelocity Scale&quot;, Float) = 1
+        _UcAccelerationScale (&quot;UC Acceleration Scale&quot;, Float) = 1
+
+        _VelocityRangeZ (&quot;StartVelocityRange Z UU (Min,Max)&quot;, Vector) = (0, 30, 0, 0)
+        _Acceleration (&quot;Acceleration UE (X,Y,Z)&quot;, Vector) = (0, 0, 200, 0)
+        _VelocityLossRangeZ (&quot;VelocityLossRange Z UU (Min,Max)&quot;, Vector) = (1, 1, 0, 0)
+
+        _SizeRangeX (&quot;StartSizeRange X UU (Min,Max)&quot;, Vector) = (1, 3, 0, 0)
+        _SizeRangeY (&quot;StartSizeRange Y UU (Min,Max)&quot;, Vector) = (30, 30, 0, 0)
+        _SizeRangeZ (&quot;StartSizeRange Z UU (Min,Max)&quot;, Vector) = (30, 30, 0, 0)
+        _L2FxEffectScale (&quot;L2 Fx Effect Scale (runtime target)&quot;, Float) = 1
+        _L2FxSpriteScale (&quot;L2 Fx Sprite Scale (per-effect tune)&quot;, Float) = 1
+
+        [Header(Unity RenderDoc Tune not UC)]
+        _L2FxSpriteWidthScale (&quot;Sprite Width Scale (RenderDoc vs L2)&quot;, Float) = 1
+        _L2FxSpriteHeightScale (&quot;Sprite Height Scale (RenderDoc vs L2)&quot;, Float) = 0.5
+
+        [Toggle] _UniformSize (&quot;Uniform Size&quot;, Float) = 0
+
+        [Toggle] _UseSizeScale (&quot;Use SizeScale&quot;, Float) = 1
+        _SizeScaleTime0 (&quot;SizeScale Time[0]&quot;, Range(0, 1)) = 0.51
+        _SizeScaleVal0 (&quot;SizeScale Value[0]&quot;, Float) = 1
+        _SizeScaleTime1 (&quot;SizeScale Time[1]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal1 (&quot;SizeScale Value[1]&quot;, Float) = 0.3
+
+        [Toggle] _SpinParticles (&quot;Spin Particles (L2 upline: off, UC beacon only)&quot;, Float) = 0
+        _SpinsPerSecondRange (&quot;Spins Per Second rev (Min,Max)&quot;, Vector) = (0, 0, 0, 0)
+        _StartSpinRange (&quot;Start Spin rev (Min,Max)&quot;, Vector) = (0, 0, 0, 0)
+
+        _TextureUSubdivisions (&quot;Texture U Subdivisions&quot;, Float) = 2
+        _TextureVSubdivisions (&quot;Texture V Subdivisions&quot;, Float) = 2
+        _SubdivisionStart (&quot;Subdivision Start&quot;, Float) = 2
+        _SubdivisionEnd (&quot;Subdivision End&quot;, Float) = 3
+        [Toggle] _BlendBetweenSubdivisions (&quot;Blend Between Subdivisions&quot;, Float) = 1
+
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend (&quot;Source Blend (RenderDoc: One)&quot;, Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend (&quot;Destination Blend (RenderDoc: One)&quot;, Float) = 1
+
+        [Header(Debug)]
+        [Toggle] _DebugAtlasPreview (&quot;Debug Atlas Preview (_StartTime=0)&quot;, Float) = 0
+        [Toggle] _DebugAtlasPreviewLoop (&quot;Debug Preview Loop (flipbook/fade time)&quot;, Float) = 0
+        [Toggle] _DebugAtlasPreviewRealSize (&quot;Debug Preview Real UC Size (no x8)&quot;, Float) = 0
+        [Toggle] _DebugAtlasPreviewMotion (&quot;Debug Preview Motion (spawn+fly one streak)&quot;, Float) = 0
+        _DebugAtlasPreviewAge (&quot;Debug Preview Life (0-1 of Lifetime)&quot;, Range(0, 1)) = 0.25
+        _DebugAtlasPreviewSizeScale (&quot;Debug Preview Size Multiplier (ignored if Real Size)&quot;, Range(0.5, 32)) = 8
+        _DebugAtlasPreviewAlpha (&quot;Debug Preview Alpha (unused w/ One+One)&quot;, Range(0, 1)) = 0.85
+        _DebugAtlasPreviewBoost (&quot;Debug Preview RGB Boost&quot;, Range(0.25, 16)) = 8
+        _DebugAtlasBackground (&quot;Debug Preview Background&quot;, Color) = (0.03, 0.04, 0.08, 1)
+        [Toggle] _DebugSpawnRegion (&quot;Debug Spawn Region Wire (Scene)&quot;, Float) = 0
+        _DebugSpawnRegionColor (&quot;Debug Spawn Region Color&quot;, Color) = (1, 0.15, 0.55, 1)
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot;
+            &quot;Queue&quot; = &quot;Transparent&quot;
+            &quot;RenderType&quot; = &quot;Transparent&quot;
+                    &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+
+        Blend [_SrcBlend] [_DstBlend]
+        Cull Off
+        ZWrite Off
+        ZTest LEqual
+
+        Pass
+        {
+            Name &quot;TeleportCaSpriteUpline&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+            #pragma shader_feature_local _DEBUGSPAWNREGION_ON
+
+            #include &quot;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&quot;
+            #include &quot;../Common/L2FxEmitterSpawn.hlsl&quot;
+            #include &quot;../Common/L2FxFlipbook.hlsl&quot;
+            #include &quot;../Common/L2FxUcToUnityConvert.hlsl&quot;
+            #include &quot;../Common/L2FxMeshEmitterVertex.hlsl&quot;
+            #include &quot;../Common/L2FxSpriteEmitterVertex.hlsl&quot;
+            #include &quot;../Common/L2FxSpriteMultiSheet.hlsl&quot;
+            #include &quot;../Common/L2FxParticleAnim.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpriteColorFade.hlsl&quot;
+            #include &quot;../Common/L2FxAtlasDebug.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _StartTime;
+                float _HasLifetime;
+                float4 _InitialDelayRange;
+                float4 _LifetimeRange;
+                float _Seed;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _Fadeout;
+                float _FadeoutStartTime;
+                float _FadeOutPower;
+                float _Opacity;
+                float _RgbBoost;
+                float _EmitterAlpha;
+                float _bAlphaBlend;
+                float _UseAlphaTest;
+                float _AlphaRef;
+                uint _ColorScaleCount;
+                float _ColorScaleRepeats;
+                float4 _ColorScale0;
+                float _ColorScaleTime1;
+                float4 _ColorScale1;
+                float4 _ColorMultMin;
+                float4 _ColorMultMax;
+                float4 _StartLocationOffset;
+                float4 _PolarAzimuthDeg;
+                float4 _PolarPitchDeg;
+                float4 _PolarRadius;
+                float _SpawnUnitScale;
+                float _UcPolarRadiusScale;
+                float _UcStartLocationOffsetScale;
+                float _UcVelocityScale;
+                float _UcAccelerationScale;
+                float4 _VelocityRangeZ;
+                float4 _Acceleration;
+                float4 _VelocityLossRangeZ;
+                float4 _SizeRangeX;
+                float4 _SizeRangeY;
+                float4 _SizeRangeZ;
+                float _L2FxEffectScale;
+                float _L2FxSpriteScale;
+                float _L2FxSpriteWidthScale;
+                float _L2FxSpriteHeightScale;
+                float _UniformSize;
+                float _UseSizeScale;
+                float _SizeScaleTime0;
+                float _SizeScaleVal0;
+                float _SizeScaleTime1;
+                float _SizeScaleVal1;
+                float _SpinParticles;
+                float4 _SpinsPerSecondRange;
+                float4 _StartSpinRange;
+                float _TextureUSubdivisions;
+                float _TextureVSubdivisions;
+                float _SubdivisionStart;
+                float _SubdivisionEnd;
+                float _BlendBetweenSubdivisions;
+                float _DebugAtlasPreview;
+                float _DebugAtlasPreviewLoop;
+                float _DebugAtlasPreviewRealSize;
+                float _DebugAtlasPreviewMotion;
+                float _DebugAtlasPreviewAge;
+                float _DebugAtlasPreviewSizeScale;
+                float _DebugAtlasPreviewAlpha;
+                float _DebugAtlasPreviewBoost;
+                float4 _DebugAtlasBackground;
+                float _DebugSpawnRegion;
+                float4 _DebugSpawnRegionColor;
+            CBUFFER_END
+
+            #include &quot;../Common/L2FxInstancing.hlsl&quot;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uvAtlasA : TEXCOORD0;
+                float2 uvAtlasB : TEXCOORD1;
+                float4 tint : COLOR;
+                nointerpolation float particleSeed : TEXCOORD2;
+                float flipbookBlend : TEXCOORD3;
+            };
+
+            float UplineSizeScaleScalar(float ageNorm)
+            {
+                return L2Fx_MeshBuiltin_SampleSizeScaleScalar(
+                    ageNorm,
+                    0.0,
+                    1.0,
+                    2u,
+                    _UseSizeScale,
+                    0.0,
+                    _SizeScaleTime0, _SizeScaleVal0,
+                    _SizeScaleTime1, _SizeScaleVal1,
+                    1.0, 1.0,
+                    1.0, 1.0,
+                    1.0, 1.0);
+            }
+
+            L2Fx_UcToUnitySpriteSpawnData UplineSpawnData()
+            {
+                L2Fx_UcToUnitySpriteSpawnData spawn;
+                spawn.azimuthDegMinMax = _PolarAzimuthDeg.xy;
+                spawn.polarPitchDegMinMax = _PolarPitchDeg.xy;
+                spawn.radiusMinMax = _PolarRadius.xy;
+                spawn.startLocationOffsetUe = _StartLocationOffset.xyz;
+                spawn.startLocationRangeMinUe = float3(0.0, 0.0, 0.0);
+                spawn.startLocationRangeMaxUe = float3(0.0, 0.0, 0.0);
+                spawn.ucPolarRadiusScale = _UcPolarRadiusScale;
+                spawn.ucStartLocationOffsetScale = _UcStartLocationOffsetScale;
+                spawn.ucStartLocationRangeScale = 1.0;
+                spawn.spawnUnitScale = _SpawnUnitScale;
+                return spawn;
+            }
+
+            L2Fx_UcToUnitySpriteConvertData UplineSpriteConvertData()
+            {
+                L2Fx_UcToUnitySpriteConvertData data;
+                data.effectScale = _L2FxEffectScale;
+                data.spriteScale = _L2FxSpriteScale;
+                return data;
+            }
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+                float pSeed = L2Fx_SpriteMaterialSeed(_Seed);
+                float delay = L2Fx_RandomInitialDelay(_InitialDelayRange.xy, pSeed, _StartTime, 3.0);
+                float lifetime = L2Fx_RandomLifetime(_LifetimeRange.xy, pSeed, _StartTime, 7.0);
+                lifetime = max(lifetime, 1e-4);
+                float age = L2Fx_AgeSeconds(_Time.y, _StartTime, delay);
+                float ageNorm = saturate(age / lifetime);
+                OUT.particleSeed = pSeed;
+
+                float scenePreview = L2Fx_AtlasDebug_IsScenePreviewActive(_DebugAtlasPreview, _StartTime);
+                float previewMotion = L2Fx_AtlasDebug_PreviewMotion(scenePreview, _DebugAtlasPreviewMotion);
+                float previewRealSize = L2Fx_AtlasDebug_PreviewRealSize(scenePreview, _DebugAtlasPreviewRealSize);
+                L2Fx_AtlasDebug_OverrideAgeNorm(
+                    scenePreview,
+                    _DebugAtlasPreviewLoop,
+                    _DebugAtlasPreviewAge,
+                    _Time.y,
+                    lifetime,
+                    age,
+                    ageNorm);
+
+                float unitScale = L2Fx_UcToUnityResolveSpawnUnitScale(_SpawnUnitScale);
+                float3 spawnOfs = float3(0.0, 0.0, 0.0);
+
+                if (L2Fx_AtlasDebug_UseRuntimeMotion(scenePreview, previewMotion) &gt; 0.5)
+                {
+                    spawnOfs = L2Fx_UcToUnitySpriteSpawnOffset(
+                        UplineSpawnData(),
+                        pSeed,
+                        _StartTime);
+
+                    float velZ = L2Fx_RandomRange(
+                        L2Fx_UcToUnityApplyScale2(_VelocityRangeZ.xy, _UcVelocityScale),
+                        pSeed,
+                        _StartTime,
+                        107.0);
+                    float3 velUe = float3(0.0, 0.0, velZ);
+                    float3 accUe = L2Fx_UcToUnityApplyScale3(_Acceleration.xyz, _UcAccelerationScale);
+                    float lossZ = L2Fx_RandomRange(_VelocityLossRangeZ.xy, pSeed, _StartTime, 109.0);
+                    float3 vel = L2Fx_UeVectorToUnity(velUe) * unitScale;
+                    float3 acc = L2Fx_UeVectorToUnity(accUe) * unitScale;
+                    // VelocityLoss is a rate (1/s), NOT a distance -&gt; no unitScale.
+                    // dv/dt = a - k*v =&gt; speed converges to a/k (200 UU/s), no overshoot.
+                    float3 lossRate = L2Fx_UeVectorToUnity(float3(0.0, 0.0, lossZ));
+                    spawnOfs += L2Fx_DisplacementVelocityLossExp(vel, acc, lossRate, age);
+                }
+
+                float3 baseSizeM = L2Fx_UcToUnitySpriteStartSize(
+                    _SizeRangeX.xy,
+                    _SizeRangeY.xy,
+                    _SizeRangeZ.xy,
+                    _UniformSize &gt; 0.5,
+                    pSeed,
+                    _StartTime,
+                    UplineSpriteConvertData());
+                float3 sizeM = L2Fx_AtlasDebug_ResolveSpriteSize(
+                    scenePreview,
+                    previewRealSize,
+                    baseSizeM,
+                    UplineSizeScaleScalar(ageNorm),
+                    _DebugAtlasPreviewSizeScale,
+                    0.12);
+
+                // Skip RenderDoc tune only for static UC-size atlas inspect; play / motion use tune.
+                if (scenePreview &lt; 0.5 || previewMotion &gt; 0.5 || previewRealSize &lt; 0.5)
+                {
+                    sizeM = L2Fx_UcToUnitySpriteAnisotropicTune(
+                        sizeM,
+                        _L2FxSpriteWidthScale,
+                        _L2FxSpriteHeightScale);
+                }
+
+                float3 centerWS = TransformObjectToWorld(spawnOfs);
+                float3 posWS = L2Fx_PtduUpMultiSheetPositionWS(
+                    centerWS,
+                    IN.positionOS.xyz,
+                    sizeM,
+                    L2Fx_SpriteYawRadiansFromObjectMatrix());
+
+                OUT.positionHCS = TransformWorldToHClip(posWS);
+
+                // L2 mesh (fx_m_t0059 upline): atlas V increases toward streak top (+Y); skip PtduUpQuadUv01 flip.
+                float2 quadUv = TRANSFORM_TEX(IN.uv, _MainTex);
+                int uSub = max(1, (int)_TextureUSubdivisions);
+                int vSub = max(1, (int)_TextureVSubdivisions);
+                int s0 = (int)_SubdivisionStart;
+                int s1 = (int)_SubdivisionEnd;
+                float fBlend = 0.0;
+                float2 uvA;
+                float2 uvB;
+
+                if (L2Fx_AtlasDebug_PinFlipbookToStart(scenePreview, _DebugAtlasPreviewLoop, previewMotion) &gt; 0.5)
+                {
+                    int fi = clamp(s0, 0, L2Fx_FlipbookCellCount(uSub, vSub) - 1);
+                    uvA = L2Fx_FlipbookAtlasUV(quadUv, fi, uSub, vSub);
+                    uvB = uvA;
+                }
+                else if (_BlendBetweenSubdivisions &gt; 0.5)
+                {
+                    int fa;
+                    int fb;
+                    L2Fx_FlipbookBlendFrames(ageNorm, s0, s1, fa, fb, fBlend);
+                    uvA = L2Fx_FlipbookAtlasUV(quadUv, fa, uSub, vSub);
+                    uvB = L2Fx_FlipbookAtlasUV(quadUv, fb, uSub, vSub);
+                }
+                else
+                {
+                    int fi = L2Fx_FlipbookFrameIndex(ageNorm, s0, s1);
+                    uvA = L2Fx_FlipbookAtlasUV(quadUv, fi, uSub, vSub);
+                    uvB = uvA;
+                }
+
+                OUT.uvAtlasA = uvA;
+                OUT.uvAtlasB = uvB;
+                OUT.flipbookBlend = fBlend;
+
+                float ctimes[8];
+                float4 ccols[8];
+                L2Fx_BuildColorScaleArrays5(
+                    _ColorScaleCount,
+                    _ColorScale0,
+                    _ColorScaleTime1, _ColorScale1,
+                    1.0, float4(1, 1, 1, 1),
+                    1.0, float4(1, 1, 1, 1),
+                    1.0, float4(1, 1, 1, 1),
+                    ctimes,
+                    ccols);
+
+                float csParam = max(_ColorScaleRepeats, 1.0) - 1.0;
+                float4 cs = L2Fx_SampleColorScale(
+                    ageNorm,
+                    csParam,
+                    _ColorScaleCount,
+                    ctimes,
+                    ccols,
+                    _bAlphaBlend &gt; 0.5);
+
+                if (scenePreview &gt; 0.5)
+                {
+                    // Editor atlas preview keeps the simple multiplicative dim for inspection.
+                    float4 colorMult = lerp(
+                        _ColorMultMin,
+                        _ColorMultMax,
+                        L2Fx_Hash11(pSeed * 19.0 + _StartTime));
+                    float lifeAlpha = L2Fx_AtlasDebug_PreviewLifeAlpha(
+                        _DebugAtlasPreviewLoop,
+                        _DebugAtlasPreviewAge,
+                        _Time.y,
+                        lifetime,
+                        _HasLifetime,
+                        _FadeIn,
+                        _FadeInEndTime,
+                        _Fadeout,
+                        _FadeoutStartTime,
+                        _FadeOutPower);
+                    OUT.tint = float4(cs.rgb * colorMult.rgb, cs.a * colorMult.a) * lifeAlpha;
+                }
+                else
+                {
+                    // Runtime: exact UE3 SpriteEmitter color pipeline (verified byte-for-byte
+                    // vs Engine.dll). Per-channel random ColorMultiplier + SUBTRACTIVE fade
+                    // (fade-to-black on all RGBA), so G/R zero out before B -&gt; dies blue.
+                    // e_u031_a ColorScale is white-&gt;white, so the white facade is exact here.
+                    OUT.tint = L2Fx_SpriteColorFade_White(
+                        _ColorMultMin.rgb, _ColorMultMax.rgb,
+                        age, lifetime, _HasLifetime,
+                        _FadeIn, _FadeInEndTime,
+                        _Fadeout, _FadeoutStartTime,
+                        pSeed, _StartTime);
+                }
+
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 texA = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvAtlasA);
+                half4 texB = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvAtlasB);
+                half4 tex = lerp(texA, texB, (half)IN.flipbookBlend);
+
+                float scenePreview = L2Fx_AtlasDebug_IsScenePreviewActive(_DebugAtlasPreview, _StartTime);
+                if (scenePreview &gt; 0.5)
+                {
+                    return L2Fx_AtlasDebug_AdditiveOneOnePreview(
+                        tex,
+                        (half3)IN.tint.rgb,
+                        (half)_DebugAtlasPreviewBoost);
+                }
+
+                // SPIR-V: out = sample(t0, uv) * in_Color0; One+One uses rgb only.
+                half4 outColor = tex * IN.tint;
+
+                if (_UseAlphaTest &gt; 0.5 &amp;&amp; outColor.a &lt; (half)_AlphaRef)
+                {
+                    discard;
+                }
+
+                // One+One additive: no per-channel saturate (destroys ColorMult hue at high gain).
+                // Do not saturate gain — _RgbBoost&gt;1 must reach the framebuffer (L2 in_Color0 path).
+                half gain = (half)max(0.0, _Opacity * _RgbBoost * _EmitterAlpha);
+                half3 rgb = outColor.rgb * gain;
+                return half4(rgb, 1.0);
+            }
+
+            ENDHLSL
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/RuntimeTextureLoader.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/RuntimeTextureLoader.cs</h1>
+            <pre>using System.IO;
+using UnityEngine;
+
+public static class RuntimeTextureLoader
+{
+    public static Texture2D LoadPng(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            return Texture2D.whiteTexture;
+
+        byte[] bytes = File.ReadAllBytes(path);
+        var decoded = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
+        if (!decoded.LoadImage(bytes, false))
+            return Texture2D.whiteTexture;
+
+        // LoadImage creates an sRGB texture. FX atlases must sample authored
+        // bytes as Linear (Inspector sRGB = OFF). Copy the raw 8-bit texels
+        // into a linear Texture2D so URP does not decode them again.
+        var tex = new Texture2D(decoded.width, decoded.height, TextureFormat.RGBA32, false, true);
+        tex.name = Path.GetFileNameWithoutExtension(path);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        tex.filterMode = FilterMode.Bilinear;
+        tex.SetPixels32(decoded.GetPixels32());
+        tex.Apply(false, false);
+        UnityEngine.Object.Destroy(decoded);
+        return tex;
+    }
+
+    public static Texture2D White()
+    {
+        return Texture2D.whiteTexture;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Login/LoginWindow/LoginWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Login/LoginWindow/LoginWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2Input&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Input/L2Input.uxml?fileID=9197481963319205126&amp;amp;guid=dce83b8dcd7f5614280886eaaa82f0f7&amp;amp;type=3#L2Input&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Login/LoginWindow/LoginWindow.uss?fileID=7433441132597879392&amp;amp;guid=05ea6159cebbe30449524b6449484bfc&amp;amp;type=3#LoginWindow&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;LoginWindow&quot; picking-mode=&quot;Ignore&quot; class=&quot;login-window&quot;&gt;
+        &lt;ui:Instance template=&quot;L2Input&quot; name=&quot;UserInputField&quot; class=&quot;l2-input-field-template l2-color-4&quot;&gt;
+            &lt;AttributeOverrides element-name=&quot;L2Input&quot; label=&quot;ID&quot; /&gt;
+        &lt;/ui:Instance&gt;
+        &lt;ui:Instance template=&quot;L2Input&quot; name=&quot;PasswordInputField&quot; class=&quot;l2-input-field-template l2-color-4&quot;&gt;
+            &lt;AttributeOverrides element-name=&quot;L2Input&quot; label=&quot;Password&quot; password=&quot;true&quot; /&gt;
+        &lt;/ui:Instance&gt;
+        &lt;ui:VisualElement name=&quot;Buttons&quot; picking-mode=&quot;Ignore&quot; class=&quot;login-buttons&quot;&gt;
+            &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;LoginButton&quot; class=&quot;l2-button-template&quot;&gt;
+                &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Log In&quot; /&gt;
+            &lt;/ui:Instance&gt;
+            &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;ExitButton&quot; class=&quot;l2-button-template&quot;&gt;
+                &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Exit&quot; /&gt;
+            &lt;/ui:Instance&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

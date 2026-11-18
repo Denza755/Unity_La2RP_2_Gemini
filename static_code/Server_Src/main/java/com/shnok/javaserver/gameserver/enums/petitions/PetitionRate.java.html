@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/petitions/PetitionRate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/petitions/PetitionRate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums.petitions;
+
+public enum PetitionRate
+{
+	VERY_GOOD(&quot;Very Good&quot;),
+	GOOD(&quot;Good&quot;),
+	FAIR(&quot;Fair&quot;),
+	POOR(&quot;Poor&quot;),
+	VERY_POOR(&quot;Very Poor&quot;);
+	
+	public static final PetitionRate[] VALUES = values();
+	
+	private String _desc;
+	
+	private PetitionRate(String desc)
+	{
+		_desc = desc;
+	}
+	
+	public String getDesc()
+	{
+		return _desc;
+	}
+}</pre>
+            
+</body>
+</html>

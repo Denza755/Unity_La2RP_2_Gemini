@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Folk.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Folk.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.data.xml.SkillTreeData;
+import com.shnok.javaserver.gameserver.enums.skills.AcquireSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.holder.skillnode.EnchantSkillNode;
+import com.shnok.javaserver.gameserver.model.holder.skillnode.GeneralSkillNode;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.skill.AcquireSkillDone;
+import com.shnok.javaserver.gameserver.network.serverpackets.skill.AcquireSkillList;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExEnchantSkillList;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+import com.shnok.javaserver.gameserver.skills.AbstractEffect;
+import com.shnok.javaserver.gameserver.skills.effects.EffectBuff;
+import com.shnok.javaserver.gameserver.skills.effects.EffectDebuff;
+
+public class Folk extends Npc
+{
+	public Folk(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void addEffect(AbstractEffect newEffect)
+	{
+		if (newEffect instanceof EffectDebuff || newEffect instanceof EffectBuff)
+			super.addEffect(newEffect);
+		else if (newEffect != null)
+			newEffect.stopEffectTask();
+	}
+	
+	/**
+	 * This method displays SkillList to the player.
+	 * @param player The player who requested the method.
+	 */
+	public void showSkillList(Player player)
+	{
+		if (!getTemplate().canTeach(player.getClassId()))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/trainer/&quot; + getTemplate().getNpcId() + &quot;-noskills.htm&quot;);
+			player.sendPacket(html);
+			return;
+		}
+		
+		final List&lt;GeneralSkillNode&gt; skills = player.getAvailableSkills();
+		if (skills.isEmpty())
+		{
+			final int minlevel = player.getRequiredLevelForNextSkill();
+			if (minlevel &gt; 0)
+				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.DO_NOT_HAVE_FURTHER_SKILLS_TO_LEARN_S1).addNumber(minlevel));
+			else
+				player.sendPacket(SystemMessageId.NO_MORE_SKILLS_TO_LEARN);
+			
+			player.sendPacket(AcquireSkillDone.STATIC_PACKET);
+		}
+		else
+			player.sendPacket(new AcquireSkillList(AcquireSkillType.USUAL, skills));
+		
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	/**
+	 * This method displays EnchantSkillList to the player.
+	 * @param player The player who requested the method.
+	 */
+	public void showEnchantSkillList(Player player)
+	{
+		if (!getTemplate().canTeach(player.getClassId()))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/trainer/&quot; + getTemplate().getNpcId() + &quot;-noskills.htm&quot;);
+			player.sendPacket(html);
+			return;
+		}
+		
+		if (player.getClassId().getLevel() &lt; 3)
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setHtml(&quot;&lt;html&gt;&lt;body&gt; You must have 3rd class change quest completed.&lt;/body&gt;&lt;/html&gt;&quot;);
+			player.sendPacket(html);
+			return;
+		}
+		
+		final List&lt;EnchantSkillNode&gt; skills = SkillTreeData.getInstance().getEnchantSkillsFor(player);
+		if (skills.isEmpty())
+		{
+			player.sendPacket(SystemMessageId.THERE_IS_NO_SKILL_THAT_ENABLES_ENCHANT);
+			
+			if (player.getStatus().getLevel() &lt; 74)
+				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.DO_NOT_HAVE_FURTHER_SKILLS_TO_LEARN_S1).addNumber(74));
+			else
+				player.sendPacket(SystemMessageId.NO_MORE_SKILLS_TO_LEARN);
+			
+			player.sendPacket(AcquireSkillDone.STATIC_PACKET);
+		}
+		else
+			player.sendPacket(new ExEnchantSkillList(skills));
+		
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;SkillList&quot;))
+			showSkillList(player);
+		else if (command.startsWith(&quot;EnchantSkillList&quot;))
+			showEnchantSkillList(player);
+		else
+			super.onBypassFeedback(player, command);
+	}
+}</pre>
+            
+</body>
+</html>

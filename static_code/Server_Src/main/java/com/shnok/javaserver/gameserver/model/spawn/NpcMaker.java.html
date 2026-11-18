@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/spawn/NpcMaker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/spawn/NpcMaker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.spawn;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.enums.MakerSpawnTime;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.memo.MakerMemo;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.SpawnMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.AlarmDeviceMaker1;
+import com.shnok.javaserver.gameserver.scripting.script.maker.AlarmDeviceMaker2;
+import com.shnok.javaserver.gameserver.scripting.script.maker.AlarmDeviceMaker3;
+import com.shnok.javaserver.gameserver.scripting.script.maker.AlarmDeviceMaker4;
+import com.shnok.javaserver.gameserver.scripting.script.maker.BenomMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.CloseDoorMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.DefaultMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.DefaultUseDBMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.DefaultUseDBMakerForFrintezza;
+import com.shnok.javaserver.gameserver.scripting.script.maker.EventMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.ExclusiveDespawnNormalMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.ExclusiveSpawnNormalMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.FarmMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.FreyaDeaconKeeperMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.FrintezzaEvilateMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.HallKeeperDefaultMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.IceFairySirrMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.InstantSpawnMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.InstantSpawnRandomMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.InstantSpawnSerialLastMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.InstantSpawnSerialMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.ManageTeleportDungeonMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.NoOnStartMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.OnDayNightSpawnMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.OpenDoorMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.ParentSpawnAllMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RainbowMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RandomSpawnMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RandomSpawnPawnMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RhamphorhynchusMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RoyalReqNextMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RoyalRushMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.RoyalSpawnTreasureBoxMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.SailrenDummyMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.SailrenMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.SculptureGardenMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.SculptureIceFairyMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.StatueOfShilenMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.TyrannosaurusMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.UndeadBandmasterMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.UniqueNpcKillEventMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.VelociraptorMaker;
+import com.shnok.javaserver.gameserver.scripting.script.maker.WarriorPassiveWeaknessMaker;
+
+public class NpcMaker
+{
+	private final String _name;
+	private final Territory _territory;
+	private final Territory _bannedTerritory;
+	private final SpawnMaker _maker;
+	private final MakerMemo _aiParams;
+	private final int _maximumNpc;
+	private final String _event;
+	
+	private MakerSpawnTime _spawnTime = null;
+	private String[] _spawnTimeParams = null;
+	
+	private List&lt;MultiSpawn&gt; _spawns;
+	private List&lt;Quest&gt; _questEvents = Collections.emptyList();
+	
+	private int _npcs;
+	
+	/**
+	 * Implicit {@link NpcMaker} constructor.
+	 * @param set : Stats of the {@link NpcMaker}.
+	 */
+	public NpcMaker(StatSet set)
+	{
+		_name = set.getString(&quot;name&quot;, null);
+		
+		_territory = set.getObject(&quot;t&quot;, Territory.class);
+		_bannedTerritory = set.getObject(&quot;bt&quot;, Territory.class);
+		_aiParams = new MakerMemo(set.getMap(&quot;aiParams&quot;));
+		_maximumNpc = (int) Math.round(set.getInteger(&quot;maximumNpcs&quot;) * Config.SPAWN_MULTIPLIER);
+		_event = set.getString(&quot;event&quot;, null);
+		
+		switch (set.getString(&quot;maker&quot;, &quot;&quot;))
+		{
+			case &quot;Close_Door_maker&quot;:
+				_maker = new CloseDoorMaker(&quot;Close_Door_maker&quot;);
+				break;
+			
+			case &quot;default_use_db_maker&quot;:
+				_maker = new DefaultUseDBMaker(&quot;default_use_db_maker&quot;);
+				break;
+			
+			case &quot;exclusive_spawn_normal&quot;:
+				_maker = new ExclusiveSpawnNormalMaker(&quot;exclusive_spawn_normal&quot;);
+				break;
+			
+			case &quot;freya_deacon_keeper_maker&quot;:
+				_maker = new FreyaDeaconKeeperMaker(&quot;freya_deacon_keeper_maker&quot;);
+				break;
+			
+			case &quot;ice_fairy_sirr_maker&quot;:
+				_maker = new IceFairySirrMaker(&quot;ice_fairy_sirr_maker&quot;);
+				break;
+			
+			case &quot;maker_instant_spawn_random&quot;:
+				_maker = new InstantSpawnRandomMaker(&quot;maker_instant_spawn_random&quot;);
+				break;
+			
+			case &quot;maker_instant_spawn_serial&quot;:
+				_maker = new InstantSpawnSerialMaker(&quot;maker_instant_spawn_serial&quot;);
+				break;
+			
+			case &quot;maker_instant_spawn&quot;:
+				_maker = new InstantSpawnMaker(&quot;maker_instant_spawn&quot;);
+				break;
+			
+			case &quot;manage_teleport_dungeon&quot;:
+				_maker = new ManageTeleportDungeonMaker(&quot;manage_teleport_dungeon&quot;);
+				break;
+			
+			case &quot;on_day_night_spawn&quot;:
+				_maker = new OnDayNightSpawnMaker(&quot;on_day_night_spawn&quot;);
+				break;
+			
+			case &quot;random_spawn&quot;:
+				_maker = new RandomSpawnMaker(&quot;random_spawn&quot;);
+				break;
+			
+			case &quot;royal_req_next_maker&quot;:
+				_maker = new RoyalReqNextMaker(&quot;royal_req_next_maker&quot;);
+				break;
+			
+			case &quot;royal_rush_maker&quot;:
+				_maker = new RoyalRushMaker(&quot;royal_rush_maker&quot;);
+				break;
+			
+			case &quot;royal_spawn_treasurebox&quot;:
+				_maker = new RoyalSpawnTreasureBoxMaker(&quot;royal_spawn_treasurebox&quot;);
+				break;
+			
+			case &quot;parent_spawn_all&quot;:
+				_maker = new ParentSpawnAllMaker(&quot;parent_spawn_all&quot;);
+				break;
+			
+			case &quot;unique_npc_kill_event&quot;:
+				_maker = new UniqueNpcKillEventMaker(&quot;unique_npc_kill_event&quot;);
+				break;
+			
+			case &quot;no_on_start_maker&quot;:
+				_maker = new NoOnStartMaker(&quot;no_on_start_maker&quot;);
+				break;
+			
+			case &quot;velociraptor_maker&quot;:
+				_maker = new VelociraptorMaker(&quot;velociraptor_maker&quot;);
+				break;
+			
+			case &quot;rhamphorhynchus_maker&quot;:
+				_maker = new RhamphorhynchusMaker(&quot;rhamphorhynchus_maker&quot;);
+				break;
+			
+			case &quot;tyrannosaurus_maker&quot;:
+				_maker = new TyrannosaurusMaker(&quot;tyrannosaurus_maker&quot;);
+				break;
+			
+			case &quot;sailren_maker&quot;:
+				_maker = new SailrenMaker(&quot;sailren_maker&quot;);
+				break;
+			
+			case &quot;sculpture_garden_maker&quot;:
+				_maker = new SculptureGardenMaker(&quot;sculpture_garden_maker&quot;);
+				break;
+			
+			case &quot;sculpture_ice_fairy_maker&quot;:
+				_maker = new SculptureIceFairyMaker(&quot;sculpture_ice_fairy_maker&quot;);
+				break;
+			
+			case &quot;sailren_dummy_maker&quot;:
+				_maker = new SailrenDummyMaker(&quot;sailren_dummy_maker&quot;);
+				break;
+			
+			case &quot;statue_of_shilen_maker&quot;:
+				_maker = new StatueOfShilenMaker(&quot;statue_of_shilen_maker&quot;);
+				break;
+			
+			case &quot;benom_maker&quot;:
+				_maker = new BenomMaker(&quot;benom_maker&quot;);
+				break;
+			
+			case &quot;default_use_db_maker_for_frintessa&quot;:
+				_maker = new DefaultUseDBMakerForFrintezza(&quot;default_use_db_maker_for_frintessa&quot;);
+				break;
+			
+			case &quot;frintessa_evilate_maker&quot;:
+				_maker = new FrintezzaEvilateMaker(&quot;frintessa_evilate_maker&quot;);
+				break;
+			
+			case &quot;hall_keeper_wizard_maker&quot;:
+				_maker = new HallKeeperDefaultMaker(&quot;hall_keeper_wizard_maker&quot;);
+				break;
+			
+			case &quot;hall_keeper_patrol_maker&quot;:
+				_maker = new HallKeeperDefaultMaker(&quot;hall_keeper_patrol_maker&quot;);
+				break;
+			
+			case &quot;alarm_device1_maker&quot;:
+				_maker = new AlarmDeviceMaker1(&quot;alarm_device1_maker&quot;);
+				break;
+			
+			case &quot;alarm_device2_maker&quot;:
+				_maker = new AlarmDeviceMaker2(&quot;alarm_device2_maker&quot;);
+				break;
+			
+			case &quot;alarm_device3_maker&quot;:
+				_maker = new AlarmDeviceMaker3(&quot;alarm_device3_maker&quot;);
+				break;
+			
+			case &quot;alarm_device4_maker&quot;:
+				_maker = new AlarmDeviceMaker4(&quot;alarm_device4_maker&quot;);
+				break;
+			
+			case &quot;hall_keeper_guard_maker&quot;:
+				_maker = new HallKeeperDefaultMaker(&quot;hall_keeper_guard_maker&quot;);
+				break;
+			
+			case &quot;hall_keeper_captain_maker&quot;:
+				_maker = new HallKeeperDefaultMaker(&quot;hall_keeper_captain_maker&quot;);
+				break;
+			
+			case &quot;hall_keeper_self_destruction_maker&quot;:
+				_maker = new HallKeeperDefaultMaker(&quot;hall_keeper_self_destruction_maker&quot;);
+				break;
+			
+			case &quot;undead_bandmaster_maker&quot;:
+				_maker = new UndeadBandmasterMaker(&quot;undead_bandmaster_maker&quot;);
+				break;
+			
+			case &quot;undead_band_lance_maker&quot;:
+				_maker = new OpenDoorMaker(&quot;undead_band_lance_maker&quot;);
+				break;
+			
+			case &quot;undead_band_leader_maker&quot;:
+				_maker = new OpenDoorMaker(&quot;undead_band_leader_maker&quot;);
+				break;
+			
+			case &quot;undead_band_archer_wazird_maker&quot;:
+				_maker = new OpenDoorMaker(&quot;undead_band_archer_wazird_maker&quot;);
+				break;
+			
+			case &quot;warrior_passive_weakness_maker&quot;:
+				_maker = new WarriorPassiveWeaknessMaker(&quot;warrior_passive_weakness_maker&quot;);
+				break;
+			
+			case &quot;hall_timer_bomb_maker&quot;:
+				_maker = new HallKeeperDefaultMaker(&quot;hall_timer_bomb_maker&quot;);
+				break;
+			
+			case &quot;farm_maker&quot;:
+				_maker = new FarmMaker(&quot;farm_maker&quot;);
+				break;
+			
+			case &quot;rainbow_maker&quot;:
+				_maker = new RainbowMaker(&quot;rainbow_maker&quot;);
+				break;
+			
+			case &quot;event_maker&quot;:
+				_maker = new EventMaker(&quot;event_maker&quot;);
+				break;
+			
+			case &quot;maker_instant_spawn_serial_last&quot;:
+				_maker = new InstantSpawnSerialLastMaker(&quot;maker_instant_spawn_serial_last&quot;);
+				break;
+			
+			case &quot;random_spawn_pawn&quot;:
+				_maker = new RandomSpawnPawnMaker(&quot;random_spawn_pawn&quot;);
+				break;
+			
+			case &quot;exclusive_despawn_normal&quot;:
+				_maker = new ExclusiveDespawnNormalMaker(&quot;exclusive_despawn_normal&quot;);
+				break;
+			
+			case &quot;exclusive_spawn_use_db&quot;:
+				_maker = new ExclusiveSpawnNormalMaker(&quot;exclusive_spawn_use_db&quot;);
+				break;
+			
+			default:
+				_maker = new DefaultMaker(&quot;default_maker&quot;);
+				break;
+		}
+		
+		final String makerSpawnTime = set.getString(&quot;spawnTime&quot;, null);
+		if (makerSpawnTime != null)
+		{
+			final String[] split = makerSpawnTime.split(&quot;[()]&quot;);
+			if (split.length == 2)
+			{
+				_spawnTime = MakerSpawnTime.getEnumByName(split[0]);
+				_spawnTimeParams = split[1].split(&quot;;&quot;);
+			}
+		}
+		
+		_spawns = null;
+		_npcs = 0;
+	}
+	
+	/**
+	 * @return the name of the {@link NpcMaker}.
+	 */
+	public final String getName()
+	{
+		return _name;
+	}
+	
+	/**
+	 * @return the {@link Territory} of the {@link NpcMaker}.
+	 */
+	public final Territory getTerritory()
+	{
+		return _territory;
+	}
+	
+	/**
+	 * @return the banned {@link Territory} of the {@link NpcMaker}.
+	 */
+	public final Territory getBannedTerritory()
+	{
+		return _bannedTerritory;
+	}
+	
+	/**
+	 * @return the {@link SpawnMaker} of the {@link NpcMaker}.
+	 */
+	public final SpawnMaker getMaker()
+	{
+		return _maker;
+	}
+	
+	/**
+	 * @return the {@link MakerSpawnTime} of the {@link NpcMaker}.
+	 */
+	public final MakerSpawnTime getMakerSpawnTime()
+	{
+		return _spawnTime;
+	}
+	
+	/**
+	 * @return the {@link MakerSpawnTime} parameters of the {@link NpcMaker}.
+	 */
+	public final String[] getMakerSpawnTimeParams()
+	{
+		return _spawnTimeParams;
+	}
+	
+	/**
+	 * @return the {@link MakerMemo} of the {@link NpcMaker}.
+	 */
+	public final MakerMemo getMakerMemo()
+	{
+		return _aiParams;
+	}
+	
+	/**
+	 * @return the maximum amount of NPCs allowed for the {@link NpcMaker}.
+	 */
+	public final int getMaximumNpc()
+	{
+		return _maximumNpc;
+	}
+	
+	/**
+	 * @return the event name of the {@link NpcMaker}, used to spawn/despawn special groups of NPCs.
+	 */
+	public final String getEvent()
+	{
+		if (_event != null)
+			return _event;
+		else if (_aiParams != null &amp;&amp; _aiParams.get(&quot;EventName&quot;) != null)
+			return _aiParams.get(&quot;EventName&quot;);
+		
+		return null;
+	}
+	
+	/**
+	 * @return true, if the {@link NpcMaker} is to be spawned on server start.
+	 */
+	public final boolean isOnStart()
+	{
+		boolean isOnStart = true;
+		if (_aiParams != null &amp;&amp; _aiParams.get(&quot;on_start_spawn&quot;) != null &amp;&amp; _aiParams.getInteger(&quot;on_start_spawn&quot;) == 0)
+			isOnStart = false;
+		
+		return _event == null &amp;&amp; _spawnTime == null &amp;&amp; isOnStart;
+	}
+	
+	/**
+	 * Sets the {@link MultiSpawn} to the {@link NpcMaker}. Used only for creation of {@link NpcMaker} by {@link SpawnManager}.
+	 * @param spawns : {@link List} of all {@link MultiSpawn}.
+	 */
+	public final void setSpawns(List&lt;MultiSpawn&gt; spawns)
+	{
+		_spawns = spawns;
+	}
+	
+	/**
+	 * @return the {@link List} of all {@link MultiSpawn} of the {@link NpcMaker}.
+	 */
+	public final List&lt;MultiSpawn&gt; getSpawns()
+	{
+		return _spawns;
+	}
+	
+	/**
+	 * @return the amount of currently spawned {@link Npc}s by the {@link NpcMaker}.
+	 */
+	public final int getNpcsAlive()
+	{
+		return _npcs;
+	}
+	
+	/**
+	 * @return the amount of currently decayed {@link Npc}s by the {@link NpcMaker}.
+	 */
+	public final long getNpcsDead()
+	{
+		return _spawns.stream().mapToLong(sd -&gt; sd.getDecayed()).sum();
+	}
+	
+	/**
+	 * @return the list of registered {@link Quest}s.
+	 */
+	public final List&lt;Quest&gt; getQuestEvents()
+	{
+		return _questEvents;
+	}
+	
+	/**
+	 * Add a {@link Quest} on _questEvents {@link List}. Generate {@link List} if not existing (lazy initialization).&lt;br&gt;
+	 * If already existing, we remove and add it back.
+	 * @param quest : The {@link Quest} to add.
+	 */
+	public final void addQuestEvent(Quest quest)
+	{
+		if (_questEvents.isEmpty())
+			_questEvents = new ArrayList&lt;&gt;(3);
+		
+		_questEvents.remove(quest);
+		_questEvents.add(quest);
+	}
+	
+	/**
+	 * Spawns {@link Npc}s of this {@link NpcMaker} up maximum defined count.
+	 * @return the amount of spawned {@link Npc}s.
+	 */
+	public final synchronized int spawnAll()
+	{
+		if (_maker != null)
+			_maker.onStart(this);
+		
+		return _npcs;
+	}
+	
+	/**
+	 * Handles {@link Npc} spawn event in the {@link NpcMaker}.
+	 * @param npc : The spawned {@link Npc}.
+	 */
+	public final void onSpawn(Npc npc)
+	{
+		_npcs++;
+		if (_maker != null)
+			_maker.onNpcCreated(npc, (MultiSpawn) npc.getSpawn(), this);
+	}
+	
+	/**
+	 * Handles {@link Npc} decay event in the {@link NpcMaker}.
+	 * @param npc : The despawned {@link Npc}.
+	 */
+	public final void onDecay(Npc npc)
+	{
+		if (--_npcs == 0)
+		{
+			for (Quest quest : _questEvents)
+				quest.onMakerNpcsKilled(this, npc);
+		}
+		
+		if (_maker != null)
+		{
+			boolean shouldCallEvent = false;
+			
+			for (MultiSpawn ms : _spawns)
+				for (Npc msNpc : ms.getNpcs())
+					if (msNpc.getObjectId() == npc.getObjectId())
+						shouldCallEvent = true;
+					
+			if (shouldCallEvent)
+				_maker.onNpcDeleted(npc, (MultiSpawn) npc.getSpawn(), this);
+		}
+	}
+	
+	/**
+	 * Immediately respawns all {@link Npc}s of this {@link NpcMaker}.
+	 * @return the amount of respawned {@link Npc}s.
+	 */
+	public final synchronized int respawnAll()
+	{
+		int npcs = _npcs;
+		
+		// Respawn all NPCs.
+		_spawns.forEach(MultiSpawn::doRespawn);
+		
+		return _npcs - npcs;
+	}
+	
+	/**
+	 * Deletes all {@link Npc}s of this {@link NpcMaker}.
+	 * @return the amount of despawned {@link Npc}s.
+	 */
+	public final synchronized int deleteAll()
+	{
+		int npcs = _npcs;
+		
+		// Delete spawned NPCs.
+		// Note: must set npcs to 0 (prevents onMakerNpcsKilled event to be called)
+		_npcs = 0;
+		_spawns.forEach(MultiSpawn::doDelete);
+		
+		_npcs = 0;
+		return npcs;
+	}
+}</pre>
+            
+</body>
+</html>

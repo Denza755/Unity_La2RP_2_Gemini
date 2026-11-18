@@ -21,6 +21,8 @@ public class PooledEffect
     [SerializeField] private Action _resetCallback;
     [SerializeField] private bool _isArrow;
     [SerializeField] private Vector3 _arrowForwardAxis = Vector3.left;
+    [SerializeField] private bool _isDrainReturn;
+    [SerializeField] private Action _onArrival;
 
     public float StartTime { get { return _startTime; } set { _startTime = value; } }
     public float EffectDurationSec { get { return _effectDurationSec; } set { _effectDurationSec = value; } }
@@ -36,6 +38,8 @@ public class PooledEffect
     public bool HitSuccess { get { return _hitSuccess; } set { _hitSuccess = value; } }
     public bool IsArrow { get { return _isArrow; } set { _isArrow = value; } }
     public Vector3 ArrowForwardAxis { get { return _arrowForwardAxis; } set { _arrowForwardAxis = value; } }
+    public bool IsDrainReturn { get { return _isDrainReturn; } set { _isDrainReturn = value; } }
+    public Action OnArrival { get { return _onArrival; } set { _onArrival = value; } }
     public Vector3 StartingPosition { get { return _startingPosition; } set { _startingPosition = value; } }
     public Vector3 TargetPosition { get { return _endPosition; } set { _endPosition = value; } }
     public Action ResetTimerCallback { get { return _resetCallback; } set { _resetCallback = value; } }

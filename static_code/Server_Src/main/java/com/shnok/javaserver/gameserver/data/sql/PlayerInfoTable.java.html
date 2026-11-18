@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/sql/PlayerInfoTable.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/sql/PlayerInfoTable.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.sql;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+/**
+ * This class caches few {@link Player}s informations. It keeps a link between objectId and a {@link PlayerInfo}.
+ * &lt;p&gt;
+ * It is notably used for any offline character check, such as friendlist, existing character name, etc.
+ * &lt;/p&gt;
+ */
+public final class PlayerInfoTable
+{
+	private static final CLogger LOGGER = new CLogger(PlayerInfoTable.class.getName());
+	
+	private static final String LOAD_DATA = &quot;SELECT account_name, obj_Id, char_name, accesslevel FROM characters&quot;;
+	
+	private final Map&lt;Integer, PlayerInfo&gt; _infos = new ConcurrentHashMap&lt;&gt;();
+	
+	protected PlayerInfoTable()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(LOAD_DATA);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+				_infos.put(rs.getInt(&quot;obj_Id&quot;), new PlayerInfo(rs.getString(&quot;account_name&quot;), rs.getString(&quot;char_name&quot;), rs.getInt(&quot;accesslevel&quot;)));
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load player infos.&quot;, e);
+		}
+		
+		LOGGER.info(&quot;Loaded {} player infos.&quot;, _infos.size());
+	}
+	
+	/**
+	 * Caches {@link Player} informations, but only if not already existing.
+	 * @param objectId : The player&#x27;s objectId.
+	 * @param accountName : The player&#x27;s account name.
+	 * @param playerName : The player&#x27;s name.
+	 * @param accessLevel : The player&#x27;s access level.
+	 */
+	public final void addPlayer(int objectId, String accountName, String playerName, int accessLevel)
+	{
+		_infos.putIfAbsent(objectId, new PlayerInfo(accountName, playerName, accessLevel));
+	}
+	
+	/**
+	 * Update the {@link Player} data. The informations must already exist. Used for name and access level edition.
+	 * @param player : The player to update.
+	 * @param onlyAccessLevel : If true, it will update the access level, otherwise, it will update the player name.
+	 */
+	public final void updatePlayerData(Player player, boolean onlyAccessLevel)
+	{
+		if (player == null)
+			return;
+		
+		final PlayerInfo data = _infos.get(player.getObjectId());
+		if (data != null)
+		{
+			if (onlyAccessLevel)
+				data.setAccessLevel(player.getAccessLevel().getLevel());
+			else
+			{
+				final String playerName = player.getName();
+				if (!data.getPlayerName().equalsIgnoreCase(playerName))
+					data.setPlayerName(playerName);
+			}
+		}
+	}
+	
+	/**
+	 * Remove a {@link Player} entry.
+	 * @param objId : The objectId to check.
+	 */
+	public final void removePlayer(int objId)
+	{
+		if (_infos.containsKey(objId))
+			_infos.remove(objId);
+	}
+	
+	/**
+	 * Get {@link Player} objectId by name (reversing call).
+	 * @param playerName : The name to check.
+	 * @return the player objectId.
+	 */
+	public final int getPlayerObjectId(String playerName)
+	{
+		if (playerName == null || playerName.isEmpty())
+			return -1;
+		
+		return _infos.entrySet().stream().filter(m -&gt; m.getValue().getPlayerName().equalsIgnoreCase(playerName)).map(Entry::getKey).findFirst().orElse(-1);
+	}
+	
+	/**
+	 * Get {@link Player} name by object id.
+	 * @param objId : The objectId to check.
+	 * @return the player name.
+	 */
+	public final String getPlayerName(int objId)
+	{
+		final PlayerInfo data = _infos.get(objId);
+		return (data != null) ? data.getPlayerName() : null;
+	}
+	
+	/**
+	 * Get {@link Player} access level by object id.
+	 * @param objId : The objectId to check.
+	 * @return the access level.
+	 */
+	public final int getPlayerAccessLevel(int objId)
+	{
+		final PlayerInfo data = _infos.get(objId);
+		return (data != null) ? data.getAccessLevel() : 0;
+	}
+	
+	/**
+	 * Retrieve characters amount from any account, by account name.
+	 * @param accountName : The account name to check.
+	 * @return the number of characters stored into this account.
+	 */
+	public final int getCharactersInAcc(String accountName)
+	{
+		return (int) _infos.entrySet().stream().filter(m -&gt; m.getValue().getAccountName().equalsIgnoreCase(accountName)).count();
+	}
+	
+	/**
+	 * A datatype used to retain Player informations such as account name, player name and access level.
+	 */
+	private final class PlayerInfo
+	{
+		private final String _accountName;
+		private String _playerName;
+		private int _accessLevel;
+		
+		public PlayerInfo(String accountName, String playerName, int accessLevel)
+		{
+			_accountName = accountName;
+			_playerName = playerName;
+			_accessLevel = accessLevel;
+		}
+		
+		public final String getAccountName()
+		{
+			return _accountName;
+		}
+		
+		public final String getPlayerName()
+		{
+			return _playerName;
+		}
+		
+		public final int getAccessLevel()
+		{
+			return _accessLevel;
+		}
+		
+		public final void setPlayerName(String playerName)
+		{
+			_playerName = playerName;
+		}
+		
+		public final void setAccessLevel(int accessLevel)
+		{
+			_accessLevel = accessLevel;
+		}
+	}
+	
+	public static final PlayerInfoTable getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static final class SingletonHolder
+	{
+		protected static final PlayerInfoTable INSTANCE = new PlayerInfoTable();
+	}
+}</pre>
+            
+</body>
+</html>

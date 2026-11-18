@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagic/WarriorCastDDMagic.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagic/WarriorCastDDMagic.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.WarriorCastDDMagic;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.Warrior;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WarriorCastDDMagic extends Warrior
+{
+	public WarriorCastDDMagic()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagic&quot;);
+	}
+	
+	public WarriorCastDDMagic(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		20037,
+		20172,
+		20177,
+		21167,
+		21170,
+		21173,
+		21188,
+		21191,
+		21194,
+		21622,
+		21797,
+		20277,
+		20589,
+		20595,
+		27126,
+		20590,
+		20786,
+		21644,
+		20153,
+		20244,
+		20245,
+		20842,
+		21620,
+		21621,
+		20648,
+		20678,
+		20997,
+		20785,
+		20501,
+		20599
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai1 = 0;
+		npc._i_ai2 = 0;
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		final Creature mostHated = npc.getAI().getAggroList().getMostHatedCreature();
+		
+		if (npc._i_ai1 == 1)
+		{
+			if (mostHated == attacker)
+				npc._i_ai2 = 1;
+		}
+		else
+		{
+			startQuestTimer(&quot;2001&quot;, npc, null, 5000);
+			
+			npc._i_ai1 = 1;
+		}
+		
+		if (attacker instanceof Playable &amp;&amp; mostHated == attacker &amp;&amp; Rnd.get(100) &lt; 33)
+		{
+			final L2Skill DDMagic = getNpcSkillByType(npc, NpcSkillType.DD_MAGIC);
+			if (getAbnormalLevel(attacker, DDMagic) &lt;= 0)
+				npc.getAI().addCastDesire(attacker, DDMagic, 1000000);
+		}
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable &amp;&amp; called.getAI().getLifeTime() &gt; 7 &amp;&amp; called.getAI().getCurrentIntention().getType() != IntentionType.ATTACK)
+		{
+			if (Rnd.get(100) &lt; 33 &amp;&amp; called.distance2D(attacker) &gt; 100)
+			{
+				final L2Skill DDMagic = getNpcSkillByType(called, NpcSkillType.DD_MAGIC);
+				called.getAI().addCastDesire(attacker, DDMagic, 1000000);
+			}
+		}
+		super.onClanAttacked(caller, called, attacker, damage, skill);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;2001&quot;))
+		{
+			if (npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST)
+			{
+				npc._i_ai1 = 0;
+				npc._i_ai2 = 0;
+				
+				return super.onTimer(name, npc, player);
+			}
+			
+			if (npc._i_ai2 == 0)
+			{
+				final Creature mostHated = npc.getAI().getAggroList().getMostHatedCreature();
+				if (mostHated != null &amp;&amp; Rnd.get(100) &lt; 50)
+				{
+					final L2Skill DDMagic = getNpcSkillByType(npc, NpcSkillType.DD_MAGIC);
+					if (getAbnormalLevel(mostHated, DDMagic) &lt;= 0)
+						npc.getAI().addCastDesire(mostHated, DDMagic, 1000000);
+				}
+			}
+			
+			startQuestTimer(&quot;2001&quot;, npc, null, 5000);
+			
+			npc._i_ai2 = 0;
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+}</pre>
+            
+</body>
+</html>

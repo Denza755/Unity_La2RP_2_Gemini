@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestChangePartyLeader.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestChangePartyLeader.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public final class RequestChangePartyLeader extends L2GameClientPacket
+{
+	private String _targetName;
+	
+	@Override
+	protected void readImpl()
+	{
+		_targetName = readS();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		final Party party = player.getParty();
+		if (party == null || !party.isLeader(player))
+		{
+			player.sendPacket(SystemMessageId.ONLY_A_PARTY_LEADER_CAN_TRANSFER_ONES_RIGHTS_TO_ANOTHER_PLAYER);
+			return;
+		}
+		
+		party.changePartyLeader(_targetName);
+	}
+}</pre>
+            
+</body>
+</html>

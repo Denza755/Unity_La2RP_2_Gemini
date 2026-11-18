@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Buff/DebuffWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Buff/DebuffWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class DebuffWindow : AbstractEffectWindow
+{
+    [SerializeField] private int _debuffEffectsCount;
+
+    private static DebuffWindow _instance;
+    public static DebuffWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/BuffWindow/DebuffWindow&quot;);
+        _buffSlot = LoadAsset(&quot;Data/UI/_Elements/Game/BuffWindow/DebuffSlot&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        _effectType = EffectType.Debuff;
+
+        base.Init(root);
+
+        _buffRowContainers = new VisualElement[3];
+        _buffRowContainers[0] = _windowEle.Q&lt;VisualElement&gt;(&quot;NormalBuffs&quot;);
+        _buffRowContainers[1] = _windowEle.Q&lt;VisualElement&gt;(&quot;SpecialBuffs&quot;);
+        _buffRowContainers[2] = _windowEle.Q&lt;VisualElement&gt;(&quot;ToggleBuffs&quot;);
+
+        _windowEle.style.top = 40;
+
+        yield return new WaitForEndOfFrame();
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    public override void SetEtcEffects(PlayerBuffStatus status)
+    {
+        base.SetEtcEffects(status);
+
+        // treat it as debuff
+        if (status.DeathPenaltyLvl &gt; 0) AddEffect(5076, status.DeathPenaltyLvl, -100, BuffType.Special);
+        if (status.WeightPenalty &gt; 0) AddEffect(4270, status.WeightPenalty, -100, BuffType.Special);
+        if (status.IsInsideDangerZone) AddEffect(4268, 1, -100, BuffType.Special);
+        if (status.IsBlockingAllPlayers) AddEffect(4269, 1, -100, BuffType.Special);
+        if (status.HasCharmOfCourage) AddEffect(5041, 1, -100, BuffType.Special);
+        if (status.HasGradePenalty) AddEffect(4267, 1, -100, BuffType.Special); //Calvaz: needs fix: 6209 for armor, 6213 for weapon
+                                                                                //Shnok: It looks like interlude doesnt have different level of weight penalty, the effect id is 4267
+
+        HideWindowIfNeeded();
+    }
+}
+</pre>
+            
+</body>
+</html>

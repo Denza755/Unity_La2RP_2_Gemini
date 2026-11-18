@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/ArmorSet.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/ArmorSet.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.item;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.enums.Paperdoll;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+
+public final class ArmorSet
+{
+	private final String _name;
+	
+	private final int[] _set = new int[5];
+	
+	private final int _skillId;
+	private final int _shield;
+	private final int _shieldSkillId;
+	private final int _enchant6Skill;
+	
+	public ArmorSet(StatSet set)
+	{
+		_name = set.getString(&quot;name&quot;);
+		
+		_set[0] = set.getInteger(&quot;chest&quot;);
+		_set[1] = set.getInteger(&quot;legs&quot;);
+		_set[2] = set.getInteger(&quot;head&quot;);
+		_set[3] = set.getInteger(&quot;gloves&quot;);
+		_set[4] = set.getInteger(&quot;feet&quot;);
+		
+		_skillId = set.getInteger(&quot;skillId&quot;);
+		_shield = set.getInteger(&quot;shield&quot;);
+		_shieldSkillId = set.getInteger(&quot;shieldSkillId&quot;);
+		_enchant6Skill = set.getInteger(&quot;enchant6Skill&quot;);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return _name;
+		
+	}
+	
+	public int[] getSetItemsId()
+	{
+		return _set;
+	}
+	
+	public int getShield()
+	{
+		return _shield;
+	}
+	
+	public int getSkillId()
+	{
+		return _skillId;
+	}
+	
+	public int getShieldSkillId()
+	{
+		return _shieldSkillId;
+	}
+	
+	public int getEnchant6skillId()
+	{
+		return _enchant6Skill;
+	}
+	
+	/**
+	 * @param player : The {@link Player} to test.
+	 * @return True if the {@link Player} equipped the basic {@link ArmorSet} (without shield).
+	 */
+	public boolean containsAll(Player player)
+	{
+		int legs = 0;
+		final ItemInstance legsItem = player.getInventory().getItemFrom(Paperdoll.LEGS);
+		if (legsItem != null)
+			legs = legsItem.getItemId();
+		
+		if (_set[1] != 0 &amp;&amp; _set[1] != legs)
+			return false;
+		
+		int head = 0;
+		final ItemInstance headItem = player.getInventory().getItemFrom(Paperdoll.HEAD);
+		if (headItem != null)
+			head = headItem.getItemId();
+		
+		if (_set[2] != 0 &amp;&amp; _set[2] != head)
+			return false;
+		
+		int gloves = 0;
+		final ItemInstance glovesItem = player.getInventory().getItemFrom(Paperdoll.GLOVES);
+		if (glovesItem != null)
+			gloves = glovesItem.getItemId();
+		
+		if (_set[3] != 0 &amp;&amp; _set[3] != gloves)
+			return false;
+		
+		int feet = 0;
+		final ItemInstance feetItem = player.getInventory().getItemFrom(Paperdoll.FEET);
+		if (feetItem != null)
+			feet = feetItem.getItemId();
+		
+		if (_set[4] != 0 &amp;&amp; _set[4] != feet)
+			return false;
+		
+		return true;
+	}
+	
+	public boolean containsItem(Paperdoll slot, int itemId)
+	{
+		switch (slot)
+		{
+			case CHEST:
+				return _set[0] == itemId;
+			
+			case LEGS:
+				return _set[1] == itemId;
+			
+			case HEAD:
+				return _set[2] == itemId;
+			
+			case GLOVES:
+				return _set[3] == itemId;
+			
+			case FEET:
+				return _set[4] == itemId;
+			
+			default:
+				return false;
+		}
+	}
+	
+	public boolean containsShield(Player player)
+	{
+		final ItemInstance item = player.getSecondaryWeaponInstance();
+		return item != null &amp;&amp; item.getItemId() == _shield;
+	}
+	
+	public boolean containsShield(int shieldId)
+	{
+		return _shield != 0 &amp;&amp; _shield == shieldId;
+	}
+	
+	/**
+	 * @param player : The {@link Player} to test.
+	 * @return True if all parts of this {@link ArmorSet} are enchanted to +6 or more.
+	 */
+	public boolean isEnchanted6(Player player)
+	{
+		final ItemInstance chestItem = player.getInventory().getItemFrom(Paperdoll.CHEST);
+		if (chestItem.getEnchantLevel() &lt; 6)
+			return false;
+		
+		int legs = 0;
+		final ItemInstance legsItem = player.getInventory().getItemFrom(Paperdoll.LEGS);
+		if (legsItem != null &amp;&amp; legsItem.getEnchantLevel() &gt; 5)
+			legs = legsItem.getItemId();
+		
+		if (_set[1] != 0 &amp;&amp; _set[1] != legs)
+			return false;
+		
+		int head = 0;
+		final ItemInstance headItem = player.getInventory().getItemFrom(Paperdoll.HEAD);
+		if (headItem != null &amp;&amp; headItem.getEnchantLevel() &gt; 5)
+			head = headItem.getItemId();
+		
+		if (_set[2] != 0 &amp;&amp; _set[2] != head)
+			return false;
+		
+		int gloves = 0;
+		final ItemInstance glovesItem = player.getInventory().getItemFrom(Paperdoll.GLOVES);
+		if (glovesItem != null &amp;&amp; glovesItem.getEnchantLevel() &gt; 5)
+			gloves = glovesItem.getItemId();
+		
+		if (_set[3] != 0 &amp;&amp; _set[3] != gloves)
+			return false;
+		
+		int feet = 0;
+		final ItemInstance feetItem = player.getInventory().getItemFrom(Paperdoll.FEET);
+		if (feetItem != null &amp;&amp; feetItem.getEnchantLevel() &gt; 5)
+			feet = feetItem.getItemId();
+		
+		if (_set[4] != 0 &amp;&amp; _set[4] != feet)
+			return false;
+		
+		return true;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/_TO_IMPLEMENT/Skillbar/SkillbarWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/_TO_IMPLEMENT/Skillbar/SkillbarWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;ui:GroupBox name=&quot;ShortCut&quot; class=&quot;short-cut&quot; style=&quot;width: 43px; height: 500px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; top: 23px; left: auto; right: auto; bottom: auto; -unity-text-align: upper-left; align-self: flex-end; justify-content: flex-start; -unity-slice-top: 0;&quot;&gt;
+        &lt;ui:GroupBox name=&quot;GroupBox&quot; class=&quot;drag-area-shortcut&quot; style=&quot;height: 16px; width: 45px; max-width: 64px; flex-direction: row; max-height: 16px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; -unity-slice-top: 0;&quot;&gt;
+            &lt;ui:GroupBox name=&quot;GroupBox&quot; style=&quot;max-width: 14px; max-height: 16px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 8px; background-image: none; height: 16px;&quot;&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; max-width: 14px; max-height: 18px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/head/HorizontalSliderBarLeft&amp;apos;);&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox style=&quot;max-height: 16px; max-width: 16px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 8px; height: 16px;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;head-slider&quot; class=&quot;button-slider&quot; style=&quot;flex-grow: 1; -unity-slice-left: 0; rotate: 0;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox style=&quot;max-width: 8px; max-height: 16px; margin-top: 0; margin-right: -1px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/head/HorizontalSliderBarCenter_empty&amp;apos;); height: 16px; width: 8px;&quot;&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/head/HorizontalSliderBarCenter_empty&amp;apos;); width: 8px; height: 18px; -unity-slice-right: -2;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBox&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: -2px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 8px; height: 16px; min-width: auto; min-height: auto;&quot;&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; max-width: 9px; max-height: 18px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/head/HorizontalSliderBarCenter_empty&amp;apos;); -unity-slice-left: -1; height: 16px; width: 10px;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;horizontal-groupbox&quot; style=&quot;margin-top: 0; margin-right: -2px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; min-width: auto; min-height: auto; max-width: 16px; max-height: 16px; width: 8px; height: 16px;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;head-slide-hor&quot; class=&quot;slide-hor&quot; style=&quot;flex-grow: 1; max-width: 8px; max-height: 18px; margin-left: -1px;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; max-width: 10px; max-height: 16px; width: 10px; height: 16px;&quot;&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; max-width: 9px; max-height: 18px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/head/HorizontalSliderBarRight&amp;apos;);&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:GroupBox style=&quot;flex-direction: row; margin-top: -2px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; max-width: 45px; max-height: 14px; width: 45px; height: 14px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/button/panel/button_panel&amp;apos;);&quot;&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxButon&quot; style=&quot;background-image: none; margin-top: 1px; margin-right: -1px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; min-width: 14px; min-height: 14px; max-width: 14px; width: 14px; -unity-slice-scale: 0; -unity-slice-bottom: 1;&quot;&gt;
+                &lt;ui:Button parse-escape-sequences=&quot;false&quot; display-tooltip-when-elided=&quot;false&quot; name=&quot;button_preview&quot; class=&quot;button-option_preview&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 1px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; width: 14px; height: 14px; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; -unity-background-image-tint-color: rgb(255, 255, 255); background-color: rgba(188, 188, 188, 0); -unity-slice-bottom: 2; -unity-slice-right: 2;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; max-width: 14px; max-height: 16px; width: 14px; height: 15px; -unity-slice-top: 0; left: 1px; padding-right: 0;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;ImageIndexPanel&quot; class=&quot;ImageIndex&quot; style=&quot;flex-grow: 1; max-width: 14px; max-height: 16px; background-image: none; margin-top: 0; margin-left: 0; height: 16px; width: 16px; padding-right: 0; margin-right: 0;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 1px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 14px; height: 14px; max-width: 14px; max-height: none; min-width: 14px; min-height: 14px; left: 0;&quot;&gt;
+                &lt;ui:Button parse-escape-sequences=&quot;false&quot; display-tooltip-when-elided=&quot;false&quot; enable-rich-text=&quot;true&quot; focusable=&quot;true&quot; name=&quot;button_next&quot; class=&quot;button-option_next&quot; style=&quot;width: 14px; height: 13px; max-width: 14px; max-height: 13px; margin-top: 1px; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-slice-right: 2; background-color: rgba(188, 188, 188, 0); -unity-text-outline-color: rgba(56, 56, 56, 0); color: rgb(56, 56, 56); opacity: 1; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; -unity-slice-top: 2; -unity-slice-left: 1;&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:GroupBox name=&quot;GroupBox&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; height: 453px; width: 45px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/head/back_skill_12&amp;apos;);&quot;&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow1&quot; class=&quot;border_row0&quot; style=&quot;margin-top: 6px; margin-right: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow1&quot; class=&quot;ClassGroupBoxImageRow1&quot; style=&quot;margin-top: 0.5px; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon1&quot; class=&quot;row0&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1251&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow2&quot; class=&quot;border_row1&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow2&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon2&quot; class=&quot;row1&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow3&quot; class=&quot;border_row2&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow3&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon3&quot; class=&quot;row2&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow4&quot; class=&quot;border_row3&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow4&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon4&quot; class=&quot;row3&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow5&quot; class=&quot;border_row4&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow5&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon5&quot; class=&quot;row4&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow6&quot; class=&quot;border_row5&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow6&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon6&quot; class=&quot;row5&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow7&quot; class=&quot;border_row6&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow7&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon7&quot; class=&quot;row6&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow8&quot; class=&quot;border_row7&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow8&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon8&quot; class=&quot;row7&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow9&quot; class=&quot;border_row8&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow9&quot; style=&quot;margin-top: 0.5px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon9&quot; class=&quot;row8&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow10&quot; class=&quot;border_row9&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow10&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon10&quot; class=&quot;row9&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow11&quot; class=&quot;border_row10&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow11&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon11&quot; class=&quot;row10&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;GroupBoxRow12&quot; class=&quot;border_row11&quot; style=&quot;margin-top: 1.7px; margin-right: 0; margin-bottom: 0; padding-top: 0.5px; padding-bottom: 0; padding-left: 0; max-width: 34px; max-height: 34px; width: 34px; height: 34px; margin-left: 5.3px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/shortcut_select_new&amp;apos;); border-left-color: rgba(0, 0, 0, 0.08); border-right-color: rgba(0, 0, 0, 0.08); border-top-color: rgba(0, 0, 0, 0.08); border-bottom-color: rgba(0, 0, 0, 0.08); visibility: hidden;&quot;&gt;
+                &lt;ui:GroupBox name=&quot;GroupBoxImageRow12&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0.5px; padding-top: 0; padding-bottom: 0; padding-left: 0; width: 32px; height: 32px; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/fill_black&amp;apos;);&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Skill_Icon12&quot; class=&quot;row11&quot; style=&quot;flex-grow: 1; background-image: resource(&amp;apos;Data/UI/Assets/ShortCut/demo_skills/skill1471&amp;apos;); width: 32px; height: 32px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:GroupBox name=&quot;GroupFooter&quot; style=&quot;flex-direction: row; max-width: 48px; width: 48px; margin-top: -14px; margin-right: 0; margin-bottom: 0; margin-left: 2px; padding-top: 0; padding-bottom: 0; padding-left: 0; height: 16px; max-height: 16px; background-image: none;&quot;&gt;
+            &lt;ui:VisualElement name=&quot;visualToolTip&quot; class=&quot;button-tool-tip&quot; style=&quot;flex-grow: 1; width: 14px; height: 14px; max-width: 14px; max-height: 14px;&quot; /&gt;
+            &lt;ui:VisualElement name=&quot;visualRotate&quot; class=&quot;button-rotate&quot; style=&quot;flex-grow: 1; max-width: 14px; max-height: 14px; width: 14px; height: 14px;&quot; /&gt;
+            &lt;ui:VisualElement name=&quot;visualLock&quot; class=&quot;button-lock&quot; style=&quot;flex-grow: 1; width: 14px; height: 14px; max-width: 14px; max-height: 14px;&quot; /&gt;
+        &lt;/ui:GroupBox&gt;
+    &lt;/ui:GroupBox&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

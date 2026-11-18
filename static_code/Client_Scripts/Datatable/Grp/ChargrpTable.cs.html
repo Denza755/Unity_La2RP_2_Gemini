@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/ChargrpTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/ChargrpTable.cs</h1>
+            <pre>using System.Collections.Generic;
+using System.IO;
+using FMODUnity;
+using UnityEngine;
+
+public class ChargrpTable
+{
+    private static ChargrpTable _instance;
+    public static ChargrpTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new ChargrpTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    public Dictionary&lt;CharacterModelType, Chargrp&gt; CharGrps { get; private set; }
+
+    public void Initialize()
+    {
+        Readgrps();
+    }
+
+    private void Readgrps()
+    {
+        CharGrps = new Dictionary&lt;CharacterModelType, Chargrp&gt;();
+        string dataPath = Path.Combine(Application.streamingAssetsPath, &quot;Data/Meta/Chargrp_Lindvior.txt&quot;);
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return;
+        }
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            int lineIndex = 0;
+            while ((line = reader.ReadLine()) != null)
+            {
+                line = line.Replace(&quot;[&quot;, &quot;&quot;).Replace(&quot;]&quot;, &quot;&quot;).Replace(&quot;}&quot;, &quot;&quot;).Replace(&quot;{&quot;, &quot;&quot;);
+
+                Chargrp grp = new Chargrp();
+
+                string[] keyvals = line.Split(&#x27;\t&#x27;);
+
+                for (int i = 0; i &lt; keyvals.Length; i++)
+                {
+                    if (!keyvals[i].Contains(&quot;=&quot;))
+                    {
+                        continue;
+                    }
+
+                    string[] keyval = keyvals[i].Split(&quot;=&quot;);
+                    string key = keyval[0];
+                    string value = keyval[1];
+
+                    switch (key)
+                    {
+                        case &quot;hair&quot;:
+                            string[] hairVals = value.Split(&quot;;&quot;);
+
+                            int maxHairCount = 5;
+                            int hairCount = 1;
+                            List&lt;HairStyle&gt; hairStyles = new List&lt;HairStyle&gt;();
+
+                            for (int x = 0; x &lt; hairVals.Length; x += 4)
+                            {
+                                if (hairVals[x + 2].Length == 0)
+                                {
+                                    continue;
+                                }
+
+                                HairStyle hairStyle = new HairStyle();
+                                hairStyle.AhModel = hairVals[x];
+                                hairStyle.BhModel = hairVals[x + 2];
+
+                                hairStyle.AhTextures = new string[4];
+
+                                if (hairStyle.AhModel != null &amp;&amp; hairStyle.AhModel.Length &gt; 0)
+                                {
+                                    hairStyle.AhTextures[0] = hairVals[x + 1];
+                                }
+
+                                hairStyle.BhTextures = new string[4];
+                                hairStyle.BhTextures[0] = hairVals[x + 3];
+
+                                for (int colors = 1; colors &lt; 4; colors++)
+                                {
+                                    hairStyle.BhTextures[colors] = hairStyle.BhTextures[0].Replace(&quot;t00&quot;, &quot;t0&quot; + colors);
+                                    if (hairStyle.AhModel != null &amp;&amp; hairStyle.AhModel.Length &gt; 0)
+                                    {
+                                        hairStyle.AhTextures[colors] = hairStyle.AhTextures[0].Replace(&quot;t00&quot;, &quot;t0&quot; + colors);
+                                    }
+                                }
+
+                                hairStyles.Add(hairStyle);
+                                if (hairCount++ &gt; maxHairCount)
+                                {
+                                    break;
+                                }
+                            }
+
+                            grp.HairStyles = hairStyles.ToArray();
+                            break;
+                        case &quot;face_mesh&quot;:
+                            grp.FaceMesh = value.Split(&quot;;&quot;)[0];
+                            break;
+                        case &quot;face_texture&quot;:
+                            grp.FaceTextures = new string[6];
+                            grp.FaceTextures[0] = value.Split(&quot;;&quot;)[0];
+                            for (int x = 1; x &lt; 6; x++)
+                            {
+                                grp.FaceTextures[x] = grp.FaceTextures[0].Replace(&quot;t00&quot;, &quot;t0&quot; + x);
+                            }
+                            break;
+                        case &quot;class_name&quot;:
+                            grp.ClassName = value;
+                            break;
+                        case &quot;race&quot;:
+                            grp.Race = int.Parse(value);
+                            break;
+                        case &quot;class_type&quot;:
+                            grp.ClassType = int.Parse(value);
+                            break;
+                        case &quot;attack_effect&quot;:
+                            grp.AttackEffect = value;
+                            break;
+                        case &quot;damage_sound&quot;:
+                            grp.DamageSounds = DatUtils.ParseArray(value);
+                            grp.DamageSoundsEvents = GetSoundReference(grp.ClassId, grp.DamageSounds);
+                            break;
+                        case &quot;defense_sound&quot;:
+                            grp.DefenseSounds = DatUtils.ParseArray(value);
+                            grp.DefenseSoundsEvents = GetSoundReference(grp.ClassId, grp.DefenseSounds);
+                            break;
+                        case &quot;attack_sound&quot;:
+                            grp.AttackSounds = DatUtils.ParseArray(value);
+                            grp.AttackSoundsEvents = GetSoundReference(grp.ClassId, grp.AttackSounds);
+                            break;
+                    }
+
+                }
+
+                CharGrps.Add(FromIndexToModelType(lineIndex++), grp);
+
+                if (lineIndex &gt; 13)
+                {
+                    break;
+                }
+
+            }
+
+            Debug.Log($&quot;Successfully imported {CharGrps.Count} chargrps(s)&quot;);
+        }
+    }
+
+    private List&lt;EventReference&gt; GetSoundReference(int raceId, string[] eventNames)
+    {
+        List&lt;EventReference&gt; eventList = new List&lt;EventReference&gt;();
+        foreach (var sound in eventNames)
+        {
+            string updatedPath = sound.Replace(&quot;.&quot;, &quot;/&quot;);
+            EventReference er = RuntimeManager.PathToEventReference(&quot;event:/&quot; + updatedPath);
+            // Debug.LogWarning($&quot;Getting sound reference for sound: {sound} - {er.IsNull}&quot;);
+            if (er.IsNull)
+            {
+                Debug.LogWarning($&quot;Missing sound: {sound} for chargrp: {raceId}.&quot;);
+            }
+            else
+            {
+                eventList.Add(er);
+            }
+        }
+
+        return eventList;
+    }
+
+    public CharacterModelType FromIndexToModelType(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                return CharacterModelType.MFighter;
+            case 1:
+                return CharacterModelType.FFighter;
+            case 2:
+                return CharacterModelType.MDarkElf;
+            case 3:
+                return CharacterModelType.FDarkElf;
+            case 4:
+                return CharacterModelType.MDwarf;
+            case 5:
+                return CharacterModelType.FDwarf;
+            case 6:
+                return CharacterModelType.MElf;
+            case 7:
+                return CharacterModelType.FElf;
+            case 8:
+                return CharacterModelType.MMagic;
+            case 9:
+                return CharacterModelType.FMagic;
+            case 10:
+                return CharacterModelType.MOrc;
+            case 11:
+                return CharacterModelType.FOrc;
+            case 12:
+                return CharacterModelType.MShaman;
+            case 13:
+                return CharacterModelType.FShaman;
+            default:
+                return CharacterModelType.MFighter;
+        }
+    }
+}</pre>
+            
+</body>
+</html>

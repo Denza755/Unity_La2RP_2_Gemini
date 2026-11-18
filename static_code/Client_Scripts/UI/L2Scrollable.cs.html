@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/L2Scrollable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/L2Scrollable.cs</h1>
+            <pre>using UnityEngine;
+using UnityEngine.UIElements;
+
+public class L2Scrollable
+{
+    protected ScrollView _scrollView;
+    protected Scroller _scroller;
+    protected VisualElement _container;
+    public Scroller Scroller { get { return _scroller; } }
+    protected float _scrollStepSize = 22f;
+    public float ScrollStepSize { get { return _scrollStepSize; } set { _scrollStepSize = value; } }
+    private bool _autoscroll;
+    public bool AutoScroll { get { return _autoscroll; } set { _autoscroll = value; } }
+
+    public virtual void Initialize(VisualElement container, bool autoscroll)
+    {
+        _container = container;
+        _autoscroll = autoscroll;
+
+        InitScroller();
+    }
+
+    private void InitScroller()
+    {
+        _scrollView = _container?.Q&lt;ScrollView&gt;(&quot;ScrollView&quot;);
+        _scroller = _scrollView?.verticalScroller;
+
+        RegisterAutoScrollEvent();
+        RegisterPlayerScrollEvent();
+    }
+
+    protected void AdjustScrollValue(int direction)
+    {
+        if (_scrollView == null || _scroller == null) return;
+
+        float contentHeight = _scrollView.contentContainer.worldBound.height;
+        float viewportHeight = _scrollView.worldBound.height;
+
+        if (contentHeight &lt;= viewportHeight) return; // No need to scroll if content fits in viewport
+
+        // float scrollRange = contentHeight - viewportHeight;
+        // float stepSize = _scrollStepSize / scrollRange;
+        // float newValue = (direction &gt; 0 ? 1 : -1) * (_scroller.value + stepSize) * _scroller.highValue;
+
+        float newValue = (direction &gt; 0 ? 1 : -1) * _scrollStepSize + _scroller.value;
+
+        _scroller.value = Mathf.Clamp(newValue, 0, _scroller.highValue);
+    }
+
+    protected virtual void RegisterAutoScrollEvent()
+    {
+        if (_scroller == null)
+        {
+            return;
+        }
+    }
+
+    private void RegisterPlayerScrollEvent()
+    {
+        if (_scroller == null)
+        {
+            return;
+        }
+
+        var highBtn = _scroller.Q&lt;RepeatButton&gt;(&quot;unity-high-button&quot;);
+        var lowBtn = _scroller.Q&lt;RepeatButton&gt;(&quot;unity-low-button&quot;);
+        var dragger = _scroller.Q&lt;VisualElement&gt;(&quot;unity-drag-container&quot;);
+
+        highBtn.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt;
+        {
+            AdjustScrollValue(1);
+            VerifyScrollValue();
+        });
+        lowBtn.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt;
+        {
+            AdjustScrollValue(-1);
+            VerifyScrollValue();
+        });
+
+        highBtn.AddManipulator(new ButtonClickSoundManipulator(highBtn));
+        lowBtn.AddManipulator(new ButtonClickSoundManipulator(lowBtn));
+
+        dragger.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt;
+        {
+            VerifyScrollValue();
+        });
+
+        dragger.RegisterCallback&lt;WheelEvent&gt;(evt =&gt;
+        {
+            VerifyScrollValue();
+        });
+
+        _scrollView.RegisterCallback&lt;WheelEvent&gt;(evt =&gt;
+        {
+            int direction = evt.delta.y &gt; 0 ? 1 : -1;
+            AdjustScrollValue(direction);
+            VerifyScrollValue();
+            evt.StopPropagation();
+        });
+    }
+
+    private void VerifyScrollValue()
+    {
+        if (_scroller.highValue &gt; 0 &amp;&amp; _scroller.value == _scroller.highValue || _scroller.highValue == 0 &amp;&amp; _scroller.value == 0)
+        {
+            _autoscroll = true;
+        }
+        else
+        {
+            _autoscroll = false;
+        }
+    }
+}</pre>
+            
+</body>
+</html>

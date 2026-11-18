@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q618_IntoTheFlame.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q618_IntoTheFlame.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q618_IntoTheFlame extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q618_IntoTheFlame&quot;;
+	
+	// NPCs
+	private static final int KLEIN = 31540;
+	private static final int HILDA = 31271;
+	
+	// Items
+	private static final int VACUALITE_ORE = 7265;
+	private static final int VACUALITE = 7266;
+	
+	// Reward
+	private static final int FLOATING_STONE = 7267;
+	
+	public Q618_IntoTheFlame()
+	{
+		super(618, &quot;Into The Flame&quot;);
+		
+		setItemsIds(VACUALITE_ORE, VACUALITE);
+		
+		addQuestStart(KLEIN);
+		addTalkId(KLEIN, HILDA);
+		
+		// Kookaburras, Bandersnatches, Grendels
+		addMyDying(21274, 21275, 21276, 21277, 21282, 21283, 21284, 21285, 21290, 21291, 21292, 21293);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31540-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31540-05.htm&quot;))
+		{
+			takeItems(player, VACUALITE, 1);
+			giveItems(player, FLOATING_STONE, 1);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		else if (event.equalsIgnoreCase(&quot;31271-02.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31271-05.htm&quot;))
+		{
+			st.setCond(4);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, VACUALITE_ORE, -1);
+			giveItems(player, VACUALITE, 1);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 60) ? &quot;31540-01.htm&quot; : &quot;31540-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case KLEIN:
+						htmltext = (cond == 4) ? &quot;31540-04.htm&quot; : &quot;31540-03.htm&quot;;
+						break;
+					
+					case HILDA:
+						if (cond == 1)
+							htmltext = &quot;31271-01.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;31271-03.htm&quot;;
+						else if (cond == 3)
+							htmltext = &quot;31271-04.htm&quot;;
+						else if (cond == 4)
+							htmltext = &quot;31271-06.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMember(player, npc, 2);
+		if (st == null)
+			return;
+		
+		if (dropItems(st.getPlayer(), VACUALITE_ORE, 1, 50, 500000))
+			st.setCond(3);
+	}
+}</pre>
+            
+</body>
+</html>

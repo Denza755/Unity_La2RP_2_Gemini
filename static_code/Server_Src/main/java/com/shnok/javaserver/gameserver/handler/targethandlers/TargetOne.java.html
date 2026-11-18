@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/targethandlers/TargetOne.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/targethandlers/TargetOne.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.targethandlers;
+
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.enums.skills.SkillTargetType;
+import com.shnok.javaserver.gameserver.handler.ITargetHandler;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.instance.Door;
+import com.shnok.javaserver.gameserver.model.actor.instance.Folk;
+import com.shnok.javaserver.gameserver.model.actor.instance.Guard;
+import com.shnok.javaserver.gameserver.model.actor.instance.Monster;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class TargetOne implements ITargetHandler
+{
+	@Override
+	public SkillTargetType getTargetType()
+	{
+		return SkillTargetType.ONE;
+	}
+	
+	@Override
+	public Creature[] getTargetList(Creature caster, Creature target, L2Skill skill)
+	{
+		return new Creature[]
+		{
+			target
+		};
+	}
+	
+	@Override
+	public Creature getFinalTarget(Creature caster, Creature target, L2Skill skill)
+	{
+		return target;
+	}
+	
+	@Override
+	public boolean meetCastConditions(Playable caster, Creature target, L2Skill skill, boolean isCtrlPressed)
+	{
+		if (target == null)
+			return false;
+		
+		if (skill.isOffensive())
+		{
+			if (target.isDead() || target == caster)
+			{
+				caster.sendPacket(SystemMessageId.INVALID_TARGET);
+				return false;
+			}
+			
+			if (target instanceof Playable targetPlayable)
+			{
+				if (!caster.getActingPlayer().canCastOffensiveSkillOnPlayable(targetPlayable, skill, isCtrlPressed))
+				{
+					caster.sendPacket(SystemMessageId.INVALID_TARGET);
+					return false;
+				}
+				
+				if (caster.getActingPlayer().isInOlympiadMode() &amp;&amp; !caster.getActingPlayer().isOlympiadStart())
+				{
+					caster.sendPacket(SystemMessageId.INVALID_TARGET);
+					return false;
+				}
+				
+				if (caster.isInsideZone(ZoneId.PEACE))
+				{
+					caster.sendPacket(SystemMessageId.CANT_ATK_PEACEZONE);
+					return false;
+				}
+				
+				if (targetPlayable.isInsideZone(ZoneId.PEACE))
+				{
+					caster.sendPacket(SystemMessageId.TARGET_IN_PEACEZONE);
+					return false;
+				}
+			}
+			else if (target instanceof Folk || target instanceof Guard)
+			{
+				// You can damage Folk and Guard with CTRL, but nothing else.
+				if (!skill.isDamage() || !isCtrlPressed)
+				{
+					caster.sendPacket(SystemMessageId.INVALID_TARGET);
+					return false;
+				}
+			}
+			else if (target instanceof Door &amp;&amp; !target.isAttackableBy(caster))
+			{
+				caster.sendPacket(SystemMessageId.INVALID_TARGET);
+				return false;
+			}
+		}
+		else
+		{
+			if (target instanceof Playable targetPlayable)
+			{
+				if (!caster.getActingPlayer().canCastBeneficialSkillOnPlayable(targetPlayable, skill, isCtrlPressed))
+				{
+					caster.sendPacket(SystemMessageId.INVALID_TARGET);
+					return false;
+				}
+			}
+			else if (target instanceof Monster &amp;&amp; !isCtrlPressed)
+			{
+				caster.sendPacket(SystemMessageId.INVALID_TARGET);
+				return false;
+			}
+		}
+		return true;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Components/L2ConfirmWindow/L2ConfirmWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Components/L2ConfirmWindow/L2ConfirmWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xmlns=&quot;UnityEngine.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2ConfirmWindow/L2ConfirmWindow.uss?fileID=7433441132597879392&amp;amp;guid=a98c2b0da0daff24fa5bda34d234c0e9&amp;amp;type=3#L2ConfirmWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uss?fileID=7433441132597879392&amp;amp;guid=b1d2114f9ed155f45a3eb16e5ef02441&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;L2ConfirmWindow&quot; class=&quot;confirm-window drag-area&quot;&gt;
+        &lt;ui:VisualElement name=&quot;InfoBox&quot; picking-mode=&quot;Ignore&quot; class=&quot;confirm-window-content-container&quot; style=&quot;border-left-color: rgba(92, 92, 92, 0.31); border-right-color: rgba(92, 92, 92, 0.31); border-top-color: rgba(92, 92, 92, 0.31); border-bottom-color: rgba(92, 92, 92, 0.31);&quot;&gt;
+            &lt;ui:VisualElement name=&quot;IconContainer&quot; picking-mode=&quot;Ignore&quot; class=&quot;confirm-window-icon-container&quot;&gt;
+                &lt;ui:VisualElement name=&quot;VisualElement&quot; picking-mode=&quot;Ignore&quot; class=&quot;confirm-window-icon&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:Label text=&quot;Warning message! Warning message! Warning message! Warning message!&quot; name=&quot;Content&quot; picking-mode=&quot;Ignore&quot; class=&quot;l2-color-4 confirm-window-content&quot; /&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement name=&quot;ButtonBox&quot; picking-mode=&quot;Ignore&quot; class=&quot;confirm-window-button-box&quot;&gt;
+            &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;OkButton&quot; class=&quot;confirm-window-button&quot;&gt;
+                &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;OK&quot; enable-rich-text=&quot;true&quot; /&gt;
+            &lt;/ui:Instance&gt;
+            &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;CancelButton&quot; class=&quot;confirm-window-button&quot;&gt;
+                &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Cancel&quot; /&gt;
+            &lt;/ui:Instance&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

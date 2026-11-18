@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/L2GameServerPacket.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/L2GameServerPacket.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.mmocore.SendablePacket;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.network.GameClient;
+
+public abstract class L2GameServerPacket extends SendablePacket&lt;GameClient&gt;
+{
+	protected static final CLogger LOGGER = new CLogger(L2GameServerPacket.class.getName());
+	
+	protected abstract void writeImpl();
+	
+	@Override
+	protected void write()
+	{
+		if (Config.PACKET_HANDLER_DEBUG)
+			LOGGER.info(getType());
+		
+		try
+		{
+			writeImpl();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Failed writing {} for {}. &quot;, e, getType(), getClient().toString());
+		}
+	}
+	
+	public void runImpl()
+	{
+	}
+	
+	public String getType()
+	{
+		return &quot;[S] &quot; + getClass().getSimpleName();
+	}
+}</pre>
+            
+</body>
+</html>

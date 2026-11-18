@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q020_BringUpWithLove.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q020_BringUpWithLove.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q020_BringUpWithLove extends Quest
+{
+	public static final String QUEST_NAME = &quot;Q020_BringUpWithLove&quot;;
+	
+	// Item
+	private static final int JEWEL_OF_INNOCENCE = 7185;
+	
+	public Q020_BringUpWithLove()
+	{
+		super(20, &quot;Bring Up With Love&quot;);
+		
+		setItemsIds(JEWEL_OF_INNOCENCE);
+		
+		addQuestStart(31537); // Tunatun
+		addTalkId(31537);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31537-09.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31537-12.htm&quot;))
+		{
+			takeItems(player, JEWEL_OF_INNOCENCE, -1);
+			rewardItems(player, 57, 68500);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 65) ? &quot;31537-02.htm&quot; : &quot;31537-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				if (st.getCond() == 2)
+					htmltext = &quot;31537-11.htm&quot;;
+				else
+					htmltext = &quot;31537-10.htm&quot;;
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

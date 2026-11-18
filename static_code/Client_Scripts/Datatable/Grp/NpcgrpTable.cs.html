@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/NpcgrpTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/NpcgrpTable.cs</h1>
+            <pre>using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using FMODUnity;
+using UnityEngine;
+
+public class NpcgrpTable
+{
+    private static NpcgrpTable _instance;
+    public static NpcgrpTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new NpcgrpTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    private Dictionary&lt;int, Npcgrp&gt; _npcgrps;
+
+    public Dictionary&lt;int, Npcgrp&gt; Npcgrps { get { return _npcgrps; } }
+
+    public void Initialize()
+    {
+        ReadNpcgrps();
+    }
+
+    private void ReadNpcgrps()
+    {
+        _npcgrps = new Dictionary&lt;int, Npcgrp&gt;();
+        string dataPath = Path.Combine(Application.streamingAssetsPath, &quot;Data/Meta/Npcgrp_Classic.txt&quot;);
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return;
+        }
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                Npcgrp npcgrp = new Npcgrp();
+
+                string[] keyvals = line.Split(&#x27;\t&#x27;);
+
+                for (int i = 0; i &lt; keyvals.Length; i++)
+                {
+                    if (!keyvals[i].Contains(&quot;=&quot;))
+                    {
+                        continue;
+                    }
+
+                    string[] keyval = keyvals[i].Split(&quot;=&quot;);
+                    string key = keyval[0];
+                    string value = keyval[1];
+
+                    switch (key)
+                    {
+                        case &quot;npc_id&quot;:
+                            npcgrp.NpcId = int.Parse(value);
+                            break;
+                        case &quot;class_name&quot;: //[LineageNPC.e_warehouse_keeper_FDwarf]	
+                            string[] folderClass = DatUtils.CleanupString(value).Split(&quot;.&quot;);
+                            npcgrp.ClassName = folderClass[folderClass.Length - 1];
+                            npcgrp.Type = EntityTypeParser.ParseEntityType(folderClass[0]);
+                            break;
+                        case &quot;mesh_name&quot;: //[LineageNPCs.e_warehouse_keeper_FDwarf_m00]	
+                            npcgrp.Mesh = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;texture_name&quot;: //{[LineageNPCsTex.e_warehouse_keeper_FDwarf_m00_t00_b00];[LineageNPCsTex.e_warehouse_keeper_FDwarf_m00_t00_b01];...}
+                            npcgrp.Materials = DatUtils.ParseArray(value);
+                            break;
+                        case &quot;attack_sound1&quot;: //{[ItemSound.fist_1];[ItemSound.fist_2];[ItemSound.fist_3]}	
+                            npcgrp.AttackSounds = DatUtils.ParseArray(value);
+                            npcgrp.AttackSoundsEvents = GetSoundReference(npcgrp.NpcId, npcgrp.AttackSounds);
+                            break;
+                        case &quot;defense_sound1&quot;: //{[ItemSound.armor_underwear_1];[ItemSound.armor_underwear_2];[ItemSound.armor_underwear_3];[ItemSound.armor_underwear_4];[ItemSound.armor_leather_7]}
+                            npcgrp.DefenseSounds = DatUtils.ParseArray(value);
+                            npcgrp.DefenseSoundsEvents = GetSoundReference(npcgrp.NpcId, npcgrp.DefenseSounds);
+                            break;
+                        case &quot;damage_sound&quot;: //{[ChrSound.FNpc_Young_Dmg_1];[ChrSound.FNpc_Young_Dmg_2];[ChrSound.FNpc_Young_Dmg_3]}
+                            npcgrp.DamageSounds = DatUtils.ParseArray(value);
+                            npcgrp.DamageSoundsEvents = GetSoundReference(npcgrp.NpcId, npcgrp.DamageSounds);
+                            break;
+                        case &quot;attack_effect&quot;: //[LineageEffect.p_u002_a]
+                            npcgrp.AttackEffect = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;npc_speed&quot;: //{[LineageNPCsTex.e_warehouse_keeper_FDwarf_m00_t00_b00];[LineageNPCsTex.e_warehouse_keeper_FDwarf_m00_t00_b01];...}
+                            npcgrp.Speed = float.Parse(value, CultureInfo.InvariantCulture.NumberFormat) / 52.5f;
+                            break;
+                        case &quot;collision_height&quot;:
+                            npcgrp.CollisionHeight = float.Parse(value, CultureInfo.InvariantCulture.NumberFormat) / 52.5f;
+                            break;
+                        case &quot;collision_radius&quot;:
+                            npcgrp.CollisionRadius = float.Parse(value, CultureInfo.InvariantCulture.NumberFormat) / 52.5f;
+                            break;
+                        case &quot;social&quot;:
+                            npcgrp.Friendly = (value == &quot;1&quot;);
+                            break;
+                        case &quot;hpshowable&quot;:
+                            npcgrp.HpVisible = (value == &quot;1&quot;);
+                            break;
+                        case &quot;slot_rhand&quot;:
+                            npcgrp.Rhand = int.Parse(value);
+                            break;
+                        case &quot;slot_lhand&quot;:
+                            npcgrp.Lhand = int.Parse(value);
+                            break;
+                        case &quot;org_hp&quot;:
+                            // npcgrp.MaxHp = float.Parse(value, CultureInfo.InvariantCulture.NumberFormat);
+                            npcgrp.MaxHp = float.Parse(value, CultureInfo.InvariantCulture.NumberFormat);
+                            break;
+                        case &quot;org_mp&quot;:
+                            npcgrp.MaxMp = float.Parse(value, CultureInfo.InvariantCulture.NumberFormat);
+                            break;
+                    }
+                }
+
+                _npcgrps.TryAdd(npcgrp.NpcId, npcgrp);
+            }
+
+            Debug.Log($&quot;Successfully imported {_npcgrps.Count} npcgrp(s)&quot;);
+        }
+    }
+
+    private List&lt;EventReference&gt; GetSoundReference(int npcId, string[] eventNames)
+    {
+        List&lt;EventReference&gt; eventList = new List&lt;EventReference&gt;();
+        foreach (var sound in eventNames)
+        {
+            string updatedPath = sound.Replace(&quot;.&quot;, &quot;/&quot;);
+            EventReference er = RuntimeManager.PathToEventReference(&quot;event:/&quot; + updatedPath);
+            // Debug.LogWarning($&quot;Getting sound reference for sound: {sound} - {er.IsNull}&quot;);
+            if (er.IsNull)
+            {
+                Debug.LogWarning($&quot;Missing sound: {sound} for npc: {npcId}.&quot;);
+            }
+            else
+            {
+                eventList.Add(er);
+            }
+        }
+
+        return eventList;
+    }
+
+    public Npcgrp GetNpcgrp(int id)
+    {
+        Npcgrp npcgrp = null;
+        _npcgrps.TryGetValue(id, out npcgrp);
+
+        if (npcgrp == null)
+        {
+            Debug.LogWarning($&quot;Npcgrp not found for id [{id}]&quot;);
+        }
+
+        return npcgrp;
+    }
+}</pre>
+            
+</body>
+</html>

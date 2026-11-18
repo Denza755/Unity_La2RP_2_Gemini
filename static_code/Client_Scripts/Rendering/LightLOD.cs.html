@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Rendering/LightLOD.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Rendering/LightLOD.cs</h1>
+            <pre>#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using System.Collections.Generic;
+using UnityEngine;
+
+using UnityEngine.Rendering;
+
+[ExecuteInEditMode]
+[RequireComponent(typeof(Light))]
+public class LightLOD : MonoBehaviour
+{
+    private Light _light;
+
+    [SerializeField]
+    [Range(0, 15)]
+    private float _updateDelay = 1f;
+    [SerializeField] private float _squareDistanceFromCamera;
+    [SerializeField] private float _lastUpdate;
+    private Camera _mainCamera;
+
+    [SerializeField]
+    private List&lt;LODAdjustment&gt; LODLevels = new();
+
+    private bool _ready = false;
+
+    private void Awake()
+    {
+        _light = GetComponent&lt;Light&gt;();
+    }
+
+    private void Start()
+    {
+        _ready = false;
+        _lastUpdate = 0;
+        if (CameraController.Instance != null)
+        {
+            _mainCamera = CameraController.Instance.GetComponent&lt;Camera&gt;();
+        }
+        if (_mainCamera == null)
+        {
+            _mainCamera = Camera.main;
+        }
+    }
+
+
+    private void Update()
+    {
+        if (_light == null)
+        {
+            _light = GetComponent&lt;Light&gt;();
+            if (_light == null)
+            {
+                return;
+            }
+        }
+
+#if (UNITY_EDITOR) 
+        if (!EditorApplication.isPlaying)
+        {
+            _ready = true;
+        }
+#endif
+
+        if (!_ready)
+        {
+            if (CameraController.Instance == null || CameraController.Instance.Target == null)
+            {
+                return;
+            }
+
+            if (CameraController.Instance.CurrentDistance &gt; CameraController.Instance.MaxDistance)
+            {
+                return;
+            }
+
+            _ready = true;
+        }
+
+        if (Time.time - _lastUpdate &gt;= _updateDelay)
+        {
+            _lastUpdate = Time.time;
+#if (UNITY_EDITOR)
+            if (EditorApplication.isPlaying)
+            {
+                AdjustLODQuality(_mainCamera);
+            }
+            else
+            {
+                if (Camera.current != null)
+                {
+                    AdjustLODQuality(Camera.current);
+                }
+            }
+#else
+            AdjustLODQuality(_mainCamera);
+#endif
+        }
+    }
+
+
+    private void AdjustLODQuality(Camera camera)
+    {
+        _squareDistanceFromCamera = Vector3.SqrMagnitude(
+            camera.transform.position - transform.position
+        );
+
+        for (int i = 0; i &lt; LODLevels.Count; i++)
+        {
+            if (_squareDistanceFromCamera &gt; LODLevels[i].MinSquareDistance
+                &amp;&amp; _squareDistanceFromCamera &lt;= LODLevels[i].MaxSquareDistance
+            )
+            {
+                _light.enabled = true;
+                _light.shadows = LODLevels[i].LightShadows;
+                // shadowResolution is Built-In RP only; not applicable in URP/HDRP
+
+                return;
+            }
+        }
+
+        _light.enabled = false;
+    }
+}</pre>
+            
+</body>
+</html>

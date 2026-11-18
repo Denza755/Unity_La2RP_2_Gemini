@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/l2skills/L2SkillSpawn.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/l2skills/L2SkillSpawn.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills.l2skills;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.spawn.Spawn;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class L2SkillSpawn extends L2Skill
+{
+	private final int _npcId;
+	private final int _despawnDelay;
+	
+	public L2SkillSpawn(StatSet set)
+	{
+		super(set);
+		
+		_npcId = set.getInteger(&quot;npcId&quot;, 0);
+		_despawnDelay = set.getInteger(&quot;despawnDelay&quot;, 0);
+	}
+	
+	@Override
+	public void useSkill(Creature creature, WorldObject[] targets)
+	{
+		if (creature.isAlikeDead())
+			return;
+		
+		try
+		{
+			// Create spawn.
+			final Spawn spawn = new Spawn(_npcId);
+			spawn.setLoc(creature.getPosition());
+			
+			// Spawn NPC.
+			final Npc npc = spawn.doSpawn(false);
+			if (_despawnDelay &gt; 0)
+				npc.scheduleDespawn(_despawnDelay);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Failed to initialize a spawn.&quot;, e);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

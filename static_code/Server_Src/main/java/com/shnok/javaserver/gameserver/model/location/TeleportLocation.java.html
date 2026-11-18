@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/TeleportLocation.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/TeleportLocation.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.location;
+
+import java.util.Calendar;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.enums.TeleportType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.itemcontainer.PcInventory;
+
+/**
+ * A datatype extending {@link Location}, used to retain a single Gatekeeper teleport location.
+ */
+public class TeleportLocation extends Location
+{
+	private final String _desc;
+	private final TeleportType _type;
+	private final int _priceId;
+	private final int _priceCount;
+	private final int _castleId;
+	
+	public TeleportLocation(StatSet set)
+	{
+		super(set.getInteger(&quot;x&quot;), set.getInteger(&quot;y&quot;), set.getInteger(&quot;z&quot;));
+		
+		_desc = set.getString(&quot;desc&quot;);
+		_type = set.getEnum(&quot;type&quot;, TeleportType.class, TeleportType.STANDARD);
+		_priceId = set.getInteger(&quot;priceId&quot;);
+		_priceCount = set.getInteger(&quot;priceCount&quot;);
+		_castleId = set.getInteger(&quot;castleId&quot;, 0);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;TeleportLocation [_desc=&quot; + _desc + &quot;, _type=&quot; + _type + &quot;, _priceId=&quot; + _priceId + &quot;, _priceCount=&quot; + _priceCount + &quot;, _castleId=&quot; + _castleId + &quot;]&quot;;
+	}
+	
+	public String getDesc()
+	{
+		return _desc;
+	}
+	
+	public TeleportType getType()
+	{
+		return _type;
+	}
+	
+	public int getPriceId()
+	{
+		return _priceId;
+	}
+	
+	public int getPriceCount()
+	{
+		return _priceCount;
+	}
+	
+	public int getCastleId()
+	{
+		return _castleId;
+	}
+	
+	/**
+	 * In L2OFF half price teleport feature is set in &#x27;event.ini&#x27; and is named &#x27;CoreTime&#x27;.&lt;br&gt;
+	 * However some custom/extended L2OFF packs are likely to use type &quot;PRIMEHOURS&quot;, but it is nothing more than static data duplication.&lt;br&gt;
+	 * Also core-time shall effect only standard teleport.
+	 * @return True if the time is core time or not.
+	 */
+	private static boolean isCoreTime()
+	{
+		final Calendar now = Calendar.getInstance();
+		switch (now.get(Calendar.DAY_OF_WEEK))
+		{
+			case Calendar.SATURDAY, Calendar.SUNDAY:
+				final int currentHour = now.get(Calendar.HOUR_OF_DAY);
+				return currentHour &gt;= 20 &amp;&amp; currentHour &lt;= 23;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * @param player : The {@link Player} to test.
+	 * @return The teleport price, modified by multiple sources (Seven Signs, half price time).
+	 */
+	public int getCalculatedPriceCount(Player player)
+	{
+		if (_priceId == PcInventory.ANCIENT_ADENA_ID)
+		{
+			final SevenSignsManager ss = SevenSignsManager.getInstance();
+			final boolean check = ss.isSealValidationPeriod() &amp;&amp; ss.getPlayerCabal(player.getObjectId()) == ss.getSealOwner(SealType.GNOSIS) &amp;&amp; ss.getPlayerSeal(player.getObjectId()) == SealType.GNOSIS;
+			
+			return (check) ? _priceCount : (int) (_priceCount * 1.6);
+		}
+		
+		// Half price system.
+		if (_type == TeleportType.STANDARD &amp;&amp; isCoreTime())
+			return Math.max(_priceCount &gt;&gt; 1, 1);
+		
+		return _priceCount;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q030_ChestCaughtWithABaitOfFire.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q030_ChestCaughtWithABaitOfFire.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q030_ChestCaughtWithABaitOfFire extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q030_ChestCaughtWithABaitOfFire&quot;;
+	
+	// NPCs
+	private static final int LINNAEUS = 31577;
+	private static final int RUKAL = 30629;
+	
+	// Items
+	private static final int RED_TREASURE_BOX = 6511;
+	private static final int MUSICAL_SCORE = 7628;
+	private static final int NECKLACE_OF_PROTECTION = 916;
+	
+	public Q030_ChestCaughtWithABaitOfFire()
+	{
+		super(30, &quot;Chest caught with a bait of fire&quot;);
+		
+		setItemsIds(MUSICAL_SCORE);
+		
+		addQuestStart(LINNAEUS);
+		addTalkId(LINNAEUS, RUKAL);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31577-04.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31577-07.htm&quot;))
+		{
+			if (player.getInventory().hasItem(RED_TREASURE_BOX))
+			{
+				st.setCond(2);
+				takeItems(player, RED_TREASURE_BOX, 1);
+				giveItems(player, MUSICAL_SCORE, 1);
+			}
+			else
+				htmltext = &quot;31577-08.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30629-02.htm&quot;))
+		{
+			if (player.getInventory().hasItem(MUSICAL_SCORE))
+			{
+				htmltext = &quot;30629-02.htm&quot;;
+				takeItems(player, MUSICAL_SCORE, 1);
+				giveItems(player, NECKLACE_OF_PROTECTION, 1);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(false);
+			}
+			else
+				htmltext = &quot;30629-03.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getStatus().getLevel() &lt; 60)
+					htmltext = &quot;31577-02.htm&quot;;
+				else
+				{
+					QuestState st2 = player.getQuestList().getQuestState(&quot;Q053_LinnaeusSpecialBait&quot;);
+					if (st2 != null &amp;&amp; st2.isCompleted())
+						htmltext = &quot;31577-01.htm&quot;;
+					else
+						htmltext = &quot;31577-03.htm&quot;;
+				}
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case LINNAEUS:
+						if (cond == 1)
+							htmltext = (!player.getInventory().hasItem(RED_TREASURE_BOX)) ? &quot;31577-06.htm&quot; : &quot;31577-05.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;31577-09.htm&quot;;
+						break;
+					
+					case RUKAL:
+						if (cond == 2)
+							htmltext = &quot;30629-01.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

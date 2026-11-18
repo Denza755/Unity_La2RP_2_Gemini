@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q369_CollectorOfJewels.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q369_CollectorOfJewels.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q369_CollectorOfJewels extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q369_CollectorOfJewels&quot;;
+	
+	// NPC
+	private static final int NELL = 30376;
+	
+	// Items
+	private static final int FLARE_SHARD = 5882;
+	private static final int FREEZING_SHARD = 5883;
+	
+	// Reward
+	private static final int ADENA = 57;
+	
+	// Droplist
+	private static final Map&lt;Integer, int[]&gt; DROPLIST = new HashMap&lt;&gt;();
+	{
+		DROPLIST.put(20609, new int[]
+		{
+			FLARE_SHARD,
+			630000
+		});
+		DROPLIST.put(20612, new int[]
+		{
+			FLARE_SHARD,
+			770000
+		});
+		DROPLIST.put(20749, new int[]
+		{
+			FLARE_SHARD,
+			850000
+		});
+		DROPLIST.put(20616, new int[]
+		{
+			FREEZING_SHARD,
+			600000
+		});
+		DROPLIST.put(20619, new int[]
+		{
+			FREEZING_SHARD,
+			730000
+		});
+		DROPLIST.put(20747, new int[]
+		{
+			FREEZING_SHARD,
+			850000
+		});
+	}
+	
+	public Q369_CollectorOfJewels()
+	{
+		super(369, &quot;Collector of Jewels&quot;);
+		
+		setItemsIds(FLARE_SHARD, FREEZING_SHARD);
+		
+		addQuestStart(NELL);
+		addTalkId(NELL);
+		
+		for (int mob : DROPLIST.keySet())
+			addMyDying(mob);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30376-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30376-07.htm&quot;))
+			playSound(player, SOUND_ITEMGET);
+		else if (event.equalsIgnoreCase(&quot;30376-08.htm&quot;))
+		{
+			st.exitQuest(true);
+			playSound(player, SOUND_FINISH);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 25) ? &quot;30376-01.htm&quot; : &quot;30376-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				final int flare = player.getInventory().getItemCount(FLARE_SHARD);
+				final int freezing = player.getInventory().getItemCount(FREEZING_SHARD);
+				
+				if (cond == 1)
+					htmltext = &quot;30376-04.htm&quot;;
+				else if (cond == 2 &amp;&amp; flare &gt;= 50 &amp;&amp; freezing &gt;= 50)
+				{
+					htmltext = &quot;30376-05.htm&quot;;
+					st.setCond(3);
+					playSound(player, SOUND_MIDDLE);
+					takeItems(player, FLARE_SHARD, -1);
+					takeItems(player, FREEZING_SHARD, -1);
+					rewardItems(player, ADENA, 12500);
+				}
+				else if (cond == 3)
+					htmltext = &quot;30376-09.htm&quot;;
+				else if (cond == 4 &amp;&amp; flare &gt;= 200 &amp;&amp; freezing &gt;= 200)
+				{
+					htmltext = &quot;30376-10.htm&quot;;
+					takeItems(player, FLARE_SHARD, -1);
+					takeItems(player, FREEZING_SHARD, -1);
+					rewardItems(player, ADENA, 63500);
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(true);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		player = st.getPlayer();
+		final int cond = st.getCond();
+		final int[] drop = DROPLIST.get(npc.getNpcId());
+		
+		if (cond == 1)
+		{
+			if (dropItems(player, drop[0], 1, 50, drop[1]) &amp;&amp; player.getInventory().getItemCount((drop[0] == FLARE_SHARD) ? FREEZING_SHARD : FLARE_SHARD) &gt;= 50)
+				st.setCond(2);
+		}
+		else if (cond == 3 &amp;&amp; dropItems(player, drop[0], 1, 200, drop[1]) &amp;&amp; player.getInventory().getItemCount((drop[0] == FLARE_SHARD) ? FREEZING_SHARD : FLARE_SHARD) &gt;= 200)
+			st.setCond(4);
+	}
+}</pre>
+            
+</body>
+</html>

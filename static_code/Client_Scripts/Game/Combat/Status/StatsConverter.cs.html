@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Combat/Status/StatsConverter.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Combat/Status/StatsConverter.cs</h1>
+            <pre>using System;
+
+public class StatsConverter
+{
+    private static StatsConverter _instance;
+    public static StatsConverter Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new StatsConverter();
+            }
+            return _instance;
+        }
+    }
+
+    public float ConvertStat(Stat statType, int value)
+    {
+        switch (statType)
+        {
+            case Stat.SPEED:
+                return ConvertSpeed(value);
+            case Stat.PHYS_ATTACK_SPEED:
+                return ConvertPAtkSpd(value);
+            case Stat.MAGIC_ATTACK_SPEED:
+                return ConvetMAtkSpd(value);
+        }
+
+        return value;
+    }
+
+    private float ConvertSpeed(int value)
+    {
+        return NumberUtils.ScaleToUnity(value);
+    }
+
+    private float ConvertPAtkSpd(int value)
+    {
+        if (value &lt; 2)
+            return 2700;
+
+        return Math.Max(100, 500000 / value);
+    }
+
+    private float ConvetMAtkSpd(int value)
+    {
+        //        if (skill.isMagic()) {
+        //            return (int) ((skillTime * 333) / attacker.getMAtkSpd());
+        //        }
+        //        return (int) ((skillTime * 333) / attacker.getPAtkSpd());
+        return value;
+    }
+}
+</pre>
+            
+</body>
+</html>

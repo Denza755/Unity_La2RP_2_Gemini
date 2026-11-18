@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/security/ScrambledKeyPair.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/security/ScrambledKeyPair.java</h1>
+            <pre>package com.shnok.javaserver.security;
+
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.interfaces.RSAPublicKey;
+
+public class ScrambledKeyPair {
+
+    private final KeyPair pair;
+
+    private final byte[] scrambledModulus;
+
+    public ScrambledKeyPair(KeyPair pPair) {
+        pair = pPair;
+        scrambledModulus = scrambleModulus(((RSAPublicKey) pair.getPublic()).getModulus());
+    }
+
+    public KeyPair getPair() {
+        return pair;
+    }
+
+    public byte[] getScrambledModulus() {
+        return scrambledModulus;
+    }
+
+    private byte[] scrambleModulus(BigInteger modulus) {
+        byte[] scrambledMod = modulus.toByteArray();
+
+        if ((scrambledMod.length == 0x81) &amp;&amp; (scrambledMod[0] == 0x00)) {
+            byte[] temp = new byte[0x80];
+            System.arraycopy(scrambledMod, 1, temp, 0, 0x80);
+            scrambledMod = temp;
+        }
+        // step 1 : 0x4d-0x50 &lt;-&gt; 0x00-0x04
+        for (int i = 0; i &lt; 4; i++) {
+            byte temp = scrambledMod[i];
+            scrambledMod[i] = scrambledMod[0x4d + i];
+            scrambledMod[0x4d + i] = temp;
+        }
+        // step 2 : xor first 0x40 bytes with last 0x40 bytes
+        for (int i = 0; i &lt; 0x40; i++) {
+            scrambledMod[i] = (byte) (scrambledMod[i] ^ scrambledMod[0x40 + i]);
+        }
+        // step 3 : xor bytes 0x0d-0x10 with bytes 0x34-0x38
+        for (int i = 0; i &lt; 4; i++) {
+            scrambledMod[0x0d + i] = (byte) (scrambledMod[0x0d + i] ^ scrambledMod[0x34 + i]);
+        }
+        // step 4 : xor last 0x40 bytes with first 0x40 bytes
+        for (int i = 0; i &lt; 0x40; i++) {
+            scrambledMod[0x40 + i] = (byte) (scrambledMod[0x40 + i] ^ scrambledMod[i]);
+        }
+        return scrambledMod;
+    }
+}
+</pre>
+            
+</body>
+</html>

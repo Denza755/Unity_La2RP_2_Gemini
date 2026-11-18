@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q340_SubjugationOfLizardmen.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q340_SubjugationOfLizardmen.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q340_SubjugationOfLizardmen extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q340_SubjugationOfLizardmen&quot;;
+	
+	// NPCs
+	private static final int WEISZ = 30385;
+	private static final int ADONIUS = 30375;
+	private static final int LEVIAN = 30037;
+	private static final int CHEST = 30989;
+	
+	// Items
+	private static final int CARGO = 4255;
+	private static final int HOLY = 4256;
+	private static final int ROSARY = 4257;
+	private static final int TOTEM = 4258;
+	
+	public Q340_SubjugationOfLizardmen()
+	{
+		super(340, &quot;Subjugation of Lizardmen&quot;);
+		
+		setItemsIds(CARGO, HOLY, ROSARY, TOTEM);
+		
+		addQuestStart(WEISZ);
+		addTalkId(WEISZ, ADONIUS, LEVIAN, CHEST);
+		
+		addMyDying(20008, 20010, 20014, 20024, 20027, 20030, 25146);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30385-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30385-07.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, CARGO, -1);
+		}
+		else if (event.equalsIgnoreCase(&quot;30385-09.htm&quot;))
+		{
+			takeItems(player, CARGO, -1);
+			rewardItems(player, 57, 4090);
+		}
+		else if (event.equalsIgnoreCase(&quot;30385-10.htm&quot;))
+		{
+			takeItems(player, CARGO, -1);
+			rewardItems(player, 57, 4090);
+			st.exitQuest(true);
+		}
+		else if (event.equalsIgnoreCase(&quot;30375-02.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30037-02.htm&quot;))
+		{
+			st.setCond(5);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30989-02.htm&quot;))
+		{
+			st.setCond(6);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, TOTEM, 1);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 17) ? &quot;30385-01.htm&quot; : &quot;30385-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case WEISZ:
+						if (cond == 1)
+							htmltext = (player.getInventory().getItemCount(CARGO) &lt; 30) ? &quot;30385-05.htm&quot; : &quot;30385-06.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;30385-11.htm&quot;;
+						else if (cond == 7)
+						{
+							htmltext = &quot;30385-13.htm&quot;;
+							rewardItems(player, 57, 14700);
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(false);
+						}
+						break;
+					
+					case ADONIUS:
+						if (cond == 2)
+							htmltext = &quot;30375-01.htm&quot;;
+						else if (cond == 3)
+						{
+							if (player.getInventory().hasItems(ROSARY, HOLY))
+							{
+								htmltext = &quot;30375-04.htm&quot;;
+								st.setCond(4);
+								playSound(player, SOUND_MIDDLE);
+								takeItems(player, HOLY, -1);
+								takeItems(player, ROSARY, -1);
+							}
+							else
+								htmltext = &quot;30375-03.htm&quot;;
+						}
+						else if (cond == 4)
+							htmltext = &quot;30375-05.htm&quot;;
+						break;
+					
+					case LEVIAN:
+						if (cond == 4)
+							htmltext = &quot;30037-01.htm&quot;;
+						else if (cond == 5)
+							htmltext = &quot;30037-03.htm&quot;;
+						else if (cond == 6)
+						{
+							htmltext = &quot;30037-04.htm&quot;;
+							st.setCond(7);
+							playSound(player, SOUND_MIDDLE);
+							takeItems(player, TOTEM, -1);
+						}
+						else if (cond == 7)
+							htmltext = &quot;30037-05.htm&quot;;
+						break;
+					
+					case CHEST:
+						if (cond == 5)
+							htmltext = &quot;30989-01.htm&quot;;
+						else
+							htmltext = &quot;30989-03.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		switch (npc.getNpcId())
+		{
+			case 20008:
+				if (st.getCond() == 1)
+					dropItems(player, CARGO, 1, 30, 500000);
+				break;
+			
+			case 20010:
+				if (st.getCond() == 1)
+					dropItems(player, CARGO, 1, 30, 520000);
+				break;
+			
+			case 20014:
+				if (st.getCond() == 1)
+					dropItems(player, CARGO, 1, 30, 550000);
+				break;
+			
+			case 20024, 20027, 20030:
+				if (st.getCond() == 3 &amp;&amp; dropItems(player, HOLY, 1, 1, 100000))
+					dropItems(player, ROSARY, 1, 1, 100000);
+				break;
+			
+			case 25146:
+				addSpawn(CHEST, npc, false, 30000, false);
+				break;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

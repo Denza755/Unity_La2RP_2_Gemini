@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q615_MagicalPowerOfFire_Part1.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q615_MagicalPowerOfFire_Part1.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q615_MagicalPowerOfFire_Part1 extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q615_MagicalPowerOfFire_Part1&quot;;
+	
+	// NPCs
+	private static final int NARAN = 31378;
+	private static final int UDAN = 31379;
+	private static final int ASEFA_BOX = 31559;
+	private static final int ASEFA_EYE = 31685;
+	
+	// Items
+	private static final int THIEF_KEY = 1661;
+	private static final int STOLEN_RED_TOTEM = 7242;
+	private static final int RED_TOTEM = 7243;
+	private static final int DIVINE_STONE = 7081;
+	
+	public Q615_MagicalPowerOfFire_Part1()
+	{
+		super(615, &quot;Magical Power of Fire - Part 1&quot;);
+		
+		setItemsIds(STOLEN_RED_TOTEM);
+		
+		addQuestStart(NARAN);
+		addTalkId(NARAN, UDAN, ASEFA_BOX);
+		
+		addMyDying(ASEFA_EYE);
+		addSeeCreature(21350, 21351, 21353, 21354, 21355, 21357, 21358, 21360, 21361, 21362, 21369, 21370, 21364, 21365, 21366, 21368, 21371, 21372, 21373, 21374, 21375);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31378-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			st.set(&quot;spawned&quot;, 0);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31559-03.htm&quot;))
+		{
+			// You have been discovered ; quest is failed.
+			if (st.getInteger(&quot;spawned&quot;) == 1)
+				htmltext = &quot;31559-04.htm&quot;;
+			// No Thief&#x27;s Key in inventory.
+			else if (!player.getInventory().hasItem(THIEF_KEY))
+				htmltext = &quot;31559-02.htm&quot;;
+			else
+			{
+				st.setCond(3);
+				playSound(player, SOUND_ITEMGET);
+				takeItems(player, THIEF_KEY, 1);
+				giveItems(player, STOLEN_RED_TOTEM, 1);
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &gt;= 74 &amp;&amp; player.getAllianceWithVarkaKetra() &lt;= -2) ? &quot;31378-01.htm&quot; : &quot;31378-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case NARAN:
+						htmltext = &quot;31378-04.htm&quot;;
+						break;
+					
+					case UDAN:
+						if (cond == 1)
+						{
+							htmltext = &quot;31379-01.htm&quot;;
+							st.setCond(2);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else if (cond == 2)
+						{
+							if (st.getInteger(&quot;spawned&quot;) == 0)
+								htmltext = &quot;31379-02.htm&quot;;
+							else
+							{
+								htmltext = &quot;31379-03.htm&quot;;
+								st.set(&quot;spawned&quot;, 0);
+								playSound(player, SOUND_MIDDLE);
+							}
+						}
+						else if (cond == 3 &amp;&amp; player.getInventory().hasItem(STOLEN_RED_TOTEM))
+						{
+							htmltext = &quot;31379-04.htm&quot;;
+							
+							takeItems(player, STOLEN_RED_TOTEM, 1);
+							giveItems(player, RED_TOTEM, 1);
+							giveItems(player, DIVINE_STONE, 1);
+							
+							st.unset(&quot;spawned&quot;);
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(true);
+						}
+						break;
+					
+					case ASEFA_BOX:
+						if (cond == 2)
+							htmltext = &quot;31559-01.htm&quot;;
+						else if (cond == 3)
+							htmltext = &quot;31559-05.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		npc.broadcastNpcSay(NpcStringId.ID_61504);
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (creature instanceof Player player)
+		{
+			final QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+			if (st == null)
+				return;
+			
+			if (st.getInteger(&quot;spawned&quot;) == 0 &amp;&amp; st.getCond() == 2)
+			{
+				// Put &quot;spawned&quot; flag to 1 to avoid to spawn another.
+				st.set(&quot;spawned&quot;, 1);
+				
+				// Spawn Asefa&#x27;s Eye.
+				final Npc asefaEye = addSpawn(ASEFA_EYE, player, true, 10000, true);
+				if (asefaEye != null)
+				{
+					asefaEye.broadcastNpcSay(NpcStringId.ID_61503);
+					playSound(player, SOUND_GIVEUP);
+				}
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

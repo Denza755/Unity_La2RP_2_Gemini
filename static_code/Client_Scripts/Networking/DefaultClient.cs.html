@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/DefaultClient.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/DefaultClient.cs</h1>
+            <pre>using UnityEngine;
+using System.Threading.Tasks;
+
+public abstract class DefaultClient : MonoBehaviour
+{
+    [SerializeField] protected string _serverIp = &quot;127.0.0.1&quot;;
+    [SerializeField] protected int _serverPort = 11000;
+    [SerializeField] protected AsynchronousClient _client;
+    [SerializeField] protected int _connectionTimeoutMs = 10000;
+    [SerializeField] protected bool _connected = false;
+    [SerializeField] protected bool _logReceivedPackets = true;
+    [SerializeField] protected bool _logSentPackets = true;
+    [SerializeField] protected bool _logCryptography = true;
+    [SerializeField] protected int _sessionKey1;
+    [SerializeField] protected int _sessionKey2;
+    [SerializeField] protected int _ping;
+    [SerializeField] protected float _lastSocketPoll;
+
+    private bool _connecting = false;
+    public bool LogReceivedPackets { get { return _logReceivedPackets; } }
+    public bool LogSentPackets { get { return _logSentPackets; } }
+    public bool LogCryptography { get { return _logCryptography; } }
+    public int ConnectionTimeoutMs { get { return _connectionTimeoutMs; } }
+    public string ServerIp { get { return _serverIp; } set { _serverIp = value; } }
+    public int ServerPort { get { return _serverPort; } set { _serverPort = value; } }
+    public int SessionKey1 { get { return _sessionKey1; } set { _sessionKey1 = value; } }
+    public int SessionKey2 { get { return _sessionKey2; } set { _sessionKey2 = value; } }
+    public bool IsConnected { get { return _connected; } }
+    public int Ping { get { return _ping; } set { _ping = value; } }
+
+    private void Start()
+    {
+        if (World.Instance != null &amp;&amp; World.Instance.OfflineMode)
+        {
+            this.enabled = false;
+        }
+    }
+
+    public async void Connect()
+    {
+        if (_connected)
+        {
+            Debug.Log(&quot;Already connected.&quot;);
+            return;
+        }
+
+        if (_connecting)
+        {
+            Debug.Log(&quot;Connection already in progress...&quot;);
+            return;
+        }
+
+        try
+        {
+            _connecting = true;
+            CreateAsyncClient();
+            WhileConnecting();
+
+            bool connected = await Task.Run(_client.Connect);
+            if (connected)
+            {
+                EventProcessor.Instance.QueueEvent(() =&gt; OnConnectionSuccess());
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($&quot;Connect exception: {ex}&quot;);
+            OnConnectionFailed();
+        }
+        finally
+        {
+            _connecting = false;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (_connected &amp;&amp; Time.time - _lastSocketPoll &gt;= 5f)
+        {
+            _lastSocketPoll = Time.time;
+
+            if (!_client.IsConnected())
+            {
+                Disconnect();
+            }
+        }
+    }
+
+    protected virtual void WhileConnecting()
+    {
+        _connecting = true;
+    }
+
+    protected abstract void CreateAsyncClient();
+
+    protected virtual void OnConnectionSuccess()
+    {
+        _connected = true;
+        _lastSocketPoll = Time.time;
+    }
+
+    public virtual void OnConnectionFailed()
+    {
+        _connecting = false;
+        _connected = false;
+    }
+
+    public abstract void OnAuthAllowed();
+
+    public void Disconnect()
+    {
+        Debug.Log(&quot;Disconnect&quot;);
+        _connected = false;
+
+        if (_client != null)
+        {
+            _client.Disconnect();
+        }
+    }
+
+    public virtual void OnDisconnect()
+    {
+        _connected = false;
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (_client != null)
+        {
+            _client.Disconnect();
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Manipulators/Slot/SlotClickSoundManipulator.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Manipulators/Slot/SlotClickSoundManipulator.cs</h1>
+            <pre>using UnityEngine.UIElements;
+
+public class SlotClickSoundManipulator : PointerManipulator {
+    private VisualElement _root;
+    public SlotClickSoundManipulator(VisualElement target) {
+        _root = target;
+        this.target = target;
+    }
+
+    protected override void RegisterCallbacksOnTarget() {
+        _root.RegisterCallback&lt;PointerDownEvent&gt;(MouseDownHandler, TrickleDown.TrickleDown);
+    }
+
+    protected override void UnregisterCallbacksFromTarget() {
+        _root.UnregisterCallback&lt;PointerDownEvent&gt;(MouseDownHandler);
+    }
+
+    private void MouseDownHandler(PointerDownEvent evt) {
+        if (evt.button == 0) {
+            AudioManager.Instance.PlayUISound(&quot;click_03&quot;);
+        }
+    }
+}</pre>
+            
+</body>
+</html>

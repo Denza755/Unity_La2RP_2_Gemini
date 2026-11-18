@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/Model/Skillgrp.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/Model/Skillgrp.cs</h1>
+            <pre>using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Skillgrp
+{
+    [SerializeField] private int _id;
+    [SerializeField] private int _level;
+    [SerializeField] private int _subLevel;
+    [SerializeField] private SkillType _skill_type;   //0 = damage, 1 = cubics and raid debuffs, 2 = embroider/dwarf buff slot, 3 = debuff, 4 = heroic skill, 11 = equipment passive buffs, 12 = passive magic buffs, 13 = weight limit, 14 = passive buffs (like assassination on dagger), 15 = clan skill
+    [SerializeField] private int _magicType;
+    [SerializeField] private SkillOperateType _operate_type; // 0 = dmg skill, 1 = buff/debuff, 2 = clan buffs, 3 = transf pain/activables, 4 = special event consumable buffs, 
+    [SerializeField] private int _mp_consume;
+    [SerializeField] private int _cast_range;
+    [SerializeField] private int _cast_style;
+    [SerializeField] private float _hit_time;
+    [SerializeField] private float _cool_time;
+    [SerializeField] private float _reuse_delay;
+    [SerializeField] private int _effect_point;
+    [SerializeField] private SkillMagicType _is_magic;  // 1 = buff/damage, 3 = songs/dances, 4 = resurrection, 6 = dimensional skills, 
+    [SerializeField] private int _is_double;
+    [SerializeField] private SkillCastAnimation _castAnimation;
+    [SerializeField] private SkillThrowAnimation _throwAnimation;
+    [SerializeField] private int _skill_visual_effect;
+    [SerializeField] private string _icon;
+    [SerializeField] private string _icon_panel;
+    [SerializeField] private int _debuff;
+    [SerializeField] private int _resist_cast;
+    [SerializeField] private int _enchant_skill_level;
+    [SerializeField] private string _enchant_icon;
+    [SerializeField] private int _hp_consume;
+    [SerializeField] private int _rumble_self;
+    [SerializeField] private int _rumble_target;
+
+
+    public int Id { get =&gt; _id; set =&gt; _id = value; }
+    public int Level { get =&gt; _level; set =&gt; _level = value; }
+    public int SubLevel { get =&gt; _subLevel; set =&gt; _subLevel = value; }
+    public SkillType IconType { get =&gt; _skill_type; set =&gt; _skill_type = value; }
+    public int MagicType { get =&gt; _magicType; set =&gt; _magicType = value; }
+    public SkillOperateType OperateType { get =&gt; _operate_type; set =&gt; _operate_type = value; }
+    public int MpConsume { get =&gt; _mp_consume; set =&gt; _mp_consume = value; }
+    public int CastRange { get =&gt; _cast_range; set =&gt; _cast_range = value; }
+    public int CastStyle { get =&gt; _cast_style; set =&gt; _cast_style = value; }
+    public float HitTime { get =&gt; _hit_time; set =&gt; _hit_time = value; }
+    public float CoolTime { get =&gt; _cool_time; set =&gt; _cool_time = value; }
+    public float ReuseDelay { get =&gt; _reuse_delay; set =&gt; _reuse_delay = value; }
+    public int EffectPoint { get =&gt; _effect_point; set =&gt; _effect_point = value; }
+    public SkillMagicType IsMagic { get =&gt; _is_magic; set =&gt; _is_magic = value; }
+    public int IsDouble { get =&gt; _is_double; set =&gt; _is_double = value; }
+    public SkillCastAnimation CastAnimation { get =&gt; _castAnimation; set =&gt; _castAnimation = value; }
+    public SkillThrowAnimation ThrowAnimation { get =&gt; _throwAnimation; set =&gt; _throwAnimation = value; }
+    public int SkillVisualEffect { get =&gt; _skill_visual_effect; set =&gt; _skill_visual_effect = value; }
+    public string Icon { get =&gt; _icon; set =&gt; _icon = value; }
+    public string IconPanel { get =&gt; _icon_panel; set =&gt; _icon_panel = value; }
+    public int Debuff { get =&gt; _debuff; set =&gt; _debuff = value; }
+    public int ResistCast { get =&gt; _resist_cast; set =&gt; _resist_cast = value; }
+    public int EnchantSkillLevel { get =&gt; _enchant_skill_level; set =&gt; _enchant_skill_level = value; }
+    public string EnchantIcon { get =&gt; _enchant_icon; set =&gt; _enchant_icon = value; }
+    public int HpConsume { get =&gt; _hp_consume; set =&gt; _hp_consume = value; }
+    public int RumbleSelf { get =&gt; _rumble_self; set =&gt; _rumble_self = value; }
+    public int RumbleTarget { get =&gt; _rumble_target; set =&gt; _rumble_target = value; }
+}</pre>
+            
+</body>
+</html>

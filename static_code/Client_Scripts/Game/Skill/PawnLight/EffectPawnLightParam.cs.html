@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Skill/PawnLight/EffectPawnLightParam.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Skill/PawnLight/EffectPawnLightParam.cs</h1>
+            <pre>using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using UnityEngine;
+
+[System.Serializable]
+public class EffectPawnLightParam
+{
+    [SerializeField] private EPawnLightType _pawnLightType;
+    [SerializeField] private ELightType _lightType;
+    [SerializeField] private ELightEffect _lightEffectType;
+    [SerializeField] private string _lightColor;
+    [SerializeField] private float _lightRadius;
+    [SerializeField] private ELightCoordSystem _lightCoordSystem;
+
+    public EPawnLightType PawnLightType { get { return _pawnLightType; } set { _pawnLightType = value; } }
+    public ELightType LightType { get { return _lightType; } set { _lightType = value; } }
+    public ELightEffect LightEffectType { get { return _lightEffectType; } set { _lightEffectType = value; } }
+    public string LightColor { get { return _lightColor; } set { _lightColor = value; } }
+    public float LightRadius { get { return _lightRadius; } set { _lightRadius = value; } }
+    public ELightCoordSystem LightCoordSystem { get { return _lightCoordSystem; } set { _lightCoordSystem = value; } }
+
+    public static EffectPawnLightParam Parse(string input)
+    {
+        EffectPawnLightParam effect = new EffectPawnLightParam();
+        input = input.Trim(&#x27;(&#x27;, &#x27;)&#x27;);
+
+        string pattern = @&quot;(\w+)=(\([^)]+\)|[^,]+)&quot;; // TODO: Use this regex in system grp files
+
+        MatchCollection matches = Regex.Matches(input, pattern);
+
+        foreach (Match match in matches)
+        {
+            string key = match.Groups[1].Value;
+            string value = match.Groups[2].Value;
+
+            switch (key)
+            {
+                case &quot;PawnLightType&quot;:
+                    effect.PawnLightType = (EPawnLightType)Enum.Parse(typeof(EPawnLightType), value.ToUpper());
+                    break;
+                case &quot;LightType&quot;:
+                    effect.LightType = (ELightType)Enum.Parse(typeof(ELightType), value.ToUpper());
+                    break;
+                case &quot;LightEffectType&quot;:
+                    effect.LightEffectType = (ELightEffect)Enum.Parse(typeof(ELightEffect), value.ToUpper());
+                    break;
+                case &quot;LightColor&quot;:
+                    effect.LightColor = value;
+                    break;
+                case &quot;LightRadius&quot;:
+                    if (float.TryParse(value.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float radius))
+                    {
+                        effect.LightRadius = radius;
+                    }
+                    else
+                    {
+                        throw new FormatException($&quot;Invalid float format for LightRadius: {value}&quot;);
+                    }
+                    break;
+                case &quot;LightCoordSystem&quot;:
+                    effect.LightCoordSystem = (ELightCoordSystem)Enum.Parse(typeof(ELightCoordSystem), value.ToUpper());
+                    break;
+            }
+        }
+
+        return effect;
+    }
+
+    //TODO: Handle skilleffect lights, not a priority for now...
+
+    //&quot;bPawnLight&quot;: &quot;True&quot;,&quot;PawnLightParam&quot;: &quot;(PawnLightType=EPLT_SKILL,LightType=LT_Steady,LightEffectType=LE_Cylinder,LightColor=(W=0.900000,X=0.500000,Y=0.200000,Z=0.200000),LightRadius=30.000000,LightCoordSystem=PTCS_RelativeRotation)&quot;}],
+}</pre>
+            
+</body>
+</html>

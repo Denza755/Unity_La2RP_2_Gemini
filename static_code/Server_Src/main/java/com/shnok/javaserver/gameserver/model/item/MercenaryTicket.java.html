@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/MercenaryTicket.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/MercenaryTicket.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.item;
+
+import java.util.Arrays;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.items.TicketType;
+
+public final class MercenaryTicket
+{
+	private final int _itemId;
+	private final TicketType _type;
+	private final boolean _isStationary;
+	private final int _npcId;
+	private final int _maxAmount;
+	private final CabalType[] _ssq;
+	
+	public MercenaryTicket(StatSet set)
+	{
+		_itemId = set.getInteger(&quot;itemId&quot;);
+		_type = set.getEnum(&quot;type&quot;, TicketType.class);
+		_isStationary = set.getBool(&quot;stationary&quot;);
+		_npcId = set.getInteger(&quot;npcId&quot;);
+		_maxAmount = set.getInteger(&quot;maxAmount&quot;);
+		
+		final String[] ssq = set.getStringArray(&quot;ssq&quot;);
+		
+		_ssq = new CabalType[ssq.length];
+		for (int i = 0; i &lt; ssq.length; i++)
+			_ssq[i] = Enum.valueOf(CabalType.class, ssq[i]);
+	}
+	
+	public int getItemId()
+	{
+		return _itemId;
+	}
+	
+	public TicketType getType()
+	{
+		return _type;
+	}
+	
+	public boolean isStationary()
+	{
+		return _isStationary;
+	}
+	
+	public int getNpcId()
+	{
+		return _npcId;
+	}
+	
+	public int getMaxAmount()
+	{
+		return _maxAmount;
+	}
+	
+	public boolean isSsqType(CabalType type)
+	{
+		return Arrays.asList(_ssq).contains(type);
+	}
+}</pre>
+            
+</body>
+</html>

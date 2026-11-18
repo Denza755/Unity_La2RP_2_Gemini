@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Common/L2FxCoreGeometryTest.hlsl</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Common/L2FxCoreGeometryTest.hlsl</h1>
+            <pre>#ifndef L2FX_CORE_GEOMETRY_INCLUDED
+#define L2FX_CORE_GEOMETRY_INCLUDED
+
+// UE2.5 macro-world: 1 Unity meter = 52.5 Unreal Units
+static const float L2_UU_TO_METERS = 1.0 / 52.5;
+
+// UE SpriteEmitter Particle.Size is a half-extent: FillVertexBuffer emits
+// corners at Location +/- Size. Unity&#x27;s unit quad spans [-0.5,+0.5], so its
+// local diameter must be 2 * Size after UU-to-meters world calibration.
+// DrawScale is intentionally not part of this conversion.
+float L2Fx_GetFinalVertexSizeMeters(float sizeUU, float worldCalibK)
+{
+    float k = worldCalibK &gt; 0.0 ? worldCalibK : 1.0;
+    float sizeInMeters = sizeUU * L2_UU_TO_METERS;
+    return sizeInMeters * k * 2.0;
+}
+
+// UE2.5 positional quantities from .uc (StartLocationOffset, ranges, polar
+// radius, velocity, acceleration) are in UU. Healing-potion validation:
+// StartLocationOffset=(Z=8) visually aligns with the original after:
+//   UE(X,Y,Z) -&gt; Unity(X,Z,Y), meters = UU / 52.5 * K.
+// With verified K=1.8, Z=8 maps to Unity Y ~= 0.274 m.
+float3 L2Fx_UcPositionToUnityMeters(float3 uePositionUU, float worldCalibK)
+{
+    float k = worldCalibK &gt; 0.0 ? worldCalibK : 1.8;
+    return float3(uePositionUU.x, uePositionUU.z, uePositionUU.y) * L2_UU_TO_METERS * k;
+}
+
+
+//example
+
+//v2f vert(Attributes input)
+//    v2f o;
+    // ... �������� ������ ������� p ...
+    
+   // float meshScale = L2Fx_GetFinalMeshScale(p.startSize, p.relativeSize, 1.4f);
+    
+    // ������������ ������� FBX-������
+   // float3 scaledVertex = input.vertex.xyz * meshScale;
+    
+    // �������� � ������� ������� (������� ��� � ������, ��������, -0.28)
+   // float3 worldPosition = p.position + scaledVertex;
+    
+   // o.pos = mul(UNITY_MATRIX_VP, float4(worldPosition, 1.0));
+   // return o;
+//}
+// �� ������ ����� ������, �� ������ ��� MeshEmitter
+// Final mesh local scale = sizeUU * sizeScale * K.
+float L2Fx_GetFinalMeshScale(float sizeUU, float sizeScale, float worldCalibK)
+{
+    float k = worldCalibK &gt; 0.0 ? worldCalibK : 1.8;
+    
+    // ��� ���� StartSizeRange � ������ SizeScale � ��� ������ Scale-���������.
+    // ��������� 52.5 �� ������������.
+    float finalScale = sizeUU * sizeScale * k;
+    
+    return finalScale;
+}
+
+#endif
+</pre>
+            
+</body>
+</html>

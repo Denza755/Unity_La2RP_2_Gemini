@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/SkillSoundgrpTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/SkillSoundgrpTable.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using FMODUnity;
+using UnityEngine;
+
+public class SkillSoundgrpTable
+{
+    private static SkillSoundgrpTable _instance;
+    private Dictionary&lt;int, SkillSoundgrp&gt; _data;
+
+    public static SkillSoundgrpTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new SkillSoundgrpTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    public void Initialize()
+    {
+        ReadActions();
+    }
+
+    private void ReadActions()
+    {
+        _data = new Dictionary&lt;int, SkillSoundgrp&gt;();
+
+        string dataPath = Path.Combine(Application.streamingAssetsPath, &quot;Data/Meta/SkillSoundgrp_Classic.txt&quot;);
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return;
+        }
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                SkillSoundgrp grp = new SkillSoundgrp();
+
+                string[] keyvals = line.Split(&#x27;\t&#x27;);
+
+                for (int i = 0; i &lt; keyvals.Length; i++)
+                {
+                    if (!keyvals[i].Contains(&quot;=&quot;))
+                    {
+                        continue;
+                    }
+
+                    string[] keyval = keyvals[i].Split(&quot;=&quot;);
+                    string key = keyval[0];
+                    string value = keyval[1].Replace(&quot;[&quot;, &quot;&quot;).Replace(&quot;]&quot;, &quot;&quot;);
+
+                    switch (key)
+                    {
+                        case &quot;skill_id&quot;:
+                            grp.SkillId = int.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+                        case &quot;spelleffect_sound_1&quot;:
+                        case &quot;spelleffect_sound_2&quot;:
+                        case &quot;spelleffect_sound_3&quot;:
+                            if (value != &quot;None&quot;)
+                            {
+                                int index = int.Parse(key.Replace(&quot;spelleffect_sound_&quot;, &quot;&quot;), CultureInfo.InvariantCulture);
+                                grp.SpellEffectSounds[--index] = new SkillSound();
+                                grp.SpellEffectSounds[index].SoundEventName = value;
+                            }
+                            break;
+                        case &quot;spelleffect_sound_vol_1&quot;:
+                        case &quot;spelleffect_sound_vol_2&quot;:
+                        case &quot;spelleffect_sound_vol_3&quot;:
+                            int volIndex = int.Parse(key.Replace(&quot;spelleffect_sound_vol_&quot;, &quot;&quot;));
+                            if (grp.SpellEffectSounds[--volIndex] != null)
+                            {
+                                float vol = float.Parse(value, CultureInfo.InvariantCulture);
+                                grp.SpellEffectSounds[volIndex].SoundVolune = vol;
+                            }
+                            break;
+                        case &quot;spelleffect_sound_rad_1&quot;:
+                        case &quot;spelleffect_sound_rad_2&quot;:
+                        case &quot;spelleffect_sound_rad_3&quot;:
+                            int radIndex = int.Parse(key.Replace(&quot;spelleffect_sound_rad_&quot;, &quot;&quot;));
+                            if (grp.SpellEffectSounds[--radIndex] != null)
+                            {
+                                float rad = float.Parse(value, CultureInfo.InvariantCulture);
+                                grp.SpellEffectSounds[radIndex].SoundRadius = rad;
+                            }
+                            break;
+                        case &quot;spelleffect_sound_delay_1&quot;:
+                        case &quot;spelleffect_sound_delay_2&quot;:
+                        case &quot;spelleffect_sound_delay_3&quot;:
+                            int delayIndex = int.Parse(key.Replace(&quot;spelleffect_sound_delay_&quot;, &quot;&quot;));
+                            if (grp.SpellEffectSounds[--delayIndex] != null)
+                            {
+                                float delay = float.Parse(value, CultureInfo.InvariantCulture);
+                                grp.SpellEffectSounds[delayIndex].SoundDelay = delay;
+                            }
+                            break;
+                        case &quot;shoteffect_sound_1&quot;:
+                        case &quot;shoteffect_sound_2&quot;:
+                        case &quot;shoteffect_sound_3&quot;:
+                            if (value != &quot;None&quot;)
+                            {
+                                int index = int.Parse(key.Replace(&quot;shoteffect_sound_&quot;, &quot;&quot;), CultureInfo.InvariantCulture);
+                                grp.ShotEffectSounds[--index] = new SkillSound();
+                                grp.ShotEffectSounds[index].SoundEventName = value;
+                            }
+                            break;
+                        case &quot;shoteffect_sound_vol_1&quot;:
+                        case &quot;shoteffect_sound_vol_2&quot;:
+                        case &quot;shoteffect_sound_vol_3&quot;:
+                            int volIndex2 = int.Parse(key.Replace(&quot;shoteffect_sound_vol_&quot;, &quot;&quot;));
+                            if (grp.ShotEffectSounds[--volIndex2] != null)
+                            {
+                                float vol = float.Parse(value, CultureInfo.InvariantCulture);
+                                grp.ShotEffectSounds[volIndex2].SoundVolune = vol;
+                            }
+                            break;
+                        case &quot;shoteffect_sound_rad_1&quot;:
+                        case &quot;shoteffect_sound_rad_2&quot;:
+                        case &quot;shoteffect_sound_rad_3&quot;:
+                            int radIndex2 = int.Parse(key.Replace(&quot;shoteffect_sound_rad_&quot;, &quot;&quot;));
+                            if (grp.ShotEffectSounds[--radIndex2] != null)
+                            {
+                                float rad = float.Parse(value, CultureInfo.InvariantCulture);
+                                grp.ShotEffectSounds[radIndex2].SoundRadius = rad;
+                            }
+                            break;
+                        case &quot;shoteffect_sound_delay_1&quot;:
+                        case &quot;shoteffect_sound_delay_2&quot;:
+                        case &quot;shoteffect_sound_delay_3&quot;:
+                            int delayIndex2 = int.Parse(key.Replace(&quot;shoteffect_sound_delay_&quot;, &quot;&quot;));
+                            if (grp.ShotEffectSounds[--delayIndex2] != null)
+                            {
+                                float delay = float.Parse(value, CultureInfo.InvariantCulture);
+                                grp.ShotEffectSounds[delayIndex2].SoundDelay = delay;
+                            }
+                            break;
+                        case &quot;mfighter_cast&quot;: //mfighter
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MFighter] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;ffighter_cast&quot;:  //ffighter
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FFighter] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mmagic_cast&quot;: //mdarkelf
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MDarkElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fmagic_cast&quot;: //fdarkelf
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FDarkElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;melf_cast&quot;: //mdwarf
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MDwarf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;felf_cast&quot;: //fdwarf
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FDwarf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mdarkelf_cast&quot;: //melf
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fdarkelf_cast&quot;: //felf
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mdwarf_cast&quot;: //mmagic
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MMagic] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fdwarf_cast&quot;: //fmagic
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FMagic] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;morc_cast&quot;: //morc
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MOrc] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;forc_cast&quot;: //forc
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FOrc] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mshaman_cast&quot;: //mshaman
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.MShaman] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fshaman_cast&quot;: //fshaman
+                            if (value != &quot;None&quot;) grp.CastingVoices[(int)CharacterModelType.FShaman] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mfighter_magic&quot;: //mfighter
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MFighter] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;ffighter_magic&quot;:  //ffighter
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FFighter] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mmagic_magic&quot;: //mdarkelf
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MDarkElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fmagic_magic&quot;: //fdarkelf
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FDarkElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;melf_magic&quot;: //mdwarf
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MDwarf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;felf_magic&quot;: //fdwarf
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FDwarf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mdarkelf_magic&quot;: //melf
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fdarkelf_magic&quot;: //felf
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FElf] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mdwarf_magic&quot;: //mmagic
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MMagic] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fdwarf_magic&quot;: //fmagic
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FMagic] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;morc_magic&quot;: //morc
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MOrc] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;forc_magic&quot;: //forc
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FOrc] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;mshaman_magic&quot;: //mshaman
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.MShaman] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;fshaman_magic&quot;: //fshaman
+                            if (value != &quot;None&quot;) grp.CastingEndVoices[(int)CharacterModelType.FShaman] = value.Replace(&quot;chrsound.&quot;, &quot;&quot;); break;
+                        case &quot;cast_volune&quot;:
+                            grp.CastVolume = float.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+                        case &quot;cast_rad&quot;:
+                            grp.CastRadius = float.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+                    }
+                }
+
+                UpdateSoundReferences(grp.SkillId, grp.SpellEffectSounds);
+                UpdateSoundReferences(grp.SkillId, grp.ShotEffectSounds);
+
+                _data.TryAdd(grp.SkillId, grp);
+            }
+            Debug.Log($&quot;Successfully imported {_data.Count} SkillSoundGrp(s)&quot;);
+        }
+    }
+
+    private void UpdateSoundReferences(int skillId, SkillSound[] skillSounds)
+    {
+        foreach (SkillSound skillSound in skillSounds)
+        {
+            if (skillSound == null || skillSound.SoundEventName == null || skillSound.SoundEventName.Length == 0)
+            {
+                continue;
+            }
+
+            string updatedPath = skillSound.SoundEventName.Replace(&quot;.&quot;, &quot;/&quot;);
+            EventReference er = RuntimeManager.PathToEventReference(&quot;event:/&quot; + updatedPath);
+            // Debug.LogWarning($&quot;Getting sound reference for sound: {skillSound.SoundEventName}&quot;);
+            if (er.IsNull)
+            {
+                Debug.LogWarning($&quot;Missing sound: {updatedPath} for skill: {skillId}.&quot;);
+            }
+            else
+            {
+                skillSound.SoundEvent = er;
+            }
+        }
+    }
+
+    public SkillSoundgrp GetSkillSoundGrp(int key)
+    {
+        SkillSoundgrp skillSoundgrp;
+        _data.TryGetValue(key, out skillSoundgrp);
+
+        if (skillSoundgrp == null)
+        {
+            // Debug.LogWarning($&quot;SkillsoundGrp is null for skillId: {key}.&quot;);
+        }
+
+        return skillSoundgrp;
+    }
+}
+</pre>
+            
+</body>
+</html>

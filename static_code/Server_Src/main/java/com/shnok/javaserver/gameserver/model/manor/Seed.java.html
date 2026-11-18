@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/manor/Seed.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/manor/Seed.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.manor;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.xml.ItemData;
+import com.shnok.javaserver.gameserver.model.item.kind.Item;
+
+public final class Seed
+{
+	private final int _cropId;
+	private final int _seedId;
+	private final int _matureId;
+	private final int _level;
+	private final int _reward1;
+	private final int _reward2;
+	private final int _castleId;
+	private final boolean _isAlternative;
+	private final int _seedsLimit;
+	private final int _cropsLimit;
+	private final int _seedReferencePrice;
+	private final int _cropReferencePrice;
+	
+	public Seed(StatSet set)
+	{
+		_cropId = set.getInteger(&quot;id&quot;);
+		_seedId = set.getInteger(&quot;seedId&quot;);
+		_matureId = set.getInteger(&quot;matureId&quot;);
+		_level = set.getInteger(&quot;level&quot;);
+		_reward1 = set.getInteger(&quot;reward1&quot;);
+		_reward2 = set.getInteger(&quot;reward2&quot;);
+		_castleId = set.getInteger(&quot;castleId&quot;);
+		_isAlternative = set.getBool(&quot;isAlternative&quot;);
+		_seedsLimit = set.getInteger(&quot;seedsLimit&quot;);
+		_cropsLimit = set.getInteger(&quot;cropsLimit&quot;);
+		
+		Item item = ItemData.getInstance().getTemplate(_cropId);
+		_cropReferencePrice = (item != null) ? item.getReferencePrice() : 1;
+		
+		item = ItemData.getInstance().getTemplate(_seedId);
+		_seedReferencePrice = (item != null) ? item.getReferencePrice() : 1;
+	}
+	
+	public final int getCropId()
+	{
+		return _cropId;
+	}
+	
+	public final int getSeedId()
+	{
+		return _seedId;
+	}
+	
+	public final int getMatureId()
+	{
+		return _matureId;
+	}
+	
+	public final int getLevel()
+	{
+		return _level;
+	}
+	
+	public final int getReward1()
+	{
+		return _reward1;
+	}
+	
+	public final int getReward2()
+	{
+		return _reward2;
+	}
+	
+	public final int getCastleId()
+	{
+		return _castleId;
+	}
+	
+	public final boolean isAlternative()
+	{
+		return _isAlternative;
+	}
+	
+	public final int getSeedsLimit()
+	{
+		return _seedsLimit * Config.RATE_DROP_MANOR;
+	}
+	
+	public final int getCropsLimit()
+	{
+		return _cropsLimit * Config.RATE_DROP_MANOR;
+	}
+	
+	public final int getSeedReferencePrice()
+	{
+		return _seedReferencePrice;
+	}
+	
+	public final int getSeedMaxPrice()
+	{
+		return _seedReferencePrice * 10;
+	}
+	
+	public final int getSeedMinPrice()
+	{
+		return (int) (_seedReferencePrice * 0.6);
+	}
+	
+	public final int getCropReferencePrice()
+	{
+		return _cropReferencePrice;
+	}
+	
+	public final int getCropMaxPrice()
+	{
+		return _cropReferencePrice * 10;
+	}
+	
+	public final int getCropMinPrice()
+	{
+		return (int) (_cropReferencePrice * 0.6);
+	}
+	
+	@Override
+	public final String toString()
+	{
+		return &quot;Seed [_id=&quot; + _seedId + &quot;, _level=&quot; + _level + &quot;, _crop=&quot; + _cropId + &quot;, _mature=&quot; + _matureId + &quot;, _reward1=&quot; + _reward1 + &quot;, _reward2=&quot; + _reward2 + &quot;, _manorId=&quot; + _castleId + &quot;, _isAlternative=&quot; + _isAlternative + &quot;, _limitSeeds=&quot; + _seedsLimit + &quot;, _limitCrops=&quot; + _cropsLimit + &quot;]&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

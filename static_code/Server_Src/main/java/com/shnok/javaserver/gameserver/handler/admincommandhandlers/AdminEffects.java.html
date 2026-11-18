@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminEffects.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminEffects.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.Arrays;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.data.Pagination;
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.enums.AiEventType;
+import com.shnok.javaserver.gameserver.enums.skills.AbnormalEffect;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.Summon;
+import com.shnok.javaserver.gameserver.model.actor.instance.Chest;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.Earthquake;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExRedSky;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+import com.shnok.javaserver.gameserver.network.serverpackets.skill.MagicSkillUse;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.PlaySound;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SSQInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.SocialAction;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SunRise;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SunSet;
+import com.shnok.javaserver.gameserver.skills.AbstractEffect;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class AdminEffects implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_abnormal&quot;,
+		&quot;admin_atmosphere&quot;,
+		&quot;admin_earthquake&quot;,
+		&quot;admin_effect&quot;,
+		&quot;admin_gmspeed&quot;,
+		&quot;admin_hide&quot;,
+		&quot;admin_invul&quot;,
+		&quot;admin_jukebox&quot;,
+		&quot;admin_para&quot;,
+		&quot;admin_play_sound&quot;,
+		&quot;admin_social&quot;,
+		&quot;admin_undying&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		if (command.startsWith(&quot;admin_hide&quot;))
+		{
+			if (player.getAppearance().isVisible())
+			{
+				player.getAppearance().setVisible(false);
+				player.decayMe();
+				player.broadcastUserInfo();
+				player.spawnMe();
+			}
+			else
+			{
+				player.getAppearance().setVisible(true);
+				player.broadcastUserInfo();
+			}
+			
+			final Summon summon = player.getSummon();
+			if (summon != null)
+			{
+				summon.decayMe();
+				summon.getStatus().broadcastStatusUpdate();
+				summon.spawnMe();
+			}
+		}
+		else if (command.startsWith(&quot;admin_invul&quot;))
+		{
+			player.setInvul(!player.isInvul());
+			player.sendMessage(((player.isInvul()) ? &quot;You are now invulnerable.&quot; : &quot;You are now vulnerable.&quot;));
+		}
+		else if (command.startsWith(&quot;admin_jukebox&quot;))
+		{
+			sendFile(player, &quot;songs/songs.htm&quot;);
+		}
+		else if (command.startsWith(&quot;admin_undying&quot;))
+		{
+			player.setMortal(!player.isMortal());
+			player.sendMessage(((player.isMortal()) ? &quot;You are now mortal.&quot; : &quot;You are now immortal.&quot;));
+		}
+		else
+		{
+			final StringTokenizer st = new StringTokenizer(command);
+			st.nextToken();
+			
+			if (command.startsWith(&quot;admin_abnormal&quot;))
+			{
+				final Creature targetCreature = getTargetCreature(player, true);
+				
+				try
+				{
+					final int abnormal = Integer.decode(&quot;0x&quot; + st.nextToken());
+					
+					if ((targetCreature.getAbnormalEffect() &amp; abnormal) == abnormal)
+						targetCreature.stopAbnormalEffect(abnormal);
+					else
+						targetCreature.startAbnormalEffect(abnormal);
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //abnormal mask&quot;);
+				}
+			}
+			else if (command.startsWith(&quot;admin_atmosphere&quot;))
+			{
+				try
+				{
+					final String type = st.nextToken();
+					final String state = st.nextToken();
+					
+					L2GameServerPacket packet = null;
+					
+					if (type.equals(&quot;ssqinfo&quot;))
+					{
+						if (state.equals(&quot;dawn&quot;))
+							packet = SSQInfo.DAWN_SKY_PACKET;
+						else if (state.equals(&quot;dusk&quot;))
+							packet = SSQInfo.DUSK_SKY_PACKET;
+						else if (state.equals(&quot;red&quot;))
+							packet = SSQInfo.RED_SKY_PACKET;
+						else if (state.equals(&quot;regular&quot;))
+							packet = SSQInfo.REGULAR_SKY_PACKET;
+					}
+					else if (type.equals(&quot;sky&quot;))
+					{
+						if (state.equals(&quot;night&quot;))
+							packet = SunSet.STATIC_PACKET;
+						else if (state.equals(&quot;day&quot;))
+							packet = SunRise.STATIC_PACKET;
+						else if (state.equals(&quot;red&quot;))
+							packet = new ExRedSky(10);
+					}
+					
+					if (packet == null)
+					{
+						player.sendMessage(&quot;Usage: //atmosphere &lt;ssqinfo dawn|dusk|red|regular&gt;&quot;);
+						player.sendMessage(&quot;Usage: //atmosphere &lt;sky day|night|red&gt;&quot;);
+						return;
+					}
+					
+					World.toAllOnlinePlayers(packet);
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //atmosphere &lt;ssqinfo dawn|dusk|red|regular&gt;&quot;);
+					player.sendMessage(&quot;Usage: //atmosphere &lt;sky day|night|red&gt;&quot;);
+				}
+			}
+			else if (command.startsWith(&quot;admin_earthquake&quot;))
+			{
+				try
+				{
+					World.toAllOnlinePlayers(new Earthquake(player, Integer.parseInt(st.nextToken()), Integer.parseInt(st.nextToken())));
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Use: //earthquake &lt;intensity&gt; &lt;duration&gt;&quot;);
+				}
+			}
+			else if (command.startsWith(&quot;admin_effect&quot;))
+			{
+				final Creature targetCreature = getTargetCreature(player, true);
+				
+				int page = 1;
+				
+				if (!st.hasMoreTokens())
+				{
+					showMainPage(player, targetCreature, page);
+					return;
+				}
+				
+				final String param = st.nextToken();
+				if (StringUtil.isDigit(param))
+					page = Integer.parseInt(param);
+				else
+				{
+					switch (param)
+					{
+						case &quot;set&quot;:
+							try
+							{
+								final L2Skill skill = SkillTable.getInstance().getInfo(Integer.parseInt(st.nextToken()), Integer.parseInt(st.nextToken()));
+								if (skill == null)
+								{
+									player.sendMessage(&quot;Usage: //effect set id level [page]&quot;);
+									return;
+								}
+								
+								skill.getEffects(player, targetCreature);
+							}
+							catch (Exception e)
+							{
+								player.sendMessage(&quot;Usage: //effect set id level [page]&quot;);
+							}
+							break;
+						
+						case &quot;remove&quot;:
+							try
+							{
+								final String param2 = st.nextToken();
+								if (param2.equals(&quot;all&quot;))
+								{
+									targetCreature.stopAllEffects();
+									
+									if (player != targetCreature)
+										player.sendMessage(&quot;You removed all effects from &quot; + targetCreature.getName() + &quot;.&quot;);
+								}
+								else
+								{
+									final int skillId = Integer.parseInt(param2);
+									if (skillId &lt; 1)
+										return;
+									
+									Arrays.stream(targetCreature.getAllEffects()).filter(e -&gt; e != null &amp;&amp; e.getSkill().getId() == skillId).forEach(AbstractEffect::exit);
+									
+									if (player != targetCreature)
+										player.sendMessage(&quot;You removed &quot; + skillId + &quot; skillId effect from &quot; + targetCreature.getName() + &quot;.&quot;);
+								}
+							}
+							catch (Exception e)
+							{
+								player.sendMessage(&quot;Usage: //effect remove id [page]&quot;);
+							}
+							break;
+						
+						case &quot;visual&quot;:
+							try
+							{
+								targetCreature.broadcastPacket(new MagicSkillUse(targetCreature, player, Integer.parseInt(st.nextToken()), 1, 1, 0));
+							}
+							catch (Exception e)
+							{
+								player.sendMessage(&quot;Usage: //effect visual id&quot;);
+							}
+							break;
+					}
+					
+					if (st.hasMoreTokens())
+					{
+						final String param3 = st.nextToken();
+						if (StringUtil.isDigit(param3))
+							page = Integer.parseInt(param3);
+					}
+				}
+				
+				showMainPage(player, targetCreature, page);
+			}
+			else if (command.startsWith(&quot;admin_gmspeed&quot;))
+			{
+				try
+				{
+					player.stopSkillEffects(7029);
+					
+					final int skillLevel = Integer.parseInt(st.nextToken());
+					if (skillLevel &gt; 0 &amp;&amp; skillLevel &lt; 5)
+						player.getCast().callSkill(SkillTable.getInstance().getInfo(7029, skillLevel), new Creature[]
+						{
+							player
+						}, null);
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Use: //gmspeed value (0-4).&quot;);
+				}
+				finally
+				{
+					player.updateEffectIcons();
+				}
+			}
+			else if (command.startsWith(&quot;admin_para&quot;))
+			{
+				final Creature targetCreature = getTargetCreature(player, false);
+				if (targetCreature == null)
+				{
+					player.sendPacket(SystemMessageId.INVALID_TARGET);
+					return;
+				}
+				
+				if (!targetCreature.isParalyzed())
+				{
+					targetCreature.startAbnormalEffect(AbnormalEffect.HOLD_2);
+					targetCreature.setIsParalyzed(true);
+					targetCreature.abortAll(false);
+				}
+				else
+				{
+					targetCreature.stopAbnormalEffect(AbnormalEffect.HOLD_2);
+					targetCreature.setIsParalyzed(false);
+					
+					if (!(targetCreature instanceof Player))
+						targetCreature.getAI().notifyEvent(AiEventType.THINK, null, null);
+				}
+			}
+			else if (command.startsWith(&quot;admin_play_sound&quot;))
+			{
+				try
+				{
+					final String soundFile = st.nextToken();
+					
+					player.broadcastPacket((soundFile.contains(&quot;.&quot;)) ? new PlaySound(soundFile) : new PlaySound(1, soundFile));
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //play_sound soundFile&quot;);
+				}
+			}
+			else if (command.startsWith(&quot;admin_social&quot;))
+			{
+				final Creature targetCreature = getTargetCreature(player, true);
+				
+				try
+				{
+					final int actionId = Integer.parseInt(st.nextToken());
+					
+					if (targetCreature instanceof Summon || targetCreature instanceof Chest || (targetCreature instanceof Npc &amp;&amp; (actionId &lt; 1 || actionId &gt; 3)) || (targetCreature instanceof Player &amp;&amp; (actionId &lt; 2 || actionId &gt; 16)))
+					{
+						player.sendPacket(SystemMessageId.INVALID_TARGET);
+						return;
+					}
+					
+					targetCreature.broadcastPacket(new SocialAction(targetCreature, actionId));
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //social actionId&quot;);
+				}
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+	
+	public static void showMainPage(Player player, Creature creature, int page)
+	{
+		// Load static htm.
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/char_effects.htm&quot;);
+		html.replace(&quot;%name%&quot;, creature.getName());
+		
+		int row = 0;
+		
+		// Generate data.
+		final Pagination&lt;AbstractEffect&gt; list = new Pagination&lt;&gt;(Arrays.stream(creature.getAllEffects()), page, PAGE_LIMIT_14);
+		for (AbstractEffect effect : list)
+		{
+			list.append(((row % 2) == 0 ? &quot;&lt;table width=280 bgcolor=000000&gt;&lt;tr&gt;&quot; : &quot;&lt;table width=280&gt;&lt;tr&gt;&quot;));
+			list.append(&quot;&lt;td width=220&gt;&lt;a action=\&quot;bypass -h admin_effect remove &quot;, effect.getSkill().getId(), &quot;\&quot;&gt;&quot;, effect.getSkill().getName(), &quot;&lt;/a&gt;&lt;/td&gt;&lt;td width=60&gt;&quot;, (effect.getSkill().isToggle()) ? &quot;toggle&quot; : effect.getPeriod() - effect.getTime() + &quot;s&quot;, &quot;&lt;/td&gt;&quot;);
+			list.append(&quot;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.SquareGray\&quot; width=280 height=1&gt;&quot;);
+			
+			row++;
+		}
+		
+		list.generateSpace(20);
+		list.generatePages(&quot;bypass admin_effect %page%&quot;);
+		
+		html.replace(&quot;%content%&quot;, list.getContent());
+		player.sendPacket(html);
+	}
+}
+</pre>
+            
+</body>
+</html>

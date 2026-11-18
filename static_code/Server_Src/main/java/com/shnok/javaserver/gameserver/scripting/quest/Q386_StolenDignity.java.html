@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q386_StolenDignity.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q386_StolenDignity.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.commons.math.MathUtil;
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q386_StolenDignity extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q386_StolenDignity&quot;;
+	
+	// NPCs
+	private static final int ROMP = 30843;
+	
+	// Items
+	private static final int STOLEN_INFERNIUM_ORE = 6363;
+	
+	private static final Map&lt;Integer, Integer&gt; CHANCES = HashMap.newHashMap(26);
+	
+	private static final int[] REWARDS =
+	{
+		5529,
+		5532,
+		5533,
+		5534,
+		5535,
+		5536,
+		5537,
+		5538,
+		5539,
+		5541,
+		5542,
+		5543,
+		5544,
+		5545,
+		5546,
+		5547,
+		5548,
+		8331,
+		8341,
+		8342,
+		8349,
+		8346
+	};
+	
+	public Q386_StolenDignity()
+	{
+		super(386, &quot;Stolen Dignity&quot;);
+		
+		CHANCES.put(20970, 208000); // Soldier of Ancient Times
+		CHANCES.put(20971, 299000); // Warrior of Ancient Times
+		CHANCES.put(20958, 170000); // Death Agent
+		CHANCES.put(20960, 149000); // Bloody Ghost
+		CHANCES.put(20963, 199000); // Bloody Lord
+		CHANCES.put(20670, 202000); // Crimson Drake
+		CHANCES.put(21114, 352000); // Cursed Guardian
+		CHANCES.put(20959, 273000); // Dark Guard
+		CHANCES.put(21020, 478000); // Fallen Orc Shaman
+		CHANCES.put(21258, 487000); // Fallen Orc Shaman (trans)
+		CHANCES.put(21003, 173000); // Grave Lich
+		CHANCES.put(20969, 205000); // Giant&#x27;s Shadow
+		CHANCES.put(21108, 245000); // Glow Wisp
+		CHANCES.put(21005, 211000); // Grave Predator
+		CHANCES.put(21116, 487000); // Hames Orc Overlord
+		CHANCES.put(21113, 370000); // Hames Orc Sniper
+		CHANCES.put(20954, 184000); // Hungered Corpse
+		CHANCES.put(20671, 211000); // Kadios
+		CHANCES.put(21110, 260000); // Marsh Predator
+		CHANCES.put(20967, 257000); // Past Creature
+		CHANCES.put(20956, 216000); // Past Knight
+		CHANCES.put(21021, 234000); // Sharp Talon Tiger
+		CHANCES.put(21259, 487000); // Fallen Orc Shaman
+		CHANCES.put(20974, 440000); // Spiteful Soul Leader
+		CHANCES.put(20975, 390000); // Spiteful Soul Wizard
+		CHANCES.put(21001, 214000); // Wretched Archer
+		
+		addQuestStart(ROMP);
+		addTalkId(ROMP);
+		
+		for (int npcId : CHANCES.keySet())
+			addMyDying(npcId);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30843-05.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30843-08.htm&quot;))
+		{
+			playSound(player, SOUND_GIVEUP);
+			st.exitQuest(true);
+		}
+		else if (event.equalsIgnoreCase(&quot;30843-12.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(STOLEN_INFERNIUM_ORE) &lt; 100)
+				htmltext = &quot;30843-11.htm&quot;;
+			else
+			{
+				st.set(&quot;board&quot;, StringUtil.scrambleString(&quot;123456789&quot;));
+				takeItems(player, STOLEN_INFERNIUM_ORE, 100);
+			}
+		}
+		else if (event.startsWith(&quot;select_1-&quot;)) // first pick
+		{
+			// Register the first char.
+			st.set(&quot;playerArray&quot;, event.substring(9));
+			
+			// Send back the finalized HTM with dynamic content.
+			htmltext = fillBoard(st, getHtmlText(&quot;30843-13.htm&quot;));
+		}
+		else if (event.startsWith(&quot;select_2-&quot;)) // pick #2-5
+		{
+			// Stores the current event for future use.
+			String number = event.substring(9);
+			
+			// Restore the player array.
+			String playerArray = st.get(&quot;playerArray&quot;);
+			
+			// Verify if the given number is already on the player array, if yes, it&#x27;s invalid, otherwise register it.
+			if (playerArray.contains(number))
+				htmltext = fillBoard(st, getHtmlText(&quot;30843-&quot; + (13 + 2 * playerArray.length()) + &quot;.htm&quot;));
+			else
+			{
+				// Stores the final String.
+				st.set(&quot;playerArray&quot;, playerArray.concat(number));
+				
+				htmltext = fillBoard(st, getHtmlText(&quot;30843-&quot; + (12 + 2 * playerArray.length()) + &quot;.htm&quot;));
+			}
+		}
+		else if (event.startsWith(&quot;select_3-&quot;)) // pick #6
+		{
+			// Stores the current event for future use.
+			String number = event.substring(9);
+			
+			// Restore the player array.
+			String playerArray = st.get(&quot;playerArray&quot;);
+			
+			// Verify if the given number is already on the player array, if yes, it&#x27;s invalid, otherwise calculate reward.
+			if (playerArray.contains(number))
+				htmltext = fillBoard(st, getHtmlText(&quot;30843-25.htm&quot;));
+			else
+			{
+				// No need to store the String on player db, but still need to update it.
+				final String playerChoice = playerArray.concat(number);
+				
+				// Transform the generated board (9 string length) into a 2d matrice (3x3 int).
+				final String[] board = st.get(&quot;board&quot;).split(&quot;&quot;);
+				
+				// test for all line combination
+				int winningLines = 0;
+				
+				for (int[] map : MathUtil.MATRICE_3X3_LINES)
+				{
+					// test line combination
+					boolean won = true;
+					for (int index : map)
+						won &amp;= playerChoice.contains(board[index - 1]);
+					
+					// cut the loop, when you won
+					if (won)
+						winningLines++;
+				}
+				
+				switch (winningLines)
+				{
+					case 3:
+						htmltext = getHtmlText(&quot;30843-22.htm&quot;);
+						giveItems(player, Rnd.get(REWARDS), 4);
+						break;
+					
+					case 0:
+						htmltext = getHtmlText(&quot;30843-24.htm&quot;);
+						giveItems(player, Rnd.get(REWARDS), 10);
+						break;
+					
+					default:
+						htmltext = getHtmlText(&quot;30843-23.htm&quot;);
+						break;
+				}
+				
+				for (int i = 1; i &lt; 10; i++)
+				{
+					htmltext = htmltext.replace(&quot;&lt;?Cell&quot; + i + &quot;?&gt;&quot;, board[i - 1]);
+					htmltext = htmltext.replace(&quot;&lt;?FontColor&quot; + i + &quot;?&gt;&quot;, (playerChoice.contains(board[i - 1])) ? &quot;ff0000&quot; : &quot;ffffff&quot;);
+				}
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 58) ? &quot;30843-04.htm&quot; : &quot;30843-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				htmltext = (player.getInventory().getItemCount(STOLEN_INFERNIUM_ORE) &lt; 100) ? &quot;30843-06.htm&quot; : &quot;30843-07.htm&quot;;
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(st.getPlayer(), STOLEN_INFERNIUM_ORE, 1, 0, CHANCES.get(npc.getNpcId()));
+	}
+	
+	private static final String fillBoard(QuestState st, String htmltext)
+	{
+		final String playerArray = st.get(&quot;playerArray&quot;);
+		final String[] board = st.get(&quot;board&quot;).split(&quot;&quot;);
+		
+		for (int i = 1; i &lt; 10; i++)
+			htmltext = htmltext.replace(&quot;&lt;?Cell&quot; + i + &quot;?&gt;&quot;, (playerArray.contains(board[i - 1])) ? board[i - 1] : &quot;?&quot;);
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

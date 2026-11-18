@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/MultisellData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/MultisellData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.multisell.Entry;
+import com.shnok.javaserver.gameserver.model.multisell.Ingredient;
+import com.shnok.javaserver.gameserver.model.multisell.ListContainer;
+import com.shnok.javaserver.gameserver.model.multisell.PreparedListContainer;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.MultiSellList;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores multisell lists under {@link ListContainer}.&lt;br&gt;
+ * Each ListContainer contains a List of {@link Entry}, and the list of allowed npcIds.&lt;br&gt;
+ * &lt;br&gt;
+ * File name is used as key, under its String hashCode.
+ */
+public class MultisellData implements IXmlReader
+{
+	public static final int PAGE_SIZE = 40;
+	
+	private final Map&lt;Integer, ListContainer&gt; _entries = new HashMap&lt;&gt;();
+	
+	public MultisellData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/multisell&quot;);
+		LOGGER.info(&quot;Loaded {} multisell.&quot;, _entries.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		final int id = path.toFile().getName().replaceAll(&quot;.xml&quot;, &quot;&quot;).hashCode();
+		final ListContainer list = new ListContainer(id);
+		forEach(doc, &quot;list&quot;, listNode -&gt;
+		{
+			final NamedNodeMap attrs = listNode.getAttributes();
+			
+			list.setApplyTaxes(parseBoolean(attrs, &quot;applyTaxes&quot;, false));
+			list.setMaintainEnchantment(parseBoolean(attrs, &quot;maintainEnchantment&quot;, false));
+			
+			forEach(listNode, &quot;item&quot;, itemNode -&gt;
+			{
+				final List&lt;Ingredient&gt; ingredients = new ArrayList&lt;&gt;();
+				final List&lt;Ingredient&gt; products = new ArrayList&lt;&gt;();
+				forEach(itemNode, &quot;ingredient&quot;, ingredientNode -&gt; ingredients.add(new Ingredient(parseAttributes(ingredientNode))));
+				forEach(itemNode, &quot;production&quot;, productionNode -&gt; products.add(new Ingredient(parseAttributes(productionNode))));
+				list.getEntries().add(new Entry(ingredients, products));
+			});
+			forEach(listNode, &quot;npcs&quot;, npcsNode -&gt; forEach(npcsNode, &quot;npc&quot;, npcNode -&gt; list.allowNpc(Integer.parseInt(npcNode.getTextContent()))));
+			
+			_entries.put(id, list);
+		});
+	}
+	
+	public void reload()
+	{
+		_entries.clear();
+		
+		load();
+	}
+	
+	/**
+	 * Send the correct multisell content to a {@link Player}.&lt;br&gt;
+	 * &lt;br&gt;
+	 * {@link ListContainer} template is first retrieved, based on its name, then {@link Npc} npcId check is done for security reason. Then the content is sent into {@link PreparedListContainer}, notably to check Player inventory. Finally a {@link MultiSellList} packet is sent to the Player. That
+	 * new, prepared list is kept in memory on Player instance, mostly for memory reason.
+	 * @param listName : The ListContainer list name.
+	 * @param player : The Player to check.
+	 * @param npc : The Npc to check (notably used for npcId check).
+	 * @param inventoryOnly : if true we check inventory content.
+	 */
+	public void separateAndSend(String listName, Player player, Npc npc, boolean inventoryOnly)
+	{
+		final ListContainer template = _entries.get(listName.hashCode());
+		if (template == null)
+			return;
+		
+		if ((npc != null &amp;&amp; !template.isNpcAllowed(npc.getNpcId())) || (npc == null &amp;&amp; template.isNpcOnly()))
+			return;
+		
+		final PreparedListContainer list = new PreparedListContainer(template, inventoryOnly, player, npc);
+		
+		int index = 0;
+		do
+		{
+			// send list at least once even if size = 0
+			player.sendPacket(new MultiSellList(list, index));
+			index += PAGE_SIZE;
+		}
+		while (index &lt; list.getEntries().size());
+		
+		player.setMultiSell(list);
+	}
+	
+	public ListContainer getList(String listName)
+	{
+		return _entries.get(listName.hashCode());
+	}
+	
+	public static MultisellData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final MultisellData INSTANCE = new MultisellData();
+	}
+}</pre>
+            
+</body>
+</html>

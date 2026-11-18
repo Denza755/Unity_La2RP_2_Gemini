@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/SkillbarWindow/SkillbarWindow.uss</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/SkillbarWindow/SkillbarWindow.uss</h1>
+            <pre>.skillbar {
+    height: 361px;
+    flex-direction: row;
+}
+
+.skillbar-slot-anchor {
+    flex-grow: 0;
+    width: 34px;
+    height: 34px;
+    margin-right: 2px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.skillbar .button-tooltip {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMax&#x27;);
+}
+
+.skillbar .button-tooltip:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMax_Down&#x27;);
+}
+
+.skillbar .button-tooltip:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMax_Down&#x27;);
+}
+
+.skillbar .button-tooltip:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMax_Over&#x27;);
+}
+
+.skillbar .button-tooltip.min {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMin&#x27;);
+}
+
+.skillbar .button-tooltip:active.min {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMin_Down&#x27;);
+}
+
+.skillbar .button-tooltip:active:hover.min {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMin_Down&#x27;);
+}
+
+.skillbar .button-tooltip:hover.min {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/ShortCut_TooltipMin_Over&#x27;);
+}
+
+.skillbar .button-rotate {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_rotate&#x27;);
+}
+
+.skillbar .button-rotate:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_rotate_down&#x27;);
+}
+
+.skillbar .button-rotate:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_rotate_down&#x27;);
+}
+
+.skillbar .button-rotate:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_rotate_over&#x27;);
+}
+
+.skillbar .button-lock {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_unlock&#x27;);
+}
+
+.skillbar .button-lock:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_unlock_down&#x27;);
+}
+
+.skillbar .button-lock:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_unlock_down&#x27;);
+}
+
+.skillbar .button-lock:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_unlock_over&#x27;);
+}
+
+.skillbar .button-lock.locked {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_lock&#x27;);
+}
+
+.skillbar .button-lock:active.locked {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_lock_down&#x27;);
+}
+
+.skillbar .button-lock:active:hover.locked {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_lock_down&#x27;);
+}
+
+.skillbar .button-lock:hover.locked {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/joypad_lock_over&#x27;);
+}
+
+.skillbar .button-expand {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_expand&#x27;);
+}
+
+.skillbar .button-expand:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_expand_down&#x27;);
+}
+
+.skillbar .button-expand:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_expand_down&#x27;);
+}
+
+.skillbar .button-expand:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_expand_over&#x27;);
+}
+
+.skillbar .button-minimize {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_minimize&#x27;);
+}
+
+.skillbar .button-minimize:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_minimize_down&#x27;);
+}
+
+.skillbar .button-minimize:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_minimize_down&#x27;);
+}
+
+.skillbar .button-minimize:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_minimize_over&#x27;);
+}
+
+.skillbar-footer-btn {
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    width: 14px;
+    height: 14px;
+    background-color: rgba(188, 188, 188, 0);
+    -unity-slice-right: 1;
+    -unity-slice-bottom: 1;
+    -unity-slice-scale: -1px;
+}
+
+.skill-arrow-input {
+    flex-grow: 1;
+    width: 14px;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: center;
+}
+
+.skillbar-arrow-input-up {
+    margin-left: 2px;
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_nextv&#x27;);
+}
+
+.skillbar-arrow-input-up:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_nextv_down&#x27;);
+}
+
+.skillbar-arrow-input-up:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_nextv_down&#x27;);
+}
+
+.skillbar-arrow-input-up:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_nextv_over&#x27;);
+}
+
+.skillbar-arrow-input-down {
+    margin-left: 2px;
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prevv&#x27;);
+}
+
+.skillbar-arrow-input-down:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prevv_down&#x27;);
+}
+
+.skillbar-arrow-input-down:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prevv_down&#x27;);
+}
+
+.skillbar-arrow-input-down:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prevv_over&#x27;);
+}
+
+.skillbar-container {
+    flex-grow: 1;
+}
+
+.skillbar {
+    height: auto;
+    flex-grow: 1;
+}
+
+.skillbar-drag {
+    flex-grow: 0;
+    width: 17px;
+    display: flex;
+    overflow: hidden;
+}
+
+
+.skillbar-inner-container {
+    flex-grow: 1;
+    flex-direction: row;
+    background-image: resource(&#x27;Data/UI/Assets/Windows/Windows_DF_Small_Vertical_Bg&#x27;);
+    -unity-slice-left: 12;
+    -unity-slice-top: 12;
+    -unity-slice-right: 12;
+    -unity-slice-bottom: 12;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.skillbar-arrow-control {
+    flex-grow: 0;
+    width: 17px;
+    background-color: rgba(0, 0, 0, 0.22);
+    display: flex;
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/ShortcutWnd_DF_NumberGroupBox&#x27;);
+    -unity-slice-left: 8;
+    -unity-slice-top: 8;
+    -unity-slice-right: 8;
+    -unity-slice-bottom: 8;
+    -unity-slice-scale: 0.6px;
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-text-align: upper-center;
+    align-items: flex-end;
+}
+
+.skill-arrow-input {
+    align-items: center;
+    align-self: flex-end;
+}
+
+.skillbar-slot-container {
+    flex-grow: 1;
+    flex-direction: row;
+    display: flex;
+    margin-top: 3px;
+    padding-left: 6px;
+    padding-right: 3px;
+}
+
+.skillbar-darkener {
+    flex-grow: 1;
+    position: absolute;
+    height: 40px;
+    width: 151px;
+    background-color: rgba(0, 0, 0, 0.28);
+    margin-left: 148px;
+    margin-top: -3px;
+}
+
+.skillbar-slot-spacer {
+    flex-grow: 1;
+}
+
+.skillbar-footer {
+    flex-grow: 0;
+    width: 15px;
+    display: flex;
+}
+
+.skill-arrow-input-label {
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 1px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    flex-grow: 1;
+    font-size: 11px;
+    color: rgb(221, 218, 218);
+    -unity-text-outline-width: 0.1px;
+    -unity-text-align: middle-center;
+}
+
+.skill-arrow-input-label #unity-text-input {
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-text-align: middle-center;
+}
+
+.skill-arrow-input-label #unity-text-input .unity-text-element {
+    margin: 0;
+    padding: 0;
+}
+
+.skillbar-container {
+    flex-direction: column-reverse;
+}
+
+.skillbar-inner-container {
+    background-color: rgba(0, 0, 0, 0.49);
+}
+
+.skillbar-darkener {
+    background-color: rgba(0, 0, 0, 0.39);
+}
+
+.skillbar-wrapper {
+    flex-grow: 1;
+    white-space: normal;
+    flex-direction: row;
+    height: 46px;
+    align-self: flex-end;
+}
+
+.skillbar {
+    flex-grow: 0;
+    overflow: hidden;
+}
+
+.skillbar-vertical {
+}
+
+.skillbar-vertical {
+    flex-direction: column;
+}
+
+.skillbar-wrapper-vertical {
+    flex-grow: 1;
+    height: 500px;
+    width: 46px;
+    flex-direction: column;
+}
+
+.skillbar-drag-vertical {
+    height: 17px;
+    width: 48px;
+}
+
+
+.skillbar-inner-container-vertical {
+    flex-direction: column;
+    background-image: resource(&#x27;Data/UI/Assets/Windows/Windows_DF_Small_Bg&#x27;);
+    -unity-slice-left: 9;
+    -unity-slice-top: 9;
+    -unity-slice-right: 9;
+    -unity-slice-bottom: 9;
+    padding-right: 3px;
+    padding-left: 3px;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+.skillbar-arrow-control-vertical {
+    height: 17px;
+    width: 46px;
+    flex-grow: 0;
+}
+
+.skill-arrow-input-vertical {
+    margin-top: -1px;
+    margin-right: 0;
+    overflow: visible;
+    height: 14px;
+    width: 46px;
+    flex-direction: row-reverse;
+    margin-left: 0;
+}
+
+.skillbar-slot-anchor-vertical {
+    margin-top: 3px;
+    margin-right: 0;
+}
+
+.skillbar-arrow-input-right {
+    -unity-slice-left: 0;
+    -unity-slice-top: 0;
+    -unity-slice-right: 1;
+    -unity-slice-bottom: 1;
+    -unity-slice-scale: -1px;
+    margin-left: 0;
+    margin-right: 4px;
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_next&#x27;);
+}
+
+.skillbar-arrow-input-right:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_next_down&#x27;);
+}
+
+.skillbar-arrow-input-right:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_next_down&#x27;);
+}
+
+.skillbar-arrow-input-right:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_next_over&#x27;);
+}
+
+.skillbar-arrow-input-left {
+    margin-top: 0;
+    -unity-slice-right: 1;
+    -unity-slice-bottom: 1;
+    -unity-slice-scale: -1px;
+    margin-left: -1px;
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prev&#x27;);
+}
+
+.skillbar-arrow-input-left:active {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prev_down&#x27;);
+}
+
+.skillbar-arrow-input-left:active:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prev_down&#x27;);
+}
+
+.skillbar-arrow-input-left:hover {
+    background-image: resource(&#x27;Data/UI/Assets/SkillBar/Buttons/shortcut_prev_over&#x27;);
+}
+
+.skillbar-footer-vertical {
+    margin-top: 0;
+    width: auto;
+    height: 15px;
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.skillbar-container-vertical {
+    position: absolute;
+    min-width: 46px;
+    min-height: 500px;
+    flex-grow: 0;
+    align-self: flex-end;
+    justify-content: flex-start;
+    align-items: auto;
+    display: flex;
+    flex-direction: row-reverse;
+}
+
+
+.skill-arrow-input-label {
+    width: 15px;
+    height: 14px;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    font-size: 10px;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-text-align: middle-center;
+}
+
+.skillbar-darkener {
+    width: 154px;
+}
+
+.skillbar-inner-container {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.skillbar-darkener-vertical {
+    width: 42px;
+    height: 154px;
+    margin-left: 0;
+    margin-top: 148px;
+}
+
+.skillbar-slot-container-vertical {
+    flex-direction: column;
+    padding-top: 6px;
+    padding-bottom: 3px;
+    padding-right: 0;
+    padding-left: 0;
+    align-items: center;
+}
+
+.skillbar-container-horizontal {
+    position: absolute;
+}
+
+.skillbar-window {
+    height: 46px;
+    width: 506px;
+    position: absolute;
+}
+
+.skillbar-window {
+    bottom: 0;
+    flex-direction: column-reverse;
+    width: 500px;
+}
+
+.footer-container-vertical {
+    flex-grow: 1;
+    height: 16px;
+}
+
+.footer-container-horizontal {
+    flex-grow: 1;
+    width: 14px;
+}
+
+.footer-container-horizontal {
+    flex-grow: 0;
+}
+
+.footer-container-vertical {
+    flex-grow: 0;
+}
+</pre>
+            
+</body>
+</html>

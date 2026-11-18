@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Json/Converter/L2SkillEffectEmitterConverter.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Json/Converter/L2SkillEffectEmitterConverter.cs</h1>
+            <pre>using System;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using UnityEngine;
+
+public class L2SkillEffectEmitterConverter : JsonConverter
+{
+    public override bool CanConvert(Type objectType)
+    {
+        return objectType == typeof(EffectEmitter);
+    }
+
+    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    {
+        JObject jObject = JObject.Load(reader);
+
+        EffectEmitter emitter = new EffectEmitter
+        {
+            AttachOn = ParseAttachOnType(jObject[&quot;AttachOn&quot;]?.ToString()),
+            SpawnOnTarget = jObject[&quot;bSpawnOnTarget&quot;]?.ToString().ToLower() == &quot;false&quot; ? false : true,
+            RelativeToCylinder = jObject[&quot;bRelativeToCylinder&quot;]?.ToString().ToLower() == &quot;false&quot; ? false : true,
+            EffectClass =
+            (jObject[&quot;EffectClass&quot;] != null &amp;&amp; jObject[&quot;EffectClass&quot;].ToString().Length &gt; 0)
+            ? jObject[&quot;EffectClass&quot;].ToString().Split(&quot;.&quot;)[1] : null,
+            ScaleSize = jObject[&quot;ScaleSize&quot;]?.Value&lt;float&gt;() ?? 1.0f,
+            Offset = L2JsonConverterCommonFunctions.ParseVector3(jObject[&quot;offset&quot;]?.ToString()), //
+            EtcEffect = ParseEtcEffect(jObject[&quot;EtcEffect&quot;]?.ToString()),
+            EtcEffectInfo = ParseEtcEffectInfo(jObject[&quot;EtcEffectInfo&quot;]?.ToString()),
+            PawnLight = jObject[&quot;bPawnLight&quot;]?.ToString().ToLower() == &quot;true&quot;,
+        };
+
+        /* defaultproperties
+        {
+            bSpawnOnTarget=True
+            bRelativeToCylinder=True // If true, this.Offset will be scaled by X*=CollisionRadius, Y*=CollisionHeight, Z*=1
+            bAdjustLifeTime=True
+            EffectPawnClassID=-1
+            bEffectPawnIsNpc=True
+        } */
+
+        if (emitter.EffectClass == null)
+        {
+            if (emitter.EtcEffect != EtcEffect.EET_NONE &amp;&amp; emitter.EtcEffectInfo != EtcEffectInfo.EEP_NONE)
+            {
+                emitter.EffectClass = EtcEffectToEffectName(emitter.EtcEffect, emitter.EtcEffectInfo);
+                emitter.SecondaryEffectClass = emitter.EffectClass.Replace(&quot;stick&quot;, &quot;book&quot;);
+            }
+        }
+        else
+        {
+            if (emitter.EffectClass == &quot;s_u003_d&quot;)
+            {
+                emitter.Arrow = true;
+            }
+
+            if (emitter.EffectClass == &quot;s_u003_b&quot;)
+            {
+                emitter.ChargedArrow = true;
+            }
+        }
+
+        if (jObject[&quot;PawnLightParam&quot;] != null)
+        {
+            emitter.PawnLightParam = EffectPawnLightParam.Parse(jObject[&quot;PawnLightParam&quot;].ToString());
+        }
+
+        if (emitter.EffectClass == null)
+        {
+            Debug.LogError($&quot;Skill emitter class is null.&quot;);
+        }
+
+        return emitter;
+    }
+
+    private string EtcEffectToEffectName(EtcEffect etcEffect, EtcEffectInfo etcEffectInfo)
+    {
+        if (etcEffect == EtcEffect.EET_SOULSHOT)
+        {
+            switch (etcEffectInfo)
+            {
+                case EtcEffectInfo.EEP_GRADENONE:
+                    return &quot;soul_N_stick&quot;;
+                case EtcEffectInfo.EEP_GRADED:
+                    return &quot;soul_D_stick&quot;;
+                case EtcEffectInfo.EEP_GRADEC:
+                    return &quot;soul_C_stick&quot;;
+                case EtcEffectInfo.EEP_GRADEB:
+                    return &quot;soul_B_stick&quot;;
+                case EtcEffectInfo.EEP_GRADEA:
+                    return &quot;soul_A_stick&quot;;
+                case EtcEffectInfo.EEP_GRADES:
+                    return &quot;soul_S_stick&quot;;
+            }
+        }
+
+        if (etcEffect == EtcEffect.EET_SPIRITSHOT)
+        {
+            switch (etcEffectInfo)
+            {
+                case EtcEffectInfo.EEP_GRADENONE:
+                    return &quot;spirit_N_stick&quot;;
+                case EtcEffectInfo.EEP_GRADED:
+                    return &quot;spirit_D_stick&quot;;
+                case EtcEffectInfo.EEP_GRADEC:
+                    return &quot;spirit_C_stick&quot;;
+                case EtcEffectInfo.EEP_GRADEB:
+                    return &quot;spirit_B_stick&quot;;
+                case EtcEffectInfo.EEP_GRADEA:
+                    return &quot;spirit_A_stick&quot;;
+                case EtcEffectInfo.EEP_GRADES:
+                    return &quot;spirit_S_stick&quot;;
+            }
+        }
+
+        return null;
+    }
+
+    private AttachMethod ParseAttachOnType(string attachOn)
+    {
+        if (attachOn == null)
+        {
+            return AttachMethod.AM_NONE;
+        }
+
+        return (AttachMethod)Enum.Parse(typeof(AttachMethod), attachOn.ToUpper());
+    }
+
+
+    private EtcEffect ParseEtcEffect(string etcEffect)
+    {
+        if (etcEffect == null)
+        {
+            return EtcEffect.EET_NONE;
+        }
+
+        return (EtcEffect)Enum.Parse(typeof(EtcEffect), etcEffect.ToUpper());
+    }
+
+    private EtcEffectInfo ParseEtcEffectInfo(string etcEffectInfo)
+    {
+        if (etcEffectInfo == null)
+        {
+            return EtcEffectInfo.EEP_NONE;
+        }
+
+        return (EtcEffectInfo)Enum.Parse(typeof(EtcEffectInfo), etcEffectInfo.ToUpper());
+    }
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    {
+        throw new NotImplementedException();
+    }
+}</pre>
+            
+</body>
+</html>

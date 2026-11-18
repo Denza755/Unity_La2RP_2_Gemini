@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/util/HexUtils.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/util/HexUtils.java</h1>
+            <pre>package com.shnok.javaserver.util;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+
+public class HexUtils {
+    public static String hexToString(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xFF &amp; b);
+            if (hex.length() == 1) {
+                hexString.append(&#x27;0&#x27;); // Pad with leading zero if necessary
+            }
+            hexString.append(hex);
+        }
+
+        System.out.println(Arrays.toString(bytes));
+        System.out.println(hexString.toString());
+        return hexString.toString();
+    }
+
+    public static byte[] stringToHex(String hexString) {
+        int len = hexString.length();
+        byte[] byteArray = new byte[len / 2];
+        for (int i = 0; i &lt; len; i += 2) {
+            byteArray[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) &lt;&lt; 4)
+                    + Character.digit(hexString.charAt(i+1), 16));
+        }
+        return byteArray;
+    }
+}
+</pre>
+            
+</body>
+</html>

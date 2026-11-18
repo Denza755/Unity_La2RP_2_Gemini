@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/trade/ItemRequest.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/trade/ItemRequest.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.trade;
+
+public class ItemRequest
+{
+	protected int _objectId;
+	protected int _itemId;
+	protected int _count;
+	protected int _price;
+	protected int _enchant;
+	
+	public ItemRequest(int objectId, int count, int price)
+	{
+		_objectId = objectId;
+		_count = count;
+		_price = price;
+	}
+	
+	public ItemRequest(int objectId, int itemId, int count, int price, int enchant)
+	{
+		_objectId = objectId;
+		_itemId = itemId;
+		_count = count;
+		_price = price;
+		_enchant = enchant;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;ItemRequest [objectId=&quot; + _objectId + &quot;, itemId=&quot; + _itemId + &quot;, count=&quot; + _count + &quot;, price=&quot; + _price + &quot;, enchant=&quot; + _enchant + &quot;]&quot;;
+	}
+	
+	public int getObjectId()
+	{
+		return _objectId;
+	}
+	
+	public void setObjectId(int objectId)
+	{
+		_objectId = objectId;
+	}
+	
+	public int getItemId()
+	{
+		return _itemId;
+	}
+	
+	public int getCount()
+	{
+		return _count;
+	}
+	
+	public void setCount(int count)
+	{
+		_count = count;
+	}
+	
+	public int getPrice()
+	{
+		return _price;
+	}
+	
+	public void setPrice(int price)
+	{
+		_price = price;
+	}
+	
+	public int getEnchant()
+	{
+		return _enchant;
+	}
+	
+	public void setEnchant(int enchant)
+	{
+		_enchant = enchant;
+	}
+}</pre>
+            
+</body>
+</html>

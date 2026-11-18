@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Character/CharacterSelector.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Character/CharacterSelector.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CharacterSelector : MonoBehaviour
+{
+    [SerializeField] private int _selectedCharacterSlot;
+    [SerializeField] private int _defaultSelectedCharacterSlot;
+    [SerializeField] private CharSelectionInfoPackage _selectedCharacter;
+    [SerializeField] private List&lt;CharSelectionInfoPackage&gt; _characters;
+    [SerializeField] private LayerMask _characterMask;
+    [SerializeField] private Camera _charSelectCamera;
+    private GameObject _container;
+    private List&lt;Logongrp&gt; _pawnData;
+    private List&lt;GameObject&gt; _characterGameObjects;
+
+    public Camera Camera { get { return _charSelectCamera; } set { _charSelectCamera = value; } }
+    public int SelectedSlot { get { return _selectedCharacterSlot; } set { _selectedCharacterSlot = value; } }
+    public int DefaultSelectedSlot { get { return _defaultSelectedCharacterSlot; } set { _defaultSelectedCharacterSlot = value; } }
+    public List&lt;CharSelectionInfoPackage&gt; Characters { get { return _characters; } set { _characters = value; } }
+
+
+    private static CharacterSelector _instance;
+    public static CharacterSelector Instance { get { return _instance; } }
+
+    void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+    }
+
+    public void ApplyCharacterList()
+    {
+        if (_container == null)
+        {
+            _container = new GameObject(&quot;Characters&quot;);
+        }
+
+        if (_characters == null)
+        {
+            Debug.LogWarning(&quot;Character list is empty.&quot;);
+            return;
+        }
+
+        if (_characterGameObjects != null)
+        {
+            _characterGameObjects.ForEach((go) =&gt;
+            {
+                Destroy(go);
+            });
+        }
+
+        _pawnData = LogongrpTable.Instance.Logongrps;
+        _characterGameObjects = new List&lt;GameObject&gt;();
+        _selectedCharacterSlot = -1;
+
+        for (int i = 0; i &lt; _characters.Count; i++)
+        {
+            SpawnCharacterList(i);
+        }
+    }
+
+    public void SpawnCharacterList(int id)
+    {
+        GameObject pawnObject = CharacterBuilder.Instance.BuildCharacterBase(_characters[id].CharacterRaceAnimation, _characters[id].PlayerAppearance, EntityType.Pawn);
+
+        EntityReferenceHolder referenceHolder = pawnObject.GetComponent&lt;EntityReferenceHolder&gt;();
+        NewHumanoidAnimationController animController = (NewHumanoidAnimationController)referenceHolder.NewAnimationController;
+
+        // referenceHolder.Entity.Appearance = _characters[id].PlayerAppearance;
+        referenceHolder.Entity.Stats = _characters[id].PlayerStats;
+        referenceHolder.Entity.Status = _characters[id].PlayerStatus;
+        referenceHolder.Entity.Identity.Name = _characters[id].Name;
+        referenceHolder.Entity.Identity.Id = id;
+
+        if (animController == null)
+        {
+            Debug.LogError(&quot;Pawn object animation controller is null&quot;);
+        }
+
+        animController.Initialize();
+
+        UserGear gear = (UserGear)referenceHolder.Gear;
+        if (gear == null)
+        {
+            Debug.LogError(&quot;Pawn object UserGear is null&quot;);
+        }
+
+        gear.Initialize(-1);
+
+        referenceHolder.Entity.UpdateAppearance(_characters[id].PlayerAppearance);
+
+        pawnObject.GetComponent&lt;SelectableCharacterEntity&gt;().CharacterInfo = _characters[id];
+
+        CharacterCreator.Instance.PlacePawn(pawnObject, _pawnData[id], _characters[id].Name, _container, animController, gear);
+
+        if (_characters[id].DeleteTimer &gt; 0)
+        {
+            referenceHolder.Entity.UpdateWaitType(ChangeWaitTypePacket.WaitType.WT_SITTING);
+            animController.SitWait();
+        }
+
+        _characterGameObjects.Add(pawnObject);
+    }
+
+    public void SelectDefaultCharacter()
+    {
+        Debug.Log(&quot;Selecting default slot &quot; + DefaultSelectedSlot);
+
+        // Select first character if default selected slot is not set
+        if (DefaultSelectedSlot == -1 &amp;&amp; Characters.Count &gt; 0)
+        {
+            DefaultSelectedSlot = 0;
+        }
+
+        // Select do not select anything if character list is empty
+        if (DefaultSelectedSlot &gt;= 0 &amp;&amp; Characters.Count == 0)
+        {
+            DefaultSelectedSlot = -1;
+        }
+
+        SelectCharacter(DefaultSelectedSlot);
+    }
+
+    public void SelectCharacter(int slot)
+    {
+        if (slot &gt;= 0 &amp;&amp; slot &lt; _characters.Count)
+        {
+            if (_selectedCharacterSlot == slot)
+            {
+                return;
+            }
+
+            if (_selectedCharacterSlot != -1)
+            {
+                _characterGameObjects[_selectedCharacterSlot].GetComponent&lt;SelectableCharacterEntity&gt;().SetDestination(_pawnData[_selectedCharacterSlot]);
+            }
+
+            _characterGameObjects[slot].GetComponent&lt;SelectableCharacterEntity&gt;().SetDestination(_pawnData[7]);
+
+            _selectedCharacterSlot = slot;
+            _selectedCharacter = _characters[slot];
+
+            CharSelectWindow.Instance.SelectSlot(slot);
+
+            if (_selectedCharacter.DeleteTimer &gt; 0)
+            {
+                L2ConfirmWindow.Instance.ShowWindow(1555, () =&gt;
+                {
+                    GameClient.Instance.ClientPacketHandler.SendRequestRestoreCharacter(slot);
+                },
+                () =&gt;
+                {
+                    SelectCharacter(DefaultSelectedSlot);
+                });
+            }
+            else
+            {
+                L2ConfirmWindow.Instance.HideWindow(false);
+            }
+        }
+    }
+
+    public void ConfirmSelection()
+    {
+        if (SelectedSlot == -1 || _characters[SelectedSlot].DeleteTimer &gt; 0)
+        {
+            Debug.LogWarning(&quot;Please select a character&quot;);
+            return;
+        }
+
+        AudioManager.Instance.PlayUISound(&quot;game_start&quot;);
+
+        GameClient.Instance.ClientPacketHandler.SendRequestSelectCharacter(SelectedSlot);
+    }
+
+
+    void Update()
+    {
+        if (_charSelectCamera == null)
+        {
+            return;
+        }
+
+
+        if (Input.GetMouseButtonDown(0) &amp;&amp; !L2LoginUI.Instance.MouseOverUI)
+        {
+            Ray ray = _charSelectCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit, 1000f))
+            {
+                SelectableCharacterEntity selectable = hit.collider.GetComponentInParent&lt;SelectableCharacterEntity&gt;();
+                if (selectable != null)
+                {
+                    SelectCharacter(selectable.CharacterInfo.Slot);
+                }
+            }
+        }
+    }
+
+    public void DeleteCharacter()
+    {
+        if (_selectedCharacter.DeleteTimer &gt; 0)
+        {
+            return;
+        }
+
+        SystemMessageDat sm = SystemMessageTable.Instance.GetSystemMessage(4076);
+        string message = sm.Message;
+        string characterName = _selectedCharacter.Name;
+        message = message.Replace(&quot;$s1&quot;, characterName);
+
+        L2ConfirmWindow.Instance.ShowWindow(message, () =&gt;
+        {
+            ConfirmDelete();
+        }, () =&gt;
+        {
+
+        });
+    }
+
+    private void ConfirmDelete()
+    {
+        if (SelectedSlot == -1)
+        {
+            Debug.LogWarning(&quot;Please select a character&quot;);
+            return;
+        }
+
+        GameClient.Instance.ClientPacketHandler.SendRequestDeleteCharacter(SelectedSlot);
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/ZoneForm.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/ZoneForm.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.zone;
+
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExServerPrimitive;
+
+/**
+ * Abstract base class for any zone form.
+ */
+public abstract class ZoneForm
+{
+	public abstract boolean isInsideZone(int x, int y, int z);
+	
+	public abstract boolean intersectsRectangle(int x1, int x2, int y1, int y2);
+	
+	public abstract int getLowZ(); // Support for the ability to extract the z coordinates of zones.
+	
+	public abstract int getHighZ(); // New fishing patch makes use of that to get the Z for the hook
+	
+	public abstract void visualizeZone(String info, ExServerPrimitive debug);
+	
+	protected boolean lineSegmentsIntersect(int ax1, int ay1, int ax2, int ay2, int bx1, int by1, int bx2, int by2)
+	{
+		return java.awt.geom.Line2D.linesIntersect(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
+	}
+}</pre>
+            
+</body>
+</html>

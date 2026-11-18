@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/SkillEffect/L2ParticleEmitterParser.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/SkillEffect/L2ParticleEmitterParser.cs</h1>
+            <pre>#if UNITY_EDITOR
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+public class L2ParticleEmitterParser
+{
+    [MenuItem(&quot;Shnok/[SkillEffects] (UC) Build ambient skilleffect&quot;)]
+    static void BuildSkillMenu()
+    {
+        string title = &quot;Select ambient sound list&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;uc&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+
+            GameObject container = new GameObject(Path.GetFileNameWithoutExtension(fileToProcess));
+            container.SetActive(false);
+            L2Particle particle = container.AddComponent&lt;L2Particle&gt;();
+            particle.enabled = false;
+
+            foreach (L2Emitter emitter in ParseParticleEmitterFile(fileToProcess))
+            {
+                GameObject emitterGroup = new GameObject(emitter.name);
+
+                GameObject emitterObject = BuildEmitter(emitter);
+                if (emitterObject != null)
+                {
+                    emitterObject.transform.SetParent(emitterGroup.transform);
+                }
+
+                int particlesCount = emitter.maxParticles;
+                if (emitter.maxParticles == 0)
+                {
+                    particlesCount = Mathf.Min(25, emitter.initialParticlesPerSecond);
+                    // particlesCount = 25;
+                    emitter.maxParticles = -1;
+                }
+
+                for (int i = 0; i &lt; (emitter.maxParticles == -1 ? 25 : particlesCount) - 1; i++)
+                {
+                    if (emitterObject != null)
+                    {
+                        GameObject copies = GameObject.Instantiate(emitterObject);
+                        copies.transform.SetParent(emitterGroup.transform);
+                    }
+                }
+
+                emitterGroup.SetActive(true);
+
+                ParticleGroup pg = emitterGroup.AddComponent&lt;ParticleGroup&gt;();
+
+                pg.enabled = true;
+                pg.Owner = particle;
+                pg.MaxCount = emitter.maxParticles;
+                pg.CountPerSecond = emitter.initialParticlesPerSecond;
+                emitterGroup.transform.parent = container.transform;
+            }
+
+            container.SetActive(true);
+
+            string saveFolder = Path.Combine(&quot;Assets&quot;, &quot;Resources&quot;, &quot;Data&quot;, &quot;Effects&quot;, container.name);
+            if (!Directory.Exists(saveFolder))
+            {
+                Directory.CreateDirectory(saveFolder);
+            }
+
+            string containerPrefabPath = Path.Combine(saveFolder, container.name + &quot;.prefab&quot;);
+            PrefabUtility.SaveAsPrefabAsset(container, containerPrefabPath);
+        }
+    }
+
+    private static List&lt;L2Emitter&gt; ParseParticleEmitterFile(string path)
+    {
+        List&lt;L2Emitter&gt; emitters = new List&lt;L2Emitter&gt;();
+
+        float drawScale = 1;
+
+        using (StreamReader reader = new StreamReader(path))
+        {
+            string line;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                line = line.Trim();
+                if (line.StartsWith(&quot;DrawScale=&quot;))
+                {
+                    drawScale = L2MetaDataUtils.ParseFloat(line);
+                    Debug.Log(&quot;DrawScale=&quot; + drawScale);
+                }
+            }
+        }
+
+        using (StreamReader reader = new StreamReader(path))
+        {
+            string line;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                // Debug.Log(line);
+                line = line.Trim();
+                if (line.StartsWith(&quot;Begin Object Class=SpriteEmitter Name=&quot;) || line.StartsWith(&quot;Begin Object Class=MeshEmitter Name=&quot;) || line.StartsWith(&quot;Begin Object Class=BeamEmitter Name=&quot;))
+                {
+                    L2Emitter emitter = new L2Emitter();
+                    emitter.drawScale = drawScale;
+                    emitter.effectName = Path.GetFileNameWithoutExtension(path);
+                    emitter.objectName = line.Replace(&quot;Begin Object Class=SpriteEmitter Name=&quot;, &quot;&quot;).Replace(&quot;Begin Object Class=MeshEmitter Name=&quot;, &quot;&quot;).Replace(&quot;Begin Object Class=BeamEmitter Name=&quot;, &quot;&quot;);
+                    Debug.Log(&quot;ObjectName=&quot; + emitter.objectName);
+
+                    while ((line = reader.ReadLine()) != null &amp;&amp; !line.Contains(&quot;End Object&quot;))
+                    {
+                        line = line.Replace(&quot;(&quot;, &quot;&quot;).Replace(&quot;)&quot;, &quot;&quot;);
+                        line = line.Trim();
+                        //Debug.Log(line);
+                        if (line.StartsWith(&quot;BeamEndPoints0=offset=&quot;))
+                        {
+                            emitter.isBeam = true;
+                            line = line.Replace(&quot;BeamEndPoints0=&quot;, &quot;&quot;).Replace(&quot;))&quot;, &quot;&quot;);
+                            emitter.beamEndPointRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;BeamEndPointRange=&quot; + emitter.beamEndPointRange);
+                        }
+
+                        if (line.StartsWith(&quot;StaticMesh=&quot;))
+                        {
+                            emitter.staticMesh = line.Replace(&quot;StaticMesh=StaticMesh&#x27;&quot;, &quot;&quot;).Replace(&quot;&#x27;&quot;, &quot;&quot;);
+                            Debug.Log(&quot;StaticMesh=&quot; + emitter.staticMesh);
+                        }
+
+                        if (line.StartsWith(&quot;Texture=&quot;))
+                        {
+                            emitter.texture = line.Replace(&quot;Texture=Texture&#x27;&quot;, &quot;&quot;).Replace(&quot;&#x27;&quot;, &quot;&quot;);
+                            Debug.Log(&quot;Texture=&quot; + emitter.texture);
+                        }
+
+                        if (line.StartsWith(&quot;UseColorScale=&quot;))
+                        {
+                            emitter.useColorScale = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;UseColorScale=&quot; + emitter.useColorScale);
+                        }
+
+                        if (line.StartsWith(&quot;ColorScale&quot;))
+                        {
+                            if (emitter.colorScales == null)
+                            {
+                                emitter.colorScales = new List&lt;ColorScale&gt;();
+                            }
+
+                            emitter.colorScales.Add(L2MetaDataUtils.ParseColorScale(line));
+                            Debug.Log($&quot;ColorScale({emitter.colorScales.Count - 1})={emitter.colorScales[emitter.colorScales.Count - 1]}&quot;);
+                        }
+
+                        if (line.StartsWith(&quot;ColorMultiplierRange&quot;))
+                        {
+                            emitter.colorMultiplierRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log($&quot;ColorMultiplierRange={emitter.colorMultiplierRange}&quot;);
+                        }
+
+                        if (line.StartsWith(&quot;Opacity=&quot;))
+                        {
+                            emitter.opacity = L2MetaDataUtils.ParseFloat(line);
+                            Debug.Log(&quot;Opacity=&quot; + emitter.opacity);
+                        }
+
+                        if (line.StartsWith(&quot;FadeIn=&quot;))
+                        {
+                            emitter.fadeIn = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;FadeIn=&quot; + emitter.fadeIn);
+                        }
+
+                        if (line.StartsWith(&quot;FadeInEndTime=&quot;))
+                        {
+                            emitter.fadeInEndTime = L2MetaDataUtils.ParseFloat(line);
+                            Debug.Log(&quot;FadeInEndTime=&quot; + emitter.fadeInEndTime);
+                        }
+
+                        if (line.StartsWith(&quot;FadeOut=&quot;))
+                        {
+                            emitter.fadeOut = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;FadeOut=&quot; + emitter.fadeOut);
+                        }
+
+                        if (line.StartsWith(&quot;FadeOutStartTime=&quot;))
+                        {
+                            emitter.fadeOutStartTime = L2MetaDataUtils.ParseFloat(line);
+                            Debug.Log(&quot;FadeOutStartTime=&quot; + emitter.fadeOutStartTime);
+                        }
+
+                        if (line.StartsWith(&quot;MaxParticles=&quot;))
+                        {
+                            emitter.maxParticles = L2MetaDataUtils.ParseInt(line);
+                            Debug.Log(&quot;MaxParticles=&quot; + emitter.maxParticles);
+                        }
+
+                        if (line.StartsWith(&quot;InitialParticlesPerSecond=&quot;))
+                        {
+                            emitter.initialParticlesPerSecond = (int)L2MetaDataUtils.ParseFloat(line);
+                            Debug.Log(&quot;InitialParticlesPerSecond=&quot; + emitter.initialParticlesPerSecond);
+                        }
+
+                        if (line.StartsWith(&quot;StartLocationOffset=&quot;))
+                        {
+                            emitter.startLocationOffset = L2MetaDataUtils.ParseVector3(line);
+                            Debug.Log(&quot;StartLocationOffset=&quot; + emitter.startLocationOffset);
+                        }
+
+                        if (line.StartsWith(&quot;StartLocationRange=&quot;))
+                        {
+                            emitter.startLocationRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;StartLocationRange=&quot; + emitter.startLocationRange);
+                        }
+
+                        if (line.StartsWith(&quot;SpinParticles=&quot;))
+                        {
+                            emitter.spinParticles = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;SpinParticles=&quot; + emitter.spinParticles);
+                        }
+
+                        if (line.StartsWith(&quot;SpinsPerSecondRange=&quot;))
+                        {
+                            emitter.spinsPerSecondRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;SpinsPerSecondRange=&quot; + emitter.spinsPerSecondRange);
+                        }
+
+                        if (line.StartsWith(&quot;StartSpinRange=&quot;))
+                        {
+                            emitter.startSpinRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;StartSpinRange=&quot; + emitter.startSpinRange);
+                        }
+
+                        if (line.StartsWith(&quot;UseSizeScale=&quot;))
+                        {
+                            emitter.useSizeScale = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;UseSizeScale=&quot; + emitter.useSizeScale);
+                        }
+
+                        if (line.StartsWith(&quot;SizeScale&quot;) &amp;&amp; !line.StartsWith(&quot;SizeScaleRepeats&quot;))
+                        {
+                            if (emitter.sizeScales == null)
+                            {
+                                emitter.sizeScales = new List&lt;SizeScale&gt;();
+                            }
+
+                            emitter.sizeScales.Add(L2MetaDataUtils.ParseSizeScale(line));
+                            Debug.Log($&quot;SizeScale({emitter.sizeScales.Count - 1})={emitter.sizeScales[emitter.sizeScales.Count - 1]}&quot;);
+                        }
+
+                        if (line.StartsWith(&quot;SizeScaleRepeats&quot;))
+                        {
+                            emitter.sizeScaleRepeats = L2MetaDataUtils.ParseFloat(line);
+                            Debug.Log(&quot;SizeScaleRepeats=&quot; + emitter.sizeScaleRepeats);
+                        }
+
+                        if (line.StartsWith(&quot;StartSizeRange=&quot;))
+                        {
+                            emitter.startSizeRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;StartSizeRange=&quot; + emitter.startSizeRange);
+                        }
+
+                        if (line.StartsWith(&quot;StartVelocityRange=&quot;))
+                        {
+                            emitter.startVelocityRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;StartVelocityRange=&quot; + emitter.startVelocityRange);
+                        }
+
+                        if (line.StartsWith(&quot;LifetimeRange=&quot;))
+                        {
+                            int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+                            line = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+
+                            emitter.lifetimeRange = L2MetaDataUtils.ParseRange(line);
+                            Debug.Log(&quot;LifetimeRange=&quot; + emitter.lifetimeRange);
+                        }
+
+                        if (line.StartsWith(&quot;Name=&quot;))
+                        {
+                            emitter.name = line.Split(&quot;=&quot;)[1].Replace(&quot;\&quot;&quot;, &quot;&quot;);
+                            Debug.Log(&quot;Name=&quot; + emitter.name);
+                        }
+
+                        if (line.StartsWith(&quot;TextureUSubdivisions=&quot;))
+                        {
+                            emitter.TextureUSubdivisions = L2MetaDataUtils.ParseInt(line);
+                            Debug.Log(&quot;TextureUSubdivisions=&quot; + emitter.TextureUSubdivisions);
+                        }
+
+                        if (line.StartsWith(&quot;TextureVSubdivisions=&quot;))
+                        {
+                            emitter.TextureVSubdivisions = L2MetaDataUtils.ParseInt(line);
+                            Debug.Log(&quot;TextureVSubdivisions=&quot; + emitter.TextureVSubdivisions);
+                        }
+
+                        if (line.StartsWith(&quot;UseRandomSubdivision=&quot;))
+                        {
+                            emitter.UseRandomSubdivision = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;UseRandomSubdivision=&quot; + emitter.UseRandomSubdivision);
+                        }
+
+                        if (line.StartsWith(&quot;SubdivisionStart=&quot;))
+                        {
+                            emitter.SubdivisionStart = L2MetaDataUtils.ParseInt(line);
+                            Debug.Log(&quot;SubdivisionStart=&quot; + emitter.SubdivisionStart);
+                        }
+
+                        if (line.StartsWith(&quot;SubdivisionEnd=&quot;))
+                        {
+                            emitter.SubdivisionEnd = L2MetaDataUtils.ParseInt(line);
+                            Debug.Log(&quot;SubdivisionEnd=&quot; + emitter.SubdivisionEnd);
+                        }
+
+                        if (line.StartsWith(&quot;DrawStyle=&quot;))
+                        {
+                            emitter.drawStyle = line.Split(&quot;=&quot;)[1];
+                            Debug.Log(&quot;DrawStyle=&quot; + emitter.drawStyle);
+                        }
+
+                        if (line.StartsWith(&quot;GetVelocityDirectionFrom=&quot;))
+                        {
+                            emitter.getVelocityDirectionFrom = line.Split(&quot;=&quot;)[1];
+                            Debug.Log(&quot;GetVelocityDirectionFrom=&quot; + emitter.getVelocityDirectionFrom);
+                        }
+
+                        if (line.StartsWith(&quot;VelocityLossRange=&quot;))
+                        {
+                            emitter.velocityLossRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;VelocityLossRange=&quot; + emitter.velocityLossRange);
+                        }
+
+                        if (line.StartsWith(&quot;StartLocationShape=&quot;))
+                        {
+                            emitter.StartLocationShape = line.Split(&quot;=&quot;)[1];
+                            Debug.Log(&quot;StartLocationShape=&quot; + emitter.StartLocationShape);
+                        }
+
+                        if (line.StartsWith(&quot;StartLocationPolarRange=&quot;))
+                        {
+                            emitter.startLocationPolarRange = L2MetaDataUtils.ParseRange3D(line);
+                            Debug.Log(&quot;StartLocationPolarRange=&quot; + emitter.startLocationPolarRange);
+                        }
+
+                        if (line.StartsWith(&quot;SphereRadiusRange=&quot;))
+                        {
+                            int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+                            line = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+
+                            emitter.sphereRadiusRange = L2MetaDataUtils.ParseRange(line);
+                            Debug.Log(&quot;SphereRadiusRange=&quot; + emitter.sphereRadiusRange);
+                        }
+
+                        if (line.StartsWith(&quot;UseDirectionAs=&quot;))
+                        {
+                            emitter.useDirectionAs = line.Split(&quot;=&quot;)[1];
+                            Debug.Log(&quot;UseDirectionAs=&quot; + emitter.useDirectionAs);
+                        }
+
+                        if (line.StartsWith(&quot;ProjectionNormal=&quot;))
+                        {
+                            emitter.projectionNormal = L2MetaDataUtils.ParseVector3(line);
+                            Debug.Log(&quot;ProjectionNormal=&quot; + emitter.projectionNormal);
+                        }
+
+                        if (line.StartsWith(&quot;UniformSize=&quot;))
+                        {
+                            emitter.uniformSize = L2MetaDataUtils.ParseBool(line);
+                            Debug.Log(&quot;UniformSize=&quot; + emitter.uniformSize);
+                        }
+
+                        if (line.StartsWith(&quot;Acceleration=&quot;))
+                        {
+                            emitter.acceleration = L2MetaDataUtils.ParseVector3(line);
+                            Debug.Log(&quot;Acceleration=&quot; + emitter.acceleration);
+                        }
+
+                        if (line.StartsWith(&quot;InitialDelayRange=&quot;))
+                        {
+                            int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+                            line = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+                            emitter.initialDelayRange = L2MetaDataUtils.ParseRange(line);
+                            Debug.Log(&quot;InitialDelayRange=&quot; + emitter.initialDelayRange);
+                        }
+                    }
+
+                    emitters.Add(emitter);
+                }
+            }
+        }
+
+        Debug.Log($&quot;Parsed {emitters.Count} emitters.&quot;);
+
+        return emitters;
+    }
+
+    private static GameObject BuildEmitter(L2Emitter emitter)
+    {
+        GameObject go;
+
+        string texturePath;
+
+        bool isTextureEmitter = false;
+
+        if (emitter.staticMesh != null &amp;&amp; emitter.staticMesh.Length &gt; 0)
+        {
+
+            string meshPath = StaticMeshUtils.GetMeshPath(emitter.staticMesh);
+            GameObject resource = StaticMeshUtils.LoadMeshFromInfo(emitter.staticMesh);
+
+            if (resource == null)
+            {
+                Debug.LogError($&quot;Couldn&#x27;t load emitter mesh {emitter.staticMesh} at path {meshPath}.&quot;);
+                return null;
+            }
+
+            if (resource.transform.childCount &gt; 0)
+            {
+                resource = resource.transform.GetChild(0).gameObject;
+            }
+
+            string materialName = resource.GetComponent&lt;Renderer&gt;().sharedMaterial.name;
+            texturePath = $&quot;Data/SysTextures/LineageEffectsTextures/{materialName}&quot;;
+            //GameObject go = (GameObject)Resources.Load(&quot;Prefab/SpriteEmitter&quot;);
+            go = GameObject.Instantiate(resource);
+            //go.transform.localScale = new Vector3(100 * emitter.drawScale, 100 * emitter.drawScale, 100 * emitter.drawScale);
+            go.transform.localScale = new Vector3(1, 1, 1);
+            go.transform.eulerAngles = new Vector3(0, 0, 0);
+        }
+        else if (emitter.texture != null &amp;&amp; emitter.texture.Length &gt; 0)
+        {
+            GameObject resource = (GameObject)Resources.Load(&quot;Prefab/SpriteEmitter&quot;);
+            go = GameObject.Instantiate(resource);
+
+            string[] textureValues = emitter.texture.Split(&quot;.&quot;);
+            string textureName = textureValues.Length &gt; 1 ? textureValues[2] : textureValues[1];
+            texturePath = $&quot;Data/SysTextures/{textureValues[0]}/{textureName}&quot;;
+            isTextureEmitter = true;
+        }
+        else
+        {
+            Debug.LogError(&quot;Emitter is neither a SpriteEmitter not a MeshEmitter.&quot;);
+            return null;
+        }
+
+
+        Texture2D effectTexture = (Texture2D)Resources.Load(texturePath);
+        if (effectTexture == null)
+        {
+            Debug.LogWarning(&quot;Missing texture: &quot; + texturePath);
+        }
+        Material material = BuildMaterial(emitter, effectTexture, isTextureEmitter);
+
+        // Save material
+        string saveFolder = Path.Combine(&quot;Assets&quot;, &quot;Resources&quot;, &quot;Data&quot;, &quot;Effects&quot;, emitter.effectName);
+        if (!Directory.Exists(saveFolder))
+        {
+            Directory.CreateDirectory(saveFolder);
+        }
+
+        string materialPath = Path.Combine(saveFolder, emitter.objectName + &quot;.mat&quot;);
+
+        // Save the material as an asset
+        AssetDatabase.CreateAsset(material, materialPath);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        go.GetComponent&lt;Renderer&gt;().sharedMaterial = material;
+        if (isTextureEmitter)
+        {
+            go.transform.localScale = new Vector3(1 / 52.5f, 1 / 52.5f, 1 / 52.5f);
+            // Global scale multiplier... Dont know what the correct size, it seems the L2 size of texture emitters are not 1 by default
+            go.transform.localScale *= 2f;
+        }
+        go.transform.name = emitter.objectName;
+        return go;
+    }
+
+    private static Material BuildMaterial(L2Emitter emitter, Texture2D effectTexture, bool spriteEmitter)
+    {
+        Material material = new Material(Shader.Find(&quot;Shader Graphs/L2SkillEffect&quot;));
+
+        material.SetTexture(&quot;_MainTexture&quot;, effectTexture);
+        material.SetFloat(&quot;_TextureUSubdivisions&quot;, emitter.TextureUSubdivisions &gt; 0 ? emitter.TextureUSubdivisions : 1);
+        material.SetFloat(&quot;_TextureVSubdivisions&quot;, emitter.TextureVSubdivisions &gt; 0 ? emitter.TextureVSubdivisions : 1);
+        material.SetFloat(&quot;_SubdivisionStart&quot;, emitter.SubdivisionStart &gt; 0 ? emitter.SubdivisionStart - 1 : 1);
+        material.SetFloat(&quot;_SubdivisionEnd&quot;, emitter.SubdivisionEnd &gt; 0 ? emitter.SubdivisionEnd - 1 : 1);
+        material.SetFloat(&quot;_Alpha&quot;, emitter.opacity &gt; 0 ? emitter.opacity : 1);
+        material.SetFloat(&quot;_Brighten&quot;, emitter.drawStyle != null &amp;&amp; emitter.drawStyle == &quot;PTDS_Brighten&quot; ? 1 : 0);
+
+        // Timer
+        if (emitter.initialDelayRange != null)
+        {
+            material.SetVector(&quot;_InitialDelayRange&quot;, new Vector2(emitter.initialDelayRange.min, emitter.initialDelayRange.max &gt; 0 ? emitter.initialDelayRange.max : (emitter.initialDelayRange.min &gt; 0 ? emitter.initialDelayRange.min : 0)));
+        }
+
+        if (emitter.lifetimeRange != null)
+        {
+            material.SetFloat(&quot;_HasLifetime&quot;, emitter.lifetimeRange.max &gt; 0 || emitter.lifetimeRange.min &gt; 0 ? 1 : 0);
+            material.SetVector(&quot;_LifetimeRange&quot;, emitter.lifetimeRange.max &gt; 0 || emitter.lifetimeRange.min &gt; 0 ? new Vector2(emitter.lifetimeRange.min, emitter.lifetimeRange.max) : Vector2.zero);
+        }
+        else
+        {
+            material.SetFloat(&quot;_HasLifetime&quot;, 0);
+        }
+        material.SetFloat(&quot;_Fadeout&quot;, emitter.fadeOut ? 1 : 0);
+        material.SetFloat(&quot;_FadeoutStartTime&quot;, emitter.fadeOutStartTime);
+        material.SetFloat(&quot;_FadeIn&quot;, emitter.fadeIn ? 1 : 0);
+        material.SetFloat(&quot;_FadeInEndTime&quot;, emitter.fadeInEndTime);
+
+        // SizeRange
+        if (spriteEmitter)
+        {
+            if (emitter.startSizeRange != null)
+            {
+                material.SetVector(&quot;_SizeRangeX&quot;, new Vector2(emitter.startSizeRange.x.min, emitter.startSizeRange.x.max));
+                material.SetVector(&quot;_SizeRangeY&quot;, new Vector2(emitter.startSizeRange.y.min, emitter.startSizeRange.y.max)); //TODO verify x-y-z convertion between unity and unreal 
+                material.SetVector(&quot;_SizeRangeZ&quot;, new Vector2(emitter.startSizeRange.z.min, emitter.startSizeRange.z.max));
+            }
+        }
+        else
+        {
+            if (emitter.startSizeRange != null)
+            {
+                material.SetVector(&quot;_SizeRangeX&quot;, new Vector2(emitter.startSizeRange.x.min, emitter.startSizeRange.x.max));
+                material.SetVector(&quot;_SizeRangeY&quot;, new Vector2(emitter.startSizeRange.z.min, emitter.startSizeRange.z.max)); //TODO verify x-y-z convertion between unity and unreal 
+                material.SetVector(&quot;_SizeRangeZ&quot;, new Vector2(emitter.startSizeRange.y.min, emitter.startSizeRange.y.max));
+            }
+
+        }
+
+        // ColorMultiplierRange
+        if (emitter.colorMultiplierRange != null)
+        {
+            material.SetVector(&quot;_ColorMultiplierRangeR&quot;, new Vector2(emitter.colorMultiplierRange.x.min, emitter.colorMultiplierRange.x.max &gt; 0 ? emitter.colorMultiplierRange.x.max : (emitter.colorMultiplierRange.x.min &gt; 0 ? emitter.colorMultiplierRange.x.min : 0)));
+            material.SetVector(&quot;_ColorMultiplierRangeG&quot;, new Vector2(emitter.colorMultiplierRange.y.min, emitter.colorMultiplierRange.y.max &gt; 0 ? emitter.colorMultiplierRange.y.max : (emitter.colorMultiplierRange.y.min &gt; 0 ? emitter.colorMultiplierRange.y.min : 0)));
+            material.SetVector(&quot;_ColorMultiplierRangeB&quot;, new Vector2(emitter.colorMultiplierRange.z.min, emitter.colorMultiplierRange.z.max &gt; 0 ? emitter.colorMultiplierRange.z.max : (emitter.colorMultiplierRange.z.min &gt; 0 ? emitter.colorMultiplierRange.z.min : 0)));
+        }
+
+        // SizeScale
+        const int MAXMIMUM_SIZESCALE_COUNT = 10;
+        material.SetFloat(&quot;_UseSizeScale&quot;, emitter.useSizeScale ? 1 : 0);
+        material.SetFloat(&quot;_UniformSize&quot;, emitter.uniformSize ? 1 : 0);
+        material.SetFloat(&quot;_SizeScaleRepeats&quot;, emitter.sizeScaleRepeats);
+        if (emitter.sizeScales != null)
+        {
+            if (emitter.sizeScales.Count &gt; MAXMIMUM_SIZESCALE_COUNT)
+            {
+                Debug.LogWarning($&quot;SizeScale count[{emitter.sizeScales.Count}] is over the limit[{MAXMIMUM_SIZESCALE_COUNT}] for emitter {emitter.objectName}.&quot;);
+            }
+            for (int i = 0; i &lt; Mathf.Min(emitter.sizeScales.Count, MAXMIMUM_SIZESCALE_COUNT); i++)
+            {
+                material.SetVector(&quot;_SizeScale&quot; + i, new Vector2(emitter.sizeScales[i].relativeTime, emitter.sizeScales[i].relativeSize));
+            }
+
+            if (emitter.sizeScales.Count &lt; MAXMIMUM_SIZESCALE_COUNT &amp;&amp; emitter.sizeScales.Count &gt; 0)
+            {
+                int lastIndex = emitter.sizeScales.Count - 1;
+                for (int i = lastIndex; i &lt; MAXMIMUM_SIZESCALE_COUNT; i++)
+                {
+                    material.SetVector(&quot;_SizeScale&quot; + i, new Vector2(emitter.sizeScales[lastIndex].relativeTime, emitter.sizeScales[lastIndex].relativeSize));
+                }
+            }
+        }
+
+        // ColorScale
+        const int MAXMIMUM_COLORSCALE_COUNT = 10;
+        material.SetFloat(&quot;_UseColorScale&quot;, emitter.useColorScale ? 1 : 0);
+        if (emitter.colorScales != null)
+        {
+            if (emitter.colorScales.Count &gt; MAXMIMUM_COLORSCALE_COUNT)
+            {
+                Debug.LogWarning($&quot;ColorScale count[{emitter.colorScales.Count}] is over the limit[{MAXMIMUM_COLORSCALE_COUNT}] for emitter {emitter.objectName}.&quot;);
+            }
+            for (int i = 0; i &lt; Mathf.Min(emitter.colorScales.Count, MAXMIMUM_COLORSCALE_COUNT); i++)
+            {
+                material.SetFloat($&quot;_ColorScale{i}Time&quot;, emitter.colorScales[i].relativeTime);
+
+                material.SetColor($&quot;_ColorScale{i}Color&quot;, new Color(
+                    emitter.colorScales[i].r / 255f,
+                    emitter.colorScales[i].g / 255f,
+                    emitter.colorScales[i].g / 255f,
+                    emitter.colorScales[i].a / 255f)); //TODO verify color conversions 
+
+            }
+
+            if (emitter.colorScales.Count &lt; MAXMIMUM_COLORSCALE_COUNT &amp;&amp; emitter.colorScales.Count &gt; 0)
+            {
+                int lastIndex = emitter.colorScales.Count - 1;
+                for (int i = lastIndex; i &lt; MAXMIMUM_COLORSCALE_COUNT; i++)
+                {
+                    material.SetFloat($&quot;_ColorScale{i}Time&quot;, emitter.colorScales[lastIndex].relativeTime);
+                    material.SetColor($&quot;_ColorScale{i}Color&quot;, new Color(
+                        emitter.colorScales[lastIndex].r / 255f,
+                        emitter.colorScales[lastIndex].g / 255f,
+                        emitter.colorScales[lastIndex].g / 255f,
+                        emitter.colorScales[lastIndex].a / 255f)); //TODO verify color conversions 
+
+                }
+            }
+        }
+
+        // Spin
+        material.SetFloat(&quot;_SpinParticles&quot;, emitter.spinParticles ? 1 : 0);
+        if (!spriteEmitter)
+        {
+            if (emitter.startSpinRange != null)
+            {
+                material.SetVector(&quot;_StartSpinRangeX&quot;, new Vector2(emitter.startSpinRange.z.min, emitter.startSpinRange.z.max));
+                material.SetVector(&quot;_StartSpinRangeY&quot;, new Vector2(emitter.startSpinRange.x.min, emitter.startSpinRange.x.max)); //TODO verify x-y-z convertion between unity and unreal 
+                material.SetVector(&quot;_StartSpinRangeZ&quot;, new Vector2(emitter.startSpinRange.y.min, emitter.startSpinRange.y.max));
+            }
+            if (emitter.spinsPerSecondRange != null)
+            {
+                material.SetVector(&quot;_SpinsPerSecondRangeX&quot;, new Vector2(emitter.spinsPerSecondRange.z.min, emitter.spinsPerSecondRange.z.max));
+                material.SetVector(&quot;_SpinsPerSecondRangeY&quot;, new Vector2(emitter.spinsPerSecondRange.x.min, emitter.spinsPerSecondRange.x.max)); //TODO verify x-y-z convertion between unity and unreal 
+                material.SetVector(&quot;_SpinsPerSecondRangeZ&quot;, new Vector2(emitter.spinsPerSecondRange.y.min, emitter.spinsPerSecondRange.y.max));
+            }
+        }
+        else
+        {
+            if (emitter.startSpinRange != null)
+            {
+                material.SetVector(&quot;_StartSpinRangeX&quot;, new Vector2(emitter.startSpinRange.y.min, emitter.startSpinRange.y.max));
+                material.SetVector(&quot;_StartSpinRangeY&quot;, new Vector2(emitter.startSpinRange.z.min, emitter.startSpinRange.z.max)); //TODO verify x-y-z convertion between unity and unreal 
+                material.SetVector(&quot;_StartSpinRangeZ&quot;, new Vector2(emitter.startSpinRange.x.min, emitter.startSpinRange.x.max));
+            }
+            if (emitter.spinsPerSecondRange != null)
+            {
+                material.SetVector(&quot;_SpinsPerSecondRangeX&quot;, new Vector2(emitter.spinsPerSecondRange.y.min, emitter.spinsPerSecondRange.y.max));
+                material.SetVector(&quot;_SpinsPerSecondRangeY&quot;, new Vector2(emitter.spinsPerSecondRange.z.min, emitter.spinsPerSecondRange.z.max)); //TODO verify x-y-z convertion between unity and unreal 
+                material.SetVector(&quot;_SpinsPerSecondRangeZ&quot;, new Vector2(emitter.spinsPerSecondRange.x.min, emitter.spinsPerSecondRange.x.max));
+            }
+        }
+
+
+        // Velocity
+        if (emitter.startVelocityRange != null)
+        {
+            // if (-emitter.startVelocityRange.x.max != emitter.startVelocityRange.x.min) // Can&#x27;t understand the rule when min = -x and max = x....
+            //  {
+            material.SetVector(&quot;_StartVelocityRangeX&quot;, new Vector2(-emitter.startVelocityRange.x.max / 52.5f, -emitter.startVelocityRange.x.min / 52.5f));
+            //  }
+            //  if (-emitter.startVelocityRange.y.max != emitter.startVelocityRange.y.min) // Can&#x27;t understand the rule when min = -x and max = x....
+            //  {
+            material.SetVector(&quot;_StartVelocityRangeY&quot;, new Vector2(emitter.startVelocityRange.z.max / 52.5f, emitter.startVelocityRange.z.min / 52.5f));
+            //  }
+            //  if (-emitter.startVelocityRange.z.max != emitter.startVelocityRange.z.min) // Can&#x27;t understand the rule when min = -x and max = x....
+            //  {
+            material.SetVector(&quot;_StartVelocityRangeZ&quot;, new Vector2(emitter.startVelocityRange.y.max / 52.5f, emitter.startVelocityRange.y.min / 52.5f));
+            //  }
+        }
+
+        //Acceleration
+        material.SetVector(&quot;_Acceleration&quot;, new Vector3(emitter.acceleration.x, emitter.acceleration.z, emitter.acceleration.y) / 52.5f);
+
+        // SizeRange
+        if (emitter.velocityLossRange != null)
+        {
+            material.SetVector(&quot;_VelocityLossRangeX&quot;, new Vector2(emitter.velocityLossRange.x.min, emitter.velocityLossRange.x.max));
+            material.SetVector(&quot;_VelocityLossRangeY&quot;, new Vector2(emitter.velocityLossRange.z.min, emitter.velocityLossRange.z.max)); //TODO verify x-y-z convertion between unity and unreal 
+            material.SetVector(&quot;_VelocityLossRangeZ&quot;, new Vector2(emitter.velocityLossRange.y.min, emitter.velocityLossRange.y.max));
+        }
+
+
+        if (emitter.getVelocityDirectionFrom != null &amp;&amp; emitter.getVelocityDirectionFrom.Length &gt; 0)
+        {
+            switch (emitter.getVelocityDirectionFrom)
+            {
+                case &quot;PTVD_None&quot;:
+                    material.SetFloat(&quot;_GetVelocityDirectionFrom&quot;, 0);
+                    break;
+
+                case &quot;PTVD_OwnerAndStartPosition&quot;:
+                    material.SetFloat(&quot;_GetVelocityDirectionFrom&quot;, 1);
+                    break;
+
+                case &quot;PTVD_StartPositionAndOwner&quot;:
+                    material.SetFloat(&quot;_GetVelocityDirectionFrom&quot;, 2);
+                    break;
+
+                case &quot;PTVD_AddRadial&quot;:
+                    Debug.LogError(&quot;Mode still not supported.&quot;);
+                    material.SetFloat(&quot;_GetVelocityDirectionFrom&quot;, 3);
+                    break;
+            }
+
+        }
+
+
+        // Location
+        if (emitter.StartLocationShape != null &amp;&amp; emitter.StartLocationShape.Length &gt; 0)
+        {
+            switch (emitter.StartLocationShape)
+            {
+                case &quot;PTLS_Box&quot;:
+                    material.SetFloat(&quot;_StartLocationShape&quot;, 0);
+                    break;
+                case &quot;PTLS_Sphere&quot;:
+                    Debug.LogError(&quot;Mode still not supported.&quot;);
+                    material.SetFloat(&quot;_StartLocationShape&quot;, 1);
+                    break;
+                case &quot;PTLS_Polar&quot;:
+                    material.SetFloat(&quot;_StartLocationShape&quot;, 2);
+                    break;
+                case &quot;PTLS_All&quot;:
+                    material.SetFloat(&quot;_StartLocationShape&quot;, 3);
+                    break;
+            }
+        }
+
+        material.SetVector(&quot;_StartLocationOffset&quot;, FromUnrealToUnityShader(emitter.startLocationOffset));
+
+        if (emitter.startLocationRange != null)
+        {
+            material.SetVector(&quot;_StartLocationRangeX&quot;, new Vector2(-emitter.startLocationRange.x.max / 52.5f, -emitter.startLocationRange.x.min / 52.5f));
+            material.SetVector(&quot;_StartLocationRangeY&quot;, new Vector2(emitter.startLocationRange.z.min / 52.5f, emitter.startLocationRange.z.max / 52.5f));
+            material.SetVector(&quot;_StartLocationRangeZ&quot;, new Vector2(emitter.startLocationRange.y.min / 52.5f, emitter.startLocationRange.y.max / 52.5f));
+        }
+
+        if (emitter.sphereRadiusRange != null)
+        {
+            material.SetVector(&quot;_SphereRadiusRange&quot;, new Vector2(emitter.sphereRadiusRange.min / 52.5f, emitter.sphereRadiusRange.max / 52.5f));
+        }
+
+
+        if (emitter.startLocationPolarRange != null)
+        {
+            material.SetVector(&quot;_StartLocationPolarRangeX&quot;, new Vector2(emitter.startLocationPolarRange.x.min, emitter.startLocationPolarRange.x.max)); // Degrees
+            material.SetVector(&quot;_StartLocationPolarRangeY&quot;, new Vector2(emitter.startLocationPolarRange.y.min, emitter.startLocationPolarRange.y.max)); // Degrees
+            material.SetVector(&quot;_StartLocationPolarRangeZ&quot;, new Vector2(emitter.startLocationPolarRange.z.min / 52.5f, emitter.startLocationPolarRange.z.max / 52.5f)); // Y Offset
+        }
+
+        if (spriteEmitter)
+        {
+            if (emitter.useDirectionAs == null || emitter.useDirectionAs == &quot;PTDU_None&quot;) // Billboard
+            {
+                material.SetFloat(&quot;_Billboard&quot;, 1f);
+            }
+            /*
+                PTDU_NORMAL -&gt; Parallel to the floor
+                PTDU_UP -&gt; Perpandicular to the floor (Y rotation still facing camera)
+            */
+            else if (emitter.useDirectionAs.ToUpper() == &quot;PTDU_NORMAL&quot;) // Use parent rotation
+            {
+                material.SetFloat(&quot;_UseDirectionAs&quot;, 1);
+            }
+            else
+            {
+                // FOR NOW USE THE SAME VALUE FOR ANY OTHER TYPE
+                material.SetFloat(&quot;_UseDirectionAs&quot;, 2);
+            }
+
+            if (emitter.projectionNormal != null)
+            {
+                material.SetVector(&quot;_ProjectionNormal&quot;, new Vector3(emitter.projectionNormal.y, emitter.projectionNormal.z, emitter.projectionNormal.x));
+            }
+        }
+
+        if (emitter.isBeam)
+        {
+            material.SetFloat(&quot;_UseDirectionAs&quot;, 3);
+            Vector4 previousOffset = material.GetVector(&quot;_StartLocationOffset&quot;);
+            material.SetVector(&quot;_StartLocationOffset&quot;, new Vector3(previousOffset.x / 2f, previousOffset.y / 2f, previousOffset.z / 2f));
+
+            Vector4 previousSizeRangeX = material.GetVector(&quot;_SizeRangeX&quot;);
+            material.SetVector(&quot;_SizeRangeY&quot;, new Vector3(Mathf.Abs(previousSizeRangeX.x), Mathf.Abs(previousSizeRangeX.y)));
+
+            Range3D length = emitter.beamEndPointRange;
+            material.SetVector(&quot;_SizeRangeX&quot;, new Vector3(length.z.min / 2f, length.z.max / 2f));
+
+            material.SetFloat(&quot;_SpinParticles&quot;, 1);
+            material.SetVector(&quot;_StartSpinRangeZ&quot;, new Vector2(-0.25f, -0.25f));
+        }
+
+        return material;
+    }
+    private static Vector3 FromUnrealToUnityShader(Vector3 unrealVec)
+    {
+        return new Vector3(-unrealVec.x, unrealVec.z, unrealVec.y) / 52.5f;
+
+    }
+}
+#endif
+</pre>
+            
+</body>
+</html>

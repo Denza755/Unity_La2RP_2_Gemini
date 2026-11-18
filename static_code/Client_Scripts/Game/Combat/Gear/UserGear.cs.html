@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Combat/Gear/UserGear.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Combat/Gear/UserGear.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class UserGear : HumanoidGear
+{
+    [Header(&quot;References&quot;)]
+    [SerializeField] private SkinnedMeshSync _skinnedMeshSync;
+    [SerializeField] private GameObject _bodypartsContainer;
+
+    [Header(&quot;Armors&quot;)]
+    [Header(&quot;Meta&quot;)]
+    [SerializeField] private Armor _torsoMeta;
+    [SerializeField] private Armor _fullarmorMeta;
+    [SerializeField] private Armor _legsMeta;
+    [SerializeField] private Armor _glovesMeta;
+    [SerializeField] private Armor _bootsMeta;
+
+    [Header(&quot;Models&quot;)]
+    [SerializeField] private GameObject _torso;
+    [SerializeField] private GameObject _fullarmor;
+    [SerializeField] private GameObject _legs;
+    [SerializeField] private GameObject _gloves;
+    [SerializeField] private GameObject _boots;
+
+    [Header(&quot;Bodyparts&quot;)]
+    [SerializeField] private GameObject _headBone; // Used in some cases when the hair model doesnt have an armature
+    [SerializeField] private GameObject[] _hairs;
+    [SerializeField] private GameObject _face;
+    [SerializeField] private bool _bodyReady;
+
+    public GameObject[] Hairs { get =&gt; _hairs; set =&gt; _hairs = value; }
+    public GameObject Face { get =&gt; _face; set =&gt; _face = value; }
+    public GameObject HeadBone { get =&gt; _headBone; set =&gt; _headBone = value; }
+
+    [Header(&quot;Trail&quot;)]
+    [SerializeField] private ParticleSystem _weaponTrail;
+
+    public override void Initialize(int ownderId)
+    {
+        base.Initialize(ownderId);
+
+        if (_bodypartsContainer == null)
+        {
+            Transform bp = transform.FindRecursive(&quot;Bodyparts&quot;);
+            if (bp != null)
+            {
+                _bodypartsContainer = bp.gameObject;
+            }
+            else if (transform.childCount &gt; 0 &amp;&amp; transform.GetChild(0).childCount &gt; 1)
+            {
+                _bodypartsContainer = transform.GetChild(0).GetChild(1).gameObject;
+            }
+            else
+            {
+                Debug.LogWarning($&quot;[{transform.name}] bodypartsContainer was not assigned and could not be found.&quot;);
+            }
+        }
+
+        if (_bodypartsContainer != null &amp;&amp; !_bodypartsContainer.activeSelf)
+        {
+            _bodypartsContainer.SetActive(true);
+        }
+
+        if (_skinnedMeshSync == null)
+        {
+            _skinnedMeshSync = GetComponent&lt;SkinnedMeshSync&gt;()
+                            ?? GetComponentInParent&lt;SkinnedMeshSync&gt;()
+                            ?? _bodypartsContainer?.GetComponentInChildren&lt;SkinnedMeshSync&gt;()
+                            ?? GetComponentInChildren&lt;SkinnedMeshSync&gt;();
+        }
+
+        if (_headBone == null)
+        {
+            Transform hb = transform.FindRecursive(&quot;Bip01 Head&quot;)
+                        ?? transform.FindRecursive(&quot;Bip01_head&quot;)
+                        ?? transform.FindRecursive(&quot;bip01_head&quot;)
+                        ?? transform.FindRecursive(&quot;Head&quot;);
+            if (hb != null)
+            {
+                _headBone = hb.gameObject;
+            }
+            else
+            {
+                Debug.LogWarning($&quot;[{transform.name}] Headbone was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+                if (transform.childCount &gt; 0 &amp;&amp; transform.GetChild(0).childCount &gt; 0)
+                {
+                    try
+                    {
+                        _headBone = transform.GetChild(0)
+                            .GetChild(0)
+                            .GetChild(0)
+                            .GetChild(0)
+                            .GetChild(0)
+                            .GetChild(0)
+                            .GetChild(2)
+                            .GetChild(0)
+                            .GetChild(0)
+                            .GetChild(0).gameObject;
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        if (_weaponTrail == null)
+        {
+            Debug.LogWarning($&quot;[{transform.name}] WeaponTrail was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+            Transform _ = _rightHandBone.Find(&quot;weapon_trail&quot;);
+            _weaponTrail = _?.GetComponent&lt;ParticleSystem&gt;();
+
+            if (_weaponTrail == null)
+            {
+                Debug.LogError($&quot;[{transform.name}] WeaponTrail is null!&quot;);
+            }
+            else
+            {
+                StopTrail();
+            }
+        }
+        else
+        {
+            StopTrail();
+        }
+    }
+
+    public override void StartTrail()
+    {
+        if (_weaponTrail == null) return;
+        _weaponTrail.gameObject.SetActive(true);
+        _weaponTrail.Play();
+    }
+
+    public override void StopTrail()
+    {
+        if (_weaponTrail == null) return;
+        _weaponTrail.Stop();
+        _weaponTrail.gameObject.SetActive(false);
+    }
+
+    public override void EquipWeapon(int weaponId, Weapon weapon, bool leftSlot)
+    {
+        base.EquipWeapon(weaponId, weapon, leftSlot);
+        UpdateTrailScale();
+    }
+
+    private void UpdateTrailScale()
+    {
+        if (_weaponTrail == null)
+        {
+            if (_rightHandBone != null)
+            {
+                Transform t = _rightHandBone.Find(&quot;weapon_trail&quot;);
+                _weaponTrail = t != null ? t.GetComponent&lt;ParticleSystem&gt;() : null;
+            }
+            if (_weaponTrail == null) return;
+        }
+
+        float scale = 0;
+        float offset = 0;
+        switch (_weaponAnim)
+        {
+            case WeaponAnimType._1HS:
+                scale = 0.8f;
+                offset = -0.003f;
+                break;
+            case WeaponAnimType._2HS:
+                scale = 1.5f;
+                offset = -0.004f;
+                break;
+            case WeaponAnimType.pole:
+                scale = 2.5f;
+                offset = -0.005f;
+                break;
+            default:
+                break;
+        }
+
+        _weaponTrail.transform.localScale = Vector3.one * 0.1f * scale * _weaponSizeRatio;
+        _weaponTrail.transform.localPosition = new Vector3(offset, 0, 0);
+    }
+
+    protected override Transform GetLeftHandBone()
+    {
+        if (_leftHandBone == null)
+        {
+            _leftHandBone = transform.FindRecursive(&quot;Weapon_L_Bone&quot;)
+                ?? transform.FindRecursive(&quot;weapon_l_bone&quot;)
+                ?? transform.FindRecursive(&quot;Bow Bone&quot;)
+                ?? transform.FindRecursive(&quot;bow_bone&quot;)
+                ?? transform.FindRecursive(&quot;Sword Bone01&quot;)
+                ?? transform.FindRecursive(&quot;Bip01_L_Hand&quot;)
+                ?? transform.FindRecursive(&quot;Bip01 L Hand&quot;);
+
+            if (_leftHandBone == null)
+            {
+                Debug.LogWarning($&quot;[{transform.name}] Left hand bone was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+            }
+        }
+        return _leftHandBone;
+    }
+
+    protected override Transform GetRightHandBone()
+    {
+        if (_rightHandBone == null)
+        {
+            _rightHandBone = transform.FindRecursive(&quot;Weapon_R_Bone&quot;)
+                ?? transform.FindRecursive(&quot;weapon_r_bone&quot;)
+                ?? transform.FindRecursive(&quot;Sword Bone&quot;)
+                ?? transform.FindRecursive(&quot;sword_bone&quot;)
+                ?? transform.FindRecursive(&quot;Bip01_R_Hand&quot;)
+                ?? transform.FindRecursive(&quot;Bip01 R Hand&quot;);
+
+            if (_rightHandBone == null)
+            {
+                Debug.LogWarning($&quot;[{transform.name}] Right hand bone was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+            }
+        }
+        return _rightHandBone;
+    }
+
+    protected override Transform GetShieldBone()
+    {
+        if (_shieldBone == null)
+        {
+            _shieldBone = transform.FindRecursive(&quot;Shield_L_Bone&quot;)
+                ?? transform.FindRecursive(&quot;Shield Bone&quot;)
+                ?? transform.FindRecursive(&quot;shield_bone&quot;)
+                ?? transform.FindRecursive(&quot;Weapon_L_Bone&quot;)
+                ?? transform.FindRecursive(&quot;Bip01_L_Hand&quot;)
+                ?? transform.FindRecursive(&quot;Bip01 L Hand&quot;);
+
+            if (_shieldBone == null)
+            {
+                Debug.LogWarning($&quot;[{transform.name}] Shield bone was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+            }
+        }
+        return _shieldBone;
+    }
+
+    public bool IsArmorAlreadyEquipped(int itemId, ItemSlot slot)
+    {
+        //Debug.Log($&quot;IsArmorAlreadyEquipped ({itemId},{slot})&quot;);
+
+        switch (slot)
+        {
+            case ItemSlot.SLOT_CHEST:
+                return _torsoMeta != null &amp;&amp; itemId == _torsoMeta.Id;
+            case ItemSlot.SLOT_FULL_ARMOR:
+                return _fullarmorMeta != null &amp;&amp; itemId == _fullarmorMeta.Id;
+            case ItemSlot.SLOT_LEGS:
+                return _legsMeta != null &amp;&amp; itemId == _legsMeta.Id;
+            case ItemSlot.SLOT_GLOVES:
+                return _glovesMeta != null &amp;&amp; itemId == _glovesMeta.Id;
+            case ItemSlot.SLOT_FEET:
+                return _bootsMeta != null &amp;&amp; itemId == _bootsMeta.Id;
+        }
+
+        return false;
+    }
+
+    public override void EquipAllArmors(Appearance apr)
+    {
+        PlayerAppearance appearance = (PlayerAppearance)apr;
+        if (appearance.Chest != 0)
+        {
+            EquipArmor(appearance.Chest, ItemSlot.SLOT_CHEST);
+        }
+        else
+        {
+            EquipArmor(ItemTable.NAKED_CHEST, ItemSlot.SLOT_CHEST);
+        }
+
+        if (appearance.Legs != 0)
+        {
+            EquipArmor(appearance.Legs, ItemSlot.SLOT_LEGS);
+        }
+        else
+        {
+            EquipArmor(ItemTable.NAKED_LEGS, ItemSlot.SLOT_LEGS);
+        }
+
+        if (appearance.Gloves != 0)
+        {
+            EquipArmor(appearance.Gloves, ItemSlot.SLOT_GLOVES);
+        }
+        else
+        {
+            EquipArmor(ItemTable.NAKED_GLOVES, ItemSlot.SLOT_GLOVES);
+        }
+
+        if (appearance.Feet != 0)
+        {
+            EquipArmor(appearance.Feet, ItemSlot.SLOT_FEET);
+        }
+        else
+        {
+            EquipArmor(ItemTable.NAKED_BOOTS, ItemSlot.SLOT_FEET);
+        }
+    }
+
+    public void EquipArmor(int itemId, ItemSlot slot)
+    {
+        if (IsArmorAlreadyEquipped(itemId, slot))
+        {
+            Debug.Log($&quot;Item {itemId} is already equipped in slot {slot}.&quot;);
+            return;
+        }
+
+        Armor armor = ItemTable.Instance.GetArmor(itemId);
+        if (armor == null)
+        {
+            Debug.LogWarning($&quot;Can&#x27;t find armor {itemId} in ItemTable&quot;);
+            return;
+        }
+
+        ModelTable.L2ArmorPiece armorPiece = ModelTable.Instance.GetArmorPiece(armor, _referenceHolder.Entity.RaceId);
+        if (armorPiece == null)
+        {
+            Debug.LogWarning($&quot;Can&#x27;t find armor {itemId} for race {_referenceHolder.Entity.RaceId} in slot {slot} in ModelTable&quot;);
+            switch (slot)
+            {
+                case ItemSlot.SLOT_CHEST:
+                case ItemSlot.SLOT_FULL_ARMOR:
+                    if (itemId != ItemTable.NAKED_CHEST) EquipArmor(ItemTable.NAKED_CHEST, ItemSlot.SLOT_CHEST);
+                    break;
+                case ItemSlot.SLOT_LEGS:
+                    if (itemId != ItemTable.NAKED_LEGS) EquipArmor(ItemTable.NAKED_LEGS, ItemSlot.SLOT_LEGS);
+                    break;
+                case ItemSlot.SLOT_GLOVES:
+                    if (itemId != ItemTable.NAKED_GLOVES) EquipArmor(ItemTable.NAKED_GLOVES, ItemSlot.SLOT_GLOVES);
+                    break;
+                case ItemSlot.SLOT_FEET:
+                    if (itemId != ItemTable.NAKED_BOOTS) EquipArmor(ItemTable.NAKED_BOOTS, ItemSlot.SLOT_FEET);
+                    break;
+            }
+            return;
+        }
+
+        GameObject mesh = Instantiate(armorPiece.baseArmorModel);
+        if (armorPiece.material != null)
+        {
+            SkinnedMeshRenderer smr = mesh.GetComponentInChildren&lt;SkinnedMeshRenderer&gt;();
+            if (smr != null)
+            {
+                if (smr.sharedMaterials != null &amp;&amp; smr.sharedMaterials.Length &gt; 1)
+                {
+                    Material[] mats = new Material[smr.sharedMaterials.Length];
+                    for (int m = 0; m &lt; mats.Length; m++) mats[m] = armorPiece.material;
+                    smr.materials = mats;
+                }
+                else
+                {
+                    smr.material = armorPiece.material;
+                }
+            }
+            else
+            {
+                MeshRenderer mr = mesh.GetComponentInChildren&lt;MeshRenderer&gt;();
+                if (mr != null)
+                {
+                    if (mr.sharedMaterials != null &amp;&amp; mr.sharedMaterials.Length &gt; 1)
+                    {
+                        Material[] mats = new Material[mr.sharedMaterials.Length];
+                        for (int m = 0; m &lt; mats.Length; m++) mats[m] = armorPiece.material;
+                        mr.materials = mats;
+                    }
+                    else
+                    {
+                        mr.material = armorPiece.material;
+                    }
+                }
+            }
+        }
+
+        SetArmorPiece(armor, mesh, slot);
+    }
+
+    private void SetArmorPiece(Armor armor, GameObject armorPiece, ItemSlot slot)
+    {
+        switch (slot)
+        {
+            case ItemSlot.SLOT_CHEST:
+                if (_torso != null)
+                {
+                    DestroyImmediate(_torso);
+                    _torsoMeta = null;
+                }
+                if (_fullarmor != null)
+                {
+                    DestroyImmediate(_fullarmor);
+                    _fullarmorMeta = null;
+                    EquipArmor(ItemTable.NAKED_LEGS, ItemSlot.SLOT_LEGS);
+                }
+                _torso = armorPiece;
+                _torsoMeta = armor;
+                _torso.transform.SetParent(_bodypartsContainer.transform, false);
+                break;
+            case ItemSlot.SLOT_FULL_ARMOR:
+                if (_torso != null)
+                {
+                    DestroyImmediate(_torso);
+                    _torsoMeta = null;
+                }
+                if (_legs != null)
+                {
+                    DestroyImmediate(_legs);
+                    _legsMeta = null;
+                }
+                _fullarmor = armorPiece;
+                _fullarmorMeta = armor;
+                _fullarmor.transform.SetParent(_bodypartsContainer.transform, false);
+                break;
+            case ItemSlot.SLOT_LEGS:
+                if (_legs != null)
+                {
+                    DestroyImmediate(_legs);
+                    _legsMeta = null;
+                }
+                if (_fullarmor != null)
+                {
+                    DestroyImmediate(_fullarmor);
+                    _fullarmorMeta = null;
+                    EquipArmor(ItemTable.NAKED_CHEST, ItemSlot.SLOT_CHEST);
+                }
+                _legs = armorPiece;
+                _legs.transform.SetParent(_bodypartsContainer.transform, false);
+                _legsMeta = armor;
+                break;
+            case ItemSlot.SLOT_GLOVES:
+                if (_gloves != null)
+                {
+                    DestroyImmediate(_gloves);
+                    _glovesMeta = null;
+                }
+                _gloves = armorPiece;
+                _gloves.transform.SetParent(_bodypartsContainer.transform, false);
+                _glovesMeta = armor;
+                break;
+            case ItemSlot.SLOT_FEET:
+                if (_boots != null)
+                {
+                    DestroyImmediate(_boots);
+                    _bootsMeta = null;
+                }
+                _boots = armorPiece;
+                _boots.transform.SetParent(_bodypartsContainer.transform, false);
+                _bootsMeta = armor;
+                break;
+        }
+
+        TriggerMeshSync();
+    }
+
+    private void TriggerMeshSync()
+    {
+        if (_skinnedMeshSync == null)
+        {
+            _skinnedMeshSync = GetComponent&lt;SkinnedMeshSync&gt;()
+                            ?? GetComponentInParent&lt;SkinnedMeshSync&gt;()
+                            ?? _bodypartsContainer?.GetComponentInChildren&lt;SkinnedMeshSync&gt;()
+                            ?? GetComponentInChildren&lt;SkinnedMeshSync&gt;();
+        }
+        if (_skinnedMeshSync != null)
+        {
+            _skinnedMeshSync.SyncMesh();
+        }
+    }
+
+    public override void UpdateAppearance(Appearance baseOldAppearance, Appearance baseNewAppearance)
+    {
+        base.UpdateAppearance(baseOldAppearance, baseNewAppearance);
+
+        PlayerAppearance newAppearance = (PlayerAppearance)baseNewAppearance;
+        PlayerAppearance oldAppearance = new PlayerAppearance();
+
+        if (!_bodyReady)
+        {
+            _hairs = new GameObject[3];
+        }
+        else
+        {
+            oldAppearance = (PlayerAppearance)baseOldAppearance;
+        }
+
+        // Debug.LogWarning($&quot;UpdateAppearance: OldFace:{poldAppearance.Face} NewFace:{pnewAppearance.Face}&quot;);
+
+        CharacterModelType raceId = _referenceHolder.Entity.RaceId;
+
+        if (oldAppearance.ShouldUpdateHair(newAppearance) || !_bodyReady)
+        {
+            // Update hairstyle
+            GameObject hair1 = ModelTable.Instance.GetHair(raceId, newAppearance.HairStyle, newAppearance.HairColor, false);
+            GameObject hair2 = ModelTable.Instance.GetHair(raceId, newAppearance.HairStyle, newAppearance.HairColor, true);
+
+            if (_hairs[(int)HairType.AH] != null)
+            {
+                Destroy(_hairs[(int)HairType.AH]);
+            }
+            if (_hairs[(int)HairType.BH] != null)
+            {
+                Destroy(_hairs[(int)HairType.BH]);
+            }
+
+            _hairs[(int)HairType.AH] = hair1;
+            _hairs[(int)HairType.BH] = hair2;
+
+            if (hair1 != null)
+            {
+                bool isStatic1 = hair1.CompareTag(&quot;Hair&quot;) || (hair1.GetComponentInChildren&lt;SkinnedMeshRenderer&gt;() == null &amp;&amp; hair1.GetComponentInChildren&lt;MeshRenderer&gt;() != null);
+                if (isStatic1 &amp;&amp; _headBone != null)
+                {
+                    Vector3 origin = hair1.transform.localPosition;
+                    Vector3 originEuler = hair1.transform.eulerAngles;
+                    hair1.transform.SetParent(_headBone.transform);
+                    hair1.transform.localPosition = origin;
+                    hair1.transform.localEulerAngles = originEuler;
+                }
+                else
+                {
+                    hair1.transform.SetParent(_bodypartsContainer.transform, false);
+                }
+            }
+
+            if (hair2 != null)
+            {
+                bool isStatic2 = hair2.CompareTag(&quot;Hair&quot;) || (hair2.GetComponentInChildren&lt;SkinnedMeshRenderer&gt;() == null &amp;&amp; hair2.GetComponentInChildren&lt;MeshRenderer&gt;() != null);
+                if (isStatic2 &amp;&amp; _headBone != null)
+                {
+                    Vector3 origin = hair2.transform.localPosition;
+                    Vector3 originEuler = hair2.transform.eulerAngles;
+                    hair2.transform.SetParent(_headBone.transform);
+                    hair2.transform.localPosition = origin;
+                    hair2.transform.localEulerAngles = originEuler;
+                }
+                else
+                {
+                    hair2.transform.SetParent(_bodypartsContainer.transform, false);
+                }
+            }
+        }
+
+        if (oldAppearance.ShouldUpdateFace(newAppearance) || !_bodyReady)
+        {
+            if (_face != null)
+            {
+                Destroy(_face);
+            }
+
+            // Update face
+            GameObject face = ModelTable.Instance.GetFace(raceId, newAppearance.Face);
+            if (face != null)
+            {
+                _face = face;
+                _face.transform.SetParent(_bodypartsContainer.transform, false);
+                _face.transform.localScale = Vector3.one;
+                _face.transform.localPosition = Vector3.zero;
+            }
+        }
+
+        if (oldAppearance.ShouldUpdateArmors(newAppearance) || !_bodyReady)
+        {
+            EquipAllArmors(newAppearance);
+        }
+        _bodyReady = true;
+
+        TriggerMeshSync();
+    }
+}</pre>
+            
+</body>
+</html>

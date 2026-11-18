@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Templates/L2FxViewer_BeamEmitter.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Templates/L2FxViewer_BeamEmitter.shader</h1>
+            <pre>Shader &quot;L2/Viewer/BeamEmitter&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture&quot;, 2D) = &quot;white&quot; {}
+        _L2FxWorldCalibration (&quot;World Calibration K&quot;, Float) = 1.4
+        _SizeRange (&quot;Start Size UU Min Max&quot;, Vector) = (6, 10, 0, 0)
+        _StartLocationOffsetUc (&quot;StartLocationOffset UE&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeXUc (&quot;StartLocation X Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeYUc (&quot;StartLocation Y Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeZUc (&quot;StartLocation Z Min Max&quot;, Vector) = (0, 0, 0, 0)
+        [Toggle] _UsePolar (&quot;PTLS_Polar&quot;, Float) = 0
+        _PolarThetaRangeUc (&quot;Polar Theta Min Max&quot;, Vector) = (0, 360, 0, 0)
+        _PolarPhiRangeUc (&quot;Polar Phi Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _PolarRadiusRangeUc (&quot;Polar Radius Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _BeamEndOffsetXUc (&quot;BeamEnd Offset X&quot;, Vector) = (0, 0, 0, 0)
+        _BeamEndOffsetYUc (&quot;BeamEnd Offset Y&quot;, Vector) = (0, 0, 0, 0)
+        _BeamEndOffsetZUc (&quot;BeamEnd Offset Z&quot;, Vector) = (-190, -190, 0, 0)
+        _BeamEndpointMode (&quot;0 Offset 1 Distance 2 Absolute&quot;, Float) = 0
+        _BeamDistanceRangeUc (&quot;BeamDistance Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _SpriteMotionRandStateBits (&quot;appRand State Before Spawn&quot;, Float) = 0
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        _LifetimeRange (&quot;Lifetime Min Max&quot;, Vector) = (2, 3, 0, 0)
+        _InitialDelayRange (&quot;Initial Delay Min Max&quot;, Vector) = (0, 0, 0, 0)
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 0
+        _FadeInEndTime (&quot;Fade In End&quot;, Float) = 0
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 0
+        _FadeoutStartTime (&quot;Fade Out Start&quot;, Float) = 0
+        _ColorScaleCount (&quot;Color Scale Keys&quot;, Float) = 2
+        _ColorScaleParam (&quot;Color Scale Repeats&quot;, Float) = 0
+        _ColorKey0 (&quot;Color Scale 0&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey1Time (&quot;Color Scale 1 Time&quot;, Float) = 1
+        _ColorKey1 (&quot;Color Scale 1&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey2Time (&quot;Color Scale 2 Time&quot;, Float) = 1
+        _ColorKey2 (&quot;Color Scale 2&quot;, Color) = (1, 1, 1, 1)
+        _ColorMulMin (&quot;ColorMultiplier Min RGB&quot;, Vector) = (1, 1, 1, 0)
+        _ColorMulMax (&quot;ColorMultiplier Max RGB&quot;, Vector) = (1, 1, 1, 0)
+        _Opacity (&quot;Opacity&quot;, Range(0, 2)) = 1
+        _RgbBoost (&quot;RGB Boost (debug, not UC)&quot;, Range(0, 16)) = 1
+        [Toggle] _L2SpriteColorGammaToLinear (&quot;L2 Color Gamma→Linear&quot;, Float) = 1
+        _ColorFadeAlphaBlend (&quot;ColorFade AlphaBlend (PTDS 1/2/4)&quot;, Float) = 0
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend (&quot;Src Blend&quot;, Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend (&quot;Dst Blend&quot;, Float) = 1
+    }
+
+    SubShader
+    {
+        Tags { &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot; &quot;Queue&quot; = &quot;Transparent&quot; &quot;RenderType&quot; = &quot;Transparent&quot; }
+        Cull Off
+        ZWrite Off
+        ZTest LEqual
+
+        Pass
+        {
+            Name &quot;ViewerBeam&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+            Blend [_SrcBlend] [_DstBlend]
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma target 4.5
+
+            #include &quot;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&quot;
+            #include &quot;../Common/L2FxEmitterSpawn.hlsl&quot;
+            #include &quot;../Common/L2FxCoreGeometryTest.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxAppRand.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpritePolar.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxStartLocationRange.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxBeamSegment.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpriteColorFade.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpriteColorGammaLinear.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxPTDS_DrawStyle.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _L2FxWorldCalibration;
+                float4 _SizeRange;
+                float4 _StartLocationOffsetUc;
+                float4 _StartLocationRangeXUc;
+                float4 _StartLocationRangeYUc;
+                float4 _StartLocationRangeZUc;
+                float _UsePolar;
+                float4 _PolarThetaRangeUc;
+                float4 _PolarPhiRangeUc;
+                float4 _PolarRadiusRangeUc;
+                float4 _BeamEndOffsetXUc;
+                float4 _BeamEndOffsetYUc;
+                float4 _BeamEndOffsetZUc;
+                float _BeamEndpointMode;
+                float4 _BeamDistanceRangeUc;
+                float _SpriteMotionRandStateBits;
+                float _StartTime;
+                float4 _LifetimeRange;
+                float4 _InitialDelayRange;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _Fadeout;
+                float _FadeoutStartTime;
+                float _ColorScaleCount;
+                float _ColorScaleParam;
+                float4 _ColorKey0;
+                float _ColorKey1Time;
+                float4 _ColorKey1;
+                float _ColorKey2Time;
+                float4 _ColorKey2;
+                float4 _ColorMulMin;
+                float4 _ColorMulMax;
+                float _Opacity;
+                float _RgbBoost;
+                float _L2SpriteColorGammaToLinear;
+                float _ColorFadeAlphaBlend;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                nointerpolation float ageSeconds : TEXCOORD1;
+                nointerpolation float lifetimeSeconds : TEXCOORD2;
+                nointerpolation float seed : TEXCOORD3;
+            };
+
+            Varyings vert(Attributes IN)
+            {
+                Varyings OUT;
+                uint spawnState = asuint(_SpriteMotionRandStateBits);
+
+                float3 spawnLocalUe = 0;
+                if (_UsePolar &gt; 0.5)
+                {
+                    spawnLocalUe = L2Fx_SpritePolar_GetRandUe(
+                        _PolarThetaRangeUc.xy, _PolarPhiRangeUc.xy, _PolarRadiusRangeUc.xy, spawnState);
+                }
+                else
+                {
+                    spawnLocalUe = L2Fx_StartLocationRange_GetRandUe(
+                        _StartLocationRangeXUc.xy, _StartLocationRangeYUc.xy, _StartLocationRangeZUc.xy, spawnState);
+                }
+                float3 startUe = spawnLocalUe + _StartLocationOffsetUc.xyz;
+
+                float3 endUe = startUe;
+                if (_BeamEndpointMode &lt; 0.5)
+                {
+                    // PTEP_Offset
+                    endUe = L2Fx_Beam_PtepOffsetEndUe(
+                        startUe,
+                        _BeamEndOffsetXUc.xy, _BeamEndOffsetYUc.xy, _BeamEndOffsetZUc.xy,
+                        spawnState);
+                }
+                else if (_BeamEndpointMode &lt; 1.5)
+                {
+                    // PTEP_Distance — along +Z local if no velocity; heal uses Offset.
+                    float dist = L2Fx_FRange_GetRand(_BeamDistanceRangeUc.xy, spawnState);
+                    endUe = startUe + float3(0, 0, -dist);
+                }
+                else
+                {
+                    // PTEP_OffsetAsAbsolute — offset is world/local absolute end.
+                    float3 absEnd = L2Fx_FRangeVector_GetRandYawPitchRoll(
+                        _BeamEndOffsetXUc.xy, _BeamEndOffsetYUc.xy, _BeamEndOffsetZUc.xy, spawnState);
+                    endUe = absEnd;
+                }
+
+                float lifetimeSeconds = L2Fx_FRange_GetRand(_LifetimeRange.xy, spawnState);
+                float sizeUU = L2Fx_FRange_GetRand(_SizeRange.xy, spawnState);
+                float delay = L2Fx_RandomInitialDelay(_InitialDelayRange.xy, _SpriteMotionRandStateBits, _StartTime, 3.0);
+                float ageSeconds = max(0.0, _Time.y - _StartTime - delay);
+
+                float3 startOS = L2Fx_UcPositionToUnityMeters(startUe, _L2FxWorldCalibration);
+                float3 endOS = L2Fx_UcPositionToUnityMeters(endUe, _L2FxWorldCalibration);
+                float3 startWS = TransformObjectToWorld(startOS);
+                float3 endWS = TransformObjectToWorld(endOS);
+                float widthM = L2Fx_Beam_HalfWidthMeters(sizeUU, _L2FxWorldCalibration) * 2.0;
+
+                float t = IN.positionOS.z;
+                float across = IN.positionOS.x;
+                float3 positionWS = L2Fx_Beam_BillboardPointWS(
+                    startWS, endWS, t, across, widthM, _WorldSpaceCameraPos.xyz);
+
+                OUT.positionHCS = TransformWorldToHClip(positionWS);
+                OUT.uv = IN.uv;
+                OUT.ageSeconds = ageSeconds;
+                OUT.lifetimeSeconds = lifetimeSeconds;
+                OUT.seed = _SpriteMotionRandStateBits;
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+                float4 colorFade = L2Fx_SpriteColorFade_FullKeys(
+                    (uint)_ColorScaleCount, _ColorScaleParam, _ColorFadeAlphaBlend,
+                    _ColorKey0, _ColorKey1Time, _ColorKey1,
+                    _ColorKey2Time, _ColorKey2, 1.0, _ColorKey2,
+                    _ColorMulMin.xyz, _ColorMulMax.xyz,
+                    IN.ageSeconds, IN.lifetimeSeconds, 1.0,
+                    _FadeIn, _FadeInEndTime, _Fadeout, _FadeoutStartTime,
+                    _Opacity, 1.0, IN.seed, _StartTime);
+                colorFade = L2Fx_SpriteColor_ApplyGammaToLinearIfEnabled(colorFade, _L2SpriteColorGammaToLinear);
+                half4 lit = tex * (half4)colorFade;
+                lit.rgb *= (half)_RgbBoost;
+                return lit;
+            }
+            ENDHLSL
+        }
+    }
+    FallBack Off
+}
+</pre>
+            
+</body>
+</html>

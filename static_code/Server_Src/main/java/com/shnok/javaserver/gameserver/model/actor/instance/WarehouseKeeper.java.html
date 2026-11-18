@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/WarehouseKeeper.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/WarehouseKeeper.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.Map;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.enums.PrivilegeType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.itemcontainer.PcFreight;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.PackageToList;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.WarehouseDepositList;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.WarehouseWithdrawList;
+
+/**
+ * An instance type extending {@link Folk}, used by warehouse keepers.&lt;br&gt;
+ * &lt;br&gt;
+ * A warehouse keeper stores {@link Player} items in a personal container.
+ */
+public class WarehouseKeeper extends Folk
+{
+	public WarehouseKeeper(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public boolean isWarehouse()
+	{
+		return true;
+	}
+	
+	@Override
+	public String getHtmlPath(int npcId, int val)
+	{
+		String filename = &quot;&quot;;
+		if (val == 0)
+			filename = &quot;&quot; + npcId;
+		else
+			filename = npcId + &quot;-&quot; + val;
+		
+		return &quot;data/html/warehouse/&quot; + filename + &quot;.htm&quot;;
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		// Generic PK check. Send back the HTM if found and cancel current action.
+		if (!Config.KARMA_PLAYER_CAN_USE_WH &amp;&amp; player.getKarma() &gt; 0 &amp;&amp; showPkDenyChatWindow(player, &quot;warehouse&quot;))
+			return;
+		
+		if (player.isProcessingTransaction())
+		{
+			player.sendPacket(SystemMessageId.ALREADY_TRADING);
+			return;
+		}
+		
+		player.cancelActiveEnchant();
+		
+		if (command.startsWith(&quot;WithdrawP&quot;))
+		{
+			player.setActiveWarehouse(player.getWarehouse());
+			
+			if (player.getActiveWarehouse().getSize() == 0)
+			{
+				player.sendPacket(SystemMessageId.NO_ITEM_DEPOSITED_IN_WH);
+				return;
+			}
+			
+			player.sendPacket(new WarehouseWithdrawList(player, WarehouseWithdrawList.PRIVATE));
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.equals(&quot;DepositP&quot;))
+		{
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+			player.setActiveWarehouse(player.getWarehouse());
+			player.tempInventoryDisable();
+			player.sendPacket(new WarehouseDepositList(player, WarehouseDepositList.PRIVATE));
+		}
+		else if (command.equals(&quot;WithdrawC&quot;))
+		{
+			if (!player.hasClanPrivileges(PrivilegeType.SP_WAREHOUSE_SEARCH))
+			{
+				player.sendPacket(SystemMessageId.YOU_DO_NOT_HAVE_THE_RIGHT_TO_USE_CLAN_WAREHOUSE);
+				return;
+			}
+			
+			final Clan clan = player.getClan();
+			if (clan == null || clan.getLevel() == 0)
+			{
+				player.sendPacket(SystemMessageId.ONLY_LEVEL_1_CLAN_OR_HIGHER_CAN_USE_WAREHOUSE);
+				return;
+			}
+			
+			player.setActiveWarehouse(clan.getWarehouse());
+			
+			if (player.getActiveWarehouse().getSize() == 0)
+			{
+				player.sendPacket(SystemMessageId.NO_ITEM_DEPOSITED_IN_WH);
+				return;
+			}
+			
+			player.sendPacket(new WarehouseWithdrawList(player, WarehouseWithdrawList.CLAN));
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.equals(&quot;DepositC&quot;))
+		{
+			final Clan clan = player.getClan();
+			if (clan == null || clan.getLevel() == 0)
+			{
+				player.sendPacket(SystemMessageId.ONLY_LEVEL_1_CLAN_OR_HIGHER_CAN_USE_WAREHOUSE);
+				return;
+			}
+			
+			player.setActiveWarehouse(clan.getWarehouse());
+			player.tempInventoryDisable();
+			player.sendPacket(new WarehouseDepositList(player, WarehouseDepositList.CLAN));
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (command.startsWith(&quot;WithdrawF&quot;))
+		{
+			if (!Config.ALLOW_FREIGHT)
+				return;
+			
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+			
+			final PcFreight freight = player.getFreight();
+			if (freight == null || freight.getSize() &lt;= 0)
+			{
+				player.sendPacket(SystemMessageId.NO_ITEM_DEPOSITED_IN_WH);
+				return;
+			}
+			
+			freight.setActiveLocation((Config.REGION_BASED_FREIGHT) ? getRegion().hashCode() : 0);
+			
+			player.setActiveWarehouse(freight);
+			player.sendPacket(new WarehouseWithdrawList(player, WarehouseWithdrawList.FREIGHT));
+		}
+		else if (command.startsWith(&quot;DepositF&quot;))
+		{
+			if (!Config.ALLOW_FREIGHT)
+				return;
+			
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+			
+			// No other chars in the account of this Player.
+			final Map&lt;Integer, String&gt; chars = player.getAccountChars();
+			if (chars.isEmpty())
+			{
+				player.sendPacket(SystemMessageId.CHARACTER_DOES_NOT_EXIST);
+				return;
+			}
+			
+			// One or more chars other than this Player for this account.
+			if (chars.size() &lt; 1)
+				return;
+			
+			player.sendPacket(new PackageToList(chars));
+		}
+		else if (command.startsWith(&quot;FreightChar&quot;))
+		{
+			if (!Config.ALLOW_FREIGHT)
+				return;
+			
+			final String id = command.substring(command.lastIndexOf(&quot;_&quot;) + 1);
+			final PcFreight freight = player.getDepositedFreight(Integer.parseInt(id));
+			freight.setActiveLocation((Config.REGION_BASED_FREIGHT) ? getRegion().hashCode() : 0);
+			
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+			player.setActiveWarehouse(freight);
+			player.tempInventoryDisable();
+			player.sendPacket(new WarehouseDepositList(player, WarehouseDepositList.FREIGHT));
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player, int val)
+	{
+		// Generic PK check. Send back the HTM if found and cancel current action.
+		if (!Config.KARMA_PLAYER_CAN_USE_WH &amp;&amp; player.getKarma() &gt; 0 &amp;&amp; showPkDenyChatWindow(player, &quot;warehouse&quot;))
+			return;
+		
+		showChatWindow(player, getHtmlPath(getNpcId(), val));
+	}
+}</pre>
+            
+</body>
+</html>

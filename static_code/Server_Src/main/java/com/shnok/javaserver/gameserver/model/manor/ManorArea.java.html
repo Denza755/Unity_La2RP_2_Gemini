@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/manor/ManorArea.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/manor/ManorArea.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.manor;
+
+import java.util.List;
+
+import com.shnok.javaserver.commons.geometry.Polygon;
+import com.shnok.javaserver.commons.geometry.Triangle;
+
+/**
+ * This class represents the manor area in a world.&lt;br&gt;
+ * &lt;br&gt;
+ * Manor area consists of a polygon defines by nodes.&lt;br&gt;
+ * Manor area has a particular castle assigned to it.
+ */
+public class ManorArea extends Polygon
+{
+	private final String _name;
+	private final int _castleId;
+	
+	private final int _minZ;
+	private final int _maxZ;
+	
+	public ManorArea(String name, int castleId, int minZ, int maxZ, List&lt;Triangle&gt; shapes)
+	{
+		super(shapes);
+		
+		_name = name;
+		_castleId = castleId;
+		
+		_minZ = minZ;
+		_maxZ = maxZ;
+	}
+	
+	/**
+	 * @return The manor area name.
+	 */
+	public final String getName()
+	{
+		return _name;
+	}
+	
+	/**
+	 * @return The manor area castle id.
+	 */
+	public final int getCastleId()
+	{
+		return _castleId;
+	}
+	
+	/**
+	 * @return The manor area minimum Z coordinate.
+	 */
+	public final int getMinZ()
+	{
+		return _minZ;
+	}
+	
+	/**
+	 * @return The manor area maximum Z coordinate.
+	 */
+	public final int getMaxZ()
+	{
+		return _maxZ;
+	}
+	
+	@Override
+	public boolean isInside(int x, int y, int z)
+	{
+		// Check Z coordinate to exceed limits.
+		if (z &lt; _minZ || z &gt; _maxZ)
+			return false;
+		
+		return super.isInside(x, y, z);
+	}
+}</pre>
+            
+</body>
+</html>

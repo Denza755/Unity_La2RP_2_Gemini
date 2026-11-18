@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Builder/L2TerrainGeneratorTool.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Builder/L2TerrainGeneratorTool.cs</h1>
+            <pre>#if UNITY_EDITOR
+using System.Collections.Generic;
+using System.IO;
+using JBooth.MicroSplat;
+using UnityEditor;
+using UnityEngine;
+using static JBooth.MicroSplat.MicroSplatPropData;
+using static L2TerrainGeneratorTextureMatcher;
+
+public class L2TerrainGeneratorTool : MonoBehaviour
+{
+    public static int UV_TEXTURE_SIZE = 256;
+    public static int UV_LAYER_ALPHAMAP_SIZE = 1024;
+    public static int DECO_LAYER_ALPHAMAP_SIZE = 512;
+    public static float UV_TILE_SIZE = 5f;
+    public static float MAP_SCALE = 1f;
+
+    public int uvTextureSize = 256;
+    public int uvLayerAlphaMapSize = 1024;
+    public int decoLayerAlphaMapSize = 512;
+    public float uvTileSize = 5f;
+    public float mapScale = 1f;
+
+    public bool generateMap = true;
+    public static List&lt;L2TerrainInfo&gt; terrainInfos;
+    public List&lt;L2StaticMeshActor&gt; meshActors;
+    public static List&lt;Terrain&gt; terrains;
+    public static Dictionary&lt;string, Terrain&gt; terrainsDict;
+    public List&lt;MapGenerationData&gt; maps;
+
+    [MenuItem(&quot;Shnok/04. [Terrain] Generate terrain&quot;)]
+    static void GenerateTerrain()
+    {
+        string title = &quot;Select terrain t3d&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;t3d&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            string mapName = Path.GetFileNameWithoutExtension(fileToProcess);
+
+            List&lt;MapGenerationData&gt; mapsToGenerate = new List&lt;MapGenerationData&gt;();
+            MapGenerationData data = new MapGenerationData();
+
+            data.mapName = mapName;
+            data.generateDecoLayers = true;
+            data.generateUVLayers = true;
+            data.generateHeightmaps = true;
+            data.generateStaticMeshes = false;
+            data.convertToMicrosplat = true;
+            data.generationMode = GenerationMode.Generate;
+            mapsToGenerate.Add(data);
+            GenerateMap(mapsToGenerate);
+        }
+    }
+
+
+    [MenuItem(&quot;Shnok/05. [Terrain] Convert terrain to microsplat&quot;)]
+    static void ConvertTerrain()
+    {
+        string title = &quot;Select terrain t3d&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;t3d&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            string mapName = Path.GetFileNameWithoutExtension(fileToProcess);
+
+            MapGenerationData data = new MapGenerationData();
+            data.mapName = mapName;
+            data.convertToMicrosplat = true;
+            data.generationMode = GenerationMode.Generate;
+            ConvertTerrainToMicroplat(data);
+        }
+    }
+
+
+    [MenuItem(&quot;Shnok/06. [Terrain] Update microsplat params&quot;)]
+    static void Update()
+    {
+        string title = &quot;Select terrain t3d&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;t3d&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            string mapName = Path.GetFileNameWithoutExtension(fileToProcess);
+
+            MapGenerationData data = new MapGenerationData();
+            data.mapName = mapName;
+            data.convertToMicrosplat = true;
+            data.generationMode = GenerationMode.Generate;
+            UpdateMicrosplatParams(data);
+        }
+    }
+
+    [MenuItem(&quot;Shnok/03. [StaticMeshes] Generate staticmeshes&quot;)]
+    static void GenerateStaticMeshes()
+    {
+        List&lt;MapGenerationData&gt; mapsToGenerate = new List&lt;MapGenerationData&gt;();
+        MapGenerationData data = new MapGenerationData();
+
+        data.mapName = &quot;l2_lobby&quot;;
+        data.generateDecoLayers = false;
+        data.generateUVLayers = false;
+        data.generateHeightmaps = false;
+        data.generateStaticMeshes = true;
+        data.generationMode = GenerationMode.Generate;
+        mapsToGenerate.Add(data);
+
+        GenerateMap(mapsToGenerate);
+
+    }
+
+
+    [MenuItem(&quot;Shnok/11. [Terrain] Stitch terrain seams&quot;)]
+    static void StitchTerrainSeams()
+    {
+        Dictionary&lt;string, Terrain&gt; mapTerrains = new Dictionary&lt;string, Terrain&gt;();
+        string mapId = &quot;17_25&quot;;
+        mapTerrains.Add(mapId, GameObject.Find(mapId).GetComponent&lt;Terrain&gt;());
+        mapId = &quot;16_25&quot;;
+        mapTerrains.Add(mapId, GameObject.Find(mapId).GetComponent&lt;Terrain&gt;());
+        mapId = &quot;16_24&quot;;
+        mapTerrains.Add(mapId, GameObject.Find(mapId).GetComponent&lt;Terrain&gt;());
+        mapId = &quot;17_24&quot;;
+        mapTerrains.Add(mapId, GameObject.Find(mapId).GetComponent&lt;Terrain&gt;());
+
+        L2TerrainGenerator generator = new L2TerrainGenerator();
+        generator.StitchTerrainSeams(mapTerrains);
+    }
+
+    private static void GenerateMap(List&lt;MapGenerationData&gt; mapsToGenerate)
+    {
+        L2TerrainGenerator generator = new L2TerrainGenerator();
+        terrainInfos = new List&lt;L2TerrainInfo&gt;();
+        terrains = new List&lt;Terrain&gt;();
+        terrainsDict = new Dictionary&lt;string, Terrain&gt;();
+
+        for (int i = 0; i &lt; mapsToGenerate.Count; i++)
+        {
+
+            if (!mapsToGenerate[i].enabled)
+            {
+                continue;
+            }
+
+            L2TerrainInfo terrainInfo = L2T3DInfoParser.LoadMetadata(mapsToGenerate[i].mapName);
+            terrainInfos.Add(terrainInfo);
+
+            Terrain terrain = generator.InstantiateTerrain(mapsToGenerate[i], terrainInfo);
+
+            terrains.Add(terrain);
+
+            terrainsDict.Add(mapsToGenerate[i].mapName, terrain);
+        }
+
+        // generator.StitchTerrainSeams(terrainsDict);
+        //   generator.StitchTerrainSeams(terrainsDict);
+    }
+
+    private static void ConvertTerrainToMicroplat(MapGenerationData mapToGenerate)
+    {
+        GameObject terrainGo = GameObject.Find(mapToGenerate.mapName);
+        Terrain terrain;
+        if (terrainGo != null)
+        {
+            terrain = terrainGo.GetComponent&lt;Terrain&gt;();
+        }
+        else
+        {
+            terrainGo = Resources.Load&lt;GameObject&gt;(Path.Combine(&quot;Data&quot;, &quot;Maps&quot;, mapToGenerate.mapName, &quot;TerrainData&quot;, mapToGenerate.mapName));
+            GameObject newTerrain = GameObject.Instantiate(terrainGo);
+            terrain = newTerrain.GetComponent&lt;Terrain&gt;();
+        }
+
+        MicroSplatTerrain mst = terrainGo.AddComponent&lt;MicroSplatTerrain&gt;();
+        MicroSplatTerrainEditor.ConvertTerrains(new Terrain[] { terrain }, terrain.terrainData.terrainLayers);
+        mst.Sync();
+    }
+
+    private static void UpdateMicrosplatParams(MapGenerationData mapToGenerate)
+    {
+        GameObject terrainGo = GameObject.Find(mapToGenerate.mapName);
+        Terrain terrain;
+        if (terrainGo != null)
+        {
+            terrain = terrainGo.GetComponent&lt;Terrain&gt;();
+        }
+        else
+        {
+            terrainGo = Resources.Load&lt;GameObject&gt;(Path.Combine(&quot;Data&quot;, &quot;Maps&quot;, mapToGenerate.mapName, &quot;TerrainData&quot;, mapToGenerate.mapName));
+            GameObject newTerrain = GameObject.Instantiate(terrainGo);
+            terrain = newTerrain.GetComponent&lt;Terrain&gt;();
+        }
+
+        L2TerrainInfo terrainInfo = L2T3DInfoParser.LoadMetadata(mapToGenerate.mapName);
+
+        MicroSplatTerrain mst = terrain.GetComponent&lt;MicroSplatTerrain&gt;();
+
+        for (int layer = 0; layer &lt; terrainInfo.uvLayers.Count; layer++)
+        {
+            string texName = terrainInfo.uvLayers[layer].texture.name;
+            if (L2TerrainGeneratorTextureMatcher.Instance.scaleMatches.TryGetValue(texName, out float scale))
+            {
+                mst.propData.SetValue(layer, PerTexVector2.SplatUVScale, new Vector2(scale, scale));
+            }
+            else
+            {
+                Debug.LogError(&quot;Can&#x27;t find matching value in scaleMatches for textue &quot; + texName);
+            }
+            if (L2TerrainGeneratorTextureMatcher.Instance.pertexFloatMatches.TryGetValue(texName, out List&lt;PerTexFloatVal&gt; ptv))
+            {
+                if (ptv != null)
+                {
+                    ptv.ForEach((ptvv) =&gt;
+                    {
+                        Debug.Log($&quot;Setting propdata float per tex: {ptvv.ptf}:{ptvv.value}&quot;);
+                        mst.propData.SetValue(layer, ptvv.ptf, ptvv.value);
+                    });
+                }
+            }
+            else
+            {
+                Debug.LogError(&quot;Can&#x27;t find matching value in pertexFloatMatches for textue &quot; + texName);
+            }
+            if (L2TerrainGeneratorTextureMatcher.Instance.pertextColorMatches.TryGetValue(texName, out List&lt;PerTexColorVal&gt; ptc))
+            {
+                if (ptc != null)
+                {
+                    ptc.ForEach((ptcv) =&gt;
+                    {
+                        Debug.Log($&quot;Setting propdata color per tex: {ptcv.ptf}:{ptcv.value}&quot;);
+                        mst.propData.SetValue(layer, ptcv.ptf, ptcv.value);
+                    });
+                }
+            }
+            else
+            {
+                Debug.LogError(&quot;Can&#x27;t find matching value in pertextColorMatches for textue &quot; + texName);
+            }
+        }
+
+        /*      
+        public void SetValue(int textureIndex, PerTexFloat channel, float value)
+        public void SetValue(int textureIndex, PerTexColor channel, Color value)
+        public void SetValue(int textureIndex, PerTexVector2 channel, Vector2 value)*/
+
+        // TextureArrayConfig.
+        TextureArrayConfig cfg = Resources.Load&lt;TextureArrayConfig&gt;(Path.Combine(&quot;Data&quot;, &quot;Maps&quot;, mapToGenerate.mapName, &quot;TerrainData&quot;, &quot;MicroSplatData&quot;, &quot;MicroSplatConfig&quot;));
+        // if (TextureArrayConfigEditor.GetFromTerrain(cfg, terrain))
+        if (cfg != null)
+        {
+            cfg.allTextureChannelHeight = TextureArrayConfig.AllTextureChannel.A;
+            cfg.allTextureChannelSmoothness = TextureArrayConfig.AllTextureChannel.A;
+            cfg.allTextureChannelAO = TextureArrayConfig.AllTextureChannel.A;
+            cfg.pbrWorkflow = TextureArrayConfig.PBRWorkflow.Specular;
+            cfg.sourceTextures.ForEach((sourceTexture) =&gt;
+            {
+                //TODO update source textures
+                // string[] folderTexture = L2MetaDataUtils.GetFolderAndFileFromInfo(info);
+
+                // // get the updated texture based on matching table
+                if (L2TerrainGeneratorTextureMatcher.Instance.textureMatches.TryGetValue(sourceTexture.diffuse.name, out string splatTexture))
+                {
+                    string path = TextureUtils.GetSplatTexturePath(splatTexture);
+                    string diffuse = path + &quot;_BaseColor.jpg&quot;;
+                    string ao = path + &quot;_AO.jpg&quot;;
+                    string bump = path + &quot;_Bump.jpg&quot;;
+                    string normal = path + &quot;_Normal.jpg&quot;;
+                    string roughness = path + &quot;_Roughness.jpg&quot;;
+                    string specular = path + &quot;_Specular.jpg&quot;;
+
+                    Texture2D diffuseTex = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(diffuse);
+                    Texture2D aoTex = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(ao);
+                    Texture2D bumpTex = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(bump);
+                    Texture2D normalTex = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(normal);
+                    Texture2D roughnessTex = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(roughness);
+                    Texture2D specularTex = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(specular);
+
+                    if (diffuseTex != null)
+                        sourceTexture.diffuse = diffuseTex;
+                    if (aoTex != null)
+                        sourceTexture.ao = aoTex;
+                    if (bumpTex != null)
+                        sourceTexture.height = bumpTex;
+                    if (normalTex != null)
+                        sourceTexture.normal = normalTex;
+                    if (roughnessTex != null)
+                        sourceTexture.smoothness = roughnessTex;
+                    if (specularTex != null)
+                        sourceTexture.specular = specularTex;
+                }
+            });
+
+            TextureArrayConfigEditor.CompileConfig(cfg);
+        }
+        else
+        {
+            Debug.LogError(&quot;Cant open TextureArrayConfig for map &quot; + mapToGenerate.mapName);
+        }
+        mst.Sync();
+    }
+}
+#endif
+</pre>
+            
+</body>
+</html>

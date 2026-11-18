@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/kind/Item.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/kind/Item.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.item.kind;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.enums.items.ActionType;
+import com.shnok.javaserver.gameserver.enums.items.ArmorType;
+import com.shnok.javaserver.gameserver.enums.items.CrystalType;
+import com.shnok.javaserver.gameserver.enums.items.EtcItemType;
+import com.shnok.javaserver.gameserver.enums.items.ItemType;
+import com.shnok.javaserver.gameserver.enums.items.MaterialType;
+import com.shnok.javaserver.gameserver.enums.items.WeaponType;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.Summon;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.skills.basefuncs.Func;
+import com.shnok.javaserver.gameserver.skills.basefuncs.FuncTemplate;
+import com.shnok.javaserver.gameserver.skills.conditions.Condition;
+
+/**
+ * This container contains all informations concerning an item (weapon, armor, etc).
+ */
+public abstract class Item
+{
+	public static final int TYPE1_WEAPON_RING_EARRING_NECKLACE = 0;
+	public static final int TYPE1_SHIELD_ARMOR = 1;
+	public static final int TYPE1_ITEM_QUESTITEM_ADENA = 4;
+	
+	public static final int TYPE2_WEAPON = 0;
+	public static final int TYPE2_SHIELD_ARMOR = 1;
+	public static final int TYPE2_ACCESSORY = 2;
+	public static final int TYPE2_QUEST = 3;
+	public static final int TYPE2_MONEY = 4;
+	public static final int TYPE2_OTHER = 5;
+	
+	public static final int SLOT_NONE = 0x0000;
+	public static final int SLOT_UNDERWEAR = 0x0001;
+	public static final int SLOT_R_EAR = 0x0002;
+	public static final int SLOT_L_EAR = 0x0004;
+	public static final int SLOT_LR_EAR = 0x0006;
+	public static final int SLOT_NECK = 0x0008;
+	public static final int SLOT_R_FINGER = 0x0010;
+	public static final int SLOT_L_FINGER = 0x0020;
+	public static final int SLOT_LR_FINGER = 0x0030;
+	public static final int SLOT_HEAD = 0x0040;
+	public static final int SLOT_R_HAND = 0x0080;
+	public static final int SLOT_L_HAND = 0x0100;
+	public static final int SLOT_GLOVES = 0x0200;
+	public static final int SLOT_CHEST = 0x0400;
+	public static final int SLOT_LEGS = 0x0800;
+	public static final int SLOT_FEET = 0x1000;
+	public static final int SLOT_BACK = 0x2000;
+	public static final int SLOT_LR_HAND = 0x4000;
+	public static final int SLOT_FULL_ARMOR = 0x8000;
+	public static final int SLOT_FACE = 0x010000;
+	public static final int SLOT_ALLDRESS = 0x020000;
+	public static final int SLOT_HAIR = 0x040000;
+	public static final int SLOT_HAIRALL = 0x080000;
+	
+	public static final int SLOT_WOLF = -100;
+	public static final int SLOT_HATCHLING = -101;
+	public static final int SLOT_STRIDER = -102;
+	public static final int SLOT_BABYPET = -103;
+	
+	public static final int SLOT_ALLWEAPON = SLOT_LR_HAND | SLOT_R_HAND;
+	
+	private static final Map&lt;String, Integer&gt; SLOTS = HashMap.newHashMap(24);
+	static
+	{
+		SLOTS.put(&quot;chest&quot;, SLOT_CHEST);
+		SLOTS.put(&quot;fullarmor&quot;, SLOT_FULL_ARMOR);
+		SLOTS.put(&quot;alldress&quot;, SLOT_ALLDRESS);
+		SLOTS.put(&quot;head&quot;, SLOT_HEAD);
+		SLOTS.put(&quot;hair&quot;, SLOT_HAIR);
+		SLOTS.put(&quot;face&quot;, SLOT_FACE);
+		SLOTS.put(&quot;hairall&quot;, SLOT_HAIRALL);
+		SLOTS.put(&quot;underwear&quot;, SLOT_UNDERWEAR);
+		SLOTS.put(&quot;back&quot;, SLOT_BACK);
+		SLOTS.put(&quot;neck&quot;, SLOT_NECK);
+		SLOTS.put(&quot;legs&quot;, SLOT_LEGS);
+		SLOTS.put(&quot;feet&quot;, SLOT_FEET);
+		SLOTS.put(&quot;gloves&quot;, SLOT_GLOVES);
+		SLOTS.put(&quot;chest,legs&quot;, SLOT_CHEST | SLOT_LEGS);
+		SLOTS.put(&quot;rhand&quot;, SLOT_R_HAND);
+		SLOTS.put(&quot;lhand&quot;, SLOT_L_HAND);
+		SLOTS.put(&quot;lrhand&quot;, SLOT_LR_HAND);
+		SLOTS.put(&quot;rear;lear&quot;, SLOT_R_EAR | SLOT_L_EAR);
+		SLOTS.put(&quot;rfinger;lfinger&quot;, SLOT_R_FINGER | SLOT_L_FINGER);
+		SLOTS.put(&quot;none&quot;, SLOT_NONE);
+		SLOTS.put(&quot;wolf&quot;, SLOT_WOLF); // for wolf
+		SLOTS.put(&quot;hatchling&quot;, SLOT_HATCHLING); // for hatchling
+		SLOTS.put(&quot;strider&quot;, SLOT_STRIDER); // for strider
+		SLOTS.put(&quot;babypet&quot;, SLOT_BABYPET); // for babypet
+	}
+	
+	private final int _itemId;
+	private final String _name;
+	protected int _type1; // needed for item list (inventory)
+	protected int _type2; // different lists for armor, weapon, etc
+	private final int _weight;
+	private final boolean _stackable;
+	private final MaterialType _materialType;
+	private final CrystalType _crystalType;
+	private final int _duration;
+	private final int _bodyPart;
+	private final int _referencePrice;
+	private final int _crystalCount;
+	
+	private final boolean _sellable;
+	private final boolean _dropable;
+	private final boolean _destroyable;
+	private final boolean _tradable;
+	private final boolean _depositable;
+	
+	private final boolean _heroItem;
+	private final boolean _isOlyRestricted;
+	
+	private final ActionType _defaultAction;
+	
+	protected List&lt;FuncTemplate&gt; _funcTemplates;
+	
+	protected List&lt;Condition&gt; _preConditions;
+	private IntIntHolder[] _skillHolder;
+	
+	private List&lt;Quest&gt; _questEvents = Collections.emptyList();
+	
+	protected Item(StatSet set)
+	{
+		_itemId = set.getInteger(&quot;item_id&quot;);
+		_name = set.getString(&quot;name&quot;);
+		_weight = set.getInteger(&quot;weight&quot;, 0);
+		_materialType = set.getEnum(&quot;material&quot;, MaterialType.class, MaterialType.STEEL);
+		_duration = set.getInteger(&quot;duration&quot;, -1);
+		_bodyPart = SLOTS.get(set.getString(&quot;bodypart&quot;, &quot;none&quot;));
+		_referencePrice = set.getInteger(&quot;price&quot;, 0);
+		_crystalType = set.getEnum(&quot;crystal_type&quot;, CrystalType.class, CrystalType.NONE);
+		_crystalCount = set.getInteger(&quot;crystal_count&quot;, 0);
+		
+		_stackable = set.getBool(&quot;is_stackable&quot;, false);
+		_sellable = set.getBool(&quot;is_sellable&quot;, true);
+		_dropable = set.getBool(&quot;is_dropable&quot;, true);
+		_destroyable = set.getBool(&quot;is_destroyable&quot;, true);
+		_tradable = set.getBool(&quot;is_tradable&quot;, true);
+		_depositable = set.getBool(&quot;is_depositable&quot;, true);
+		
+		_heroItem = (_itemId &gt;= 6611 &amp;&amp; _itemId &lt;= 6621) || _itemId == 6842;
+		_isOlyRestricted = set.getBool(&quot;is_oly_restricted&quot;, false);
+		
+		_defaultAction = set.getEnum(&quot;default_action&quot;, ActionType.class, ActionType.none);
+		
+		if (set.containsKey(&quot;item_skill&quot;))
+			_skillHolder = set.getIntIntHolderArray(&quot;item_skill&quot;);
+	}
+	
+	/**
+	 * @return Enum the itemType.
+	 */
+	public abstract ItemType getItemType();
+	
+	/**
+	 * @return int the duration of the item
+	 */
+	public final int getDuration()
+	{
+		return _duration;
+	}
+	
+	/**
+	 * @return int the ID of the item
+	 */
+	public final int getItemId()
+	{
+		return _itemId;
+	}
+	
+	public abstract int getItemMask();
+	
+	/**
+	 * @return int the type of material of the item
+	 */
+	public final MaterialType getMaterialType()
+	{
+		return _materialType;
+	}
+	
+	/**
+	 * @return int the type 2 of the item
+	 */
+	public final int getType2()
+	{
+		return _type2;
+	}
+	
+	/**
+	 * @return int the weight of the item
+	 */
+	public final int getWeight()
+	{
+		return _weight;
+	}
+	
+	/**
+	 * @return boolean if the item is crystallizable
+	 */
+	public final boolean isCrystallizable()
+	{
+		return _crystalType != CrystalType.NONE &amp;&amp; _crystalCount &gt; 0;
+	}
+	
+	/**
+	 * @return CrystalType the type of crystal if item is crystallizable
+	 */
+	public final CrystalType getCrystalType()
+	{
+		return _crystalType;
+	}
+	
+	/**
+	 * @return int the type of crystal if item is crystallizable
+	 */
+	public final int getCrystalItemId()
+	{
+		return _crystalType.getCrystalId();
+	}
+	
+	/**
+	 * @return int the quantity of crystals for crystallization
+	 */
+	public final int getCrystalCount()
+	{
+		return _crystalCount;
+	}
+	
+	/**
+	 * @param enchantLevel
+	 * @return int the quantity of crystals for crystallization on specific enchant level
+	 */
+	public final int getCrystalCount(int enchantLevel)
+	{
+		if (enchantLevel &gt; 3)
+		{
+			switch (_type2)
+			{
+				case TYPE2_SHIELD_ARMOR, TYPE2_ACCESSORY:
+					return _crystalCount + getCrystalType().getCrystalEnchantBonusArmor() * (3 * enchantLevel - 6);
+				
+				case TYPE2_WEAPON:
+					return _crystalCount + getCrystalType().getCrystalEnchantBonusWeapon() * (2 * enchantLevel - 3);
+				
+				default:
+					return _crystalCount;
+			}
+		}
+		else if (enchantLevel &gt; 0)
+		{
+			switch (_type2)
+			{
+				case TYPE2_SHIELD_ARMOR, TYPE2_ACCESSORY:
+					return _crystalCount + getCrystalType().getCrystalEnchantBonusArmor() * enchantLevel;
+				case TYPE2_WEAPON:
+					return _crystalCount + getCrystalType().getCrystalEnchantBonusWeapon() * enchantLevel;
+				default:
+					return _crystalCount;
+			}
+		}
+		else
+			return _crystalCount;
+	}
+	
+	/**
+	 * @return String the name of the item
+	 */
+	public final String getName()
+	{
+		return _name;
+	}
+	
+	/**
+	 * @return int the part of the body used with the item.
+	 */
+	public final int getBodyPart()
+	{
+		return _bodyPart;
+	}
+	
+	/**
+	 * @return int the type 1 of the item
+	 */
+	public final int getType1()
+	{
+		return _type1;
+	}
+	
+	/**
+	 * @return boolean if the item is stackable
+	 */
+	public final boolean isStackable()
+	{
+		return _stackable;
+	}
+	
+	/**
+	 * @return boolean if the item is consumable
+	 */
+	public boolean isConsumable()
+	{
+		return false;
+	}
+	
+	public boolean isEquipable()
+	{
+		return getBodyPart() != 0 &amp;&amp; !(getItemType() instanceof EtcItemType);
+	}
+	
+	/**
+	 * @return int the price of reference of the item
+	 */
+	public final int getReferencePrice()
+	{
+		return _referencePrice;
+	}
+	
+	/**
+	 * Returns if the item can be sold
+	 * @return boolean
+	 */
+	public final boolean isSellable()
+	{
+		return _sellable;
+	}
+	
+	/**
+	 * Returns if the item can dropped
+	 * @return boolean
+	 */
+	public final boolean isDropable()
+	{
+		return _dropable;
+	}
+	
+	/**
+	 * Returns if the item can destroy
+	 * @return boolean
+	 */
+	public final boolean isDestroyable()
+	{
+		return _destroyable;
+	}
+	
+	/**
+	 * Returns if the item can add to trade
+	 * @return boolean
+	 */
+	public final boolean isTradable()
+	{
+		return _tradable;
+	}
+	
+	/**
+	 * Returns if the item can be put into warehouse
+	 * @return boolean
+	 */
+	public final boolean isDepositable()
+	{
+		return _depositable;
+	}
+	
+	/**
+	 * Get the functions used by this item.
+	 * @param item : ItemInstance pointing out the item
+	 * @param player : Creature pointing out the player
+	 * @return the list of functions
+	 */
+	public final List&lt;Func&gt; getStatFuncs(ItemInstance item, Creature player)
+	{
+		if (_funcTemplates == null || _funcTemplates.isEmpty())
+			return Collections.emptyList();
+		
+		final List&lt;Func&gt; funcs = new ArrayList&lt;&gt;(_funcTemplates.size());
+		
+		for (FuncTemplate template : _funcTemplates)
+		{
+			final Func func = template.getFunc(player, player, item, item);
+			if (func != null)
+				funcs.add(func);
+		}
+		return funcs;
+	}
+	
+	/**
+	 * Add the FuncTemplate f to the list of functions used with the item
+	 * @param f : FuncTemplate to add
+	 */
+	public void attach(FuncTemplate f)
+	{
+		if (_funcTemplates == null)
+			_funcTemplates = new ArrayList&lt;&gt;(1);
+		
+		_funcTemplates.add(f);
+	}
+	
+	public final void attach(Condition c)
+	{
+		if (_preConditions == null)
+			_preConditions = new ArrayList&lt;&gt;();
+		
+		if (!_preConditions.contains(c))
+			_preConditions.add(c);
+	}
+	
+	/**
+	 * Method to retrieve skills linked to this item
+	 * @return Skills linked to this item as SkillHolder[]
+	 */
+	public final IntIntHolder[] getSkills()
+	{
+		return _skillHolder;
+	}
+	
+	public boolean checkCondition(Creature creature, WorldObject object, boolean sendMessage)
+	{
+		// Don&#x27;t allow hero equipment and restricted items during Olympiad
+		if ((isOlyRestrictedItem() || isHeroItem()) &amp;&amp; creature instanceof Player player &amp;&amp; player.isInOlympiadMode())
+		{
+			if (isEquipable())
+				player.sendPacket(SystemMessageId.THIS_ITEM_CANT_BE_EQUIPPED_FOR_THE_OLYMPIAD_EVENT);
+			else
+				player.sendPacket(SystemMessageId.THIS_ITEM_IS_NOT_AVAILABLE_FOR_THE_OLYMPIAD_EVENT);
+			
+			return false;
+		}
+		
+		if (_preConditions == null)
+			return true;
+		
+		final Creature target = (object instanceof Creature targetCreature) ? targetCreature : null;
+		for (Condition preCondition : _preConditions)
+		{
+			if (preCondition == null)
+				continue;
+			
+			if (!preCondition.test(creature, target, null, null))
+			{
+				if (creature instanceof Summon summon)
+				{
+					summon.sendPacket(SystemMessageId.PET_CANNOT_USE_ITEM);
+					return false;
+				}
+				
+				if (sendMessage)
+				{
+					final String msg = preCondition.getMessage();
+					if (msg != null)
+						creature.sendMessage(msg);
+					else
+					{
+						final int msgId = preCondition.getMessageId();
+						if (msgId != 0)
+						{
+							final SystemMessage sm = SystemMessage.getSystemMessage(msgId);
+							if (preCondition.isAddName())
+								sm.addItemName(_itemId);
+							
+							creature.sendPacket(sm);
+						}
+					}
+				}
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean isConditionAttached()
+	{
+		return _preConditions != null &amp;&amp; !_preConditions.isEmpty();
+	}
+	
+	public boolean isQuestItem()
+	{
+		return (getItemType() == EtcItemType.QUEST);
+	}
+	
+	public final boolean isHeroItem()
+	{
+		return _heroItem;
+	}
+	
+	public boolean isOlyRestrictedItem()
+	{
+		return _isOlyRestricted;
+	}
+	
+	public boolean isPetItem()
+	{
+		return (getItemType() == ArmorType.PET || getItemType() == WeaponType.PET);
+	}
+	
+	public boolean isPotion()
+	{
+		return (getItemType() == EtcItemType.POTION);
+	}
+	
+	public boolean isElixir()
+	{
+		return (getItemType() == EtcItemType.ELIXIR);
+	}
+	
+	public ActionType getDefaultAction()
+	{
+		return _defaultAction;
+	}
+	
+	/**
+	 * Returns the name of the item
+	 * @return String
+	 */
+	@Override
+	public String toString()
+	{
+		return _name + &quot; (&quot; + _itemId + &quot;)&quot;;
+	}
+	
+	public void addQuestEvent(Quest quest)
+	{
+		if (_questEvents.isEmpty())
+			_questEvents = new ArrayList&lt;&gt;(3);
+		
+		_questEvents.add(quest);
+	}
+	
+	public List&lt;Quest&gt; getQuestEvents()
+	{
+		return _questEvents;
+	}
+	
+	public boolean isNightLure()
+	{
+		return ((_itemId &gt;= 8505 &amp;&amp; _itemId &lt;= 8513) || _itemId == 8485);
+	}
+}</pre>
+            
+</body>
+</html>

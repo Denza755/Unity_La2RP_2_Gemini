@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminZone.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminZone.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.ZoneManager;
+import com.shnok.javaserver.gameserver.data.xml.RestartPointData;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.restart.RestartPoint;
+import com.shnok.javaserver.gameserver.model.zone.type.subtype.ZoneType;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExServerPrimitive;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class AdminZone implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_zone&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		st.nextToken();
+		
+		if (!st.hasMoreTokens())
+		{
+			showHtml(player);
+			return;
+		}
+		
+		switch (st.nextToken().toLowerCase())
+		{
+			case &quot;show&quot;:
+				try
+				{
+					final ExServerPrimitive debug = player.getDebugPacket(&quot;ZONE&quot;);
+					debug.reset();
+					
+					final String param = st.nextToken().toLowerCase();
+					switch (param)
+					{
+						case &quot;all&quot;:
+							for (ZoneType zone : player.getZones(false))
+								zone.visualizeZone(debug);
+							
+							debug.sendTo(player);
+							
+							showHtml(player);
+							break;
+						
+						case &quot;clear&quot;:
+							debug.sendTo(player);
+							
+							showHtml(player);
+							break;
+						
+						default:
+							ZoneManager.getInstance().getZoneById(Integer.parseInt(param)).visualizeZone(debug);
+							
+							debug.sendTo(player);
+							break;
+					}
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Invalid parameter for //zone show.&quot;);
+				}
+				break;
+			
+			default:
+				showHtml(player);
+				break;
+		}
+	}
+	
+	private static void showHtml(Player player)
+	{
+		int x = player.getX();
+		int y = player.getY();
+		int rx = (x - World.WORLD_X_MIN) / World.TILE_SIZE + World.TILE_X_MIN;
+		int ry = (y - World.WORLD_Y_MIN) / World.TILE_SIZE + World.TILE_Y_MIN;
+		
+		final RestartPoint currentRp = RestartPointData.getInstance().getRestartPoint(player);
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/zone.htm&quot;);
+		html.replace(&quot;%GEOREGION%&quot;, rx + &quot;_&quot; + ry);
+		html.replace(&quot;%RA%&quot;, RestartPointData.getInstance().getRestartArea(player) != null);
+		html.replace(&quot;%CALCULATED_RP%&quot;, RestartPointData.getInstance().getCalculatedRestartPoint(player).getName());
+		html.replace(&quot;%CURRENT_RP%&quot;, (currentRp == null) ? &quot;N/A&quot; : currentRp.getName());
+		html.replace(&quot;%CURRENTLOC%&quot;, x + &quot;, &quot; + y + &quot;, &quot; + player.getZ());
+		
+		final StringBuilder sb = new StringBuilder(100);
+		
+		for (ZoneId zoneId : ZoneId.VALUES)
+		{
+			if (player.isInsideZone(zoneId))
+				StringUtil.append(sb, zoneId, &quot;&lt;br1&gt;&quot;);
+		}
+		html.replace(&quot;%ZONES%&quot;, sb.toString());
+		
+		// Reset the StringBuilder for another use.
+		sb.setLength(0);
+		
+		for (ZoneType zoneType : World.getInstance().getRegion(x, y).getZones())
+		{
+			if (zoneType.isInZone(player))
+				StringUtil.append(sb, zoneType.getId(), &quot; &quot;);
+		}
+		html.replace(&quot;%ZLIST%&quot;, sb.toString());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

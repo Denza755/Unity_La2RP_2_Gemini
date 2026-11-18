@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/type/EffectZone.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/type/EffectZone.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.zone.type;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.model.zone.type.subtype.ZoneType;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.EtcStatusUpdate;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+/**
+ * A zone extending {@link ZoneType}, which fires a task on the first {@link Creature} entrance.&lt;br&gt;
+ * &lt;br&gt;
+ * This task launches skill effects on all {@link Creature}s within this zone, and can affect specific class types. It can also be activated or desactivated. The zone is considered a danger zone.
+ */
+public class EffectZone extends ZoneType
+{
+	private final List&lt;IntIntHolder&gt; _skills = new ArrayList&lt;&gt;(5);
+	
+	private int _chance = 100;
+	private int _initialDelay = 0;
+	private int _reuseDelay = 30000;
+	private Class&lt;?&gt; _target = Player.class;
+	
+	private boolean _isEnabled = true;
+	
+	private volatile Future&lt;?&gt; _task;
+	
+	public EffectZone(int id)
+	{
+		super(id);
+	}
+	
+	@Override
+	public void setParameter(String name, String value)
+	{
+		if (name.equals(&quot;chance&quot;))
+			_chance = Integer.parseInt(value);
+		else if (name.equals(&quot;initialDelay&quot;))
+			_initialDelay = Integer.parseInt(value);
+		else if (name.equals(&quot;reuseDelay&quot;))
+			_reuseDelay = Integer.parseInt(value);
+		else if (name.equals(&quot;defaultStatus&quot;))
+			_isEnabled = Boolean.parseBoolean(value);
+		else if (name.equals(&quot;skill&quot;))
+		{
+			final String[] skills = value.split(&quot;;&quot;);
+			for (String skill : skills)
+			{
+				final String[] skillSplit = skill.split(&quot;-&quot;);
+				if (skillSplit.length != 2)
+					LOGGER.warn(&quot;Invalid skill format {} for {}.&quot;, skill, toString());
+				else
+				{
+					try
+					{
+						_skills.add(new IntIntHolder(Integer.parseInt(skillSplit[0]), Integer.parseInt(skillSplit[1])));
+					}
+					catch (NumberFormatException nfe)
+					{
+						LOGGER.warn(&quot;Invalid skill format {} for {}.&quot;, skill, toString());
+					}
+				}
+			}
+		}
+		else if (name.equals(&quot;targetType&quot;))
+		{
+			try
+			{
+				_target = Class.forName(&quot;com.shnok.javaserver.gameserver.model.actor.&quot; + value);
+			}
+			catch (ClassNotFoundException e)
+			{
+				LOGGER.error(&quot;Invalid target type {} for {}.&quot;, value, toString());
+			}
+		}
+		else
+			super.setParameter(name, value);
+	}
+	
+	@Override
+	protected boolean isAffected(Creature creature)
+	{
+		return _target.isInstance(creature);
+	}
+	
+	@Override
+	protected void onEnter(Creature creature)
+	{
+		Future&lt;?&gt; task = _task;
+		if (task == null)
+		{
+			synchronized (this)
+			{
+				task = _task;
+				if (task == null)
+					_task = ThreadPool.scheduleAtFixedRate(this::applyEffect, _initialDelay, _reuseDelay);
+			}
+		}
+		
+		if (creature instanceof Player player)
+		{
+			player.setInsideZone(ZoneId.DANGER_AREA, true);
+			player.sendPacket(new EtcStatusUpdate(player));
+		}
+	}
+	
+	@Override
+	protected void onExit(Creature creature)
+	{
+		if (creature instanceof Player player)
+		{
+			player.setInsideZone(ZoneId.DANGER_AREA, false);
+			
+			if (!player.isInsideZone(ZoneId.DANGER_AREA))
+				player.sendPacket(new EtcStatusUpdate(player));
+		}
+	}
+	
+	/**
+	 * Edit this zone activation state.
+	 * @param state : The new state to set.
+	 */
+	public void editStatus(boolean state)
+	{
+		_isEnabled = state;
+	}
+	
+	/**
+	 * Apply this {@link EffectZone} effect to all {@link Creature}s of defined target type.
+	 */
+	private final void applyEffect()
+	{
+		if (!_isEnabled)
+			return;
+		
+		if (_creatures.isEmpty())
+		{
+			_task.cancel(true);
+			_task = null;
+			
+			return;
+		}
+		
+		for (Creature temp : _creatures)
+		{
+			if (temp.isDead() || Rnd.get(100) &gt;= _chance)
+				continue;
+			
+			for (IntIntHolder entry : _skills)
+			{
+				final L2Skill skill = entry.getSkill();
+				if (skill != null &amp;&amp; skill.checkCondition(temp, temp, false) &amp;&amp; temp.getFirstEffect(entry.getId()) == null)
+					skill.getEffects(temp, temp);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

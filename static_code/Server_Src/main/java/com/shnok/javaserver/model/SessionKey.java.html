@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/model/SessionKey.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/model/SessionKey.java</h1>
+            <pre>package com.shnok.javaserver.model;
+
+import static com.shnok.javaserver.config.Configuration.server;
+
+public class SessionKey {
+    public final int playOkID1;
+    public final int playOkID2;
+    public final int loginOkID1;
+    public final int loginOkID2;
+
+    public SessionKey(int loginOK1, int loginOK2, int playOK1, int playOK2) {
+        playOkID1 = playOK1;
+        playOkID2 = playOK2;
+        loginOkID1 = loginOK1;
+        loginOkID2 = loginOK2;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;PlayOk: &quot; + playOkID1 + &quot; &quot; + playOkID2 + &quot; LoginOk:&quot; + loginOkID1 + &quot; &quot; + loginOkID2;
+    }
+
+    public boolean checkLoginPair(int loginOk1, int loginOk2) {
+        return (loginOkID1 == loginOk1) &amp;&amp; (loginOkID2 == loginOk2);
+    }
+
+    /**
+     * Only checks the PlayOk part of the session key if server doesn&#x27;t show the license when player logs in.
+     * @param other the other session key to validate
+     * @return true if keys are equal.
+     */
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof SessionKey)) {
+            return false;
+        }
+
+        SessionKey key = (SessionKey) other;
+        // when server doesn&#x27;t show license it doesn&#x27;t send the LoginOk packet, client doesn&#x27;t have this part of the key then.
+        if (server.showLicense()) {
+            return ((playOkID1 == key.playOkID1) &amp;&amp; (loginOkID1 == key.loginOkID1) &amp;&amp; (playOkID2 == key.playOkID2) &amp;&amp; (loginOkID2 == key.loginOkID2));
+        }
+        return ((playOkID1 == key.playOkID1) &amp;&amp; (playOkID2 == key.playOkID2));
+    }
+}</pre>
+            
+</body>
+</html>

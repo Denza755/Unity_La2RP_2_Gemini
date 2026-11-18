@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/PostBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/PostBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.gameserver.communitybbs.CommunityBoard;
+import com.shnok.javaserver.gameserver.communitybbs.model.Forum;
+import com.shnok.javaserver.gameserver.communitybbs.model.Post;
+import com.shnok.javaserver.gameserver.communitybbs.model.Topic;
+import com.shnok.javaserver.gameserver.enums.bbs.ForumType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+public class PostBBSManager extends BaseBBSManager
+{
+	protected PostBBSManager()
+	{
+	}
+	
+	@Override
+	public void parseCmd(String command, Player player)
+	{
+		if (command.startsWith(&quot;_bbsposts;read;&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			st.nextToken();
+			
+			final int forumId = Integer.parseInt(st.nextToken());
+			final int topicId = Integer.parseInt(st.nextToken());
+			
+			final Forum forum = CommunityBoard.getInstance().getForumByID(forumId);
+			if (forum == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;This forum doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			final Topic topic = forum.getTopicById(topicId);
+			if (topic == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;This topic doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			if (forum.getType() == ForumType.MEMO)
+				showMemoPost(topic, player);
+			else
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum is off-limits.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+		}
+		else if (command.startsWith(&quot;_bbsposts;edit;&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			st.nextToken();
+			
+			final int forumId = Integer.parseInt(st.nextToken());
+			final int topicId = Integer.parseInt(st.nextToken());
+			
+			final Forum forum = CommunityBoard.getInstance().getForumByID(forumId);
+			if (forum == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;This forum doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			final Topic topic = forum.getTopicById(topicId);
+			if (topic == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;This topic doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			final Post post = topic.getPost(0);
+			if (post == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;This post doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			final String html = &quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;table border=0 width=610&gt;&lt;tr&gt;&lt;td width=10&gt;&lt;/td&gt;&lt;td width=600 align=left&gt;&lt;a action=\&quot;bypass _bbshome\&quot;&gt;HOME&lt;/a&gt;&amp;nbsp;&gt;&amp;nbsp;&lt;a action=\&quot;bypass _bbsmemo\&quot;&gt;Memo Form&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.squareblank\&quot; width=\&quot;1\&quot; height=\&quot;10\&quot;&gt;&lt;center&gt;&lt;table border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td width=610&gt;&lt;img src=\&quot;sek.cbui355\&quot; width=\&quot;610\&quot; height=\&quot;1\&quot;&gt;&lt;br1&gt;&lt;img src=\&quot;sek.cbui355\&quot; width=\&quot;610\&quot; height=\&quot;1\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table fixwidth=610 border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=20&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=60 height=29&gt;&amp;$413;&lt;/td&gt;&lt;td FIXWIDTH=540&gt;&quot; + topic.getName() + &quot;&lt;/td&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table fixwidth=610 border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=60 height=29 valign=top&gt;&amp;$427;&lt;/td&gt;&lt;td align=center FIXWIDTH=540&gt;&lt;MultiEdit var =\&quot;Content\&quot; width=535 height=313&gt;&lt;/td&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table fixwidth=610 border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=60 height=29&gt;&amp;nbsp;&lt;/td&gt;&lt;td align=center FIXWIDTH=70&gt;&lt;button value=\&quot;&amp;$140;\&quot; action=\&quot;Write Post &quot; + forum.getId() + &quot;;&quot; + topic.getId() + &quot;;0 _ Content Content Content\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot; &gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=70&gt;&lt;button value = \&quot;&amp;$141;\&quot; action=\&quot;bypass _bbsmemo\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt; &lt;/td&gt;&lt;td align=center FIXWIDTH=400&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;;
+			send1001(html, player);
+			send1002(player, post.getText(), topic.getName(), DateFormat.getInstance().format(new Date(topic.getDate())));
+		}
+		else
+			super.parseCmd(command, player);
+	}
+	
+	@Override
+	public void parseWrite(String ar1, String ar2, String ar3, String ar4, String ar5, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(ar1, &quot;;&quot;);
+		
+		final int forumId = Integer.parseInt(st.nextToken());
+		final int topicId = Integer.parseInt(st.nextToken());
+		final int pageId = Integer.parseInt(st.nextToken());
+		
+		final Forum forum = CommunityBoard.getInstance().getForumByID(forumId);
+		if (forum == null)
+		{
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum named &#x27;&quot; + forumId + &quot;&#x27; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+			return;
+		}
+		
+		final Topic topic = forum.getTopic(topicId);
+		if (topic == null)
+		{
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The topic named &#x27;&quot; + topicId + &quot;&#x27; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+			return;
+		}
+		
+		final Post post = topic.getPost(pageId);
+		if (post == null)
+		{
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The post named &#x27;&quot; + pageId + &quot;&#x27; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+			return;
+		}
+		
+		post.updateText(pageId, ar4);
+		
+		parseCmd(&quot;_bbsposts;read;&quot; + forum.getId() + &quot;;&quot; + topic.getId(), player);
+	}
+	
+	private static void showMemoPost(Topic topic, Player player)
+	{
+		final Post post = topic.getPost(0);
+		
+		String mes = post.getText().replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);
+		mes = mes.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;);
+		mes = mes.replace(&quot;\n&quot;, &quot;&lt;br1&gt;&quot;);
+		
+		final String html = &quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;table border=0 width=610&gt;&lt;tr&gt;&lt;td width=10&gt;&lt;/td&gt;&lt;td width=600 align=left&gt;&lt;a action=\&quot;bypass _bbshome\&quot;&gt;HOME&lt;/a&gt;&amp;nbsp;&gt;&amp;nbsp;&lt;a action=\&quot;bypass _bbsmemo\&quot;&gt;Memo Form&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.squareblank\&quot; width=\&quot;1\&quot; height=\&quot;10\&quot;&gt;&lt;center&gt;&lt;table border=0 cellspacing=0 cellpadding=0 bgcolor=333333&gt;&lt;tr&gt;&lt;td height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td fixWIDTH=55 align=right valign=top&gt;&amp;$413; : &amp;nbsp;&lt;/td&gt;&lt;td fixWIDTH=380 valign=top&gt;&quot; + topic.getName() + &quot;&lt;/td&gt;&lt;td fixwidth=5&gt;&lt;/td&gt;&lt;td fixwidth=50&gt;&lt;/td&gt;&lt;td fixWIDTH=120&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=right&gt;&lt;font color=\&quot;AAAAAA\&quot; &gt;&amp;$417; : &amp;nbsp;&lt;/font&gt;&lt;/td&gt;&lt;td&gt;&lt;font color=\&quot;AAAAAA\&quot;&gt;&quot; + topic.getOwnerName() + &quot;&lt;/font&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;font color=\&quot;AAAAAA\&quot;&gt;&amp;$418; :&lt;/font&gt;&lt;/td&gt;&lt;td&gt;&lt;font color=\&quot;AAAAAA\&quot;&gt;&quot; + new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(post.getDate()) + &quot;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&lt;table border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td fixwidth=5&gt;&lt;/td&gt;&lt;td FIXWIDTH=600 align=left&gt;&quot; + mes + &quot;&lt;/td&gt;&lt;td fixqqwidth=5&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&lt;img src=\&quot;L2UI.squareblank\&quot; width=\&quot;1\&quot; height=\&quot;5\&quot;&gt;&lt;img src=\&quot;L2UI.squaregray\&quot; width=\&quot;610\&quot; height=\&quot;1\&quot;&gt;&lt;img src=\&quot;L2UI.squareblank\&quot; width=\&quot;1\&quot; height=\&quot;5\&quot;&gt;&lt;table border=0 cellspacing=0 cellpadding=0 FIXWIDTH=610&gt;&lt;tr&gt;&lt;td width=50&gt;&lt;button value=\&quot;&amp;$422;\&quot; action=\&quot;bypass _bbsmemo\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt;&lt;/td&gt;&lt;td width=560 align=right&gt;&lt;table border=0 cellspacing=0&gt;&lt;tr&gt;&lt;td FIXWIDTH=300&gt;&lt;/td&gt;&lt;td&gt;&lt;button value = \&quot;&amp;$424;\&quot; action=\&quot;bypass _bbsposts;edit;&quot; + topic.getForumId() + &quot;;&quot; + topic.getId() + &quot;;0\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot; &gt;&lt;/td&gt;&amp;nbsp;&lt;td&gt;&lt;button value = \&quot;&amp;$425;\&quot; action=\&quot;bypass _bbstopics;del;&quot; + topic.getForumId() + &quot;;&quot; + topic.getId() + &quot;\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot; &gt;&lt;/td&gt;&amp;nbsp;&lt;td&gt;&lt;button value = \&quot;&amp;$421;\&quot; action=\&quot;bypass _bbstopics;crea;&quot; + topic.getForumId() + &quot;\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot; &gt;&lt;/td&gt;&amp;nbsp;&lt;/tr&gt;&lt;/table&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;;
+		separateAndSend(html, player);
+	}
+	
+	public static PostBBSManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final PostBBSManager INSTANCE = new PostBBSManager();
+	}
+}</pre>
+            
+</body>
+</html>

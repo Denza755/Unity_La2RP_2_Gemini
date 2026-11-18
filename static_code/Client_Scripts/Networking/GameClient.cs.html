@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/GameClient.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/GameClient.cs</h1>
+            <pre>using UnityEngine;
+using L2_login;
+using static CharSelectedPacket;
+using System;
+
+public class GameClient : DefaultClient
+{
+    [SerializeField] protected PlayerInfo _playerInfo;
+    [SerializeField] protected int _serverId;
+    [SerializeField] private int _playKey1;
+    [SerializeField] private int _playKey2;
+    [SerializeField] private float _serverEntityPositionSyncThreshold;
+    [SerializeField] private float _playerPositionSyncThreshold;
+
+    private GameCrypt _gameCrypt;
+
+    public PlayerInfo PlayerInfo { get { return _playerInfo; } set { _playerInfo = value; } }
+    public int CurrentPlayerId { get { return _playerInfo.Identity.Id; } }
+    public int ServerId { get { return _serverId; } set { _serverId = value; } }
+    public int PlayKey1 { get { return _playKey1; } set { _playKey1 = value; } }
+    public int PlayKey2 { get { return _playKey2; } set { _playKey2 = value; } }
+    public float ServerEntityPositionSyncThreshold { get { return _serverEntityPositionSyncThreshold; } set { _serverEntityPositionSyncThreshold = value; } }
+    public float PlayerPositionSyncThreshold { get { return _playerPositionSyncThreshold; } set { _playerPositionSyncThreshold = value; } }
+
+    public GameCrypt GameCrypt { get { return _gameCrypt; } }
+
+    private GameClientPacketHandler clientPacketHandler;
+    private GameServerPacketHandler serverPacketHandler;
+
+    public GameClientPacketHandler ClientPacketHandler { get { return clientPacketHandler; } }
+    public GameServerPacketHandler ServerPacketHandler { get { return serverPacketHandler; } }
+
+    private static GameClient _instance;
+    public static GameClient Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+    }
+
+    protected override void CreateAsyncClient()
+    {
+        clientPacketHandler = new GameClientPacketHandler();
+        serverPacketHandler = new GameServerPacketHandler();
+
+        _client = new AsynchronousClient(_serverIp, _serverPort, this, clientPacketHandler, serverPacketHandler, false, false);
+    }
+
+    public void EnableCrypt(byte[] key)
+    {
+        _gameCrypt = new GameCrypt();
+        _gameCrypt.SetKey(key);
+        _client.CryptEnabled = true;
+    }
+
+    protected override void WhileConnecting()
+    {
+        base.WhileConnecting();
+    }
+
+    protected override void OnConnectionSuccess()
+    {
+        base.OnConnectionSuccess();
+
+        Debug.Log(&quot;Connected to GameServer&quot;);
+
+        clientPacketHandler.SendProtocolVersion();
+    }
+
+    public override void OnConnectionFailed()
+    {
+        base.OnConnectionFailed();
+    }
+
+    public override void OnAuthAllowed()
+    {
+        Debug.Log(&quot;Authed to GameServer.&quot;);
+    }
+
+    public override void OnDisconnect()
+    {
+        base.OnDisconnect();
+
+        L2ConfirmWindow.Instance.ShowWindow(127, () =&gt;
+        {
+            GameManager.Instance.NotifyEvent(GameEvent.GAME_DISCONNECTED);
+        }, null);
+
+        Debug.Log(&quot;Disconnected from GameServer.&quot;);
+    }
+}
+</pre>
+            
+</body>
+</html>

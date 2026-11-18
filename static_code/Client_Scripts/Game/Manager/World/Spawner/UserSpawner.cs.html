@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/World/Spawner/UserSpawner.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/World/Spawner/UserSpawner.cs</h1>
+            <pre>using UnityEngine;
+
+public class UserSpawner : EntitySpawnStrategy&lt;PlayerAppearance, Stats, PlayerStatus&gt;
+{
+    private Transform _usersContainer;
+    public UserSpawner(EventProcessor eventProcessor, Transform usersContainer)
+        : base(eventProcessor)
+    {
+        _usersContainer = usersContainer;
+    }
+
+    #region Spawn
+    protected override void SpawnEntity(NetworkIdentity identity, PlayerStatus status,
+        Stats stats, PlayerAppearance appearance, EntityActionInfo actionInfo)
+    {
+        identity.SetPosY(World.Instance.GetGroundHeight(identity.Position));
+        identity.EntityType = EntityType.User;
+
+        CharacterRace race = (CharacterRace)appearance.Race;
+
+        CharacterModelType raceId = CharacterModelTypeParser.ParseRace(race, appearance.Sex, identity.IsMage);
+
+        GameObject go = CharacterBuilder.Instance.BuildCharacterBase(raceId, appearance, identity.EntityType);
+        float rotation = VectorUtils.ConvertRotToUnity(identity.Heading);
+        go.transform.eulerAngles = new Vector3(go.transform.eulerAngles.x, rotation, go.transform.eulerAngles.z);
+        go.transform.position = identity.Position;
+        go.transform.name = identity.Name;
+        go.transform.SetParent(_usersContainer.transform);
+        go.SetActive(true);
+
+        NetworkHumanoidEntity user = go.GetComponent&lt;NetworkHumanoidEntity&gt;();
+        user.AnimationController.Initialize();
+        ((NetworkEntityReferenceHolder)user.ReferenceHolder).NetworkTransformReceive.enabled = true;
+
+        user.Stats = new Stats();
+        user.Status = new PlayerStatus();
+
+        user.Gear.Initialize(user.Identity.Id);
+
+        user.Initialize();
+
+        UpdateEntitySync(user, identity, status, stats, appearance, actionInfo);
+
+        if (user.AnimationController != null)
+        {
+            user.AnimationController.Wait();
+        }
+
+        WorldSpawner.Instance.AddObject(identity.Id, user);
+        WorldSpawner.Instance.AddPlayer(identity.Id, user);
+
+        Debug.Log($&quot;Spawn user {race} - {raceId}&quot;);
+
+    }
+    #endregion
+
+    #region Update
+    protected override void UpdateEntitySync(Entity entity, NetworkIdentity identity,
+        PlayerStatus status, Stats stats, PlayerAppearance appearance, EntityActionInfo actionInfo)
+    {
+        entity.Identity.UpdateIdentity(identity);
+        ((PlayerStatus)entity.Status).UpdateStatus(status);
+
+        entity.UpdateMoveType(actionInfo.Running);
+
+        entity.UpdateAppearance(appearance);
+        entity.UpdatePAtkSpeed(stats.PAtkSpd);
+        entity.UpdateMAtkSpeed(stats.MAtkSpd);
+        entity.UpdateWalkSpeed(stats.WalkSpeed);
+        entity.UpdateRunSpeed(stats.RunSpeed);
+
+        entity.Stats.UpdateStats(stats);
+
+        if ((PlayerEntity.Instance != null &amp;&amp; entity == PlayerEntity.Instance) ||
+            (TargetManager.Instance != null &amp;&amp; TargetManager.Instance.Target == entity))
+        {
+            TargetWindow.Instance?.RefreshTargetColor();
+        }
+
+        entity.UpdateAppearance(appearance);
+
+        UpdateAction(entity, actionInfo);
+
+        ((NetworkEntityReferenceHolder)entity.ReferenceHolder)
+            .NetworkTransformReceive
+            .SetNewPosition(identity.Position);
+    }
+    #endregion
+}</pre>
+            
+</body>
+</html>

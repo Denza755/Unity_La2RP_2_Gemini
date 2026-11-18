@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/TO_IMPLEMENT/Quest/QuestWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/TO_IMPLEMENT/Quest/QuestWindow.cs</h1>
+            <pre>#if FALSE
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class QuestWindow : L2PopupWindow
+{
+    public VisualElement minimal_panel;
+    private VisualElement boxContent;
+    private VisualElement background;
+    private VisualElement boxHeader;
+    private VisualElement rootWindow;
+    private ButtonQuest _button;
+    private static QuestWindow _instance;
+    public static QuestWindow Instance
+    {
+        get { return _instance; }
+    }
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+            _button = new ButtonQuest(this);
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/Quest/QuestWindow&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+
+        yield return new WaitForEndOfFrame();
+
+        rootWindow = GetElementByClass(&quot;root-windows&quot;);
+        boxHeader = GetElementByClass(&quot;drag-area&quot;);
+        // boxContent = GetElementByClass(&quot;action_content&quot;);
+        background = GetElementByClass(&quot;background_over&quot;);
+        _button.RegisterButtonCloseWindow(rootWindow, &quot;btn-close-frame&quot;);
+        // _button.RegisterClickWindow(boxContent, boxHeader);
+
+        DragManipulator drag = new DragManipulator(boxHeader, _windowEle, this);
+        boxHeader.AddManipulator(drag);
+        HideWindow(false);
+    }
+}
+#endif
+</pre>
+            
+</body>
+</html>

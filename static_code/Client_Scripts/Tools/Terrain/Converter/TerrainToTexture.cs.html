@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Converter/TerrainToTexture.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Converter/TerrainToTexture.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System.IO;
+using UnityEngine;
+
+public class TerrainToTexture : MonoBehaviour
+{
+    public Terrain terrain;
+    public int height = 100;
+    public int subdivisions = 2;
+    public int textureSize = 2048;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        TerrainData terrainData = terrain.terrainData;
+        Vector3 size = terrainData.size;
+
+
+        // Camera previewCam = CreateCamera(width, length);
+
+        GameObject cameraObject = new GameObject(&quot;Camera&quot;);
+        cameraObject.AddComponent&lt;Camera&gt;();
+
+        for (int x = 0; x &lt; subdivisions; x++)
+        {
+            for (int y = 0; y &lt; subdivisions; y++)
+            {
+                float width = size.x / subdivisions;
+                float length = size.z / subdivisions;
+
+
+                Camera camera = MoveCamera(cameraObject, x, width, y, length);
+
+                int resHeight = textureSize;
+                int resWidth = Mathf.RoundToInt(resHeight * camera.aspect);
+                RenderTexture renderTexture = new RenderTexture(resWidth, resHeight, 24);
+                camera.targetTexture = renderTexture;
+
+                camera.Render();
+
+                //Texture2D texture = new Texture2D(resWidth, resHeight, TextureFormat.DXT5Crunched, false);
+                Texture2D texture = new Texture2D(resWidth, resHeight);
+                RenderTexture.active = renderTexture;
+                texture.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+                texture.Apply();
+
+                byte[] bytes = texture.EncodeToPNG();
+                File.WriteAllBytes(&quot;Assets/Data/Maps/17_25/TerrainData/Textures/17_25_&quot; + x + &quot;_&quot; + y + &quot;.png&quot;, bytes);
+            }
+        }
+        /*Camera mainCamera = Camera.main;
+        if(mainCamera != null &amp;&amp; mainCamera.gameObject != previewCam.gameObject) {
+            mainCamera.gameObject.SetActive(false);
+            mainCamera.enabled = false;
+        }
+
+        previewCam.tag = &quot;MainCamera&quot;;*/
+
+        //cameraObject.AddComponent&lt;UniversalAdditionalCameraData&gt;();
+    }
+
+    Camera MoveCamera(GameObject cameraObject, int x, float width, int y, float length)
+    {
+
+        cameraObject.transform.position = new Vector3(width / 2 + x * width, height, length / 2 + length * y);
+        cameraObject.transform.rotation = Quaternion.Euler(90, 0, 0);
+
+        Camera camera = cameraObject.GetComponent&lt;Camera&gt;();
+        camera.orthographic = true;
+        camera.aspect = width / length;
+        camera.orthographicSize = length / 2f;
+
+        return camera;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

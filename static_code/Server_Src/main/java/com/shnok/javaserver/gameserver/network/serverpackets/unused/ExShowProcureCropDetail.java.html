@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/ExShowProcureCropDetail.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/ExShowProcureCropDetail.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.data.manager.CastleManager;
+import com.shnok.javaserver.gameserver.data.manager.CastleManorManager;
+import com.shnok.javaserver.gameserver.model.manor.CropProcure;
+import com.shnok.javaserver.gameserver.model.residence.castle.Castle;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class ExShowProcureCropDetail extends L2GameServerPacket
+{
+	private final Map&lt;Integer, CropProcure&gt; _castleCrops = new HashMap&lt;&gt;();
+	
+	private final int _cropId;
+	
+	public ExShowProcureCropDetail(int cropId)
+	{
+		_cropId = cropId;
+		
+		for (Castle castle : CastleManager.getInstance().getCastles())
+		{
+			final CropProcure cropItem = CastleManorManager.getInstance().getCropProcure(castle.getId(), cropId, false);
+			if (cropItem != null &amp;&amp; cropItem.getAmount() &gt; 0)
+				_castleCrops.put(castle.getId(), cropItem);
+		}
+	}
+	
+	@Override
+	public void writeImpl()
+	{
+		writeC(0xFE);
+		writeH(0x22);
+		
+		writeD(_cropId);
+		writeD(_castleCrops.size());
+		
+		for (Map.Entry&lt;Integer, CropProcure&gt; entry : _castleCrops.entrySet())
+		{
+			final CropProcure crop = entry.getValue();
+			
+			writeD(entry.getKey());
+			writeD(crop.getAmount());
+			writeD(crop.getPrice());
+			writeC(crop.getReward());
+		}
+	}
+}</pre>
+            
+</body>
+</html>

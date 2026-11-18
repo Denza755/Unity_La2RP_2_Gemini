@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Skillbar/SkillbarSlot.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Skillbar/SkillbarSlot.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class SkillbarSlot : SkillSlot
+{
+    private L2Slot _innerSlot;
+    private Shortcut _shortcut;
+    [SerializeField] private int _skillbarId;
+    [SerializeField] private int _slot;
+    private VisualElement _keyElement;
+
+    public int Slot { get =&gt; _slot; }
+
+    public SkillbarSlot(VisualElement slotElement, int position, int skillbarId, int slot) : base(position, slotElement, SlotType.SkillBar)
+    {
+        _slotElement = slotElement;
+        _position = position;
+        _skillbarId = skillbarId;
+        _slot = slot;
+        _keyElement = _slotElement.Q&lt;VisualElement&gt;(&quot;Key&quot;);
+        _toggled = false;
+    }
+
+    public void AssignShortcut(Shortcut shortcut)
+    {
+        ClearManipulators();
+
+        _shortcut = shortcut;
+        _buttonClickSoundManipulator = new ButtonClickSoundManipulator(_slotElement);
+
+        switch (shortcut.Type)
+        {
+            case Shortcut.TYPE_ACTION:
+                AssignAction(shortcut.Id);
+                break;
+            case Shortcut.TYPE_ITEM:
+                AssignItem(shortcut.Id);
+                break;
+            case Shortcut.TYPE_MACRO:
+                break;
+            case Shortcut.TYPE_RECIPE:
+                break;
+            case Shortcut.TYPE_SKILL:
+                AssignSkill(shortcut.Id, shortcut.Level);
+                break;
+        }
+    }
+
+    public void AssignItem(int objectId)
+    {
+        _empty = false;
+
+        ItemInstance item = PlayerInventory.Instance.GetItemByObjectId(objectId);
+        _innerSlot = new InventorySlot(_position, _slotElement, SlotType.SkillBar);
+        ((InventorySlot)_innerSlot).AssignItem(item);
+        ((L2ClickableSlot)_innerSlot).UnregisterClickableCallback();
+
+        _slotAnimationManipulator = new SlotAnimationManipulator(_slotEffect, this);
+
+        UpdateInputInfo();
+
+        if (PlayerShortcuts.Instance.IsItemToggled(item.ItemId))
+        {
+            _toggled = true;
+            SkillbarWindow.Instance.AddToggledSlot(this);
+        }
+        else
+        {
+            _toggled = false;
+            SkillbarWindow.Instance.RemoveToggledSlot(this);
+        }
+    }
+
+    public void AssignAction(int objectId)
+    {
+        _empty = false;
+
+        _innerSlot = new ActionSlot(_slotElement, _position, SlotType.SkillBar);
+        ((ActionSlot)_innerSlot).AssignAction((ActionType)objectId);
+        ((L2ClickableSlot)_innerSlot).UnregisterClickableCallback();
+
+        UpdateInputInfo();
+    }
+
+    public void AssignSkill(int skillId, int level)
+    {
+        SkillWindowInfo skill = new SkillWindowInfo(skillId, level);
+        if (skill.IsPassiveSkill()) return;
+
+        _slotAnimationManipulator = new SlotAnimationManipulator(_slotEffect, this);
+
+        _innerSlot = new SkillSlot(_position, _slotElement, SlotType.SkillBar);
+        ((SkillSlot)_innerSlot).AssignSkill(skill);
+        ((L2ClickableSlot)_innerSlot).UnregisterClickableCallback();
+
+        _skillInfo = PlayerSkill.Instance.GetSkillInfo(skillId);
+
+        if (_skillInfo.IsSkillOnCooldown) //TODO: FIX CAN CRASH HERE
+        {
+            // CooldownStartTime = skillInfo.CooldownStartTime;
+            // CooldownEndTime = skillInfo.CooldownEndTime;
+            SkillbarWindow.Instance.AddSkillOnCooldown(this);
+        }
+
+        UpdateInputInfo();
+    }
+
+    private void UpdateInputInfo()
+    {
+        _slotElement.RemoveFromClassList(&quot;empty&quot;);
+
+        string key = PlayerShortcuts.Instance.GetKeybindForShortcut(_skillbarId, _slot);
+
+        Texture2D inputTexture = SkillbarImageTable.Instance.LoadTextureByKey(key);
+
+        if (inputTexture != null)
+        {
+            _keyElement.style.backgroundImage = inputTexture;
+            _keyElement.style.width = inputTexture.width;
+        }
+    }
+
+    public override void ClearManipulators()
+    {
+        if (_innerSlot != null)
+        {
+            _innerSlot.ClearManipulators();
+            _innerSlot = null;
+        }
+
+        base.ClearManipulators();
+    }
+
+    protected override void HandleLeftClick()
+    {
+        if (_shortcut != null)
+        {
+            Debug.Log($&quot;Use bar slot {_position}.&quot;);
+            PlayerShortcuts.Instance.UseShortcut(_shortcut);
+        }
+    }
+
+    protected override void HandleRightClick()
+    {
+        if (_shortcut != null)
+        {
+            if (_shortcut.Type == Shortcut.TYPE_ITEM)
+            {
+                ItemName itemName = ((InventorySlot)_innerSlot).ItemName;
+                if (itemName.DefaultAction == &quot;action_soulshot&quot; || itemName.DefaultAction == &quot;action_bless_spiritshot&quot; || itemName.DefaultAction == &quot;action_spiritshot&quot;)
+                {
+                    Debug.LogWarning($&quot;Toggle bar slot {_position}.&quot;);
+                    PlayerShortcuts.Instance.RequestToggleShortcutItem(itemName.Id, _toggled);
+                }
+            }
+        }
+    }
+
+    protected override void HandleMiddleClick()
+    {
+    }
+}</pre>
+            
+</body>
+</html>

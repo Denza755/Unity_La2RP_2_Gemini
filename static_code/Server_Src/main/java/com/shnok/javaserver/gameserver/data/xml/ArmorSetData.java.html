@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/ArmorSetData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/ArmorSetData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.model.item.ArmorSet;
+
+import org.w3c.dom.Document;
+
+/**
+ * This class loads and stores {@link ArmorSet}s, the key being the chest item id.
+ */
+public class ArmorSetData implements IXmlReader
+{
+	private final Map&lt;Integer, ArmorSet&gt; _armorSets = new HashMap&lt;&gt;();
+	
+	protected ArmorSetData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/armorSets.xml&quot;);
+		LOGGER.info(&quot;Loaded {} armor sets.&quot;, _armorSets.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;armorset&quot;, armorsetNode -&gt;
+		{
+			final StatSet set = parseAttributes(armorsetNode);
+			_armorSets.put(set.getInteger(&quot;chest&quot;), new ArmorSet(set));
+		}));
+	}
+	
+	public ArmorSet getSet(int chestId)
+	{
+		return _armorSets.get(chestId);
+	}
+	
+	public Collection&lt;ArmorSet&gt; getSets()
+	{
+		return _armorSets.values();
+	}
+	
+	public static ArmorSetData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final ArmorSetData INSTANCE = new ArmorSetData();
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/L2ClickableSlot.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/L2ClickableSlot.cs</h1>
+            <pre>
+using System;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class L2ClickableSlot : L2Slot
+{
+    private bool _leftMouseUp;
+    private bool _rightMouseup;
+    private long _lastClickTime = 0;
+    private const int DoubleClickThreshold = 300; // Milliseconds
+
+    public L2ClickableSlot(VisualElement slotElement, int position, SlotType type, bool leftMouseUp, bool rightMouseup) : base(slotElement, position, type)
+    {
+        _leftMouseUp = leftMouseUp;
+        _rightMouseup = rightMouseup;
+        RegisterClickableCallback();
+    }
+
+    protected void RegisterClickableCallback()
+    {
+        if (_slotElement == null)
+        {
+            return;
+        }
+
+        _slotElement.RegisterCallback&lt;MouseDownEvent&gt;(HandleSlotClickDown, TrickleDown.TrickleDown);
+        _slotElement.RegisterCallback&lt;MouseUpEvent&gt;(HandleSlotClickUp, TrickleDown.TrickleDown);
+    }
+
+    public void UnregisterClickableCallback()
+    {
+        if (_slotElement == null)
+        {
+            return;
+        }
+
+        _slotElement.UnregisterCallback&lt;MouseDownEvent&gt;(HandleSlotClickDown, TrickleDown.TrickleDown);
+        _slotElement.UnregisterCallback&lt;MouseUpEvent&gt;(HandleSlotClickUp, TrickleDown.TrickleDown);
+    }
+
+    public override void SetSelected()
+    {
+        Debug.Log($&quot;Slot {_position} selected.&quot;);
+        _slotElement.AddToClassList(&quot;selected&quot;);
+    }
+
+    public override void UnSelect()
+    {
+        Debug.Log($&quot;Slot {_position} unselected.&quot;);
+        _slotElement.RemoveFromClassList(&quot;selected&quot;);
+    }
+
+    private void HandleSlotClickDown(MouseDownEvent evt)
+    {
+        long currentTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        if (evt.button == 0)
+        {
+            SetActive();
+
+            if (!_leftMouseUp)
+            {
+                if (currentTime - _lastClickTime &lt;= DoubleClickThreshold)
+                {
+                    HandleLeftDoubleClick();
+                }
+                else
+                {
+                    HandleLeftClick();
+                }
+            }
+        }
+        else if (evt.button == 1)
+        {
+            if (!_rightMouseup)
+            {
+                HandleRightClick();
+            }
+        }
+        else
+        {
+            HandleMiddleClick();
+        }
+
+        _lastClickTime = currentTime;
+    }
+
+    private void HandleSlotClickUp(MouseUpEvent evt)
+    {
+        UnsetActive();
+
+        if (!_hoverManipulator.Hovering)
+        {
+            return;
+        }
+
+        if (evt.button == 0)
+        {
+            if (_leftMouseUp)
+            {
+                HandleLeftClick();
+            }
+        }
+        else if (evt.button == 1)
+        {
+            if (_rightMouseup)
+            {
+                HandleRightClick();
+            }
+        }
+        else
+        {
+            HandleMiddleClick();
+        }
+    }
+
+    protected virtual void SetActive()
+    {
+        _slotElement.AddToClassList(&quot;active&quot;);
+    }
+
+    protected virtual void UnsetActive()
+    {
+        _slotElement.RemoveFromClassList(&quot;active&quot;);
+    }
+
+    protected virtual void HandleLeftClick() { }
+    protected virtual void HandleRightClick() { }
+    protected virtual void HandleMiddleClick() { }
+    protected virtual void HandleLeftDoubleClick()
+    {
+        Debug.Log($&quot;Slot {_position} left double-clicked.&quot;);
+    }
+
+}</pre>
+            
+</body>
+</html>

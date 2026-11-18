@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Ruler/BuildingPlacementSystem.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Ruler/BuildingPlacementSystem.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[Serializable]
+public class PlacedBuildingData
+{
+    public string prefabName;
+    public float posX, posY, posZ;
+    public float rotX, rotY, rotZ, rotW;
+    public float scaleX, scaleY, scaleZ;
+}
+
+[Serializable]
+public class PlacedBuildingList
+{
+    public List&lt;PlacedBuildingData&gt; buildings = new List&lt;PlacedBuildingData&gt;();
+}
+
+public class BuildingPlacementSystem : MonoBehaviour
+{
+    private static BuildingPlacementSystem _instance;
+    public static BuildingPlacementSystem Instance =&gt; _instance;
+
+    [Header(&quot;Ghost Materials&quot;)]
+    private Material _validGhostMaterial;
+    private Material _invalidGhostMaterial;
+
+    [Header(&quot;Current Selection&quot;)]
+    [SerializeField] private string _selectedPrefabName;
+    private GameObject _selectedPrefab;
+    private GameObject _ghostInstance;
+    private float _currentRotation = 0f;
+    private bool _isPlacementActive = false;
+    private bool _isValidPlacement = false;
+    private Vector3 _currentSnappedPos;
+
+    [Header(&quot;Validation Limits&quot;)]
+    [SerializeField] private float _maxSlopeHeightDelta = 1.6f;
+
+    private Transform _placedContainer;
+    private Camera _cam;
+
+    private static readonly string[] AvailableBuildingPrefabs = new string[]
+    {
+        &quot;Preset_Blacksmith_01&quot;,
+        &quot;Preset_Church_01_A&quot;,
+        &quot;Preset_Church_01_B&quot;,
+        &quot;Preset_House_01_A&quot;,
+        &quot;Preset_House_01_B&quot;,
+        &quot;Preset_House_02_A&quot;,
+        &quot;Preset_House_02_B&quot;,
+        &quot;Preset_House_02_C&quot;,
+        &quot;Preset_House_03&quot;,
+        &quot;Preset_House_04&quot;,
+        &quot;Preset_House_05&quot;,
+        &quot;Preset_House_06&quot;,
+        &quot;Preset_House_07&quot;,
+        &quot;Preset_House_08&quot;,
+        &quot;Preset_House_09_A&quot;,
+        &quot;Preset_House_09_B&quot;,
+        &quot;Preset_House_09_C&quot;,
+        &quot;Preset_House_09_D&quot;,
+        &quot;Preset_House_10&quot;,
+        &quot;Preset_House_Archway_01&quot;,
+        &quot;Preset_House_Archway_02&quot;,
+        &quot;Preset_House_Windmill_01&quot;,
+        &quot;Preset_Hut_01&quot;,
+        &quot;Preset_Hut_02&quot;,
+        &quot;Preset_Outhouse_01&quot;,
+        &quot;Preset_Shelter_01&quot;,
+        &quot;Preset_Shelter_02&quot;,
+        &quot;Preset_Stables_01&quot;,
+        &quot;Preset_Tavern_01&quot;,
+        &quot;Preset_Tower_01&quot;
+    };
+
+    private static List&lt;string&gt; _cachedPrefabNames;
+
+    public static IReadOnlyList&lt;string&gt; GetAvailableBuildingPrefabNames()
+    {
+        if (_cachedPrefabNames == null || _cachedPrefabNames.Count == 0)
+        {
+            _cachedPrefabNames = new List&lt;string&gt;();
+            if (AvailableBuildingPrefabs != null &amp;&amp; AvailableBuildingPrefabs.Length &gt; 0)
+            {
+                _cachedPrefabNames.AddRange(AvailableBuildingPrefabs);
+            }
+
+            if (_cachedPrefabNames.Count == 0)
+            {
+                GameObject[] loaded = Resources.LoadAll&lt;GameObject&gt;(&quot;Data/Buildings&quot;);
+                for (int i = 0; i &lt; loaded.Length; i++)
+                {
+                    if (loaded[i] != null &amp;&amp; !string.IsNullOrEmpty(loaded[i].name))
+                    {
+                        _cachedPrefabNames.Add(loaded[i].name);
+                    }
+                }
+            }
+        }
+        return _cachedPrefabNames;
+    }
+
+    public IReadOnlyList&lt;string&gt; BuildingPrefabNames =&gt; GetAvailableBuildingPrefabNames();
+    public string SelectedPrefabName =&gt; _selectedPrefabName;
+    public bool HasSelection =&gt; !string.IsNullOrEmpty(_selectedPrefabName) &amp;&amp; _ghostInstance != null;
+
+    private string SaveFilePath =&gt; Path.Combine(Application.persistentDataPath, &quot;placed_buildings.json&quot;);
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        InitMaterials();
+        EnsureContainer();
+        _cam = Camera.main;
+    }
+
+    private void Start()
+    {
+        LoadPlacedBuildings();
+    }
+
+    private void OnDestroy()
+    {
+        ClearGhost();
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    private void EnsureContainer()
+    {
+        if (_placedContainer == null)
+        {
+            GameObject containerGo = GameObject.Find(&quot;PlacedBuildings&quot;);
+            if (containerGo == null)
+            {
+                containerGo = new GameObject(&quot;PlacedBuildings&quot;);
+            }
+            _placedContainer = containerGo.transform;
+        }
+    }
+
+    public bool IsGhostTransform(Transform t)
+    {
+        return _ghostInstance != null &amp;&amp; (t == _ghostInstance.transform || t.IsChildOf(_ghostInstance.transform));
+    }
+
+    private void InitMaterials()
+    {
+        _validGhostMaterial = CreateURPTransparentMaterial(new Color(0.7f, 0.72f, 0.75f, 0.55f));
+        _invalidGhostMaterial = CreateURPTransparentMaterial(new Color(0.85f, 0.25f, 0.25f, 0.55f));
+    }
+
+    private Material CreateURPTransparentMaterial(Color col)
+    {
+        Shader shader = Shader.Find(&quot;Universal Render Pipeline/Lit&quot;);
+        if (shader == null) shader = Shader.Find(&quot;Universal Render Pipeline/Unlit&quot;);
+        if (shader == null) shader = Shader.Find(&quot;Sprites/Default&quot;);
+        if (shader == null) shader = Shader.Find(&quot;Hidden/Internal-Colored&quot;);
+
+        Material mat = new Material(shader);
+        mat.color = col;
+        if (mat.HasProperty(&quot;_BaseColor&quot;))
+        {
+            mat.SetColor(&quot;_BaseColor&quot;, col);
+        }
+
+        if (mat.HasProperty(&quot;_Color&quot;))
+        {
+            mat.SetColor(&quot;_Color&quot;, col);
+        }
+
+        mat.SetFloat(&quot;_Surface&quot;, 1f); // 1 = Transparent
+        mat.SetFloat(&quot;_Blend&quot;, 0f); // 0 = Alpha blend
+        mat.SetInt(&quot;_SrcBlend&quot;, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt(&quot;_DstBlend&quot;, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.SetInt(&quot;_ZWrite&quot;, 0);
+        mat.renderQueue = 3000;
+        mat.EnableKeyword(&quot;_SURFACE_TYPE_TRANSPARENT&quot;);
+
+        return mat;
+    }
+
+    public void SelectBuildingByIndex(int index)
+    {
+        var list = GetAvailableBuildingPrefabNames();
+        if (list != null &amp;&amp; index &gt;= 0 &amp;&amp; index &lt; list.Count)
+        {
+            SelectBuilding(list[index]);
+        }
+    }
+
+    public void SetPlacementActive(bool active)
+    {
+        _isPlacementActive = active;
+        if (!active)
+        {
+            ClearGhost();
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(_selectedPrefabName))
+            {
+                SelectBuildingByIndex(0);
+            }
+            else
+            {
+                SelectBuilding(_selectedPrefabName);
+            }
+        }
+    }
+
+    public void SelectBuilding(string prefabName)
+    {
+        _selectedPrefabName = prefabName;
+        ClearGhost();
+
+        if (!_isPlacementActive || string.IsNullOrEmpty(_selectedPrefabName))
+        {
+            return;
+        }
+
+        string path = $&quot;Data/Buildings/{_selectedPrefabName}&quot;;
+        _selectedPrefab = Resources.Load&lt;GameObject&gt;(path);
+        if (_selectedPrefab == null)
+        {
+            Debug.LogError($&quot;[BuildingPlacementSystem] Failed to load prefab at {path}&quot;);
+            return;
+        }
+
+        CreateGhost();
+    }
+
+    public void CancelSelection()
+    {
+        _selectedPrefabName = null;
+        _selectedPrefab = null;
+        ClearGhost();
+    }
+
+    private void ClearGhost()
+    {
+        if (_ghostInstance != null)
+        {
+            Destroy(_ghostInstance);
+            _ghostInstance = null;
+        }
+    }
+
+    private void CreateGhost()
+    {
+        if (_selectedPrefab == null) return;
+
+        _ghostInstance = Instantiate(_selectedPrefab);
+        _ghostInstance.name = &quot;Ghost_&quot; + _selectedPrefab.name;
+
+        // Disable all colliders on ghost (so raycasts don&#x27;t hit it and physics don&#x27;t interact)
+        foreach (var col in _ghostInstance.GetComponentsInChildren&lt;Collider&gt;(true))
+        {
+            col.enabled = false;
+        }
+
+        // Force LOD 0 so ghost never disappears or reduces quality from high RTS camera
+        foreach (var lod in _ghostInstance.GetComponentsInChildren&lt;LODGroup&gt;(true))
+        {
+            lod.ForceLOD(0);
+        }
+
+        foreach (var anim in _ghostInstance.GetComponentsInChildren&lt;Animation&gt;(true))
+        {
+            Destroy(anim);
+        }
+        foreach (var anim in _ghostInstance.GetComponentsInChildren&lt;Animator&gt;(true))
+        {
+            Destroy(anim);
+        }
+        foreach (var audio in _ghostInstance.GetComponentsInChildren&lt;AudioSource&gt;(true))
+        {
+            Destroy(audio);
+        }
+
+        float scale = RulerManager.Instance != null ? RulerManager.Instance.BuildingScale : 0.65f;
+        _ghostInstance.transform.localScale = Vector3.one * scale;
+        _ghostInstance.transform.rotation = Quaternion.Euler(0, _currentRotation, 0);
+
+        _isValidPlacement = true;
+        ApplyGhostMaterial(_ghostInstance, _validGhostMaterial);
+    }
+
+    private void ApplyGhostMaterial(GameObject root, Material mat)
+    {
+        if (root == null || mat == null) return;
+        var renderers = root.GetComponentsInChildren&lt;Renderer&gt;(true);
+        for (int i = 0; i &lt; renderers.Length; i++)
+        {
+            renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderers[i].receiveShadows = false;
+            Material[] mats = new Material[renderers[i].sharedMaterials.Length];
+            for (int m = 0; m &lt; mats.Length; m++)
+            {
+                mats[m] = mat;
+            }
+            renderers[i].materials = mats;
+        }
+    }
+
+    private Camera GetActiveGameCamera()
+    {
+        if (RulerCameraController.Instance != null &amp;&amp; RulerCameraController.Instance.Cam != null &amp;&amp; RulerCameraController.Instance.Cam.isActiveAndEnabled)
+        {
+            return RulerCameraController.Instance.Cam;
+        }
+        if (CameraController.Instance != null)
+        {
+            Camera c = CameraController.Instance.GetComponent&lt;Camera&gt;();
+            if (c != null &amp;&amp; c.isActiveAndEnabled) return c;
+        }
+        if (Camera.main != null &amp;&amp; Camera.main.isActiveAndEnabled)
+        {
+            return Camera.main;
+        }
+        return _cam != null ? _cam : Camera.current;
+    }
+
+    private void Update()
+    {
+        if (!_isPlacementActive) return;
+
+        _cam = GetActiveGameCamera();
+        if (_cam == null) return;
+
+        HandleRotationInput();
+        UpdateGhostAndGrid();
+        HandlePlacementAndDeletion();
+    }
+
+    private void HandleRotationInput()
+    {
+        Keyboard kb = Keyboard.current;
+        if (kb != null)
+        {
+            if (kb.rKey.wasPressedThisFrame)
+            {
+                float step = (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) ? 45f : 90f;
+                _currentRotation = Mathf.Repeat(_currentRotation + step, 360f);
+                if (_ghostInstance != null)
+                {
+                    _ghostInstance.transform.rotation = Quaternion.Euler(0, _currentRotation, 0);
+                }
+            }
+
+            if (kb.escapeKey.wasPressedThisFrame)
+            {
+                CancelSelection();
+            }
+        }
+
+        Mouse mouse = Mouse.current;
+        if (mouse != null &amp;&amp; mouse.rightButton.wasPressedThisFrame &amp;&amp; HasSelection)
+        {
+            CancelSelection();
+        }
+    }
+
+    private bool RaycastTerrainFromCamera(out Vector3 hitPoint)
+    {
+        hitPoint = Vector3.zero;
+        Camera cam = GetActiveGameCamera();
+        if (cam == null) return false;
+
+        Vector2 mousePos = Mouse.current != null ? Mouse.current.position.ReadValue() : (Vector2)Input.mousePosition;
+        Ray ray = cam.ScreenPointToRay(mousePos);
+        LayerMask mask = RulerManager.GetTerrainRaycastMask();
+
+        RaycastHit[] hits = Physics.RaycastAll(ray, 2000f, mask);
+        if (hits == null || hits.Length == 0) return false;
+
+        System.Array.Sort(hits, (a, b) =&gt; a.distance.CompareTo(b.distance));
+
+        // Primary: find terrain / ground mesh
+        for (int i = 0; i &lt; hits.Length; i++)
+        {
+            var h = hits[i];
+            if (h.collider == null || h.collider.isTrigger) continue;
+            if (IsGhostTransform(h.transform)) continue;
+            if (_placedContainer != null &amp;&amp; h.transform.IsChildOf(_placedContainer)) continue;
+
+            hitPoint = h.point;
+            return true;
+        }
+
+        // Secondary: if on placed building or other static collider
+        for (int i = 0; i &lt; hits.Length; i++)
+        {
+            var h = hits[i];
+            if (h.collider == null || h.collider.isTrigger) continue;
+            if (IsGhostTransform(h.transform)) continue;
+
+            hitPoint = h.point;
+            return true;
+        }
+
+        return false;
+    }
+
+    private float SampleGroundElevation(float x, float sampleFromY, float z)
+    {
+        LayerMask mask = RulerManager.GetTerrainRaycastMask();
+        Ray ray = new Ray(new Vector3(x, sampleFromY + 50f, z), Vector3.down);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 150f, mask);
+        if (hits != null &amp;&amp; hits.Length &gt; 0)
+        {
+            System.Array.Sort(hits, (a, b) =&gt; a.distance.CompareTo(b.distance));
+            for (int i = 0; i &lt; hits.Length; i++)
+            {
+                var h = hits[i];
+                if (h.collider == null || h.collider.isTrigger) continue;
+                if (IsGhostTransform(h.transform)) continue;
+                if (_placedContainer != null &amp;&amp; h.transform.IsChildOf(_placedContainer)) continue;
+                return h.point.y;
+            }
+        }
+
+        if (World.Instance != null)
+        {
+            return World.Instance.GetGroundHeight(new Vector3(x, sampleFromY, z));
+        }
+
+        return sampleFromY;
+    }
+
+    private void UpdateGhostAndGrid()
+    {
+        if (RaycastTerrainFromCamera(out Vector3 hitPoint))
+        {
+            if (RulerGridOverlay.Instance != null)
+            {
+                RulerGridOverlay.Instance.UpdateGridPosition(hitPoint);
+            }
+
+            if (_ghostInstance != null)
+            {
+                float cellSize = RulerManager.Instance != null ? RulerManager.Instance.CellSize : 1.0f;
+                float snappedX = Mathf.Round(hitPoint.x / cellSize) * cellSize;
+                float snappedZ = Mathf.Round(hitPoint.z / cellSize) * cellSize;
+
+                float groundY = SampleGroundElevation(snappedX, hitPoint.y, snappedZ);
+
+                _currentSnappedPos = new Vector3(snappedX, groundY, snappedZ);
+                _ghostInstance.transform.position = _currentSnappedPos;
+                _ghostInstance.transform.rotation = Quaternion.Euler(0, _currentRotation, 0);
+
+                bool valid = ValidatePlacement(_currentSnappedPos, _ghostInstance.transform.rotation);
+                if (valid != _isValidPlacement || _ghostInstance.GetComponentInChildren&lt;Renderer&gt;()?.sharedMaterial != (_isValidPlacement ? _validGhostMaterial : _invalidGhostMaterial))
+                {
+                    _isValidPlacement = valid;
+                    ApplyGhostMaterial(_ghostInstance, _isValidPlacement ? _validGhostMaterial : _invalidGhostMaterial);
+                }
+            }
+        }
+    }
+
+    private bool ValidatePlacement(Vector3 centerPos, Quaternion rotation)
+    {
+        if (_ghostInstance == null) return false;
+
+        Bounds bounds = CalculateBounds(_ghostInstance);
+        Vector3 extents = bounds.extents;
+        extents.x = Mathf.Max(extents.x, 0.5f);
+        extents.z = Mathf.Max(extents.z, 0.5f);
+
+        // 1. Slope check: check 4 corners of foundation
+        Vector3[] corners = new Vector3[4]
+        {
+            centerPos + rotation * new Vector3(-extents.x, 0, -extents.z),
+            centerPos + rotation * new Vector3(extents.x, 0, -extents.z),
+            centerPos + rotation * new Vector3(-extents.x, 0, extents.z),
+            centerPos + rotation * new Vector3(extents.x, 0, extents.z),
+        };
+
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
+
+        for (int i = 0; i &lt; 4; i++)
+        {
+            float cornerY = SampleGroundElevation(corners[i].x, centerPos.y, corners[i].z);
+            if (cornerY &lt; minY) minY = cornerY;
+            if (cornerY &gt; maxY) maxY = cornerY;
+        }
+
+        if ((maxY - minY) &gt; _maxSlopeHeightDelta)
+        {
+            return false;
+        }
+
+        // 2. Overlap check with other buildings, players, npcs
+        Vector3 boxCenter = centerPos + Vector3.up * (extents.y * 0.9f);
+        Vector3 halfExtents = new Vector3(extents.x * 0.9f, extents.y * 0.8f, extents.z * 0.9f);
+
+        Collider[] colliders = Physics.OverlapBox(boxCenter, halfExtents, rotation);
+        for (int i = 0; i &lt; colliders.Length; i++)
+        {
+            var col = colliders[i];
+            if (col == null || col.isTrigger) continue;
+            // Ignore terrain collider itself
+            if (col is TerrainCollider) continue;
+            if (IsGhostTransform(col.transform)) continue;
+
+            // If it&#x27;s a placed building or player/monster/npc/obstacle
+            if ((_placedContainer != null &amp;&amp; col.transform.IsChildOf(_placedContainer)) ||
+                col.CompareTag(&quot;Player&quot;) ||
+                col.CompareTag(&quot;Monster&quot;) ||
+                col.CompareTag(&quot;Npc&quot;))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Bounds CalculateBounds(GameObject go)
+    {
+        var renderers = go.GetComponentsInChildren&lt;Renderer&gt;();
+        if (renderers.Length == 0)
+        {
+            return new Bounds(go.transform.position, Vector3.one * 2f);
+        }
+
+        Bounds b = renderers[0].bounds;
+        for (int i = 1; i &lt; renderers.Length; i++)
+        {
+            b.Encapsulate(renderers[i].bounds);
+        }
+        return b;
+    }
+
+    private void HandlePlacementAndDeletion()
+    {
+        // Don&#x27;t place or delete if pointer is over UI elements or Ruler UI
+        if ((L2GameUI.Instance != null &amp;&amp; L2GameUI.Instance.MouseOverUI) ||
+            (RulerHUDWindow.Instance != null &amp;&amp; RulerHUDWindow.Instance.IsPointerOverRulerUI()))
+        {
+            return;
+        }
+
+        Mouse mouse = Mouse.current;
+        Keyboard kb = Keyboard.current;
+
+        // Left Click to place
+        if (mouse != null &amp;&amp; mouse.leftButton.wasPressedThisFrame)
+        {
+            if (HasSelection &amp;&amp; _isValidPlacement)
+            {
+                RequestPlaceBuilding(_selectedPrefabName, _currentSnappedPos, _currentRotation);
+            }
+        }
+
+        // Delete or Del key to remove hovered placed building
+        if (kb != null &amp;&amp; (kb.deleteKey.wasPressedThisFrame || kb.numpadPeriodKey.wasPressedThisFrame))
+        {
+            TryDemolishHoveredBuilding();
+        }
+    }
+
+    public void RequestPlaceBuilding(string prefabName, Vector3 position, float rotY)
+    {
+        float scale = RulerManager.Instance != null ? RulerManager.Instance.BuildingScale : 0.65f;
+        if (GameClient.Instance != null &amp;&amp; GameClient.Instance.ClientPacketHandler != null)
+        {
+            GameClient.Instance.ClientPacketHandler.SendRulerBuild(prefabName, position, rotY, scale);
+        }
+        else
+        {
+            // Offline fallback
+            PlaceBuilding(prefabName, position, Quaternion.Euler(0, rotY, 0), true);
+        }
+    }
+
+    public void HandleServerRulerBuildings(RulerBuildingsPacket packet)
+    {
+        if (packet == null) return;
+
+        EnsureContainer();
+
+        if (packet.Mode == 0) // Chunk list
+        {
+            for (int i = 0; i &lt; packet.Buildings.Count; i++)
+            {
+                var b = packet.Buildings[i];
+                SpawnOrUpdateBuildingFromNetwork(b.Id, b.PrefabName, b.Position, b.RotY, b.Scale, b.OwnerName);
+            }
+        }
+        else if (packet.Mode == 1) // Single building added
+        {
+            for (int i = 0; i &lt; packet.Buildings.Count; i++)
+            {
+                var b = packet.Buildings[i];
+                SpawnOrUpdateBuildingFromNetwork(b.Id, b.PrefabName, b.Position, b.RotY, b.Scale, b.OwnerName);
+            }
+        }
+        else if (packet.Mode == 2) // Single building demolished
+        {
+            int targetId = packet.DemolishedBuildingId;
+            for (int i = _placedContainer.childCount - 1; i &gt;= 0; i--)
+            {
+                Transform child = _placedContainer.GetChild(i);
+                PlacedBuildingInstance pbi = child.GetComponent&lt;PlacedBuildingInstance&gt;();
+                if (pbi != null &amp;&amp; pbi.ServerBuildingId == targetId)
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+        }
+    }
+
+    public GameObject SpawnOrUpdateBuildingFromNetwork(int serverId, string prefabName, Vector3 pos, float rotY, float scale, string ownerName)
+    {
+        EnsureContainer();
+
+        // Check if building already exists
+        for (int i = 0; i &lt; _placedContainer.childCount; i++)
+        {
+            Transform child = _placedContainer.GetChild(i);
+            PlacedBuildingInstance pbi = child.GetComponent&lt;PlacedBuildingInstance&gt;();
+            if (pbi != null &amp;&amp; pbi.ServerBuildingId == serverId)
+            {
+                child.position = pos;
+                child.rotation = Quaternion.Euler(0, rotY, 0);
+                float s = scale &gt; 0 ? scale : (RulerManager.Instance != null ? RulerManager.Instance.BuildingScale : 0.65f);
+                child.localScale = Vector3.one * s;
+                pbi.OwnerName = ownerName;
+                return child.gameObject;
+            }
+        }
+
+        string path = $&quot;Data/Buildings/{prefabName}&quot;;
+        GameObject prefab = Resources.Load&lt;GameObject&gt;(path);
+        if (prefab == null)
+        {
+            Debug.LogWarning($&quot;[BuildingPlacementSystem] Unable to load building prefab: {path}&quot;);
+            return null;
+        }
+
+        Quaternion rotation = Quaternion.Euler(0, rotY, 0);
+        GameObject instance = Instantiate(prefab, pos, rotation, _placedContainer);
+        instance.name = $&quot;{prefabName}_{serverId}&quot;;
+        float finalScale = scale &gt; 0 ? scale : (RulerManager.Instance != null ? RulerManager.Instance.BuildingScale : 0.65f);
+        instance.transform.localScale = Vector3.one * finalScale;
+
+        PlacedBuildingInstance newPbi = instance.AddComponent&lt;PlacedBuildingInstance&gt;();
+        newPbi.ServerBuildingId = serverId;
+        newPbi.PrefabName = prefabName;
+        newPbi.OwnerName = ownerName;
+
+        SetupBuildingColliders(instance);
+        return instance;
+    }
+
+    public void PlaceBuilding(string prefabName, Vector3 position, Quaternion rotation, bool save = true)
+    {
+        string path = $&quot;Data/Buildings/{prefabName}&quot;;
+        GameObject prefab = Resources.Load&lt;GameObject&gt;(path);
+        if (prefab == null) return;
+
+        EnsureContainer();
+
+        GameObject instance = Instantiate(prefab, position, rotation, _placedContainer);
+        instance.name = prefabName;
+        float scale = RulerManager.Instance != null ? RulerManager.Instance.BuildingScale : 0.65f;
+        instance.transform.localScale = Vector3.one * scale;
+
+        PlacedBuildingInstance pbi = instance.AddComponent&lt;PlacedBuildingInstance&gt;();
+        pbi.ServerBuildingId = 0;
+        pbi.PrefabName = prefabName;
+        pbi.OwnerName = &quot;Local&quot;;
+
+        // Ensure colliders exist for players/physics
+        SetupBuildingColliders(instance);
+
+        if (save)
+        {
+            SavePlacedBuildings();
+        }
+    }
+
+    private void SetupBuildingColliders(GameObject building)
+    {
+        // Check if there is already a collider
+        var existingColliders = building.GetComponentsInChildren&lt;Collider&gt;();
+        if (existingColliders.Length &gt; 0)
+        {
+            return;
+        }
+
+        // Check for simplified mesh *_SP
+        Transform spChild = null;
+        foreach (var t in building.GetComponentsInChildren&lt;Transform&gt;(true))
+        {
+            if (t.name.EndsWith(&quot;_SP&quot;, StringComparison.OrdinalIgnoreCase) ||
+                t.name.Contains(&quot;_col&quot;, StringComparison.OrdinalIgnoreCase))
+            {
+                spChild = t;
+                break;
+            }
+        }
+
+        if (spChild != null &amp;&amp; spChild.GetComponent&lt;MeshFilter&gt;() != null)
+        {
+            MeshCollider mc = spChild.gameObject.AddComponent&lt;MeshCollider&gt;();
+            mc.convex = false;
+        }
+        else
+        {
+            // Add BoxCollider based on render bounds
+            Bounds b = CalculateBounds(building);
+            BoxCollider box = building.AddComponent&lt;BoxCollider&gt;();
+            box.center = building.transform.InverseTransformPoint(b.center);
+            Vector3 worldSize = b.size;
+            Vector3 localScale = building.transform.localScale;
+            box.size = new Vector3(
+                localScale.x != 0 ? worldSize.x / localScale.x : worldSize.x,
+                localScale.y != 0 ? worldSize.y / localScale.y : worldSize.y,
+                localScale.z != 0 ? worldSize.z / localScale.z : worldSize.z
+            );
+        }
+    }
+
+    public bool TryDemolishHoveredBuilding()
+    {
+        Camera cam = GetActiveGameCamera();
+        if (cam == null) return false;
+
+        Vector2 mousePos = Mouse.current != null ? Mouse.current.position.ReadValue() : (Vector2)Input.mousePosition;
+        Ray ray = cam.ScreenPointToRay(mousePos);
+        if (Physics.Raycast(ray, out RaycastHit hit, 2000f))
+        {
+            EnsureContainer();
+            Transform cur = hit.transform;
+            while (cur != null &amp;&amp; cur.parent != _placedContainer)
+            {
+                cur = cur.parent;
+            }
+
+            if (cur != null &amp;&amp; cur.parent == _placedContainer)
+            {
+                PlacedBuildingInstance pbi = cur.GetComponent&lt;PlacedBuildingInstance&gt;();
+                if (pbi != null &amp;&amp; pbi.ServerBuildingId &gt; 0 &amp;&amp; GameClient.Instance != null &amp;&amp; GameClient.Instance.ClientPacketHandler != null)
+                {
+                    GameClient.Instance.ClientPacketHandler.SendRulerDemolish(pbi.ServerBuildingId);
+                    return true;
+                }
+
+                // Fallback for offline/local
+                Destroy(cur.gameObject);
+                StartCoroutine(SaveAfterDestroyNextFrame());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private System.Collections.IEnumerator SaveAfterDestroyNextFrame()
+    {
+        yield return null;
+        SavePlacedBuildings();
+    }
+
+    public void SavePlacedBuildings()
+    {
+        EnsureContainer();
+        PlacedBuildingList list = new PlacedBuildingList();
+
+        for (int i = 0; i &lt; _placedContainer.childCount; i++)
+        {
+            Transform child = _placedContainer.GetChild(i);
+            if (child == null) continue;
+
+            PlacedBuildingData data = new PlacedBuildingData
+            {
+                prefabName = child.name.Replace(&quot;(Clone)&quot;, &quot;&quot;).Trim(),
+                posX = child.position.x,
+                posY = child.position.y,
+                posZ = child.position.z,
+                rotX = child.rotation.x,
+                rotY = child.rotation.y,
+                rotZ = child.rotation.z,
+                rotW = child.rotation.w,
+                scaleX = child.localScale.x,
+                scaleY = child.localScale.y,
+                scaleZ = child.localScale.z
+            };
+            list.buildings.Add(data);
+        }
+
+        try
+        {
+            string json = JsonUtility.ToJson(list, true);
+            File.WriteAllText(SaveFilePath, json);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($&quot;[BuildingPlacementSystem] Failed to save buildings: {ex.Message}&quot;);
+        }
+    }
+
+    public void LoadPlacedBuildings()
+    {
+        EnsureContainer();
+
+        // Clear existing
+        for (int i = _placedContainer.childCount - 1; i &gt;= 0; i--)
+        {
+            Destroy(_placedContainer.GetChild(i).gameObject);
+        }
+
+        if (!File.Exists(SaveFilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            string json = File.ReadAllText(SaveFilePath);
+            PlacedBuildingList list = JsonUtility.FromJson&lt;PlacedBuildingList&gt;(json);
+            if (list == null || list.buildings == null) return;
+
+            for (int i = 0; i &lt; list.buildings.Count; i++)
+            {
+                var data = list.buildings[i];
+                Vector3 pos = new Vector3(data.posX, data.posY, data.posZ);
+                Quaternion rot = new Quaternion(data.rotX, data.rotY, data.rotZ, data.rotW);
+                PlaceBuilding(data.prefabName, pos, rot, false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($&quot;[BuildingPlacementSystem] Failed to load buildings: {ex.Message}&quot;);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

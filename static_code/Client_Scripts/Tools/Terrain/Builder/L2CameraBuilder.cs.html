@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Builder/L2CameraBuilder.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Builder/L2CameraBuilder.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+public class L2CameraBuilder
+{
+
+    [MenuItem(&quot;Shnok/08. [Camera] (T3D) Build cameras&quot;)]
+    static void ImportBrushTexturesT3D()
+    {
+        string title = &quot;Select T3D file&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;t3d&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            List&lt;L2InterpolationPoint&gt; interpolationPoints = L2T3DInfoParser.ParseCameraInfo(fileToProcess);
+
+            GameObject container = new GameObject(&quot;Cameras&quot;);
+
+            foreach (L2InterpolationPoint point in interpolationPoints)
+            {
+                GameObject go = new GameObject(point.name);
+                go.transform.position = VectorUtils.ConvertPosToUnity(point.position);
+                go.transform.eulerAngles = VectorUtils.ConvertRotToUnity(point.eulerAngles);
+                Camera cam = go.AddComponent&lt;Camera&gt;();
+                cam.usePhysicalProperties = true;
+                cam.fieldOfView = 60;
+                cam.allowHDR = false;
+                cam.allowMSAA = false;
+
+                go.transform.parent = container.transform;
+            }
+
+            SortChildrenByNameTag(container);
+        }
+    }
+
+    public static void SortChildrenByNameTag(GameObject obj)
+    {
+        List&lt;Transform&gt; children = new List&lt;Transform&gt;();
+        for (int i = obj.transform.childCount - 1; i &gt;= 0; i--)
+        {
+            Transform child = obj.transform.GetChild(i);
+
+            children.Add(child);
+            child.transform.SetParent(null, false);
+        }
+
+        children.Sort((Transform t1, Transform t2) =&gt; { return t1.name.CompareTo(t2.name); });
+
+        foreach (Transform child in children)
+        {
+            child.transform.SetParent(obj.transform, false);
+        }
+    }
+
+}
+#endif</pre>
+            
+</body>
+</html>

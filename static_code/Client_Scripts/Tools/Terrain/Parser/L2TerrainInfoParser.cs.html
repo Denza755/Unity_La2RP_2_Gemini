@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Parser/L2TerrainInfoParser.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Parser/L2TerrainInfoParser.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using UnityEngine;
+
+public class L2TerrainInfoParser
+{
+    public static L2TerrainInfo ParseTerrainInfo0(string mapID)
+    {
+        string dataPath = &quot;Assets/Data/Maps/Meta/&quot; + mapID + &quot;/TerrainInfo0.txt&quot;;
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return null;
+        }
+
+        var terrainInfo = new L2TerrainInfo();
+        terrainInfo.mapName = mapID;
+        terrainInfo.uvLayers = new List&lt;L2TerrainLayer&gt;();
+        terrainInfo.decoLayers = new List&lt;L2DecoLayer&gt;();
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.StartsWith(&quot;TerrainMap=&quot;))
+                {
+                    terrainInfo.terrainMapPath = TextureUtils.GetHeightMapPath(line);
+                }
+                else if (line.StartsWith(&quot;GeneratedSectorCounter=&quot;))
+                {
+                    terrainInfo.generatedSectorCounter = ParseGeneratedSectorCounter(line);
+                }
+                else if (line.StartsWith(&quot;TerrainScale=&quot;))
+                {
+                    terrainInfo.terrainScale = ParseVector3(line);
+                }
+                else if (line.StartsWith(&quot;Location=&quot;))
+                {
+                    terrainInfo.location = ParseVector3(line);
+                }
+                else if (line.StartsWith(&quot;Layer&quot;))
+                {
+                    L2TerrainLayer layer = ParseL2TerrainLayer(line);
+                    if (layer != null)
+                    {
+                        terrainInfo.uvLayers.Add(layer);
+                    }
+                }
+                else if (line.StartsWith(&quot;DecoLayers&quot;))
+                {
+                    L2DecoLayer layer = ParseL2DecoLayer(line);
+                    if (layer != null)
+                    {
+                        terrainInfo.decoLayers.Add(layer);
+                    }
+                }
+            }
+        }
+
+        return terrainInfo;
+    }
+
+    private static int ParseGeneratedSectorCounter(string line)
+    {
+        // TODO: Handle parsing of GeneratedSectorCounter if needed
+        return 256; // Temporary value
+    }
+
+    private static Vector3 ParseVector3(string line)
+    {
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+        string[] valueParts = valueString.Split(&#x27;,&#x27;);
+        float x = float.Parse(valueParts[0].Substring(valueParts[0].IndexOf(&#x27;=&#x27;) + 1), CultureInfo.InvariantCulture);
+        float y = float.Parse(valueParts[1].Substring(valueParts[1].IndexOf(&#x27;=&#x27;) + 1), CultureInfo.InvariantCulture);
+        float z = float.Parse(valueParts[2].Substring(valueParts[2].IndexOf(&#x27;=&#x27;) + 1), CultureInfo.InvariantCulture);
+        return new Vector3(x, y, z);
+    }
+
+    public static L2TerrainLayer ParseL2TerrainLayer(string line)
+    {
+        L2TerrainLayer layer = new L2TerrainLayer();
+
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+        string[] valueParts = valueString.Split(&#x27;,&#x27;);
+
+        if (valueParts.Length &lt; 4)
+        {
+            Debug.LogError(&quot;Invalid layer line: &quot; + line);
+            return null;
+        }
+
+        string textureInfo = string.Empty;
+        string alphaMapInfo = string.Empty;
+        string uScaleInfo = string.Empty;
+        string vScaleInfo = string.Empty;
+
+        for (int i = 0; i &lt; valueParts.Length; i++)
+        {
+            if (valueParts[i].Contains(&quot;Texture=&quot;))
+            {
+                textureInfo = valueParts[i].Trim();
+            }
+            if (valueParts[i].Contains(&quot;AlphaMap=&quot;))
+            {
+                alphaMapInfo = valueParts[i].Trim();
+            }
+            if (valueParts[i].Contains(&quot;UScale=&quot;))
+            {
+                uScaleInfo = valueParts[i].Trim();
+            }
+            if (valueParts[i].Contains(&quot;VScale=&quot;))
+            {
+                vScaleInfo = valueParts[i].Trim();
+            }
+        }
+
+        if (!textureInfo.Contains(&quot;Texture&quot;))
+        {
+            return null;
+        }
+
+        layer.texture = TextureUtils.LoadTexture2DFromInfo(textureInfo, L2TerrainGeneratorTool.UV_TEXTURE_SIZE);
+        if (alphaMapInfo != string.Empty)
+        {
+            layer.alphaMap = TextureUtils.LoadTexture2DFromInfo(alphaMapInfo, L2TerrainGeneratorTool.UV_LAYER_ALPHAMAP_SIZE);
+        }
+
+        // Parse uScale and vScale
+        float uScale = L2MetaDataUtils.ParseFloatFromInfo(uScaleInfo);
+        float vScale = L2MetaDataUtils.ParseFloatFromInfo(vScaleInfo);
+
+        layer.uScale = uScale;
+        layer.vScale = vScale;
+
+        return layer;
+    }
+
+    public static L2DecoLayer ParseL2DecoLayer(string line)
+    {
+        L2DecoLayer layer = new L2DecoLayer();
+
+        string showOnTerrain = string.Empty;
+        string densityMap = string.Empty;
+        string staticMesh = string.Empty;
+        string scaleMultiplier = string.Empty;
+
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+        string[] valueParts = valueString.Split(&#x27;,&#x27;);
+
+        for (int i = 0; i &lt; valueParts.Length; i++)
+        {
+            if (valueParts[i].Contains(&quot;ShowOnTerrain=&quot;))
+            {
+                showOnTerrain = valueParts[i].Trim();
+            }
+            if (valueParts[i].Contains(&quot;DensityMap=&quot;))
+            {
+                densityMap = valueParts[i].Trim();
+            }
+            if (valueParts[i].Contains(&quot;StaticMesh=&quot;))
+            {
+                staticMesh = valueParts[i].Trim();
+            }
+            if (valueParts[i].Contains(&quot;ScaleMultiplier=&quot;))
+            {
+                int index = line.IndexOf(&quot;ScaleMultiplier=&quot;);
+                string fromIndex = line.Substring(index);
+                int argEndIndex = fromIndex.IndexOf(&quot;))&quot;);
+                scaleMultiplier = fromIndex.Substring(0, argEndIndex + 2);
+            }
+        }
+
+        layer.showOnTerrain = L2MetaDataUtils.ParseBoolFromInfo(showOnTerrain);
+        layer.densityMapPath = TextureUtils.GetTexturePath(densityMap);
+        layer.densityMap = TextureUtils.LoadTexture2DFromInfo(densityMap, L2TerrainGeneratorTool.DECO_LAYER_ALPHAMAP_SIZE);
+        layer = UpdateDecoLayerScale(layer, scaleMultiplier);
+        layer.staticMesh = StaticMeshUtils.LoadMeshFromInfo(staticMesh);
+
+        return layer;
+    }
+
+    private static L2DecoLayer UpdateDecoLayerScale(L2DecoLayer layer, string scaleMultiplier)
+    {
+        int equalsIndex = scaleMultiplier.IndexOf(&#x27;=&#x27;);
+        string valueString = scaleMultiplier.Substring(equalsIndex + 1, scaleMultiplier.Length - equalsIndex - 2);
+
+        valueString = valueString
+            .Replace(&quot;(&quot;, String.Empty)
+            .Replace(&quot;)&quot;, String.Empty)
+            .Replace(&quot;Min&quot;, String.Empty)
+            .Replace(&quot;Max&quot;, String.Empty)
+            .Replace(&quot;=&quot;, String.Empty)
+            .Replace(&quot;X&quot;, String.Empty)
+            .Replace(&quot;Y&quot;, String.Empty)
+            .Replace(&quot;Z&quot;, String.Empty);
+
+        string[] parts = valueString.Split(&quot;,&quot;);
+
+        layer.minWidth = float.Parse(parts[0], CultureInfo.InvariantCulture);
+        layer.maxWidth = float.Parse(parts[1], CultureInfo.InvariantCulture);
+        layer.minHeight = float.Parse(parts[2], CultureInfo.InvariantCulture);
+        layer.maxHeight = float.Parse(parts[3], CultureInfo.InvariantCulture);
+
+        return layer;
+    }
+
+
+    public static AmbientSound[] ParseAmbientSoundFile(string path)
+    {
+        try
+        {
+            string json = File.ReadAllText(path);
+            AmbientDataContainer sounds = JsonUtility.FromJson&lt;AmbientDataContainer&gt;(json);
+            return sounds.data;
+
+        }
+        catch (IOException e)
+        {
+            Debug.LogError(&quot;An error occurred: &quot; + e.Message);
+        }
+
+        return null;
+    }
+
+
+}
+#endif</pre>
+            
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/TargetWindow/TargetWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/TargetWindow/TargetWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;Frame_DF_Ver&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/Frame_DF_Ver.uxml?fileID=9197481963319205126&amp;amp;guid=af155183079e5194eb28f9cf0305ecbb&amp;amp;type=3#Frame_DF_Ver&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Bar&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Bar/L2Bar.uxml?fileID=9197481963319205126&amp;amp;guid=e7da9ee05d38b14459d91eca9fc49926&amp;amp;type=3#L2Bar&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/TargetWindow/TargetWindow.uss?fileID=7433441132597879392&amp;amp;guid=9ab070af2d137fd4693b412525478adf&amp;amp;type=3#TargetWindow&quot; /&gt;
+    &lt;ui:GroupBox name=&quot;TargetWindow&quot; class=&quot;target-window&quot;&gt;
+        &lt;ui:Instance template=&quot;Frame_DF_Ver&quot; name=&quot;TemplateContainer&quot; class=&quot;target-window-drag drag-area&quot; style=&quot;overflow: hidden;&quot; /&gt;
+        &lt;ui:GroupBox name=&quot;CenterContainer&quot; class=&quot;ui-bg ui-border target-window-bg&quot;&gt;
+            &lt;ui:VisualElement class=&quot;target-window-inner&quot;&gt;
+                &lt;ui:Label text=&quot;Label&quot; name=&quot;TargetName&quot; class=&quot;target-window-target-name l2-color-4&quot; /&gt;
+                &lt;ui:VisualElement class=&quot;target-window-bar-container&quot;&gt;
+                    &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;HPBar&quot; class=&quot;target-bar-container&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:VisualElement name=&quot;SizeControl&quot; class=&quot;target-window-size-control&quot;&gt;
+            &lt;ui:VisualElement name=&quot;SizeControl&quot; class=&quot;target-window-resize-handle resize-hor&quot; /&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:Button text=&quot;&amp;#10;&quot; name=&quot;CloseBtn&quot; class=&quot;close-btn target-window-close-btn&quot; /&gt;
+    &lt;/ui:GroupBox&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

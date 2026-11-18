@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q324_SweetestVenom.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q324_SweetestVenom.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q324_SweetestVenom extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q324_SweetestVenom&quot;;
+	
+	// Item
+	private static final int VENOM_SAC = 1077;
+	
+	// Drop chances
+	private static final Map&lt;Integer, Integer&gt; CHANCES = new HashMap&lt;&gt;();
+	{
+		CHANCES.put(20034, 220000);
+		CHANCES.put(20038, 230000);
+		CHANCES.put(20043, 250000);
+	}
+	
+	public Q324_SweetestVenom()
+	{
+		super(324, &quot;Sweetest Venom&quot;);
+		
+		setItemsIds(VENOM_SAC);
+		
+		addQuestStart(30351); // Astaron
+		addTalkId(30351);
+		
+		addMyDying(20034, 20038, 20043);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30351-04.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 18) ? &quot;30351-02.htm&quot; : &quot;30351-03.htm&quot;;
+				break;
+			
+			case STARTED:
+				if (st.getCond() == 1)
+					htmltext = &quot;30351-05.htm&quot;;
+				else
+				{
+					htmltext = &quot;30351-06.htm&quot;;
+					takeItems(player, VENOM_SAC, -1);
+					rewardItems(player, 57, 5810);
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(true);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (dropItems(player, VENOM_SAC, 1, 10, CHANCES.get(npc.getNpcId())))
+			st.setCond(2);
+	}
+}</pre>
+            
+</body>
+</html>

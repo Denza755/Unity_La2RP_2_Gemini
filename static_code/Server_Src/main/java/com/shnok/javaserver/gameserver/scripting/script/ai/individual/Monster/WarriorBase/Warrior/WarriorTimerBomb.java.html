@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorTimerBomb.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorTimerBomb.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+// Used for Frintezza raid only
+
+public class WarriorTimerBomb extends Warrior
+{
+	public WarriorTimerBomb()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior&quot;);
+	}
+	
+	public WarriorTimerBomb(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		18340,
+		18341
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai0 = 0;
+		
+		int i0 = Rnd.get(59);
+		
+		if (i0 &lt; 10)
+		{
+			i0 = (i0 + 10);
+		}
+		
+		startQuestTimer(&quot;1009&quot;, npc, null, i0 * 1000L);
+		
+		int i1 = Rnd.get(9) + 1;
+		
+		startQuestTimer(&quot;1010&quot;, npc, null, i1 * 1000L);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (npc.distance2D(attacker) &lt; 200)
+			npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC), 1000000);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1009&quot;))
+		{
+			npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC), 1000000);
+		}
+		if (name.equalsIgnoreCase(&quot;1010&quot;))
+		{
+			if (npc._i_ai0 == 0)
+			{
+				npc.setWalkOrRun(false);
+				npc._i_ai0 = 1;
+			}
+			else
+			{
+				npc.setWalkOrRun(true);
+				npc._i_ai0 = 0;
+			}
+			
+			int i1 = Rnd.get(9);
+			
+			if (i1 &lt;= 2)
+			{
+				i1 = (i1 + 3);
+			}
+			startQuestTimer(&quot;1010&quot;, npc, null, i1 * 1000L);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (skill == getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC) &amp;&amp; success)
+			npc.doDie(npc);
+		
+		super.onUseSkillFinished(npc, creature, skill, success);
+	}
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/InstantSpawnRandomMaker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/InstantSpawnRandomMaker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.maker;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+
+public class InstantSpawnRandomMaker extends DefaultMaker
+{
+	public InstantSpawnRandomMaker(String name)
+	{
+		super(name);
+	}
+	
+	@Override
+	public void onNpcDeleted(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		if (maker.getNpcsAlive() == 0)
+		{
+			final int i1 = Rnd.get(maker.getMakerMemo().getInteger(&quot;maker_cnt&quot;));
+			if (i1 == 0)
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(maker.getMakerMemo().get(&quot;maker_name1&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, (int) ms.calculateRespawnDelay(), 0);
+			}
+			else if (i1 == 1)
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(maker.getMakerMemo().get(&quot;maker_name2&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, (int) ms.calculateRespawnDelay(), 0);
+			}
+			else if (i1 == 2)
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(maker.getMakerMemo().get(&quot;maker_name3&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, (int) ms.calculateRespawnDelay(), 0);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

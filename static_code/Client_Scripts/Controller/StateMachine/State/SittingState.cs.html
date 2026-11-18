@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Controller/StateMachine/State/SittingState.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Controller/StateMachine/State/SittingState.cs</h1>
+            <pre>using UnityEngine;
+
+public class SittingState : StateBase
+{
+    public SittingState(PlayerStateMachine stateMachine) : base(stateMachine) { }
+    public const float SIT_ANIM_LENGTH_SEC = 4.5f;
+    private bool _sitting = false;
+
+
+    private float _enterTime;
+    public override void Enter(object obj0)
+    {
+        NewPlayerAnimationController.Instance.Sit();
+
+        _sitting = false;
+        _enterTime = Time.time;
+    }
+
+
+    public override void Update()
+    {
+        if (Time.time - _enterTime &gt;= SIT_ANIM_LENGTH_SEC &amp;&amp; !_sitting)
+        {
+            _sitting = true;
+            _stateMachine.ChangeState(PlayerState.SIT_WAIT);
+        }
+    }
+
+    public override void HandleEvent(Event evt, object arg0)
+    {
+        switch (evt)
+        {
+            case Event.DEAD:
+                _stateMachine.ChangeState(PlayerState.DEAD);
+                break;
+            case Event.ACTION_ALLOWED:
+                _stateMachine.ChangeState(PlayerState.STANDING);
+                break;
+        }
+    }
+}</pre>
+            
+</body>
+</html>

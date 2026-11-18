@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/EvilateB.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/EvilateB.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.frintezza;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class EvilateB extends DefaultNpc
+{
+	public EvilateB()
+	{
+		super(&quot;ai/boss/frintezza&quot;);
+	}
+	
+	public EvilateB(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		29048
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		startQuestTimer(&quot;1000&quot;, npc, null, 45000);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		final int spawnPosX = getNpcIntAIParam(npc, &quot;SpawnPosX&quot;);
+		final int spawnPosY = getNpcIntAIParam(npc, &quot;SpawnPosY&quot;);
+		final int spawnPosZ = getNpcIntAIParam(npc, &quot;SpawnPosZ&quot;);
+		final int spawnAngle = getNpcIntAIParam(npc, &quot;SpawnAngle&quot;);
+		
+		if (name.equalsIgnoreCase(&quot;1000&quot;))
+		{
+			createOnePrivateEx(npc, 29051, spawnPosX, spawnPosY, spawnPosZ, spawnAngle, 0, true);
+			startQuestTimer(&quot;1001&quot;, npc, null, 20000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1001&quot;))
+		{
+			createOnePrivateEx(npc, 29051, spawnPosX, spawnPosY, spawnPosZ, spawnAngle, 0, true);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (skill != null &amp;&amp; skill.getId() == 2276)
+			npc.doDie(npc);
+	}
+	
+	@Override
+	public void onPartyDied(Npc caller, Npc called)
+	{
+		if (called != caller &amp;&amp; called.isMaster() &amp;&amp; called.isDead())
+			caller.scheduleRespawn(20000);
+	}
+}
+</pre>
+            
+</body>
+</html>

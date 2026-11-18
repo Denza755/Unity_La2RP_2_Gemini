@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/OlympiadManagerNpc.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/OlympiadManagerNpc.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.HeroManager;
+import com.shnok.javaserver.gameserver.data.xml.MultisellData;
+import com.shnok.javaserver.gameserver.enums.OlympiadType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.olympiad.Olympiad;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadGameManager;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadGameTask;
+import com.shnok.javaserver.gameserver.model.olympiad.OlympiadManager;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExHeroList;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class OlympiadManagerNpc extends Folk
+{
+	private static final List&lt;OlympiadManagerNpc&gt; _managers = new CopyOnWriteArrayList&lt;&gt;();
+	
+	private static final int GATE_PASS = 6651;
+	
+	public OlympiadManagerNpc(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	public static List&lt;OlympiadManagerNpc&gt; getInstances()
+	{
+		return _managers;
+	}
+	
+	@Override
+	public String getHtmlPath(int npcId, int val)
+	{
+		// Only used by Olympiad managers. Monument of Heroes don&#x27;t use &quot;Chat&quot; bypass.
+		String filename = &quot;noble&quot;;
+		
+		if (val &gt; 0)
+			filename = &quot;noble_&quot; + val;
+		
+		return filename + &quot;.htm&quot;;
+	}
+	
+	@Override
+	public void showChatWindow(Player player, int val)
+	{
+		int npcId = getTemplate().getNpcId();
+		String filename = getHtmlPath(npcId, val);
+		
+		switch (npcId)
+		{
+			case 31688: // Olympiad managers
+				if (player.isNoble() &amp;&amp; val == 0)
+					filename = &quot;noble_main.htm&quot;;
+				break;
+			
+			// Monuments of Heroes
+			case 31690, 31769, 31770, 31771, 31772:
+				if (player.isHero() || HeroManager.getInstance().isInactiveHero(player.getObjectId()))
+					filename = &quot;hero_main.htm&quot;;
+				else
+					filename = &quot;hero_main2.htm&quot;;
+				break;
+		}
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/olympiad/&quot; + filename);
+		
+		// Hidden option for players who are in inactive mode.
+		if (filename.equals(&quot;hero_main.htm&quot;))
+		{
+			String hiddenText = &quot;&quot;;
+			if (HeroManager.getInstance().isInactiveHero(player.getObjectId()))
+				hiddenText = &quot;&lt;a action=\&quot;bypass -h npc_%objectId%_Olympiad 5\&quot;&gt;\&quot;I want to be a Hero.\&quot;&lt;/a&gt;&lt;br&gt;&quot;;
+			
+			html.replace(&quot;%hero%&quot;, hiddenText);
+		}
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+		
+		// Send a Server-&gt;Client ActionFailed to the Player in order to avoid that the client wait another packet
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;OlympiadNoble&quot;))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			if (player.isCursedWeaponEquipped())
+			{
+				html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_cant_cw.htm&quot;);
+				player.sendPacket(html);
+				return;
+			}
+			
+			if (player.getClassIndex() != 0)
+			{
+				html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_cant_sub.htm&quot;);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+				return;
+			}
+			
+			if (!player.isNoble() || (player.getClassId().getLevel() &lt; 3))
+			{
+				html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_cant_thirdclass.htm&quot;);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+				return;
+			}
+			
+			int val = Integer.parseInt(command.substring(14));
+			switch (val)
+			{
+				case 1: // Unregister
+					OlympiadManager.getInstance().unRegisterNoble(player);
+					break;
+				
+				case 2: // Show waiting list
+					final int nonClassed = OlympiadManager.getInstance().getNonClassBasedParticipants().size();
+					final int classed = OlympiadManager.getInstance().getClassBasedParticipants().size();
+					
+					html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_registered.htm&quot;);
+					html.replace(&quot;%listClassed%&quot;, classed);
+					html.replace(&quot;%listNonClassed%&quot;, nonClassed);
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					break;
+				
+				case 3: // There are %points% Grand Olympiad points granted for this event.
+					int points = Olympiad.getInstance().getNoblePoints(player.getObjectId());
+					html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_points1.htm&quot;);
+					html.replace(&quot;%points%&quot;, points);
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					break;
+				
+				case 4: // register non classed based
+					OlympiadManager.getInstance().registerNoble(this, player, OlympiadType.NON_CLASSED);
+					break;
+				
+				case 5: // register classed based
+					OlympiadManager.getInstance().registerNoble(this, player, OlympiadType.CLASSED);
+					break;
+				
+				case 6: // request tokens reward
+					points = Olympiad.getInstance().getNoblePoints(player.getObjectId());
+					if (points &gt;= 50 || player.isHero() || HeroManager.getInstance().isInactiveHero(player.getObjectId()))
+						html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_settle.htm&quot;);
+					else
+						html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_nopoints2.htm&quot;);
+					
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					break;
+				
+				case 7: // Rewards
+					MultisellData.getInstance().separateAndSend(&quot;102&quot;, player, this, false);
+					break;
+				
+				case 10: // Give tokens to player
+					points = Olympiad.getInstance().getNoblessePasses(player);
+					if (points &gt; 0)
+						player.addItem(GATE_PASS, points, true);
+					break;
+				
+				default:
+					break;
+			}
+		}
+		else if (command.startsWith(&quot;Olympiad&quot;))
+		{
+			int val = Integer.parseInt(command.substring(9, 10));
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			switch (val)
+			{
+				case 2: // Show rank for a specific class, example &gt;&gt; Olympiad 1_88
+					int classId = Integer.parseInt(command.substring(11));
+					if (classId &gt;= 88 &amp;&amp; classId &lt;= 118)
+					{
+						List&lt;String&gt; names = Olympiad.getInstance().getClassLeaderBoard(classId);
+						html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;noble_ranking.htm&quot;);
+						
+						int index = 1;
+						for (String name : names)
+						{
+							html.replace(&quot;%place&quot; + index + &quot;%&quot;, index);
+							html.replace(&quot;%rank&quot; + index + &quot;%&quot;, name);
+							
+							index++;
+							if (index &gt; 10)
+								break;
+						}
+						
+						for (; index &lt;= 10; index++)
+						{
+							html.replace(&quot;%place&quot; + index + &quot;%&quot;, &quot;&quot;);
+							html.replace(&quot;%rank&quot; + index + &quot;%&quot;, &quot;&quot;);
+						}
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					break;
+				
+				case 3: // Spectator overview
+					html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;olympiad_observe_list.htm&quot;);
+					
+					int i = 0;
+					
+					final StringBuilder sb = new StringBuilder(2000);
+					for (OlympiadGameTask task : OlympiadGameManager.getInstance().getOlympiadTasks())
+					{
+						StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass arenachange &quot;, i, &quot;\&quot;&gt;Arena &quot;, ++i, &quot;&amp;nbsp;&quot;);
+						
+						if (task.isGameStarted())
+						{
+							if (task.isInTimerTime())
+								StringUtil.append(sb, &quot;(&amp;$907;)&quot;); // Counting In Progress
+							else if (task.isBattleStarted())
+								StringUtil.append(sb, &quot;(&amp;$829;)&quot;); // In Progress
+							else
+								StringUtil.append(sb, &quot;(&amp;$908;)&quot;); // Terminate
+								
+							StringUtil.append(sb, &quot;&amp;nbsp;&quot;, task.getGame().getPlayerNames()[0], &quot;&amp;nbsp; : &amp;nbsp;&quot;, task.getGame().getPlayerNames()[1]);
+						}
+						else
+							StringUtil.append(sb, &quot;(&amp;$906;)&lt;/td&gt;&lt;td&gt;&amp;nbsp;&quot;); // Initial State
+							
+						StringUtil.append(sb, &quot;&lt;/a&gt;&lt;br&gt;&quot;);
+					}
+					html.replace(&quot;%list%&quot;, sb.toString());
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					break;
+				
+				case 4: // Send heroes list.
+					player.sendPacket(new ExHeroList());
+					break;
+				
+				case 5: // Hero pending state.
+					if (HeroManager.getInstance().isInactiveHero(player.getObjectId()))
+					{
+						html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;hero_confirm.htm&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					break;
+				
+				case 6: // Hero confirm action.
+					if (HeroManager.getInstance().isInactiveHero(player.getObjectId()))
+					{
+						if (player.isSubClassActive() || player.getStatus().getLevel() &lt; 76)
+						{
+							player.sendMessage(&quot;You may only become an hero on a main class whose level is 75 or more.&quot;);
+							return;
+						}
+						
+						HeroManager.getInstance().activateHero(player);
+					}
+					break;
+				
+				case 7: // Main panel
+					html.setFile(Olympiad.OLYMPIAD_HTML_PATH + &quot;hero_main.htm&quot;);
+					
+					String hiddenText = &quot;&quot;;
+					if (HeroManager.getInstance().isInactiveHero(player.getObjectId()))
+						hiddenText = &quot;&lt;a action=\&quot;bypass -h npc_%objectId%_Olympiad 5\&quot;&gt;\&quot;I want to be a Hero.\&quot;&lt;/a&gt;&lt;br&gt;&quot;;
+					
+					html.replace(&quot;%hero%&quot;, hiddenText);
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					break;
+				
+				default:
+					break;
+			}
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void onSpawn()
+	{
+		super.onSpawn();
+		
+		if (getNpcId() == 31688)
+			_managers.add(this);
+	}
+	
+	@Override
+	public void onDecay()
+	{
+		_managers.remove(this);
+		super.onDecay();
+	}
+}</pre>
+            
+</body>
+</html>

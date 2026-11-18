@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/CommunityBoard.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/CommunityBoard.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.communitybbs.manager.BaseBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.ClanBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.FavoriteBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.FriendsBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.MailBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.PostBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.RegionBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.TopBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.manager.TopicBBSManager;
+import com.shnok.javaserver.gameserver.communitybbs.model.Forum;
+import com.shnok.javaserver.gameserver.communitybbs.model.Post;
+import com.shnok.javaserver.gameserver.communitybbs.model.Topic;
+import com.shnok.javaserver.gameserver.enums.bbs.ForumAccess;
+import com.shnok.javaserver.gameserver.enums.bbs.ForumType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.GameClient;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+
+public class CommunityBoard
+{
+	private static final CLogger LOGGER = new CLogger(CommunityBoard.class.getName());
+	
+	private static final String SELECT_FORUMS = &quot;SELECT * FROM bbs_forum&quot;;
+	private static final String SELECT_TOPICS = &quot;SELECT * FROM bbs_topic ORDER BY id DESC&quot;;
+	private static final String SELECT_POSTS = &quot;SELECT * FROM bbs_post ORDER BY id ASC&quot;;
+	
+	private final Set&lt;Forum&gt; _forums = ConcurrentHashMap.newKeySet();
+	
+	protected CommunityBoard()
+	{
+		if (!Config.ENABLE_COMMUNITY_BOARD)
+			return;
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(SELECT_FORUMS);
+			PreparedStatement ps2 = con.prepareStatement(SELECT_TOPICS);
+			PreparedStatement ps3 = con.prepareStatement(SELECT_POSTS))
+		{
+			try (ResultSet rs = ps.executeQuery())
+			{
+				while (rs.next())
+					addForum(new Forum(rs));
+			}
+			
+			try (ResultSet rs2 = ps2.executeQuery())
+			{
+				while (rs2.next())
+				{
+					final Forum forum = getForumByID(rs2.getInt(&quot;forum_id&quot;));
+					if (forum == null)
+						return;
+					
+					forum.addTopic(new Topic(rs2));
+				}
+			}
+			
+			try (ResultSet rs3 = ps3.executeQuery())
+			{
+				while (rs3.next())
+				{
+					final Forum forum = getForumByID(rs3.getInt(&quot;forum_id&quot;));
+					if (forum == null)
+						return;
+					
+					final Topic topic = forum.getTopic(rs3.getInt(&quot;topic_id&quot;));
+					if (topic == null)
+						return;
+					
+					topic.addPost(new Post(rs3));
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load forums.&quot;, e);
+		}
+		LOGGER.info(&quot;Loaded {} forums.&quot;, _forums.size());
+	}
+	
+	public void handleCommands(GameClient client, String command)
+	{
+		final Player player = client.getPlayer();
+		if (player == null)
+			return;
+		
+		if (!Config.ENABLE_COMMUNITY_BOARD)
+		{
+			player.sendPacket(SystemMessageId.CB_OFFLINE);
+			return;
+		}
+		
+		if (command.startsWith(&quot;_bbshome&quot;))
+			TopBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbsgetfav&quot;))
+			FavoriteBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbsloc&quot;))
+			RegionBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbsclan&quot;))
+			ClanBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbsmemo&quot;))
+			TopicBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbsmail&quot;) || command.equals(&quot;_maillist_0_1_0_&quot;))
+			MailBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_friend&quot;) || command.startsWith(&quot;_block&quot;))
+			FriendsBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbstopics&quot;))
+			TopicBBSManager.getInstance().parseCmd(command, player);
+		else if (command.startsWith(&quot;_bbsposts&quot;))
+			PostBBSManager.getInstance().parseCmd(command, player);
+		else
+			BaseBBSManager.separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The command: &quot; + command + &quot; isn&#x27;t implemented.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+	}
+	
+	public void handleWriteCommands(GameClient client, String url, String arg1, String arg2, String arg3, String arg4, String arg5)
+	{
+		final Player player = client.getPlayer();
+		if (player == null)
+			return;
+		
+		if (!Config.ENABLE_COMMUNITY_BOARD)
+		{
+			player.sendPacket(SystemMessageId.CB_OFFLINE);
+			return;
+		}
+		
+		if (url.equals(&quot;Topic&quot;))
+			TopicBBSManager.getInstance().parseWrite(arg1, arg2, arg3, arg4, arg5, player);
+		else if (url.equals(&quot;Post&quot;))
+			PostBBSManager.getInstance().parseWrite(arg1, arg2, arg3, arg4, arg5, player);
+		else if (url.equals(&quot;_bbsloc&quot;))
+			RegionBBSManager.getInstance().parseWrite(arg1, arg2, arg3, arg4, arg5, player);
+		else if (url.equals(&quot;_bbsclan&quot;))
+			ClanBBSManager.getInstance().parseWrite(arg1, arg2, arg3, arg4, arg5, player);
+		else if (url.equals(&quot;Mail&quot;))
+			MailBBSManager.getInstance().parseWrite(arg1, arg2, arg3, arg4, arg5, player);
+		else if (url.equals(&quot;_friend&quot;))
+			FriendsBBSManager.getInstance().parseWrite(arg1, arg2, arg3, arg4, arg5, player);
+		else
+			BaseBBSManager.separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The command: &quot; + url + &quot; isn&#x27;t implemented.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+	}
+	
+	public void addForum(Forum forum)
+	{
+		if (forum == null)
+			return;
+		
+		_forums.add(forum);
+	}
+	
+	public int getANewForumId()
+	{
+		return _forums.stream().mapToInt(Forum::getId).max().orElse(0) + 1;
+	}
+	
+	public Forum getForum(ForumType type, int ownerId)
+	{
+		return _forums.stream().filter(f -&gt; f.getType() == type &amp;&amp; f.getOwnerId() == ownerId).findFirst().orElse(null);
+	}
+	
+	public Forum getForumByID(int id)
+	{
+		return _forums.stream().filter(f -&gt; f.getId() == id).findFirst().orElse(null);
+	}
+	
+	public Forum getOrCreateForum(ForumType type, ForumAccess access, int ownerId)
+	{
+		// Try to retrieve the Forum based on ForumType and ownerId.
+		Forum forum = getForum(type, ownerId);
+		if (forum != null)
+			return forum;
+		
+		// Forum isn&#x27;t existing, create it.
+		forum = new Forum(type, access, ownerId);
+		forum.insertIntoDb();
+		
+		// Add it on memory.
+		addForum(forum);
+		
+		return forum;
+	}
+	
+	public static CommunityBoard getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final CommunityBoard INSTANCE = new CommunityBoard();
+	}
+}</pre>
+            
+</body>
+</html>

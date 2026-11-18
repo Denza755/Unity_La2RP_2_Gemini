@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/UndeadBandmasterMaker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/UndeadBandmasterMaker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.maker;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.data.xml.DoorData;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.instance.Door;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+
+public class UndeadBandmasterMaker extends OpenDoorMaker
+{
+	public UndeadBandmasterMaker(String name)
+	{
+		super(name);
+	}
+	
+	@Override
+	public void onStart(NpcMaker maker)
+	{
+		ThreadPool.schedule(() -&gt; onTimer(&quot;1000&quot;, maker), 3000);
+		
+		super.onStart(maker);
+	}
+	
+	@Override
+	public void onDoorEvent(Door door, NpcMaker maker)
+	{
+		if (door.isOpened())
+		{
+			if (maker.getMakerMemo().getBool(&quot;enabled&quot;))
+				return;
+			
+			maker.getMakerMemo().set(&quot;enabled&quot;, true);
+			
+			for (MultiSpawn ms : maker.getSpawns())
+			{
+				final long toSpawnCount = ms.getTotal() - ms.getSpawned();
+				
+				for (long i = 0; i &lt; toSpawnCount; i++)
+				{
+					if (maker.getMaximumNpc() - maker.getNpcsAlive() &gt; 0)
+					{
+						ms.doSpawn(false);
+						
+						ThreadPool.schedule(() -&gt; onTimer(&quot;1000&quot;, maker), 3000);
+					}
+				}
+			}
+		}
+		else
+		{
+			if (!maker.getMakerMemo().getBool(&quot;enabled&quot;))
+				return;
+			
+			maker.getMakerMemo().set(&quot;enabled&quot;, false);
+			maker.deleteAll();
+		}
+	}
+	
+	@Override
+	public void onTimer(String name, NpcMaker maker)
+	{
+		if (name.equalsIgnoreCase(&quot;1000&quot;))
+		{
+			for (int i = 0; i &lt;= 6; i += 2)
+			{
+				final MultiSpawn def0 = maker.getSpawns().get(i);
+				if (def0 != null)
+					def0.sendScriptEvent(10032, i, 0);
+			}
+		}
+	}
+	
+	@Override
+	public void onNpcDeleted(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		final int npcsAlive = maker.getNpcsAlive();
+		
+		// TODO: Zones by name and on/off
+		if (npcsAlive == 6)
+		{
+			// gg::Area_SetOnOff(dmgzone1,0);
+		}
+		else if (npcsAlive == 4)
+		{
+			// gg::Area_SetOnOff(dmgzone2,0);
+		}
+		else if (npcsAlive == 2)
+		{
+			// gg::Area_SetOnOff(dmgzone3,0);
+		}
+		else if (npcsAlive == 0)
+		{
+			final String tDoorName3 = maker.getMakerMemo().getOrDefault(&quot;TDoorName3&quot;, &quot;TDoorName3_default&quot;);
+			if (!tDoorName3.equalsIgnoreCase(&quot;TDoorName3_default&quot;))
+				DoorData.getInstance().getDoor(tDoorName3).openMe();
+			
+			final String tDoorName4 = maker.getMakerMemo().getOrDefault(&quot;TDoorName4&quot;, &quot;TDoorName4_default&quot;);
+			if (!tDoorName4.equalsIgnoreCase(&quot;TDoorName4_default&quot;))
+				DoorData.getInstance().getDoor(tDoorName4).openMe();
+			
+			NpcMaker maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_14m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+			
+			maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_11m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+			
+			maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_10m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+			
+			maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_12m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+			
+			maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_13m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+			
+			maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_15m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+			
+			maker1 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_18m1&quot;);
+			if (maker1 != null)
+				maker1.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker1, 0, 1);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

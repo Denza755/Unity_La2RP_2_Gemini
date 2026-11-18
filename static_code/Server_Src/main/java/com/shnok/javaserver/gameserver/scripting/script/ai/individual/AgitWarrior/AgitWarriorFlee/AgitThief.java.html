@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/AgitWarrior/AgitWarriorFlee/AgitThief.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/AgitWarrior/AgitWarriorFlee/AgitThief.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.AgitWarrior.AgitWarriorFlee;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class AgitThief extends AgitWarriorFlee
+{
+	private static final L2Skill NPC_HOLD = SkillTable.getInstance().getInfo(4047, 6);
+	
+	public AgitThief()
+	{
+		super(&quot;ai/individual/AgitWarrior/AgitWarriorFlee&quot;);
+	}
+	
+	public AgitThief(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		35432,
+		35622
+	};
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (npc._i_ai1 == 1)
+		{
+			npc.removeAllAttackDesire();
+			npc.getAI().addFleeDesire(attacker, Config.MAX_DRIFT_RANGE, 10000);
+			
+			if (Rnd.get(100) &lt; 10)
+				npc.getAI().addCastDesire(attacker, NPC_HOLD, 1000000);
+		}
+		else
+		{
+			final Player player = attacker.getActingPlayer();
+			if (player != null &amp;&amp; (player.getClanId() != npc.getClanId() || player.getClanId() == 0))
+			{
+				final double hpRatio = npc.getStatus().getHpRatio();
+				if (hpRatio &gt; 0.5)
+					npc.getAI().addAttackDesire(attacker, (int) (((((double) damage) / npc.getStatus().getMaxHp()) / 0.05) * (attacker instanceof Player ? 100 : 10)));
+				else if (hpRatio &gt; 0.3)
+				{
+					if (Rnd.get(100) &lt; 90)
+						npc.getAI().addAttackDesire(attacker, (int) (((((double) damage) / npc.getStatus().getMaxHp()) / 0.05) * (attacker instanceof Player ? 100 : 10)));
+					else
+					{
+						npc._i_ai1 = 1;
+						npc.removeAllAttackDesire();
+						
+						startQuestTimer(&quot;3001&quot;, npc, player, 5000);
+					}
+				}
+				else
+				{
+					npc._i_ai1 = 1;
+					npc.removeAllAttackDesire();
+				}
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/Unity/NetworkIdentity.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/Unity/NetworkIdentity.cs</h1>
+            <pre>﻿using UnityEngine;
+
+[System.Serializable]
+public class NetworkIdentity
+{
+    [SerializeField] private EntityType _entityType;
+    [SerializeField] private int _id;
+    [SerializeField] private string _name;
+    [SerializeField] private string _title;
+
+    [Header(&quot;Relation&quot;)]
+    [SerializeField] private bool _isHpShowable;
+    [SerializeField] private bool _isAttackable;
+    [SerializeField] private int _pvpFlag;
+
+    [Header(&quot;Npc&quot;)]
+    [SerializeField] private int _npcId;
+    [SerializeField] private string _npcClass;
+
+    [Header(&quot;Player&quot;)]
+    [SerializeField] private byte _playerClass;
+    [SerializeField] private bool _isMage;
+
+    [Header(&quot;Transform&quot;)]
+    [SerializeField] private Vector3 _position = new Vector3(0, 0, 0);
+    [SerializeField] private float _heading;
+
+    [SerializeField] private bool _owned = false;
+
+    public EntityType EntityType { get =&gt; _entityType; set =&gt; _entityType = value; }
+    public int Id { get =&gt; _id; set =&gt; _id = value; }
+    public int NpcId { get =&gt; _npcId; set =&gt; _npcId = value; }
+    public string NpcClass { get =&gt; _npcClass; set =&gt; _npcClass = value; }
+    public string Name { get =&gt; _name; set =&gt; _name = value; }
+    public string Title { get =&gt; _title; set =&gt; _title = value; }
+    public Vector3 Position { get =&gt; _position; set =&gt; _position = value; }
+    public float Heading { get =&gt; _heading; set =&gt; _heading = value; }
+    public bool Owned { get =&gt; _owned; set =&gt; _owned = value; }
+    public byte PlayerClass { get =&gt; _playerClass; set =&gt; _playerClass = value; }
+    public bool IsMage { get =&gt; _isMage; set =&gt; _isMage = value; }
+    public bool IsHpShowable { get =&gt; _isHpShowable; set =&gt; _isHpShowable = value; }
+    public bool IsAttackable { get =&gt; _isAttackable; set =&gt; _isAttackable = value; }
+    public int PvpFlag { get =&gt; _pvpFlag; set =&gt; _pvpFlag = value; }
+
+    public NetworkIdentity() { }
+
+    public void UpdateIdentity(NetworkIdentity identity)
+    {
+        _entityType = identity.EntityType;
+        _id = identity.Id;
+        _npcId = identity.NpcId;
+        _npcClass = identity.NpcClass;
+        _name = identity.Name;
+        _title = identity.Title;
+        _position = identity.Position;
+        _heading = identity.Heading;
+        _owned = identity.Owned;
+        _playerClass = identity.PlayerClass;
+        _isMage = identity.IsMage;
+        _pvpFlag = identity.PvpFlag;
+        _isAttackable = identity.IsAttackable;
+    }
+
+    public void UpdateForNpcs(NetworkIdentity identity)
+    {
+        _position = identity.Position;
+        _heading = identity.Heading;
+        _isAttackable = identity.IsAttackable;
+    }
+
+    public void SetPosX(float x)
+    {
+        _position.x = x;
+    }
+
+    public void SetPosY(float y)
+    {
+        _position.y = y;
+    }
+
+    public void SetPosZ(float z)
+    {
+        _position.z = z;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Login/CharCreationWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Login/CharCreationWindow.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class CharCreationWindow : L2Window
+{
+    private VisualTreeAsset _arrowInputTemplate;
+    private ArrowInputManipulator hairstyleManipulator;
+    private ArrowInputManipulator hairColorManipulator;
+    private ArrowInputManipulator faceManipulator;
+    private ArrowInputManipulator genderManipulator;
+    private ArrowInputManipulator classManipulator;
+    private ArrowInputManipulator raceManipulator;
+    private TextField userInputField;
+    private VisualElement pawnRotateWindow;
+    private Button pawnZoominButton;
+
+    private static CharCreationWindow _instance;
+    public static CharCreationWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Login/CharCreationWindow/CharCreationWindow&quot;);
+        _arrowInputTemplate = LoadAsset(&quot;Data/UI/_Elements/Components/L2ArrowInput/L2ArrowInput&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        userInputField = (TextField)GetElementById(&quot;UserInputField&quot;).Q&lt;TextField&gt;(&quot;L2Input&quot;);
+        userInputField.AddManipulator(new BlinkingCursorManipulator(userInputField));
+        userInputField.RegisterValueChangedCallback(evt =&gt; ValidateNewName(evt));
+
+        Button createButton = (Button)GetElementById(&quot;CreateButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        createButton.AddManipulator(new ButtonClickSoundManipulator(createButton));
+        createButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; CreateButtonPressed());
+
+        Button previousButton = (Button)GetElementById(&quot;PreviousButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        previousButton.AddManipulator(new ButtonClickSoundManipulator(previousButton));
+        previousButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; PreviousButtonPressed());
+
+        VisualElement charDetailWindow = GetElementById(&quot;CharCreationDetailWindow&quot;);
+
+        pawnRotateWindow = GetElementById(&quot;CharacterRotateWindow&quot;);
+        HideRotatePawnWindow();
+
+        Button pawnRotateLeftButton = pawnRotateWindow.Q&lt;Button&gt;(&quot;TurnLeftButton&quot;);
+        Button pawnRotateRightButton = pawnRotateWindow.Q&lt;Button&gt;(&quot;TurnRightButton&quot;);
+        pawnZoominButton = pawnRotateWindow.Q&lt;Button&gt;(&quot;ZoomButton&quot;);
+
+        pawnRotateLeftButton.AddManipulator(new ButtonClickSoundManipulator(pawnRotateLeftButton));
+        pawnRotateRightButton.AddManipulator(new ButtonClickSoundManipulator(pawnRotateRightButton));
+        pawnZoominButton.AddManipulator(new ButtonClickSoundManipulator(pawnZoominButton));
+
+        pawnRotateLeftButton.RegisterCallback&lt;PointerDownEvent&gt;((evt) =&gt;
+        {
+            CharacterCreator.Instance.RotatePawn(true);
+        }, TrickleDown.TrickleDown);
+
+        pawnRotateRightButton.RegisterCallback&lt;PointerDownEvent&gt;((evt) =&gt;
+        {
+            CharacterCreator.Instance.RotatePawn(false);
+        }, TrickleDown.TrickleDown);
+
+        pawnRotateLeftButton.RegisterCallback&lt;PointerUpEvent&gt;((evt) =&gt;
+        {
+            CharacterCreator.Instance.StopRotatingPawn();
+        });
+
+        pawnRotateRightButton.RegisterCallback&lt;PointerUpEvent&gt;((evt) =&gt;
+        {
+            CharacterCreator.Instance.StopRotatingPawn();
+        });
+
+        pawnZoominButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt;
+        {
+            ToggleZoomin(false);
+        });
+
+        VisualElement raceInput = _arrowInputTemplate.Instantiate()[0];
+        VisualElement classInput = _arrowInputTemplate.Instantiate()[0];
+        VisualElement genderInput = _arrowInputTemplate.Instantiate()[0];
+        VisualElement hairstyleInput = _arrowInputTemplate.Instantiate()[0];
+        VisualElement hairColorInput = _arrowInputTemplate.Instantiate()[0];
+        VisualElement faceInput = _arrowInputTemplate.Instantiate()[0];
+
+
+        hairstyleManipulator = new ArrowInputManipulator(hairstyleInput, SysStringTable.Instance.GetSysString(167).Name, new string[] {
+            SysStringTable.Instance.GetSysString(179).Name,
+            SysStringTable.Instance.GetSysString(180).Name,
+            SysStringTable.Instance.GetSysString(181).Name,
+            SysStringTable.Instance.GetSysString(182).Name,
+            SysStringTable.Instance.GetSysString(186).Name }, -1, (index, value) =&gt;
+        {
+            if (CharacterCreator.Instance.PawnIndex == -1)
+            {
+                hairstyleManipulator.ClearInput();
+                return;
+            }
+
+            CharacterCreator.Instance.ChangeCharacterHairStyle(index);
+        });
+        hairstyleInput.AddManipulator(hairstyleManipulator);
+
+        hairColorManipulator = new ArrowInputManipulator(hairColorInput, SysStringTable.Instance.GetSysString(168).Name, new string[] {
+            SysStringTable.Instance.GetSysString(179).Name,
+            SysStringTable.Instance.GetSysString(180).Name,
+            SysStringTable.Instance.GetSysString(181).Name,
+            SysStringTable.Instance.GetSysString(182).Name }, -1, (index, value) =&gt;
+        {
+            if (CharacterCreator.Instance.PawnIndex == -1)
+            {
+                hairColorManipulator.ClearInput();
+                return;
+            }
+
+            CharacterCreator.Instance.ChangeCharacterHairColor(index);
+        });
+        hairColorInput.AddManipulator(hairColorManipulator);
+
+        faceManipulator = new ArrowInputManipulator(faceInput, SysStringTable.Instance.GetSysString(169).Name, new string[] {
+            SysStringTable.Instance.GetSysString(179).Name,
+            SysStringTable.Instance.GetSysString(180).Name,
+            SysStringTable.Instance.GetSysString(181).Name }, -1, (index, value) =&gt;
+        {
+            if (CharacterCreator.Instance.PawnIndex == -1)
+            {
+                faceManipulator.ClearInput();
+                return;
+            }
+
+            CharacterCreator.Instance.ChangeCharacterFace(index);
+        });
+        faceInput.AddManipulator(faceManipulator);
+
+        genderManipulator = new ArrowInputManipulator(genderInput, SysStringTable.Instance.GetSysString(166).Name, new string[] {
+            SysStringTable.Instance.GetSysString(177).Name,
+            SysStringTable.Instance.GetSysString(178).Name }, -1, (index, value) =&gt;
+        {
+            if (classManipulator.Value == &quot;&quot;)
+            {
+                genderManipulator.ClearInput();
+                return;
+            }
+
+            Camera cam = LoginCameraManager.Instance.SelectGenderCamera(raceManipulator.Value, classManipulator.Index, index);
+            if (cam != null)
+            {
+                LoginCameraManager.Instance.SwitchCamera(cam);
+            }
+
+            hairstyleManipulator.ResetInput();
+            hairColorManipulator.ResetInput();
+            faceManipulator.ResetInput();
+
+            ShowRotatePawnWindow();
+            CharacterCreator.Instance.ResetPawnSelection();
+            CharacterCreator.Instance.SelectPawn(raceManipulator.Index, classManipulator.Index, index);
+        });
+        genderInput.AddManipulator(genderManipulator);
+
+        classManipulator = new ArrowInputManipulator(classInput, SysStringTable.Instance.GetSysString(165).Name, new string[] {
+            SysStringTable.Instance.GetSysString(175).Name,
+            SysStringTable.Instance.GetSysString(176).Name }, -1, (index, value) =&gt;
+        {
+            if (raceManipulator.Index == 4 &amp;&amp; index == 1)
+            {
+                classManipulator.ResetInput();
+                return;
+            }
+
+            if (raceManipulator.Value == &quot;&quot;)
+            {
+                classManipulator.ClearInput();
+                return;
+            }
+
+            Camera cam = LoginCameraManager.Instance.SelectClassCamera(raceManipulator.Value, index);
+            Debug.LogWarning(raceManipulator.Value);
+            Debug.LogWarning(value);
+            Debug.LogWarning(cam);
+            if (cam != null)
+            {
+                LoginCameraManager.Instance.SwitchCamera(cam);
+            }
+
+            genderManipulator.ClearInput();
+            hairstyleManipulator.ClearInput();
+            hairColorManipulator.ClearInput();
+            faceManipulator.ClearInput();
+
+            HideRotatePawnWindow();
+            CharacterCreator.Instance.ResetPawnSelection();
+        });
+        classInput.AddManipulator(classManipulator);
+
+        raceManipulator = new ArrowInputManipulator(raceInput, SysStringTable.Instance.GetSysString(164).Name, new string[] {
+            SysStringTable.Instance.GetSysString(170).Name,
+            SysStringTable.Instance.GetSysString(171).Name,
+            SysStringTable.Instance.GetSysString(172).Name,
+            SysStringTable.Instance.GetSysString(173).Name,
+            SysStringTable.Instance.GetSysString(174).Name }, -1, (index, value) =&gt;
+        {
+            LoginCameraManager.Instance.SwitchCamera(value);
+            classManipulator.ClearInput();
+            genderManipulator.ClearInput();
+            hairstyleManipulator.ClearInput();
+            hairColorManipulator.ClearInput();
+            faceManipulator.ClearInput();
+
+            HideRotatePawnWindow();
+            CharacterCreator.Instance.ResetPawnSelection();
+        });
+        raceInput.AddManipulator(raceManipulator);
+
+        raceManipulator.ClearInput();
+
+        charDetailWindow.Add(raceInput);
+        charDetailWindow.Add(classInput);
+        charDetailWindow.Add(genderInput);
+        charDetailWindow.Add(hairstyleInput);
+        charDetailWindow.Add(hairColorInput);
+        charDetailWindow.Add(faceInput);
+
+        L2LoginUI.Instance.WindowLoadComplete();
+    }
+
+    private void ValidateNewName(ChangeEvent&lt;string&gt; evt)
+    {
+        var regex = new Regex(@&quot;^[a-zA-Z0-9]{0,12}$&quot;);
+        if (!regex.IsMatch(evt.newValue))
+        {
+            userInputField.value = evt.previousValue;
+            return;
+        }
+    }
+
+    private void CreateButtonPressed()
+    {
+        if (userInputField.value.Length == 0)
+        {
+            L2ConfirmWindow.Instance.ShowWindow(205, () =&gt; { }, null);
+            return;
+        }
+
+        if (CharacterCreator.Instance.PawnIndex == -1)
+        {
+            return;
+        }
+
+        CharacterCreator.Instance.ValidateCharacterCreation(userInputField.value, classManipulator.Index == 1);
+    }
+
+    private void ClearInputs()
+    {
+        classManipulator.ClearInput();
+        genderManipulator.ClearInput();
+        hairstyleManipulator.ClearInput();
+        hairColorManipulator.ClearInput();
+        faceManipulator.ClearInput();
+        raceManipulator.ClearInput();
+        userInputField.value = &quot;&quot;;
+        CharacterCreator.Instance.ResetPawnSelection();
+    }
+
+    private void PreviousButtonPressed()
+    {
+        ClearInputs();
+
+        GameManager.Instance.NotifyEvent(GameEvent.RETURN);
+    }
+
+    private void ShowRotatePawnWindow()
+    {
+        pawnRotateWindow.style.display = DisplayStyle.Flex;
+
+        if (pawnZoominButton.ClassListContains(&quot;toggle&quot;))
+        {
+            pawnZoominButton.RemoveFromClassList(&quot;toggle&quot;);
+        }
+    }
+
+    private void HideRotatePawnWindow()
+    {
+        pawnRotateWindow.style.display = DisplayStyle.None;
+    }
+
+    private void ToggleZoomin(bool removeOnly)
+    {
+        if (pawnZoominButton.ClassListContains(&quot;toggle&quot;))
+        {
+            LoginCameraManager.Instance.ZoomOut();
+
+            pawnZoominButton.RemoveFromClassList(&quot;toggle&quot;);
+        }
+        else
+        {
+
+            LoginCameraManager.Instance.ZoomIn();
+
+            pawnZoominButton.AddToClassList(&quot;toggle&quot;);
+        }
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+
+        ClearInputs();
+    }
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/Say2.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/Say2.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets;
+
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.enums.SayType;
+import com.shnok.javaserver.gameserver.handler.ChatHandler;
+import com.shnok.javaserver.gameserver.handler.IChatHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+
+public final class Say2 extends L2GameClientPacket
+{
+	private static final Logger CHAT_LOG = Logger.getLogger(&quot;chat&quot;);
+	
+	private static final String[] WALKER_COMMAND_LIST =
+	{
+		&quot;USESKILL&quot;,
+		&quot;USEITEM&quot;,
+		&quot;BUYITEM&quot;,
+		&quot;SELLITEM&quot;,
+		&quot;SAVEITEM&quot;,
+		&quot;LOADITEM&quot;,
+		&quot;MSG&quot;,
+		&quot;DELAY&quot;,
+		&quot;LABEL&quot;,
+		&quot;JMP&quot;,
+		&quot;CALL&quot;,
+		&quot;RETURN&quot;,
+		&quot;MOVETO&quot;,
+		&quot;NPCSEL&quot;,
+		&quot;NPCDLG&quot;,
+		&quot;DLGSEL&quot;,
+		&quot;CHARSTATUS&quot;,
+		&quot;POSOUTRANGE&quot;,
+		&quot;POSINRANGE&quot;,
+		&quot;GOHOME&quot;,
+		&quot;SAY&quot;,
+		&quot;EXIT&quot;,
+		&quot;PAUSE&quot;,
+		&quot;STRINDLG&quot;,
+		&quot;STRNOTINDLG&quot;,
+		&quot;CHANGEWAITTYPE&quot;,
+		&quot;FORCEATTACK&quot;,
+		&quot;ISMEMBER&quot;,
+		&quot;REQUESTJOINPARTY&quot;,
+		&quot;REQUESTOUTPARTY&quot;,
+		&quot;QUITPARTY&quot;,
+		&quot;MEMBERSTATUS&quot;,
+		&quot;CHARBUFFS&quot;,
+		&quot;ITEMCOUNT&quot;,
+		&quot;FOLLOWTELEPORT&quot;
+	};
+	
+	private String _text;
+	private int _id;
+	private String _target;
+	
+	@Override
+	protected void readImpl()
+	{
+		_text = readS();
+		_id = readD();
+		_target = (_id == SayType.TELL.ordinal()) ? readS() : null;
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		if (_id &lt; 0 || _id &gt;= SayType.VALUES.length)
+			return;
+		
+		if (_text.isEmpty() || _text.length() &gt; 100)
+			return;
+		
+		SayType type = SayType.VALUES[_id];
+		if (Config.L2WALKER_PROTECTION &amp;&amp; type == SayType.TELL &amp;&amp; checkBot(_text))
+			return;
+		
+		if (!player.isGM() &amp;&amp; (type == SayType.ANNOUNCEMENT || type == SayType.CRITICAL_ANNOUNCE))
+			return;
+		
+		if (player.isChatBanned() || (player.isInJail() &amp;&amp; !player.isGM()))
+		{
+			player.sendPacket(SystemMessageId.CHATTING_PROHIBITED);
+			return;
+		}
+		
+		if (type == SayType.PETITION_PLAYER &amp;&amp; player.isGM())
+			type = SayType.PETITION_GM;
+		
+		if (Config.LOG_CHAT)
+		{
+			final LogRecord logRecord = new LogRecord(Level.INFO, _text);
+			logRecord.setLoggerName(&quot;chat&quot;);
+			
+			if (type == SayType.TELL)
+				logRecord.setParameters(new Object[]
+				{
+					type,
+					&quot;[&quot; + player.getName() + &quot; to &quot; + _target + &quot;]&quot;
+				});
+			else
+				logRecord.setParameters(new Object[]
+				{
+					type,
+					&quot;[&quot; + player.getName() + &quot;]&quot;
+				});
+			
+			CHAT_LOG.log(logRecord);
+		}
+		
+		_text = _text.replaceAll(&quot;\\\\n&quot;, &quot;&quot;);
+		
+		final IChatHandler handler = ChatHandler.getInstance().getHandler(type);
+		if (handler == null)
+		{
+			LOGGER.warn(&quot;{} tried to use unregistred chathandler type: {}.&quot;, player.getName(), type);
+			return;
+		}
+		
+		handler.handleChat(type, player, _target, _text);
+	}
+	
+	private static boolean checkBot(String text)
+	{
+		for (String botCommand : WALKER_COMMAND_LIST)
+		{
+			if (text.startsWith(botCommand))
+				return true;
+		}
+		return false;
+	}
+	
+	@Override
+	protected boolean triggersOnActionRequest()
+	{
+		return false;
+	}
+}</pre>
+            
+</body>
+</html>

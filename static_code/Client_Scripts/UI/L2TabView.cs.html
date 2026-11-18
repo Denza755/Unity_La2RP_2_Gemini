@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/L2TabView.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/L2TabView.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class L2TabView
+{
+    private VisualElement _tabViewElement;
+    private L2Tab[] _tabs;
+    private VisualTreeAsset _tabTemplate;
+    private VisualTreeAsset _tabHeaderTemplate;
+    private L2Tab _activeTab;
+    public L2Tab ActiveTab { get =&gt; _activeTab; }
+
+    public void Initialize(VisualElement tabViewElement, L2Tab[] tabs, VisualTreeAsset tabTemplate, VisualTreeAsset tabHeaderTemplate, bool reverseOrder)
+    {
+        _tabViewElement = tabViewElement;
+        _tabs = tabs;
+        _tabTemplate = tabTemplate;
+        _tabHeaderTemplate = tabHeaderTemplate;
+
+        CreateTabs(reverseOrder);
+    }
+
+    private void CreateTabs(bool reverseOrder)
+    {
+        VisualElement tabHeaderContainer = _tabViewElement.Q&lt;VisualElement&gt;(&quot;tab-header-container&quot;);
+        if (tabHeaderContainer == null)
+        {
+            Debug.LogError(&quot;tab-header-container is null&quot;);
+        }
+
+        VisualElement tabContainer = _tabViewElement.Q&lt;VisualElement&gt;(&quot;tab-content-container&quot;);
+        if (tabContainer == null)
+        {
+            Debug.LogError(&quot;tab-content-container&quot;);
+        }
+
+        for (int i = 0; i &lt; _tabs.Length; i++)
+        {
+            L2Tab tab = reverseOrder ? _tabs[_tabs.Length - 1 - i] : _tabs[i];
+
+            VisualElement tabElement = _tabTemplate.CloneTree()[0];
+            // tabElement.name = _tabs[i].TabName;
+            tabElement.name = tab.TabName;
+            tabElement.AddToClassList(&quot;unselected-tab&quot;);
+
+            VisualElement tabHeaderElement = _tabHeaderTemplate.CloneTree()[0];
+            tabHeaderElement.name = tab.TabName;
+            tabHeaderElement.Q&lt;Label&gt;().text = tab.TabName;
+
+            tabHeaderContainer.Add(tabHeaderElement);
+            tabContainer.Add(tabElement);
+
+            tab.Initialize(this, tabElement, tabHeaderElement);
+        }
+
+        if (_tabs.Length &gt; 0)
+        {
+            SwitchTab(_tabs[0]);
+        }
+    }
+
+    public bool SwitchTab(L2Tab switchTo)
+    {
+        if (_activeTab != switchTo)
+        {
+            if (_activeTab != null)
+            {
+                _activeTab.TabContainer.AddToClassList(&quot;unselected-tab&quot;);
+                _activeTab.TabHeader.RemoveFromClassList(&quot;active&quot;);
+            }
+
+            switchTo.TabContainer.RemoveFromClassList(&quot;unselected-tab&quot;);
+            switchTo.TabHeader.AddToClassList(&quot;active&quot;);
+
+            AudioManager.Instance.PlayUISound(&quot;window_open&quot;);
+
+            _activeTab = switchTo;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void ShowTab(int tabIndex)
+    {
+        _tabs[tabIndex].TabHeader.RemoveFromClassList(&quot;hidden&quot;);
+    }
+
+    public void HideTab(int tabIndex)
+    {
+        _tabs[tabIndex].TabHeader.AddToClassList(&quot;hidden&quot;);
+    }
+}</pre>
+            
+</body>
+</html>

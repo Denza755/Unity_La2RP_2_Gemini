@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q264_KeenClaws.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q264_KeenClaws.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q264_KeenClaws extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q264_KeenClaws&quot;;
+	
+	// Item
+	private static final int WOLF_CLAW = 1367;
+	
+	// Rewards
+	private static final int LEATHER_SANDALS = 36;
+	private static final int WOODEN_HELMET = 43;
+	private static final int STOCKINGS = 462;
+	private static final int HEALING_POTION = 1061;
+	private static final int SHORT_GLOVES = 48;
+	private static final int CLOTH_SHOES = 35;
+	
+	public Q264_KeenClaws()
+	{
+		super(264, &quot;Keen Claws&quot;);
+		
+		setItemsIds(WOLF_CLAW);
+		
+		addQuestStart(30136); // Payne
+		addTalkId(30136);
+		
+		addMyDying(20003, 20456); // Goblin, Wolf
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30136-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 3) ? &quot;30136-01.htm&quot; : &quot;30136-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int count = player.getInventory().getItemCount(WOLF_CLAW);
+				if (count &lt; 50)
+					htmltext = &quot;30136-04.htm&quot;;
+				else
+				{
+					htmltext = &quot;30136-05.htm&quot;;
+					takeItems(player, WOLF_CLAW, -1);
+					
+					final int n = Rnd.get(17);
+					if (n == 0)
+					{
+						giveItems(player, WOODEN_HELMET, 1);
+						playSound(player, SOUND_JACKPOT);
+					}
+					else if (n &lt; 2)
+						giveItems(player, 57, 1000);
+					else if (n &lt; 5)
+						giveItems(player, LEATHER_SANDALS, 1);
+					else if (n &lt; 8)
+					{
+						giveItems(player, STOCKINGS, 1);
+						giveItems(player, 57, 50);
+					}
+					else if (n &lt; 11)
+						giveItems(player, HEALING_POTION, 1);
+					else if (n &lt; 14)
+						giveItems(player, SHORT_GLOVES, 1);
+					else
+						giveItems(player, CLOTH_SHOES, 1);
+					
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(true);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (npc.getNpcId() == 20003)
+		{
+			if (dropItems(player, WOLF_CLAW, Rnd.nextBoolean() ? 2 : 4, 50, 500000))
+				st.setCond(2);
+		}
+		else if (dropItemsAlways(player, WOLF_CLAW, (Rnd.get(5) &lt; 4) ? 1 : 2, 50))
+			st.setCond(2);
+	}
+}</pre>
+            
+</body>
+</html>

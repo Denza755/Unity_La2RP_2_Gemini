@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Nameplate/NameplatesManagerGame.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Nameplate/NameplatesManagerGame.cs</h1>
+            <pre>using UnityEngine;
+using UnityEngine.UIElements;
+
+public class NameplatesManagerGame : NameplatesManagerBase
+{
+    private PlayerNameplate playerNameplate;
+
+    private static NameplatesManagerGame instance;
+    public static NameplatesManagerGame Instance =&gt; instance;
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
+        Initialize();
+    }
+
+    private void FixedUpdate()
+    {
+        if (!IsSystemReady()) return;
+
+        ScanForEntities();
+        ProcessNameplateVisibility();
+        HandlePlayerNameplate();
+    }
+
+    protected override bool IsSystemReady()
+    {
+        if (!L2GameUI.Instance.UILoaded) return false;
+
+        if (mainCamera == null)
+        {
+            if (CameraController.Instance == null)
+            {
+                Debug.LogWarning(&quot;CameraController instance is null&quot;);
+                return false;
+            }
+
+            var cameraComponent = CameraController.Instance.GetComponent&lt;Camera&gt;();
+            if (cameraComponent == null)
+            {
+                Debug.LogWarning(&quot;Camera component not found on CameraController&quot;);
+                return false;
+            }
+
+            mainCamera = cameraComponent;
+        }
+
+        if (rootElement == null)
+        {
+            rootElement = L2GameUI.Instance.RootElement.Q&lt;VisualElement&gt;(&quot;NameplatesContainer&quot;);
+            return false;
+        }
+
+        if (playerTransform == null &amp;&amp; PlayerEntity.Instance?.transform != null)
+        {
+            playerTransform = PlayerEntity.Instance.transform;
+        }
+
+        return playerTransform != null;
+    }
+
+    protected override void ScanForEntities()
+    {
+        base.ScanForEntities();
+
+        ProcessHoveredEntity();
+        ProcessTargetedEntity();
+    }
+
+    private void ProcessHoveredEntity()
+    {
+        var hoveredObject = ClickManager.Instance.HoverObjectData;
+        if (ShouldCreateNameplateForEntity(hoveredObject))
+        {
+            var entity = hoveredObject.ObjectTransform.GetComponent&lt;Entity&gt;();
+            nameplates.GetOrAdd(entity.Identity.Id, _ =&gt; CreateNameplate(entity));
+        }
+    }
+
+    protected virtual void ProcessTargetedEntity()
+    {
+        if (!TargetManager.Instance.HasTarget()) return;
+
+        var targetTransform = TargetManager.Instance.Target.transform;
+        if (targetTransform.TryGetComponent&lt;Entity&gt;(out var entity) &amp;&amp;
+            entity.Identity.Id != GameClient.Instance.CurrentPlayerId)
+        {
+            nameplates.GetOrAdd(entity.Identity.Id, _ =&gt; CreateNameplate(entity));
+        }
+    }
+
+    protected override bool CheckIfNotPlayer(Entity entity)
+    {
+        return entity.Identity.Id != GameClient.Instance.CurrentPlayerId;
+    }
+
+    private PlayerNameplate CreatePlayerNameplate(Entity entity)
+    {
+        var element = nameplateTemplate.Instantiate()[0];
+        var nameplate = new PlayerNameplate(
+            element,
+            element.Q&lt;Label&gt;(&quot;EntityName&quot;),
+            element.Q&lt;Label&gt;(&quot;EntityTitle&quot;),
+            entity
+        );
+        rootElement.Add(element);
+        return nameplate;
+    }
+
+    private void HandlePlayerNameplate()
+    {
+        playerNameplate ??= CreatePlayerNameplate(PlayerEntity.Instance);
+        UpdatePlayerNameplate();
+    }
+
+    private void UpdatePlayerNameplate()
+    {
+        playerNameplate.Visible = IsNameplateVisible(playerNameplate.Target);
+        if (playerNameplate.Visible)
+        {
+            playerNameplate.Show();
+            UpdateNameplatePosition(playerNameplate);
+            UpdateNameplateStyle(playerNameplate);
+            UpdatePlayerGauge();
+        }
+        else
+        {
+            playerNameplate.Hide();
+        }
+    }
+    protected override bool IsNameplateVisible(Transform target)
+    {
+        if (target == null) return false;
+
+        var isHovered = ClickManager.Instance.HoverObjectData?.ObjectTransform == target;
+        if (isHovered) return true;
+
+        var isTarget = TargetManager.Instance.HasTarget() &amp;&amp;
+                      TargetManager.Instance.Target.transform == target;
+        var isTooFar = Vector3.Distance(playerTransform.position, target.position) &gt; nameplateViewDistance;
+
+        return (!isTooFar || isTarget) &amp;&amp; CameraController.Instance.IsObjectVisible(target);
+    }
+
+    protected override void UpdateNameplateStyle(Nameplate nameplate)
+    {
+        base.UpdateNameplateStyle(nameplate);
+
+        var target = TargetManager.Instance;
+        var isCurrentTarget = target.HasTarget() &amp;&amp; target.Target.transform == nameplate.Target;
+
+        if (isCurrentTarget)
+        {
+            UpdateTargetedNameplateStyle(nameplate, target);
+        }
+        else
+        {
+            nameplate.RemoveStyle(&quot;target-bubble-attack&quot;);
+            nameplate.RemoveStyle(&quot;target-bubble-target&quot;);
+        }
+
+        UpdateHoveredNameplateStyle(nameplate);
+    }
+
+    protected void UpdateTargetedNameplateStyle(Nameplate nameplate, TargetManager target)
+    {
+        var isAttackTarget = target.AttackTarget == target.Target &amp;&amp;
+                            !target.AttackTarget.Status.IsDead;
+
+        if (isAttackTarget)
+        {
+            nameplate.SetStyle(&quot;target-bubble-attack&quot;);
+        }
+        else
+        {
+            nameplate.SetStyle(&quot;target-bubble-target&quot;);
+            nameplate.RemoveStyle(&quot;target-bubble-attack&quot;);
+        }
+    }
+
+    protected void UpdateHoveredNameplateStyle(Nameplate nameplate)
+    {
+        var isHovered = ClickManager.Instance.HoverObjectData?.ObjectTransform == nameplate.Target;
+        if (isHovered)
+        {
+            nameplate.SetStyle(&quot;target-bubble-hover&quot;);
+        }
+        else
+        {
+            nameplate.RemoveStyle(&quot;target-bubble-hover&quot;);
+        }
+    }
+
+    public void StartCasting(SetupGaugePacket.GaugeColor color, int durationMs)
+    {
+        playerNameplate?.ShowGauge(color, Time.time, durationMs);
+    }
+
+    public void StopCasting()
+    {
+        playerNameplate?.HideGauge();
+    }
+
+    private void UpdatePlayerGauge()
+    {
+        if (playerNameplate == null) return;
+
+        if (playerNameplate.GaugeEndTime - Time.time &gt; 0)
+        {
+            playerNameplate.UpdateGauge(Time.time);
+        }
+        else
+        {
+            playerNameplate.HideGauge();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        nameplates.Clear();
+        instance = null;
+    }
+
+    public override void ClearNameplates()
+    {
+        base.ClearNameplates();
+
+        if (playerNameplate != null)
+        {
+            if (playerNameplate.NameplateEle != null)
+            {
+                rootElement.Remove(playerNameplate.NameplateEle);
+            }
+
+            playerNameplate = null;
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

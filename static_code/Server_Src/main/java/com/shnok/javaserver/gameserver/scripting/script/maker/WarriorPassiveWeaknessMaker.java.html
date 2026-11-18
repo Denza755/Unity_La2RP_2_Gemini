@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/WarriorPassiveWeaknessMaker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/WarriorPassiveWeaknessMaker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.maker;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.data.xml.DoorData;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+
+public class WarriorPassiveWeaknessMaker extends OpenDoorMaker
+{
+	public WarriorPassiveWeaknessMaker(String name)
+	{
+		super(name);
+	}
+	
+	@Override
+	public void onTimer(String name, NpcMaker maker)
+	{
+		if (name.equalsIgnoreCase(&quot;1000&quot;))
+		{
+			
+			String tDoorName1 = maker.getMakerMemo().getOrDefault(&quot;TDoorName1&quot;, &quot;grave_pathway_1&quot;);
+			String tDoorName2 = maker.getMakerMemo().getOrDefault(&quot;TDoorName2&quot;, &quot;grave_pathway_2&quot;);
+			
+			String tDoorName3 = maker.getMakerMemo().get(&quot;TDoorName3&quot;);
+			String tDoorName4 = maker.getMakerMemo().get(&quot;TDoorName4&quot;);
+			
+			String wallDoorNameB1 = maker.getMakerMemo().get(&quot;WallDoorNameB1&quot;);
+			String wallDoorNameB2 = maker.getMakerMemo().get(&quot;WallDoorNameB2&quot;);
+			String wallDoorNameB3 = maker.getMakerMemo().get(&quot;WallDoorNameB3&quot;);
+			String wallDoorNameB4 = maker.getMakerMemo().get(&quot;WallDoorNameB4&quot;);
+			String wallDoorNameB5 = maker.getMakerMemo().get(&quot;WallDoorNameB5&quot;);
+			String wallDoorNameB6 = maker.getMakerMemo().get(&quot;WallDoorNameB6&quot;);
+			String wallDoorNameB7 = maker.getMakerMemo().get(&quot;WallDoorNameB7&quot;);
+			String wallDoorNameB8 = maker.getMakerMemo().get(&quot;WallDoorNameB8&quot;);
+			String wallDoorNameB9 = maker.getMakerMemo().get(&quot;WallDoorNameB9&quot;);
+			String wallDoorNameB10 = maker.getMakerMemo().get(&quot;WallDoorNameB10&quot;);
+			
+			DoorData.getInstance().getDoor(tDoorName1).closeMe();
+			DoorData.getInstance().getDoor(tDoorName2).closeMe();
+			
+			if (tDoorName3 != null)
+				DoorData.getInstance().getDoor(tDoorName3).closeMe();
+			
+			if (tDoorName4 != null)
+				DoorData.getInstance().getDoor(tDoorName4).closeMe();
+			
+			if (wallDoorNameB1 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB1).openMe();
+			
+			if (wallDoorNameB2 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB2).openMe();
+			
+			if (wallDoorNameB3 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB3).openMe();
+			
+			if (wallDoorNameB4 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB4).openMe();
+			
+			if (wallDoorNameB5 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB5).openMe();
+			
+			if (wallDoorNameB6 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB6).openMe();
+			
+			if (wallDoorNameB7 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB7).openMe();
+			
+			if (wallDoorNameB8 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB8).openMe();
+			
+			if (wallDoorNameB9 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB9).openMe();
+			
+			if (wallDoorNameB10 != null)
+				DoorData.getInstance().getDoor(wallDoorNameB10).openMe();
+		}
+	}
+	
+	@Override
+	public void onNpcDeleted(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		if (maker.getNpcsAlive() == 0)
+			ThreadPool.schedule(() -&gt; onTimer(&quot;1000&quot;, maker), 500);
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/TeleportData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/TeleportData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.model.location.TeleportLocation;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores {@link TeleportLocation}s used as regular teleport positions.
+ */
+public class TeleportData implements IXmlReader
+{
+	private final Map&lt;Integer, List&lt;TeleportLocation&gt;&gt; _teleports = new HashMap&lt;&gt;();
+	
+	protected TeleportData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/teleports.xml&quot;);
+		LOGGER.info(&quot;Loaded {} teleport positions.&quot;, _teleports.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;telPosList&quot;, telPosListNode -&gt;
+		{
+			final NamedNodeMap telPosListAttrs = telPosListNode.getAttributes();
+			final int npcId = Integer.parseInt(telPosListAttrs.getNamedItem(&quot;npcId&quot;).getNodeValue());
+			
+			final List&lt;TeleportLocation&gt; teleports = new ArrayList&lt;&gt;();
+			forEach(telPosListNode, &quot;loc&quot;, locNode -&gt; teleports.add(new TeleportLocation(parseAttributes(locNode))));
+			
+			_teleports.put(npcId, teleports);
+		}));
+	}
+	
+	public void reload()
+	{
+		_teleports.clear();
+		
+		load();
+	}
+	
+	public List&lt;TeleportLocation&gt; getTeleports(int npcId)
+	{
+		return _teleports.get(npcId);
+	}
+	
+	public static TeleportData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final TeleportData INSTANCE = new TeleportData();
+	}
+}</pre>
+            
+</body>
+</html>

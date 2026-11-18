@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/ClanHallManagerNpc.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/ClanHallManagerNpc.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.text.SimpleDateFormat;
+import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
+
+import com.shnok.javaserver.gameserver.data.xml.ClanHallDecoData;
+import com.shnok.javaserver.gameserver.enums.PrivilegeType;
+import com.shnok.javaserver.gameserver.enums.TeleportType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcTalkCond;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.ai.type.ClanHallManagerNpcAI;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHall;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHallFunction;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.SiegableHall;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ClanHallDecoration;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.WarehouseDepositList;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.WarehouseWithdrawList;
+
+public class ClanHallManagerNpc extends Merchant
+{
+	private static final String REMOVE_HP = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery hp_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String HP_GRADE_1 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 2\&quot;&gt;40%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 5\&quot;&gt;100%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 8\&quot;&gt;160%&lt;/a&gt;]&quot;;
+	private static final String HP_GRADE_2 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 4\&quot;&gt;80%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 7\&quot;&gt;140%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 10\&quot;&gt;200%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 260\&quot;&gt;260%&lt;/a&gt;]&quot;;
+	private static final String HP_GRADE_3 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 4\&quot;&gt;80%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 6\&quot;&gt;120%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 9\&quot;&gt;180%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 12\&quot;&gt;240%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 15\&quot;&gt;300%&lt;/a&gt;]&quot;;
+	private static final String HP_GRADE_2_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 25\&quot;&gt;300%&lt;/a&gt;]&quot;;
+	private static final String HP_GRADE_3_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 25\&quot;&gt;300%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_hp 30\&quot;&gt;400%&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_EXP = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery exp_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String EXP_GRADE_1 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 1\&quot;&gt;5%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 3\&quot;&gt;15%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 6\&quot;&gt;30%&lt;/a&gt;]&quot;;
+	private static final String EXP_GRADE_2 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 1\&quot;&gt;5%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 3\&quot;&gt;15%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 5\&quot;&gt;25%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 8\&quot;&gt;40%&lt;/a&gt;]&quot;;
+	private static final String EXP_GRADE_3 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 3\&quot;&gt;15%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 5\&quot;&gt;25%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 7\&quot;&gt;35%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 10\&quot;&gt;50%&lt;/a&gt;]&quot;;
+	private static final String EXP_GRADE_2_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 19\&quot;&gt;45%&lt;/a&gt;]&quot;;
+	private static final String EXP_GRADE_3_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 19\&quot;&gt;45%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_exp 20\&quot;&gt;50%&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_MP = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery mp_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String MP_GRADE_1 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 1\&quot;&gt;5%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 3\&quot;&gt;15%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 5\&quot;&gt;25%&lt;/a&gt;]&quot;;
+	private static final String MP_GRADE_2 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 1\&quot;&gt;5%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 3\&quot;&gt;15%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 6\&quot;&gt;30%&lt;/a&gt;]&quot;;
+	private static final String MP_GRADE_3 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 1\&quot;&gt;5%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 3\&quot;&gt;15%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 6\&quot;&gt;30%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 8\&quot;&gt;40%&lt;/a&gt;]&quot;;
+	private static final String MP_GRADE_2_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 18\&quot;&gt;40%&lt;/a&gt;]&quot;;
+	private static final String MP_GRADE_3_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 18\&quot;&gt;40%&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage recovery edit_mp 20\&quot;&gt;50%&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_SUPPORT = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other support_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String SUPPORT_GRADE_1 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 1\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 2\&quot;&gt;Level 2&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 4\&quot;&gt;Level 4&lt;/a&gt;]&quot;;
+	private static final String SUPPORT_GRADE_2 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 3\&quot;&gt;Level 3&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 4\&quot;&gt;Level 4&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 5\&quot;&gt;Level 5&lt;/a&gt;]&quot;;
+	private static final String SUPPORT_GRADE_3 = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 3\&quot;&gt;Level 3&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 5\&quot;&gt;Level 5&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 7\&quot;&gt;Level 7&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 8\&quot;&gt;Level 8&lt;/a&gt;]&quot;;
+	private static final String SUPPORT_GRADE_2_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 15\&quot;&gt;Level 5&lt;/a&gt;]&quot;;
+	private static final String SUPPORT_GRADE_3_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 15\&quot;&gt;Level 5&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_support 18\&quot;&gt;Level 8&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_ITEM = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other item_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String ITEM = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_item 1\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_item 2\&quot;&gt;Level 2&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_item 3\&quot;&gt;Level 3&lt;/a&gt;]&quot;;
+	private static final String ITEM_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_item 11\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_item 12\&quot;&gt;Level 2&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_item 13\&quot;&gt;Level 3&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_TELE = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other tele_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String TELE = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_tele 1\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_tele 2\&quot;&gt;Level 2&lt;/a&gt;]&quot;;
+	private static final String TELE_SCH = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_tele 11\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage other edit_tele 12\&quot;&gt;Level 2&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_CURTAINS = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage deco curtains_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String CURTAINS = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage deco edit_curtains 1\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage deco edit_curtains 2\&quot;&gt;Level 2&lt;/a&gt;]&quot;;
+	
+	private static final String REMOVE_FIXTURES = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage deco fixtures_cancel\&quot;&gt;Remove&lt;/a&gt;]&quot;;
+	private static final String FIXTURES = &quot;[&lt;a action=\&quot;bypass -h npc_%objectId%_manage deco edit_fixtures 1\&quot;&gt;Level 1&lt;/a&gt;][&lt;a action=\&quot;bypass -h npc_%objectId%_manage deco edit_fixtures 2\&quot;&gt;Level 2&lt;/a&gt;]&quot;;
+	
+	private static final String NONE = &quot;none&quot;;
+	
+	public ClanHallManagerNpc(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public ClanHallManagerNpcAI getAI()
+	{
+		return (ClanHallManagerNpcAI) _ai;
+	}
+	
+	@Override
+	public void setAI()
+	{
+		_ai = new ClanHallManagerNpcAI(this);
+	}
+	
+	@Override
+	public boolean isWarehouse()
+	{
+		return true;
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		final NpcTalkCond condition = getNpcTalkCond(player);
+		if (condition != NpcTalkCond.OWNER)
+			return;
+		
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		final String actualCommand = st.nextToken();
+		
+		String val = (st.hasMoreTokens()) ? st.nextToken() : &quot;&quot;;
+		
+		if (actualCommand.equalsIgnoreCase(&quot;banish_foreigner&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CHP_RIGHT_TO_DISMISS))
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			if (val.equalsIgnoreCase(&quot;list&quot;))
+				html.setFile(&quot;data/html/clanHallManager/banish-list.htm&quot;);
+			else if (val.equalsIgnoreCase(&quot;banish&quot;))
+			{
+				getClanHall().banishForeigners();
+				html.setFile(&quot;data/html/clanHallManager/banish.htm&quot;);
+			}
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;manage_vault&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.SP_WAREHOUSE_SEARCH))
+				return;
+			
+			final boolean isSCH = (getClanHall() instanceof SiegableHall);
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/clanHallManager/vault&quot; + (isSCH ? &quot;-sch&quot; : &quot;&quot;) + &quot;.htm&quot;);
+			html.replace(&quot;%rent%&quot;, getClanHall().getLease());
+			html.replace(&quot;%date%&quot;, new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(getClanHall().getPaidUntil()));
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;door&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CHP_ENTRY_EXIT_RIGHTS))
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			if (val.equalsIgnoreCase(&quot;open&quot;))
+			{
+				getClanHall().openDoors();
+				html.setFile(&quot;data/html/clanHallManager/door-open.htm&quot;);
+			}
+			else if (val.equalsIgnoreCase(&quot;close&quot;))
+			{
+				getClanHall().closeDoors();
+				html.setFile(&quot;data/html/clanHallManager/door-close.htm&quot;);
+			}
+			else
+				html.setFile(&quot;data/html/clanHallManager/door.htm&quot;);
+			
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;functions&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CHP_USE_FUNCTIONS))
+				return;
+			
+			if (val.equalsIgnoreCase(&quot;tele&quot;))
+			{
+				final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_TELEPORT);
+				if (chf == null)
+				{
+					final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+					html.setFile(&quot;data/html/clanHallManager/functions-disabled.htm&quot;);
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					return;
+				}
+				
+				showTeleportWindow(player, (chf.getLvl() == 2) ? TeleportType.CHF_LEVEL_2 : TeleportType.CHF_LEVEL_1);
+			}
+			else if (val.equalsIgnoreCase(&quot;item_creation&quot;))
+			{
+				if (!st.hasMoreTokens())
+					return;
+				
+				final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_CREATE_ITEM);
+				if (chf == null)
+				{
+					final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+					html.setFile(&quot;data/html/clanHallManager/functions-disabled.htm&quot;);
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+					return;
+				}
+				
+				showBuyWindow(player, Integer.parseInt(st.nextToken()) + (chf.getLvl() * 100000));
+			}
+			else if (val.equalsIgnoreCase(&quot;support&quot;))
+			{
+				final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+				
+				final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_SUPPORT_MAGIC);
+				if (chf == null)
+					html.setFile(&quot;data/html/clanHallManager/functions-disabled.htm&quot;);
+				else
+				{
+					html.setFile(&quot;data/html/clanHallManager/support&quot; + chf.getLvl() + &quot;.htm&quot;);
+					html.replace(&quot;%mp%&quot;, (int) getStatus().getMp());
+				}
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+			}
+			else
+			{
+				final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+				html.setFile(&quot;data/html/clanHallManager/functions.htm&quot;);
+				html.replace(&quot;%npcId%&quot;, getNpcId());
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				html.replace(&quot;%hp_regen%&quot;, getClanHall().getFunctionLevel(ClanHall.FUNC_RESTORE_HP));
+				html.replace(&quot;%mp_regen%&quot;, getClanHall().getFunctionLevel(ClanHall.FUNC_RESTORE_MP));
+				html.replace(&quot;%xp_regen%&quot;, getClanHall().getFunctionLevel(ClanHall.FUNC_RESTORE_EXP));
+				player.sendPacket(html);
+			}
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;manage&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CHP_SET_FUNCTIONS))
+				return;
+			
+			if (val.equalsIgnoreCase(&quot;recovery&quot;))
+			{
+				if (st.hasMoreTokens())
+				{
+					if (getClanHall().getOwnerId() == 0)
+						return;
+					
+					val = st.nextToken();
+					
+					if (val.equalsIgnoreCase(&quot;hp_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;recovery hp 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;mp_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;recovery mp 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;exp_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;recovery exp 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_hp&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Fireplace (HP Recovery Device)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_HP, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_RESTORE_HP, level);
+						if (level &gt; 20)
+							level -= 10;
+						final int percent = level * 20;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Provides additional HP recovery for clan members in the clan hall.&lt;font color=\&quot;00FFFF\&quot;&gt;&quot; + percent + &quot;%&lt;/font&gt;&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;recovery hp &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_mp&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Carpet (MP Recovery)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_MP, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_RESTORE_MP, level);
+						if (level &gt; 10)
+							level -= 10;
+						final int percent = level * 5;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Provides additional MP recovery for clan members in the clan hall.&lt;font color=\&quot;00FFFF\&quot;&gt;&quot; + percent + &quot;%&lt;/font&gt;&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;recovery mp &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_exp&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Chandelier (EXP Recovery Device)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_EXP, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_RESTORE_EXP, level);
+						if (level &gt; 10)
+							level -= 10;
+						final int percent = level * 5;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Restores the Exp of any clan member who is resurrected in the clan hall.&lt;font color=\&quot;00FFFF\&quot;&gt;&quot; + percent + &quot;%&lt;/font&gt;&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;recovery exp &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;hp&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_HP, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_RESTORE_HP, level);
+						if (level &gt; 20)
+							level -= 10;
+						final int percent = level * 20;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_RESTORE_HP);
+						if (chf != null &amp;&amp; chf.getLvl() == percent)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, level + &quot;%&quot;);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (percent == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_RESTORE_HP, percent, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;mp&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_MP, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_RESTORE_MP, level);
+						if (level &gt; 10)
+							level -= 10;
+						final int percent = level * 5;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_RESTORE_MP);
+						if (chf != null &amp;&amp; chf.getLvl() == percent)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, level + &quot;%&quot;);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (percent == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_RESTORE_MP, percent, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;exp&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_EXP, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_RESTORE_EXP, level);
+						if (level &gt; 20)
+							level -= 10;
+						final int percent = level * 5;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_RESTORE_EXP);
+						if (chf != null &amp;&amp; chf.getLvl() == percent)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, level + &quot;%&quot;);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (percent == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_RESTORE_EXP, percent, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+				}
+				else
+				{
+					final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+					html.setFile(&quot;data/html/clanHallManager/edit_recovery.htm&quot;);
+					
+					final int grade = getClanHall().getGrade();
+					final boolean isSCH = (getClanHall() instanceof SiegableHall);
+					
+					// Restore HP function.
+					ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_RESTORE_HP);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_HP, chf.getFuncLvl());
+						html.replace(&quot;%hp_recovery%&quot;, chf.getLvl() + &quot;%&lt;/font&gt; (&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%hp_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_hp%&quot;, REMOVE_HP + HP_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_hp%&quot;, REMOVE_HP + (isSCH ? HP_GRADE_2_SCH : HP_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_hp%&quot;, REMOVE_HP + (isSCH ? HP_GRADE_3_SCH : HP_GRADE_3));
+								break;
+						}
+					}
+					else
+					{
+						html.replace(&quot;%hp_recovery%&quot;, NONE);
+						html.replace(&quot;%hp_period%&quot;, NONE);
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_hp%&quot;, HP_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_hp%&quot;, (isSCH ? HP_GRADE_2_SCH : HP_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_hp%&quot;, (isSCH ? HP_GRADE_3_SCH : HP_GRADE_3));
+								break;
+						}
+					}
+					
+					// Restore exp function.
+					chf = getClanHall().getFunction(ClanHall.FUNC_RESTORE_EXP);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_EXP, chf.getFuncLvl());
+						html.replace(&quot;%exp_recovery%&quot;, chf.getLvl() + &quot;%&lt;/font&gt; (&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%exp_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_exp%&quot;, REMOVE_EXP + EXP_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_exp%&quot;, REMOVE_EXP + (isSCH ? EXP_GRADE_2_SCH : EXP_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_exp%&quot;, REMOVE_EXP + (isSCH ? EXP_GRADE_3_SCH : EXP_GRADE_3));
+								break;
+						}
+					}
+					else
+					{
+						html.replace(&quot;%exp_recovery%&quot;, NONE);
+						html.replace(&quot;%exp_period%&quot;, NONE);
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_exp%&quot;, EXP_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_exp%&quot;, (isSCH ? EXP_GRADE_2_SCH : EXP_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_exp%&quot;, (isSCH ? EXP_GRADE_3_SCH : EXP_GRADE_3));
+								break;
+						}
+					}
+					
+					// Restore MP function.
+					chf = getClanHall().getFunction(ClanHall.FUNC_RESTORE_MP);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_RESTORE_MP, chf.getFuncLvl());
+						html.replace(&quot;%mp_recovery%&quot;, chf.getLvl() + &quot;%&lt;/font&gt; (&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%mp_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_mp%&quot;, REMOVE_MP + MP_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_mp%&quot;, REMOVE_MP + (isSCH ? MP_GRADE_2_SCH : MP_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_mp%&quot;, REMOVE_MP + (isSCH ? MP_GRADE_3_SCH : MP_GRADE_3));
+								break;
+						}
+					}
+					else
+					{
+						html.replace(&quot;%mp_recovery%&quot;, NONE);
+						html.replace(&quot;%mp_period%&quot;, NONE);
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_mp%&quot;, MP_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_mp%&quot;, (isSCH ? MP_GRADE_2_SCH : MP_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_mp%&quot;, (isSCH ? MP_GRADE_3_SCH : MP_GRADE_3));
+								break;
+						}
+					}
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+				}
+			}
+			else if (val.equalsIgnoreCase(&quot;other&quot;))
+			{
+				if (st.hasMoreTokens())
+				{
+					if (getClanHall().getOwnerId() == 0)
+						return;
+					
+					val = st.nextToken();
+					
+					if (val.equalsIgnoreCase(&quot;item_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;other item 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;tele_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;other tele 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;support_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;other support 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_item&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Magic Equipment (Item Production Facilities)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_CREATE_ITEM, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_CREATE_ITEM, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Allow the purchase of special items at fixed intervals.&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;other item &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_support&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Insignia (Supplementary Magic)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_SUPPORT_MAGIC, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_SUPPORT_MAGIC, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Enables the use of supplementary magic.&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;other support &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_tele&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Mirror (Teleportation Device)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_TELEPORT, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_TELEPORT, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Teleports clan members in a clan hall to the target &lt;font color=\&quot;00FFFF\&quot;&gt;Stage &quot; + level + &quot;&lt;/font&gt; staging area&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;other tele &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;item&quot;))
+					{
+						if (getClanHall().getOwnerId() == 0)
+							return;
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_CREATE_ITEM, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_CREATE_ITEM, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_CREATE_ITEM);
+						if (chf != null &amp;&amp; chf.getLvl() == level)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, &quot;Stage &quot; + val);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (level == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_CREATE_ITEM, level, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;tele&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_TELEPORT, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_TELEPORT, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_TELEPORT);
+						if (chf != null &amp;&amp; chf.getLvl() == level)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, &quot;Stage &quot; + level);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (level == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_TELEPORT, level, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;support&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_SUPPORT_MAGIC, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_SUPPORT_MAGIC, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_SUPPORT_MAGIC);
+						if (chf != null &amp;&amp; chf.getLvl() == level)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, &quot;Stage &quot; + val);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (level == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_SUPPORT_MAGIC, level, fee, TimeUnit.DAYS.toMillis(days)))
+						{
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						}
+						else
+						{
+							getAI().resetBuffCheckTime();
+							revalidateDeco(player);
+						}
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+				}
+				else
+				{
+					final boolean isSCH = (getClanHall() instanceof SiegableHall);
+					final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+					html.setFile(&quot;data/html/clanHallManager/edit_other.htm&quot;);
+					
+					ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_TELEPORT);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_TELEPORT, chf.getFuncLvl());
+						html.replace(&quot;%tele%&quot;, &quot;Stage &quot; + chf.getLvl() + &quot;&lt;/font&gt; (&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%tele_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						html.replace(&quot;%change_tele%&quot;, REMOVE_TELE + (isSCH ? TELE_SCH : TELE));
+					}
+					else
+					{
+						html.replace(&quot;%tele%&quot;, NONE);
+						html.replace(&quot;%tele_period%&quot;, NONE);
+						html.replace(&quot;%change_tele%&quot;, (isSCH ? TELE_SCH : TELE));
+					}
+					
+					final int grade = getClanHall().getGrade();
+					
+					chf = getClanHall().getFunction(ClanHall.FUNC_SUPPORT_MAGIC);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_SUPPORT_MAGIC, chf.getFuncLvl());
+						html.replace(&quot;%support%&quot;, &quot;Stage &quot; + chf.getLvl() + &quot;&lt;/font&gt; (&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%support_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_support%&quot;, REMOVE_SUPPORT + SUPPORT_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_support%&quot;, REMOVE_SUPPORT + (isSCH ? SUPPORT_GRADE_2_SCH : SUPPORT_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_support%&quot;, REMOVE_SUPPORT + (isSCH ? SUPPORT_GRADE_3_SCH : SUPPORT_GRADE_3));
+								break;
+						}
+					}
+					else
+					{
+						html.replace(&quot;%support%&quot;, NONE);
+						html.replace(&quot;%support_period%&quot;, NONE);
+						
+						switch (grade)
+						{
+							case 1:
+								html.replace(&quot;%change_support%&quot;, SUPPORT_GRADE_1);
+								break;
+							
+							case 2:
+								html.replace(&quot;%change_support%&quot;, (isSCH ? SUPPORT_GRADE_2_SCH : SUPPORT_GRADE_2));
+								break;
+							
+							case 3:
+								html.replace(&quot;%change_support%&quot;, (isSCH ? SUPPORT_GRADE_3_SCH : SUPPORT_GRADE_3));
+								break;
+						}
+					}
+					
+					chf = getClanHall().getFunction(ClanHall.FUNC_CREATE_ITEM);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_CREATE_ITEM, chf.getFuncLvl());
+						html.replace(&quot;%item%&quot;, &quot;Stage &quot; + chf.getLvl() + &quot;&lt;/font&gt; (&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%item_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						html.replace(&quot;%change_item%&quot;, REMOVE_ITEM + (isSCH ? ITEM_SCH : ITEM));
+					}
+					else
+					{
+						html.replace(&quot;%item%&quot;, NONE);
+						html.replace(&quot;%item_period%&quot;, NONE);
+						html.replace(&quot;%change_item%&quot;, (isSCH ? ITEM_SCH : ITEM));
+					}
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+				}
+			}
+			else if (val.equalsIgnoreCase(&quot;deco&quot;))
+			{
+				if (st.hasMoreTokens())
+				{
+					if (getClanHall().getOwnerId() == 0)
+						return;
+					
+					val = st.nextToken();
+					if (val.equalsIgnoreCase(&quot;curtains_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;deco curtains 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;fixtures_cancel&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-cancel.htm&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;deco fixtures 0&quot;);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_curtains&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Curtains (Decoration)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_DECO_CURTAINS, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_DECO_CURTAINS, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;These curtains can be used to decorate the clan hall.&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;deco curtains &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;edit_fixtures&quot;))
+					{
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						html.setFile(&quot;data/html/clanHallManager/functions-apply.htm&quot;);
+						html.replace(&quot;%name%&quot;, &quot;Front Platform (Decoration)&quot;);
+						
+						int level = Integer.parseInt(st.nextToken());
+						final int funcLvl = level;
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_DECO_FIXTURES, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_DECO_FIXTURES, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						html.replace(&quot;%cost%&quot;, cost + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s)&lt;/font&gt;)&quot;);
+						html.replace(&quot;%use%&quot;, &quot;Used to decorate the clan hall.&quot;);
+						html.replace(&quot;%apply%&quot;, &quot;deco fixtures &quot; + funcLvl);
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;curtains&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_DECO_CURTAINS, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_DECO_CURTAINS, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_DECO_CURTAINS);
+						if (chf != null &amp;&amp; chf.getLvl() == level)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, &quot;Stage &quot; + val);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (level == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_DECO_CURTAINS, level, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+					else if (val.equalsIgnoreCase(&quot;fixtures&quot;))
+					{
+						int level = Integer.parseInt(st.nextToken());
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_DECO_FIXTURES, level);
+						final int cost = ClanHallDecoData.getInstance().getDecoFee(ClanHall.FUNC_DECO_FIXTURES, level);
+						if (level &gt; 10)
+							level -= 10;
+						
+						final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+						
+						final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_DECO_FIXTURES);
+						if (chf != null &amp;&amp; chf.getLvl() == level)
+						{
+							html.setFile(&quot;data/html/clanHallManager/functions-used.htm&quot;);
+							html.replace(&quot;%val%&quot;, &quot;Stage &quot; + val);
+							html.replace(&quot;%objectId%&quot;, getObjectId());
+							player.sendPacket(html);
+							return;
+						}
+						
+						html.setFile(&quot;data/html/clanHallManager/functions-apply_confirmed.htm&quot;);
+						
+						int fee = cost;
+						if (level == 0)
+						{
+							fee = 0;
+							html.setFile(&quot;data/html/clanHallManager/functions-cancel_confirmed.htm&quot;);
+						}
+						
+						if (!getClanHall().updateFunction(player, ClanHall.FUNC_DECO_FIXTURES, level, fee, TimeUnit.DAYS.toMillis(days)))
+							html.setFile(&quot;data/html/clanHallManager/low_adena.htm&quot;);
+						else
+							revalidateDeco(player);
+						
+						html.replace(&quot;%objectId%&quot;, getObjectId());
+						player.sendPacket(html);
+					}
+				}
+				else
+				{
+					final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+					html.setFile(&quot;data/html/clanHallManager/deco.htm&quot;);
+					
+					ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_DECO_CURTAINS);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_DECO_CURTAINS, chf.getFuncLvl());
+						html.replace(&quot;%curtain%&quot;, &quot;Stage &quot; + chf.getLvl() + &quot;&lt;/font&gt;&amp;nbsp;(&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%curtain_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						html.replace(&quot;%change_curtain%&quot;, REMOVE_CURTAINS + CURTAINS);
+					}
+					else
+					{
+						html.replace(&quot;%curtain%&quot;, NONE);
+						html.replace(&quot;%curtain_period%&quot;, NONE);
+						html.replace(&quot;%change_curtain%&quot;, CURTAINS);
+					}
+					
+					chf = getClanHall().getFunction(ClanHall.FUNC_DECO_FIXTURES);
+					if (chf != null)
+					{
+						final int days = ClanHallDecoData.getInstance().getDecoDays(ClanHall.FUNC_DECO_FIXTURES, chf.getFuncLvl());
+						html.replace(&quot;%fixture%&quot;, &quot;Stage &quot; + chf.getLvl() + &quot;&lt;/font&gt;&amp;nbsp;(&lt;font color=\&quot;FFAABB\&quot;&gt;&quot; + chf.getLease() + &quot;&lt;/font&gt; Adena / &quot; + days + &quot; day(s))&quot;);
+						html.replace(&quot;%fixture_period%&quot;, &quot;Next fee at &quot; + new SimpleDateFormat(&quot;dd-MM-yyyy HH:mm&quot;).format(chf.getEndTime()));
+						html.replace(&quot;%change_fixture%&quot;, REMOVE_FIXTURES + FIXTURES);
+					}
+					else
+					{
+						html.replace(&quot;%fixture%&quot;, NONE);
+						html.replace(&quot;%fixture_period%&quot;, NONE);
+						html.replace(&quot;%change_fixture%&quot;, FIXTURES);
+					}
+					html.replace(&quot;%objectId%&quot;, getObjectId());
+					player.sendPacket(html);
+				}
+			}
+			else if (val.equalsIgnoreCase(&quot;back&quot;))
+				showChatWindow(player);
+			else
+			{
+				final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+				html.setFile((getClanHall() instanceof SiegableHall) ? &quot;data/html/clanHallManager/manage_sch.htm&quot; : &quot;data/html/clanHallManager/manage.htm&quot;);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+			}
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;support&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CHP_USE_FUNCTIONS))
+				return;
+			
+			final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_SUPPORT_MAGIC);
+			if (chf == null || chf.getLvl() == 0)
+				return;
+			
+			if (player.isCursedWeaponEquipped())
+			{
+				// Custom system message
+				player.sendMessage(&quot;The wielder of a cursed weapon cannot receive outside heals or buffs&quot;);
+				return;
+			}
+			
+			setTarget(player);
+			
+			try
+			{
+				final int id = Integer.parseInt(val);
+				final int lvl = (st.hasMoreTokens()) ? Integer.parseInt(st.nextToken()) : 0;
+				
+				getAI().addCastDesire(player, id, lvl, 1000000);
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Invalid skill, contact your server support.&quot;);
+			}
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;list_back&quot;))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/clanHallManager/chamberlain.htm&quot;);
+			html.replace(&quot;%npcname%&quot;, getName());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;support_back&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CHP_USE_FUNCTIONS))
+				return;
+			
+			final ClanHallFunction chf = getClanHall().getFunction(ClanHall.FUNC_SUPPORT_MAGIC);
+			if (chf == null || chf.getLvl() == 0)
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/clanHallManager/support&quot; + chf.getLvl() + &quot;.htm&quot;);
+			html.replace(&quot;%mp%&quot;, (int) getStatus().getMp());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;WithdrawC&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.SP_WAREHOUSE_SEARCH))
+			{
+				player.sendPacket(SystemMessageId.YOU_DO_NOT_HAVE_THE_RIGHT_TO_USE_CLAN_WAREHOUSE);
+				return;
+			}
+			
+			final Clan clan = player.getClan();
+			if (clan == null || clan.getLevel() == 0)
+			{
+				player.sendPacket(SystemMessageId.ONLY_LEVEL_1_CLAN_OR_HIGHER_CAN_USE_WAREHOUSE);
+				return;
+			}
+			
+			player.setActiveWarehouse(clan.getWarehouse());
+			player.sendPacket(new WarehouseWithdrawList(player, WarehouseWithdrawList.CLAN));
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;DepositC&quot;))
+		{
+			final Clan clan = player.getClan();
+			if (clan == null || clan.getLevel() == 0)
+			{
+				player.sendPacket(SystemMessageId.ONLY_LEVEL_1_CLAN_OR_HIGHER_CAN_USE_WAREHOUSE);
+				return;
+			}
+			
+			player.setActiveWarehouse(clan.getWarehouse());
+			player.tempInventoryDisable();
+			player.sendPacket(new WarehouseDepositList(player, WarehouseDepositList.CLAN));
+			player.sendPacket(ActionFailed.STATIC_PACKET);
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player)
+	{
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/clanHallManager/chamberlain&quot; + ((getNpcTalkCond(player) == NpcTalkCond.OWNER) ? &quot;.htm&quot; : &quot;-no.htm&quot;));
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	protected boolean isTeleportAllowed(Player player)
+	{
+		return validatePrivileges(player, PrivilegeType.CHP_USE_FUNCTIONS);
+	}
+	
+	@Override
+	protected NpcTalkCond getNpcTalkCond(Player player)
+	{
+		if (getClanHall() != null &amp;&amp; player.getClan() != null &amp;&amp; getClanHall().getOwnerId() == player.getClanId())
+			return NpcTalkCond.OWNER;
+		
+		return NpcTalkCond.NONE;
+	}
+	
+	private void revalidateDeco(Player player)
+	{
+		getClanHall().getZone().broadcastPacket(new ClanHallDecoration(getClanHall()));
+	}
+	
+	private boolean validatePrivileges(Player player, PrivilegeType privilege)
+	{
+		if (!player.hasClanPrivileges(privilege))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/clanHallManager/not_authorized.htm&quot;);
+			player.sendPacket(html);
+			return false;
+		}
+		return true;
+	}
+}</pre>
+            
+</body>
+</html>

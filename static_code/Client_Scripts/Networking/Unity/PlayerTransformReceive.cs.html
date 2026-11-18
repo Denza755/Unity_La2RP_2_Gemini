@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/Unity/PlayerTransformReceive.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/Unity/PlayerTransformReceive.cs</h1>
+            <pre>using System;
+using UnityEngine;
+
+public class PlayerTransformReceive : NetworkTransformReceive
+{
+    private static PlayerTransformReceive _instance;
+    public static PlayerTransformReceive Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        PausePositionSync();
+    }
+
+    protected override float GetPositionSyncThreshold()
+    {
+        return GameClient.Instance.PlayerPositionSyncThreshold;
+    }
+
+    /* Set new theorical position */
+    public override void SetNewPosition(Vector3 pos, bool calculateY)
+    {
+        // Debug.LogWarning(&quot;Adjust player position error&quot;);
+        base.SetNewPosition(pos, calculateY);
+        ResumePositionSync();
+    }
+
+    protected override void OnPositionSynced()
+    {
+        PausePositionSync();
+    }
+
+    /* Ajust rotation */
+    protected override void UpdateRotation()
+    {
+    }
+
+    public override void SetFinalRotation(float finalRotation)
+    {
+    }
+
+    public override void LookAt(Transform target)
+    {
+    }
+
+    public override void LookAt(Vector3 position)
+    {
+    }
+}</pre>
+            
+</body>
+</html>

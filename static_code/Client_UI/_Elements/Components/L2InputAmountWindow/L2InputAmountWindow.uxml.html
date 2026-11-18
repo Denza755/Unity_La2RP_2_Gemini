@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Components/L2InputAmountWindow/L2InputAmountWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Components/L2InputAmountWindow/L2InputAmountWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xmlns=&quot;UnityEngine.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2Input&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Input/L2Input.uxml?fileID=9197481963319205126&amp;amp;guid=dce83b8dcd7f5614280886eaaa82f0f7&amp;amp;type=3#L2Input&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uss?fileID=7433441132597879392&amp;amp;guid=b1d2114f9ed155f45a3eb16e5ef02441&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2InputAmountWindow/L2InputAmountWindow.uss?fileID=7433441132597879392&amp;amp;guid=853ec4dc18665d642a9b3e8b25993589&amp;amp;type=3#L2InputAmountWindow&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;L2InputAmountWindow&quot; class=&quot;input-amount-window&quot; style=&quot;position: absolute;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Main&quot; class=&quot;drag-area input-amount-window-main&quot;&gt;
+            &lt;ui:VisualElement name=&quot;InfoBox&quot; picking-mode=&quot;Ignore&quot; class=&quot;input-amount-window-content-container&quot; style=&quot;border-left-color: rgba(92, 92, 92, 0.31); border-right-color: rgba(92, 92, 92, 0.31); border-top-color: rgba(92, 92, 92, 0.31); border-bottom-color: rgba(92, 92, 92, 0.31);&quot;&gt;
+                &lt;ui:VisualElement name=&quot;IconContainer&quot; picking-mode=&quot;Ignore&quot; class=&quot;input-amount-window-icon-container&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;VisualElement&quot; picking-mode=&quot;Ignore&quot; class=&quot;input-amount-window-icon&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement class=&quot;input-amount-window-content&quot; style=&quot;flex-grow: 1;&quot;&gt;
+                    &lt;ui:Label text=&quot;Warning message! Warning message! Warning message! Warning message!&quot; name=&quot;Content&quot; picking-mode=&quot;Ignore&quot; class=&quot;l2-color-4 input-amount-window-content-label&quot; /&gt;
+                    &lt;ui:Instance template=&quot;L2Input&quot; name=&quot;AmountInput&quot; class=&quot;input-amount-window-amount&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;L2Input&quot; max-length=&quot;15&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;ButtonBox&quot; picking-mode=&quot;Ignore&quot; class=&quot;input-amount-window-button-box&quot;&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;OkButton&quot; class=&quot;input-amount-window-button&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;OK&quot; enable-rich-text=&quot;true&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;CancelButton&quot; class=&quot;input-amount-window-button&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Cancel&quot; /&gt;
+                &lt;/ui:Instance&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement name=&quot;Side&quot; class=&quot;input-amount-window-side&quot; style=&quot;flex-grow: 1;&quot;&gt;
+            &lt;ui:VisualElement style=&quot;flex-grow: 1; flex-direction: row; align-items: center;&quot;&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; flex-wrap: wrap; flex-direction: row;&quot;&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number1&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;1&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number2&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;2&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number3&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;3&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number4&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;4&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number5&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;5&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number6&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;6&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number7&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;7&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number8&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;8&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number9&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;9&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;Number0&quot; class=&quot;input-amount-window-number&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;0&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;NumberAll&quot; class=&quot;input-amount-window-number input-amount-window-number-all&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;All&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; flex-shrink: 0;&quot;&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;NumberBS&quot; class=&quot;input-amount-window-number-vertical&quot; style=&quot;flex-grow: 0; flex-shrink: 0;&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;B/S&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;NumberC&quot; class=&quot;input-amount-window-number-vertical&quot; style=&quot;flex-grow: 0; flex-shrink: 0;&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;C&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q653_WildMaiden.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q653_WildMaiden.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q653_WildMaiden extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q653_WildMaiden&quot;;
+	
+	// NPCs
+	private static final int SUKI = 32013;
+	private static final int GALIBREDO = 30181;
+	
+	// Item
+	private static final int SCROLL_OF_ESCAPE = 736;
+	
+	// Table of possible spawns
+	private static final SpawnLocation[] SPAWNS =
+	{
+		new SpawnLocation(66578, 72351, -3731, 0),
+		new SpawnLocation(77189, 73610, -3708, 2555),
+		new SpawnLocation(71809, 67377, -3675, 29130),
+		new SpawnLocation(69166, 88825, -3447, 43886)
+	};
+	
+	// Current position
+	private int _currentPosition = 0;
+	
+	public Q653_WildMaiden()
+	{
+		super(653, &quot;Wild Maiden&quot;);
+		
+		addQuestStart(SUKI);
+		addTalkId(SUKI, GALIBREDO);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;32013-03.htm&quot;))
+		{
+			if (player.getInventory().hasItem(SCROLL_OF_ESCAPE))
+			{
+				st.setState(QuestStatus.STARTED);
+				st.setCond(1);
+				playSound(player, SOUND_ACCEPT);
+				takeItems(player, SCROLL_OF_ESCAPE, 1);
+				
+				startQuestTimer(&quot;65301&quot;, npc, null, 3000);
+			}
+			else
+			{
+				htmltext = &quot;32013-03a.htm&quot;;
+				st.exitQuest(true);
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;65301&quot;))
+		{
+			int chance = Rnd.get(4);
+			
+			// Loop to avoid to spawn to the same place.
+			while (chance == _currentPosition)
+				chance = Rnd.get(4);
+			
+			// Register new position.
+			_currentPosition = chance;
+			
+			npc.deleteMe();
+			addSpawn(SUKI, SPAWNS[chance], false, 0, false);
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 36) ? &quot;32013-01.htm&quot; : &quot;32013-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				switch (npc.getNpcId())
+				{
+					case GALIBREDO:
+						htmltext = &quot;30181-01.htm&quot;;
+						rewardItems(player, 57, 2883);
+						playSound(player, SOUND_FINISH);
+						st.exitQuest(true);
+						break;
+					
+					case SUKI:
+						htmltext = &quot;32013-04a.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

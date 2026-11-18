@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorDDMagicHold/WarriorDDMagicHold.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorDDMagicHold/WarriorDDMagicHold.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorDDMagicHold;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.MonsterAI;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WarriorDDMagicHold extends MonsterAI
+{
+	protected static final int SKILL_RANGE = 500;
+	
+	public WarriorDDMagicHold()
+	{
+		super(&quot;ai/individual/Monster/WarriorDDMagicHold&quot;);
+	}
+	
+	public WarriorDDMagicHold(String descr)
+	{
+		super(descr);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable)
+		{
+			final IntentionType currentIntentionType = npc.getAI().getCurrentIntention().getType();
+			if (currentIntentionType != IntentionType.ATTACK &amp;&amp; currentIntentionType != IntentionType.CAST)
+				npc.getAI().addCastDesireHold(attacker, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+			else
+			{
+				final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+				if (topDesireTarget != null &amp;&amp; attacker != topDesireTarget &amp;&amp; npc.distance3D(topDesireTarget) &gt; SKILL_RANGE)
+				{
+					npc.getAI().getAggroList().stopHate(topDesireTarget);
+					npc.getAI().addCastDesireHold(attacker, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+				}
+			}
+			
+			npc.getAI().addAttackDesireHold(attacker, 100);
+		}
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable &amp;&amp; called.getAI().getLifeTime() &gt; 7)
+		{
+			final IntentionType currentIntentionType = called.getAI().getCurrentIntention().getType();
+			if (currentIntentionType != IntentionType.ATTACK &amp;&amp; currentIntentionType != IntentionType.CAST)
+				called.getAI().addCastDesireHold(attacker, getNpcSkillByType(called, NpcSkillType.DD_MAGIC), 1000000);
+			
+			called.getAI().addAttackDesireHold(attacker, 50);
+		}
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+		if (topDesireTarget != null)
+		{
+			if (SKILL_RANGE &lt; npc.distance3D(topDesireTarget))
+			{
+				npc.getAI().getAggroList().stopHate(topDesireTarget);
+				
+				startQuestTimer(&quot;2001&quot;, npc, null, 1000);
+				
+				return;
+			}
+			
+			if (topDesireTarget instanceof Player)
+				npc.getAI().addCastDesireHold(topDesireTarget, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;2001&quot;))
+		{
+			final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+			if (topDesireTarget != null)
+			{
+				if (SKILL_RANGE &lt; npc.distance3D(topDesireTarget))
+				{
+					npc.getAI().getAggroList().stopHate(topDesireTarget);
+					
+					startQuestTimer(&quot;2001&quot;, npc, player, 1000);
+					
+					return super.onTimer(name, npc, player);
+				}
+				
+				if (topDesireTarget instanceof Player)
+					npc.getAI().addCastDesireHold(topDesireTarget, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+			}
+		}
+		return super.onTimer(name, npc, player);
+	}
+}</pre>
+            
+</body>
+</html>

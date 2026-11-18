@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/ManageTeleportDungeonMaker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/ManageTeleportDungeonMaker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.maker;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+
+public class ManageTeleportDungeonMaker extends DefaultMaker
+{
+	public ManageTeleportDungeonMaker(String name)
+	{
+		super(name);
+	}
+	
+	@Override
+	public void onStart(NpcMaker maker)
+	{
+		final MultiSpawn def0 = (MultiSpawn) SpawnManager.getInstance().getSpawn(maker.getMakerMemo().get(&quot;manager_npc_name&quot;));
+		if (def0 != null &amp;&amp; maker.getMaximumNpc() - maker.getNpcsAlive() &gt; 0)
+		{
+			for (long i = 0; i &lt; (def0.getTotal() - def0.getSpawned()); i++)
+				def0.doSpawn(false);
+		}
+		maker.getMakerMemo().set(&quot;i_ai0&quot;, 0);
+	}
+	
+	@Override
+	public void onMakerScriptEvent(String name, NpcMaker maker, int int1, int int2)
+	{
+		final String managerNpcAlias = maker.getMakerMemo().get(&quot;manager_npc_name&quot;);
+		
+		switch (name)
+		{
+			case &quot;0&quot;:
+				maker.getMakerMemo().set(&quot;i_ai0&quot;, 0);
+				
+				for (MultiSpawn ms : maker.getSpawns())
+				{
+					if (!managerNpcAlias.equalsIgnoreCase(ms.getTemplate().getAlias()))
+						ms.doDelete();
+				}
+				break;
+			
+			case &quot;1&quot;:
+				final int i_ai0 = maker.getMakerMemo().getInteger(&quot;i_ai0&quot;);
+				if (i_ai0 == 0)
+				{
+					maker.getMakerMemo().set(&quot;i_ai0&quot;, 1);
+					
+					for (MultiSpawn ms : maker.getSpawns())
+					{
+						if (!managerNpcAlias.equalsIgnoreCase(ms.getTemplate().getAlias()))
+						{
+							if (maker.getMaximumNpc() - (maker.getNpcsAlive() + ms.getTotal()) &gt;= 0)
+							{
+								for (int i = 0; i &lt; ms.getTotal(); i++)
+								{
+									if (ms.getDecayed() &gt; 0)
+										ms.doRespawn();
+									else
+										ms.doSpawn(false);
+								}
+							}
+						}
+					}
+				}
+				break;
+			
+			case &quot;2&quot;:
+				for (MultiSpawn ms : maker.getSpawns())
+				{
+					if (managerNpcAlias.equalsIgnoreCase(ms.getTemplate().getAlias()))
+					{
+						for (Npc npc : ms.getNpcs())
+							npc.sendScriptEvent(Integer.parseInt(name), 0, 0);
+					}
+				}
+				break;
+			
+			case &quot;3&quot;:
+				maker.getMakerMemo().set(&quot;i_ai0&quot;, 0);
+				
+				for (MultiSpawn ms : maker.getSpawns())
+				{
+					if (managerNpcAlias.equalsIgnoreCase(ms.getTemplate().getAlias()))
+					{
+						for (Npc npc : ms.getNpcs())
+							npc.sendScriptEvent(Integer.parseInt(name), 0, 0);
+					}
+					else
+						ms.doDelete();
+				}
+				break;
+		}
+		super.onMakerScriptEvent(name, maker, int1, int2);
+	}
+	
+	@Override
+	public void onNpcDeleted(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		if (maker.getMakerMemo().getInteger(&quot;i_ai0&quot;, 0) == 1)
+			npc.scheduleRespawn(ms.calculateRespawnDelay() * 1000);
+	}
+	
+	@Override
+	public void onNpcCreated(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		if (maker.getMakerMemo().getInteger(&quot;i_ai0&quot;, 0) == 0)
+		{
+			final String managerNpcAlias = maker.getMakerMemo().get(&quot;manager_npc_name&quot;);
+			if (!managerNpcAlias.equalsIgnoreCase(npc.getTemplate().getAlias()))
+				npc.deleteMe();
+		}
+	}
+}</pre>
+            
+</body>
+</html>

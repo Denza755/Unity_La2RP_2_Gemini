@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/db/repository/AccountInfoRepository.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/db/repository/AccountInfoRepository.java</h1>
+            <pre>package com.shnok.javaserver.db.repository;
+
+import com.shnok.javaserver.db.DbFactory;
+import com.shnok.javaserver.db.entity.DBAccountInfo;
+import com.shnok.javaserver.db.interfaces.AccountInfoDao;
+import lombok.extern.log4j.Log4j2;
+import org.hibernate.Session;
+
+@Log4j2
+public class AccountInfoRepository implements AccountInfoDao {
+    private static AccountInfoRepository instance;
+    public static AccountInfoRepository getInstance() {
+        if (instance == null) {
+            instance = new AccountInfoRepository();
+        }
+        return instance;
+    }
+
+    @Override
+    public DBAccountInfo getAccountInfo(String login) {
+        try (Session session = DbFactory.getSessionFactory().openSession()) {
+            return session.createQuery(&quot;SELECT i FROM DBAccountInfo i WHERE login=:login&quot;, DBAccountInfo.class)
+                    .setParameter(&quot;login&quot;, login)
+                    .getSingleResult();
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public void createAccount(DBAccountInfo accountInfo) {
+        try (Session session = DbFactory.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            session.save(accountInfo);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            log.error(&quot;SQL ERROR: {}&quot;, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void updateAccount(DBAccountInfo accountInfo) {
+        try (Session session = DbFactory.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            session.update(accountInfo);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            log.error(&quot;SQL ERROR: {}&quot;, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void updateAccountLastServer(String account, int serverId) {
+        try (Session session = DbFactory.getSessionFactory().openSession()) {
+            session.beginTransaction();
+            session.createQuery(&quot;UPDATE DBAccountInfo i SET lastServer=:lastServer WHERE login=:login&quot;)
+                    .setParameter(&quot;login&quot;, account)
+                    .setParameter(&quot;lastServer&quot;, serverId)
+                    .executeUpdate();
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            log.error(&quot;SQL ERROR: {}&quot;, e.getMessage(), e);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

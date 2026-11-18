@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminKnownlist.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminKnownlist.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.data.Pagination;
+
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class AdminKnownlist implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_knownlist&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		st.nextToken();
+		
+		if (command.startsWith(&quot;admin_knownlist&quot;))
+		{
+			// Pick potential player&#x27;s target or the player himself.
+			final WorldObject targetWorldObject = getTarget(WorldObject.class, player, true);
+			
+			int page = 1;
+			
+			if (st.hasMoreTokens())
+			{
+				try
+				{
+					page = Integer.parseInt(st.nextToken());
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //knownlist [page]&quot;);
+				}
+			}
+			
+			showKnownlist(player, targetWorldObject, page);
+		}
+	}
+	
+	private static void showKnownlist(Player player, WorldObject worldObject, int page)
+	{
+		// Load static htm.
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/knownlist.htm&quot;);
+		html.replace(&quot;%target%&quot;, worldObject.getName());
+		
+		int row = 0;
+		
+		// Generate data.
+		final Pagination&lt;WorldObject&gt; list = new Pagination&lt;&gt;(worldObject.getKnownType(WorldObject.class).stream(), page, PAGE_LIMIT_15);
+		for (WorldObject wo : list)
+		{
+			list.append(((row % 2) == 0 ? &quot;&lt;table width=280 bgcolor=000000&gt;&lt;tr&gt;&quot; : &quot;&lt;table width=280&gt;&lt;tr&gt;&quot;));
+			list.append(&quot;&lt;td width=160&gt;&quot;, wo.getName(), &quot;&lt;/td&gt;&lt;td width=120&gt;&quot;, wo.getClass().getSimpleName(), &quot;&lt;/td&gt;&quot;);
+			list.append(&quot;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.SquareGray\&quot; width=280 height=1&gt;&quot;);
+			
+			row++;
+		}
+		
+		list.generateSpace(20);
+		list.generatePages(&quot;bypass admin_knownlist %page%&quot;);
+		
+		html.replace(&quot;%content%&quot;, list.getContent());
+		
+		player.sendPacket(html);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

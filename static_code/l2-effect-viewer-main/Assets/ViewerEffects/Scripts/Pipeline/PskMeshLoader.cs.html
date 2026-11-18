@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/PskMeshLoader.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/PskMeshLoader.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using UnityEngine;
+
+public static class PskMeshLoader
+{
+    struct Chunk
+    {
+        public string Id;
+        public int DataSize;
+        public int DataCount;
+        public long DataStart;
+    }
+
+    public static Mesh Load(string path)
+    {
+        byte[] bytes = File.ReadAllBytes(path);
+        var chunks = ReadChunks(bytes);
+        if (!chunks.TryGetValue(&quot;PNTS0000&quot;, out Chunk points) ||
+            !chunks.TryGetValue(&quot;VTXW0000&quot;, out Chunk wedges) ||
+            !TryGetFace(chunks, out Chunk faces))
+            throw new InvalidDataException(&quot;PSK missing PNTS/VTXW/FACE: &quot; + path);
+
+        var verts = new Vector3[points.DataCount];
+        for (int i = 0; i &lt; points.DataCount; i++)
+        {
+            int o = (int)points.DataStart + i * 12;
+            float x = BitConverter.ToSingle(bytes, o);
+            float y = BitConverter.ToSingle(bytes, o + 4);
+            float z = BitConverter.ToSingle(bytes, o + 8);
+            // UE Z-up UU -&gt; Unity Y-up meters.
+            // Same basis as L2Fx_UcPositionToUnityMeters / L2FxMeshSpin:
+            //   Unity(X,Y,Z) = UE(X,Z,Y) * 0.01
+            // (magiccircle* rings are authored in UE XY = ground plane).
+            verts[i] = new Vector3(x, z, y) * 0.01f;
+        }
+
+        int wedgeStride = wedges.DataCount &gt; 0 ? wedges.DataSize : 16;
+        var meshVerts = new List&lt;Vector3&gt;(wedges.DataCount);
+        var meshUv = new List&lt;Vector2&gt;(wedges.DataCount);
+        var pointIndex = new int[wedges.DataCount];
+        for (int i = 0; i &lt; wedges.DataCount; i++)
+        {
+            int o = (int)wedges.DataStart + i * wedgeStride;
+            int idx = wedgeStride &gt;= 16 &amp;&amp; wedges.DataSize &gt;= 16
+                ? BitConverter.ToUInt16(bytes, o)
+                : BitConverter.ToInt32(bytes, o);
+            if (idx &lt; 0 || idx &gt;= verts.Length)
+                idx = 0;
+            pointIndex[i] = idx;
+            float u = BitConverter.ToSingle(bytes, o + 4);
+            float v = BitConverter.ToSingle(bytes, o + 8);
+            meshVerts.Add(verts[idx]);
+            meshUv.Add(new Vector2(u, 1f - v));
+        }
+
+        int faceStride = faces.DataCount &gt; 0 ? faces.DataSize : 12;
+        var tris = new List&lt;int&gt;(faces.DataCount * 3);
+        for (int i = 0; i &lt; faces.DataCount; i++)
+        {
+            int o = (int)faces.DataStart + i * faceStride;
+            int a = BitConverter.ToUInt16(bytes, o);
+            int b = BitConverter.ToUInt16(bytes, o + 2);
+            int c = BitConverter.ToUInt16(bytes, o + 4);
+            if (a &gt;= meshVerts.Count || b &gt;= meshVerts.Count || c &gt;= meshVerts.Count)
+                continue;
+            // Flip winding after the improper Y↔Z basis swap (det = -1).
+            tris.Add(a);
+            tris.Add(c);
+            tris.Add(b);
+        }
+
+        EnsureGroundPlaneLiesOnXZ(meshVerts);
+
+        var mesh = new Mesh { name = Path.GetFileNameWithoutExtension(path) };
+        mesh.SetVertices(meshVerts);
+        mesh.SetUVs(0, meshUv);
+        mesh.SetTriangles(tris, 0);
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+        Debug.Log(
+            &quot;[ViewerEffects] PSK &quot; + Path.GetFileName(path) +
+            &quot; bounds=&quot; + mesh.bounds.size +
+            &quot; (thin axis should be Y for ground rings)&quot;);
+        return mesh;
+    }
+
+    /// &lt;summary&gt;
+    /// Ground FX meshes (magiccircle*, rings) are authored in the UE XY plane.
+    /// After UE→Unity remap the thin axis must be Unity Y. If a mesh still has
+    /// its thin axis on Z or X, rotate it flat onto XZ so rings stay horizontal.
+    /// &lt;/summary&gt;
+    static void EnsureGroundPlaneLiesOnXZ(List&lt;Vector3&gt; verts)
+    {
+        if (verts == null || verts.Count &lt; 3)
+            return;
+
+        Vector3 min = verts[0];
+        Vector3 max = verts[0];
+        for (int i = 1; i &lt; verts.Count; i++)
+        {
+            min = Vector3.Min(min, verts[i]);
+            max = Vector3.Max(max, verts[i]);
+        }
+
+        Vector3 size = max - min;
+        float sx = Mathf.Abs(size.x);
+        float sy = Mathf.Abs(size.y);
+        float sz = Mathf.Abs(size.z);
+        float largest = Mathf.Max(sx, Mathf.Max(sy, sz));
+        if (largest &lt; 1e-6f)
+            return;
+
+        // Already horizontal (thin ≈ Y), or not planar enough to decide.
+        float thinThreshold = largest * 0.2f;
+        bool thinY = sy &lt;= thinThreshold;
+        bool thinZ = sz &lt;= thinThreshold;
+        bool thinX = sx &lt;= thinThreshold;
+        if (thinY || (!thinZ &amp;&amp; !thinX))
+            return;
+
+        for (int i = 0; i &lt; verts.Count; i++)
+        {
+            Vector3 v = verts[i];
+            if (thinZ)
+            {
+                // UE XY left in Unity XY → Rx -90: (x,y,z) -&gt; (x,z,-y)
+                verts[i] = new Vector3(v.x, v.z, -v.y);
+            }
+            else // thinX: ring in Unity YZ → Ry +90: (x,y,z) -&gt; (z,y,-x)
+            {
+                verts[i] = new Vector3(v.z, v.y, -v.x);
+            }
+        }
+    }
+
+    static bool TryGetFace(Dictionary&lt;string, Chunk&gt; chunks, out Chunk faces)
+    {
+        if (chunks.TryGetValue(&quot;FACE0000&quot;, out faces))
+            return true;
+        if (chunks.TryGetValue(&quot;FACE3200&quot;, out faces))
+            return true;
+        faces = default;
+        return false;
+    }
+
+    static Dictionary&lt;string, Chunk&gt; ReadChunks(byte[] bytes)
+    {
+        var map = new Dictionary&lt;string, Chunk&gt;(StringComparer.Ordinal);
+        int offset = 0;
+        while (offset + 32 &lt;= bytes.Length)
+        {
+            string id = Encoding.ASCII.GetString(bytes, offset, 20).TrimEnd(&#x27;\0&#x27;, &#x27; &#x27;);
+            int dataSize = BitConverter.ToInt32(bytes, offset + 24);
+            int dataCount = BitConverter.ToInt32(bytes, offset + 28);
+            offset += 32;
+            if (dataSize &lt; 0 || dataCount &lt; 0)
+                break;
+            long dataBytes = (long)dataSize * dataCount;
+            if (offset + dataBytes &gt; bytes.Length)
+                break;
+            map[id] = new Chunk
+            {
+                Id = id,
+                DataSize = dataSize,
+                DataCount = dataCount,
+                DataStart = offset
+            };
+            offset += (int)dataBytes;
+        }
+        return map;
+    }
+}
+</pre>
+            
+</body>
+</html>

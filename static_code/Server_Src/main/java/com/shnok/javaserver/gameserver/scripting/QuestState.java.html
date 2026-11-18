@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/QuestState.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/QuestState.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Objects;
+
+import com.shnok.javaserver.commons.data.MemoSet;
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowQuestMark;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.QuestList;
+
+/**
+ * A container holding one {@link Player}&#x27;s {@link Quest} progress. It extends {@link MemoSet}.&lt;br&gt;
+ * &lt;br&gt;
+ * The main variables for a {@link QuestState} are :
+ * &lt;ul&gt;
+ * &lt;li&gt;state : the current state of the {@link Quest}, which can be CREATED, STARTED, COMPLETED ;&lt;/li&gt;
+ * &lt;li&gt;flags : allow to bypass one or multiple client-side {@link Quest} log(s) ;&lt;/li&gt;
+ * &lt;li&gt;cond : help server-side to trigger events, help client-side to show the correct {@link Quest} log.&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public final class QuestState extends MemoSet
+{
+	private static final long serialVersionUID = 1L;
+	
+	private static final CLogger LOGGER = new CLogger(QuestState.class.getName());
+	
+	private static final String QUEST_SET_VAR = &quot;INSERT INTO character_quests (charId,name,var,value) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE value=VALUES(value)&quot;;
+	private static final String QUEST_DEL_VAR = &quot;DELETE FROM character_quests WHERE charId=? AND name=? AND var=?&quot;;
+	private static final String QUEST_DELETE = &quot;DELETE FROM character_quests WHERE charId=? AND name=?&quot;;
+	private static final String QUEST_COMPLETE = &quot;DELETE FROM character_quests WHERE charId=? AND name=? AND var&lt;&gt;&#x27;&lt;state&gt;&#x27;&quot;;
+	
+	public static final String COND = &quot;&lt;cond&gt;&quot;;
+	public static final String FLAGS = &quot;&lt;flags&gt;&quot;;
+	public static final String STATE = &quot;&lt;state&gt;&quot;;
+	
+	private final Player _player;
+	private final Quest _quest;
+	
+	/**
+	 * Constructor of the new {@link Player}&#x27;s {@link QuestState} with {@link QuestStatus} CREATED.
+	 * @param quest : The {@link Quest} associated with the {@link QuestState}.
+	 * @param player : The {@link Player} carrying the {@link Quest}.
+	 */
+	public QuestState(Player player, Quest quest)
+	{
+		_player = player;
+		_quest = quest;
+		
+		put(STATE, String.valueOf(QuestStatus.CREATED));
+		
+		_player.getQuestList().add(this);
+	}
+	
+	@Override
+	public boolean getBool(final String key)
+	{
+		return getBool(key, false);
+	}
+	
+	@Override
+	public int getInteger(final String key)
+	{
+		return getInteger(key, 0);
+	}
+	
+	@Override
+	public long getLong(final String key)
+	{
+		return getLong(key, 0);
+	}
+	
+	@Override
+	public double getDouble(final String key)
+	{
+		return getDouble(key, 0);
+	}
+	
+	@Override
+	protected void onSet(String key, String value)
+	{
+		// Set variable to database.
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(QUEST_SET_VAR))
+		{
+			ps.setInt(1, _player.getObjectId());
+			ps.setString(2, _quest.getName());
+			ps.setString(3, key);
+			ps.setString(4, value);
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t set quest {} variable {}.&quot;, e, _quest.getName(), key);
+		}
+	}
+	
+	@Override
+	protected void onUnset(String key)
+	{
+		// Remove variable from database.
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(QUEST_DEL_VAR))
+		{
+			ps.setInt(1, _player.getObjectId());
+			ps.setString(2, _quest.getName());
+			ps.setString(3, key);
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t remove quest {} variable {}.&quot;, e, _quest.getName(), key);
+		}
+	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		if (!(o instanceof QuestState qs))
+			return false;
+		
+		if (!_quest.isRealQuest())
+			return false;
+		
+		if (_player != qs._player)
+			return false;
+		
+		return _quest.getQuestId() == qs._quest.getQuestId();
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(_player.getObjectId(), _quest.getQuestId());
+	}
+	
+	/**
+	 * Load variable and value from SQL data row.
+	 * @param rs : The loaded {@link ResultSet} carrying variable and value data.
+	 * @throws SQLException : When value reading fails.
+	 */
+	public void loadFromDB(ResultSet rs) throws SQLException
+	{
+		// Get variable and value and check valid.
+		final String variable = rs.getString(&quot;var&quot;);
+		final String value = rs.getString(&quot;value&quot;);
+		if (variable == null || variable.isEmpty() || value == null || value.isEmpty())
+			return;
+		
+		// Parse special variable types.
+		put(variable, value);
+	}
+	
+	/**
+	 * @return The {@link Player} associated to this {@link QuestState}.
+	 */
+	public Player getPlayer()
+	{
+		return _player;
+	}
+	
+	/**
+	 * @return The {@link Quest} associated to this {@link QuestState}.
+	 */
+	public Quest getQuest()
+	{
+		return _quest;
+	}
+	
+	/**
+	 * @return The {@link QuestStatus} associated to this {@link QuestState}.
+	 */
+	public QuestStatus getState()
+	{
+		return getEnum(STATE, QuestStatus.class, null);
+	}
+	
+	/**
+	 * @return True if the {@link QuestState} is under QuestStatus.CREATED, or false otherwise.
+	 */
+	public boolean isCreated()
+	{
+		return (getState() == QuestStatus.CREATED);
+	}
+	
+	/**
+	 * @return True if the {@link QuestState} is under QuestStatus.COMPLETED, or false otherwise.
+	 */
+	public boolean isCompleted()
+	{
+		return (getState() == QuestStatus.COMPLETED);
+	}
+	
+	/**
+	 * @return True if the {@link QuestState} is under QuestStatus.STARTED, or false otherwise.
+	 */
+	public boolean isStarted()
+	{
+		return (getState() == QuestStatus.STARTED);
+	}
+	
+	/**
+	 * Set the {@link QuestStatus} of the {@link QuestState}.
+	 * @param state : The desired {@link QuestStatus}.
+	 */
+	public void setState(QuestStatus state)
+	{
+		// Get current state and skip of no change.
+		if (getState() == state)
+			return;
+		
+		// Set new state.
+		set(STATE, state);
+	}
+	
+	/**
+	 * @return The condition value of the {@link Player}&#x27;s {@link Quest}.
+	 */
+	public int getCond()
+	{
+		return getInteger(COND, 0);
+	}
+	
+	/**
+	 * Set condition value of the {@link Player}&#x27;s {@link Quest}.&lt;br&gt;
+	 * Note: Handle the quest progression. If condition skip is detected, calculate {@link Quest}&#x27;s flags.
+	 * @param cond : The condition to be set.
+	 */
+	public void setCond(int cond)
+	{
+		// Get current condition and skip of no change.
+		final int previous = getCond();
+		if (cond == previous)
+			return;
+		
+		// Set quest progression flags, if required.
+		int flags = getInteger(FLAGS, 0);
+		if (flags == 0)
+		{
+			if (previous != 0 &amp;&amp; cond &gt; (previous + 1))
+			{
+				flags = calculateFlags();
+				flags |= 1 &lt;&lt; (cond - 1);
+				set(FLAGS, flags);
+			}
+		}
+		else
+		{
+			if (cond &gt; previous)
+			{
+				flags |= 1 &lt;&lt; (cond - 1);
+				set(FLAGS, flags);
+			}
+			else if (cond &gt; 2)
+			{
+				int negate = (1 &lt;&lt; cond) - 1;
+				flags &amp;= negate;
+				flags |= 0x80000000;
+				set(FLAGS, flags);
+			}
+			else
+			{
+				unset(FLAGS);
+			}
+		}
+		
+		// Set new condition.
+		set(COND, cond);
+		
+		// Send quest update.
+		if (_quest.isRealQuest())
+		{
+			_player.sendPacket(new QuestList(_player));
+			_player.sendPacket(new ExShowQuestMark(_quest.getQuestId()));
+		}
+	}
+	
+	/**
+	 * @return The {@link Quest}&#x27;s flags or condition values.
+	 */
+	public int getFlags()
+	{
+		// Get or calculate quest flags.
+		return getInteger(FLAGS, calculateFlags());
+	}
+	
+	/**
+	 * Exit a {@link Quest}, destroying elements used by it (quest items, and progression).
+	 * @param repeatable : If true, we delete progression and if false, we set the {@link QuestStatus} to QuestStatus.COMPLETED.
+	 */
+	public void exitQuest(boolean repeatable)
+	{
+		if (!isStarted())
+			return;
+		
+		// Remove quest variables.
+		clear();
+		
+		// Remove/Complete quest.
+		if (repeatable)
+			_player.getQuestList().remove(this);
+		else
+			setState(QuestStatus.COMPLETED);
+		
+		if (_quest.isRealQuest())
+			_player.sendPacket(new QuestList(_player));
+		
+		// Remove registered quest items.
+		int[] itemIds = _quest.getItemsIds();
+		if (itemIds != null)
+		{
+			for (int itemId : itemIds)
+				Quest.takeItems(_player, itemId, -1);
+		}
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement((repeatable) ? QUEST_DELETE : QUEST_COMPLETE))
+		{
+			ps.setInt(1, _player.getObjectId());
+			ps.setString(2, _quest.getName());
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t delete quest.&quot;, e);
+		}
+	}
+	
+	/**
+	 * Calculate the {@link Quest}&#x27;s flags for {@link QuestList} packet.
+	 * @return The calculated flag.
+	 */
+	private int calculateFlags()
+	{
+		// Get cond and check.
+		final int cond = getCond();
+		if (cond == 0)
+			return 0;
+		
+		// Cond is set, calculate flags.
+		int flags = (1 &lt;&lt; cond) - 1;
+		flags |= 0x80000000;
+		return flags;
+	}
+}</pre>
+            
+</body>
+</html>

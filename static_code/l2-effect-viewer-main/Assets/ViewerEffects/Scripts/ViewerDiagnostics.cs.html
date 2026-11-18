@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/ViewerDiagnostics.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/ViewerDiagnostics.cs</h1>
+            <pre>using System;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using UnityEngine;
+
+public static class ViewerDiagnostics
+{
+    static readonly object Sync = new object();
+    static string _path;
+
+    public static string LogPath
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(_path))
+                return _path;
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName
+                                 ?? Application.persistentDataPath;
+            _path = Path.Combine(projectRoot, &quot;Logs&quot;, &quot;ViewerEffectsRuntime.log&quot;);
+            return _path;
+        }
+    }
+
+    public static void Begin(ViewerEffectData effect)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+            File.WriteAllText(LogPath, string.Empty);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning(&quot;[ViewerEffectsDiag] Cannot reset log: &quot; + ex.Message);
+        }
+
+        Camera camera = Camera.main;
+        Write(
+            &quot;BEGIN effect=&quot; + Q(effect?.ClassName) +
+            &quot; source=&quot; + Q(effect?.SourcePath) +
+            &quot; unity=&quot; + Application.unityVersion +
+            &quot; colorSpace=&quot; + QualitySettings.activeColorSpace +
+            &quot; graphics=&quot; + SystemInfo.graphicsDeviceType +
+            &quot; camera=&quot; + Q(camera != null ? camera.name : null) +
+            &quot; hdr=&quot; + (camera != null &amp;&amp; camera.allowHDR) +
+            &quot; log=&quot; + LogPath);
+    }
+
+    public static void Emitter(ViewerEmitterData e)
+    {
+        var text = new StringBuilder();
+        text.Append(&quot;EMITTER object=&quot;).Append(Q(e.ObjectName))
+            .Append(&quot; display=&quot;).Append(Q(e.DisplayName))
+            .Append(&quot; kind=&quot;).Append(e.Kind)
+            .Append(&quot; mesh=&quot;).Append(Q(e.StaticMesh))
+            .Append(&quot; texture=&quot;).Append(Q(e.Texture))
+            .Append(&quot; drawStyle=&quot;).Append(Q(e.DrawStyle))
+            .Append(&quot; max=&quot;).Append(e.MaxParticles)
+            .Append(&quot; rate=&quot;).Append(F(e.InitialParticlesPerSecond))
+            .Append(&quot; autoInitial=&quot;).Append(e.AutomaticInitialSpawning)
+            .Append(&quot; respawn=&quot;).Append(e.RespawnDeadParticles)
+            .Append(&quot; lifetime=&quot;).Append(R(e.Lifetime))
+            .Append(&quot; opacity=&quot;).Append(F(e.Opacity))
+            .Append(&quot; colorMin=&quot;).Append(V(e.ColorMulMin))
+            .Append(&quot; colorMax=&quot;).Append(V(e.ColorMulMax))
+            .Append(&quot; fadeIn=&quot;).Append(e.FadeIn).Append(&#x27;@&#x27;).Append(F(e.FadeInEndTime))
+            .Append(&quot; fadeOut=&quot;).Append(e.FadeOut).Append(&#x27;@&#x27;).Append(F(e.FadeOutStartTime))
+            .Append(&quot; colorKeys=&quot;).Append(e.ColorScale.Count)
+            .Append(&quot; colorRepeats=&quot;).Append(F(e.ColorScaleRepeats))
+            .Append(&quot; sizeKeys=&quot;).Append(e.SizeScale.Count)
+            .Append(&quot; subdivisions=&quot;).Append(e.TextureUSubdivisions).Append(&#x27;x&#x27;).Append(e.TextureVSubdivisions)
+            .Append(&#x27;:&#x27;).Append(e.SubdivisionStart).Append(&quot;..&quot;).Append(e.SubdivisionEnd);
+        Write(text.ToString());
+
+        for (int i = 0; i &lt; e.ColorScale.Count; i++)
+            Write(&quot;COLOR_KEY object=&quot; + Q(e.ObjectName) + &quot; i=&quot; + i +
+                  &quot; time=&quot; + F(e.ColorScale[i].RelativeTime) +
+                  &quot; rgba=&quot; + C(e.ColorScale[i].Color));
+    }
+
+    public static void Assets(ViewerEmitterData e, ViewerResolvedAssets assets)
+    {
+        Texture texture = assets.Texture;
+        string srgb = &quot;n/a&quot;;
+        if (texture is Texture2D tex2d)
+            srgb = tex2d.isDataSRGB ? &quot;on&quot; : &quot;off&quot;;
+        string textureInfo = texture == null
+            ? &quot;null&quot;
+            : Q(texture.name) + &quot; &quot; + texture.width + &quot;x&quot; + texture.height +
+              &quot; dimension=&quot; + texture.dimension + &quot; wrap=&quot; + texture.wrapMode +
+              &quot; filter=&quot; + texture.filterMode + &quot; format=&quot; + texture.graphicsFormat +
+              &quot; sRGB=&quot; + srgb;
+        Write(
+            &quot;ASSETS object=&quot; + Q(e.ObjectName) +
+            &quot; meshSource=&quot; + Q(assets.MeshSource) +
+            &quot; mesh=&quot; + Q(assets.Mesh != null ? assets.Mesh.name : null) +
+            &quot; textureSource=&quot; + Q(assets.TextureSource) +
+            &quot; texture=&quot; + textureInfo);
+    }
+
+    public static void Material(
+        ViewerEffectData effect,
+        ViewerEmitterData e,
+        Material mat,
+        bool validatedProfileApplied)
+    {
+        Write(
+            &quot;MATERIAL effect=&quot; + Q(effect?.ClassName) +
+            &quot; object=&quot; + Q(e.ObjectName) +
+            &quot; profileApplied=&quot; + validatedProfileApplied +
+            &quot; shader=&quot; + Q(mat.shader != null ? mat.shader.name : null) +
+            &quot; supported=&quot; + (mat.shader != null &amp;&amp; mat.shader.isSupported) +
+            &quot; queue=&quot; + mat.renderQueue +
+            &quot; mainTex=&quot; + Q(mat.mainTexture != null ? mat.mainTexture.name : null) +
+            &quot; srcBlend=&quot; + P(mat, &quot;_SrcBlend&quot;) +
+            &quot; dstBlend=&quot; + P(mat, &quot;_DstBlend&quot;) +
+            &quot; gamma=&quot; + P(mat, &quot;_L2SpriteColorGammaToLinear&quot;) +
+            &quot; rgbBoost=&quot; + P(mat, &quot;_RgbBoost&quot;) +
+            &quot; opacity=&quot; + P(mat, &quot;_Opacity&quot;) +
+            &quot; fadeIn=&quot; + P(mat, &quot;_FadeIn&quot;) + &quot;@&quot; + P(mat, &quot;_FadeInEndTime&quot;) +
+            &quot; fadeOut=&quot; + P(mat, &quot;_Fadeout&quot;) + &quot;@&quot; + P(mat, &quot;_FadeoutStartTime&quot;) +
+            &quot; life=&quot; + PV(mat, &quot;_LifetimeRange&quot;) +
+            &quot; colorRepeats=&quot; + P(mat, &quot;_ColorScaleParam&quot;) +
+            &quot; calibration=&quot; + P(mat, &quot;_L2FxWorldCalibration&quot;) +
+            &quot; subdivision=&quot; + P(mat, &quot;_SubdivisionStart&quot;) + &quot;..&quot; + P(mat, &quot;_SubdivisionEnd&quot;) +
+            &quot; colorFadeAlphaBlend=&quot; + P(mat, &quot;_ColorFadeAlphaBlend&quot;) +
+            &quot; colorKey0=&quot; + PC(mat, &quot;_ColorKey0&quot;) +
+            &quot; colorMultiplier=&quot; + PV(mat, &quot;_ColorMultiplier&quot;) +
+            &quot; colorMulMin=&quot; + PV(mat, &quot;_ColorMulMin&quot;) +
+            &quot; colorMulMax=&quot; + PV(mat, &quot;_ColorMulMax&quot;));
+    }
+
+    public static void Group(
+        ViewerEmitterData e,
+        int maxCount,
+        bool burst,
+        float rate,
+        float duration)
+    {
+        Write(
+            &quot;GROUP object=&quot; + Q(e.ObjectName) +
+            &quot; max=&quot; + maxCount +
+            &quot; burst=&quot; + burst +
+            &quot; rate=&quot; + F(rate) +
+            &quot; duration=&quot; + F(duration) +
+            &quot; fixedDelta=&quot; + F(Time.fixedDeltaTime));
+    }
+
+    public static void Activate(
+        string groupName,
+        int slot,
+        int spawned,
+        float now,
+        float startedAt,
+        Material mat)
+    {
+        Write(
+            &quot;ACTIVATE group=&quot; + Q(groupName) +
+            &quot; slot=&quot; + slot +
+            &quot; spawned=&quot; + spawned +
+            &quot; time=&quot; + F(now) +
+            &quot; sincePlay=&quot; + F(now - startedAt) +
+            &quot; frame=&quot; + Time.frameCount +
+            &quot; fixedTime=&quot; + F(Time.fixedTime) +
+            &quot; startTime=&quot; + P(mat, &quot;_StartTime&quot;) +
+            &quot; gamma=&quot; + P(mat, &quot;_L2SpriteColorGammaToLinear&quot;) +
+            &quot; rgbBoost=&quot; + P(mat, &quot;_RgbBoost&quot;) +
+            &quot; opacity=&quot; + P(mat, &quot;_Opacity&quot;));
+    }
+
+    public static void Play(Vector3 position)
+    {
+        Write(&quot;PLAY position=&quot; + V(position) + &quot; time=&quot; + F(Time.time));
+    }
+
+    public static void Error(string context, Exception ex)
+    {
+        Write(&quot;ERROR context=&quot; + Q(context) + &quot; exception=&quot; + Q(ex.ToString()));
+    }
+
+    static void Write(string message)
+    {
+        string line = DateTime.Now.ToString(&quot;HH:mm:ss.fff&quot;, CultureInfo.InvariantCulture) +
+                      &quot; &quot; + message;
+        try
+        {
+            lock (Sync)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+                File.AppendAllText(LogPath, line + Environment.NewLine);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning(&quot;[ViewerEffectsDiag] Cannot append log: &quot; + ex.Message);
+        }
+    }
+
+    static string P(Material mat, string property) =&gt;
+        mat != null &amp;&amp; mat.HasProperty(property) ? F(mat.GetFloat(property)) : &quot;n/a&quot;;
+
+    static string PV(Material mat, string property) =&gt;
+        mat != null &amp;&amp; mat.HasProperty(property) ? V(mat.GetVector(property)) : &quot;n/a&quot;;
+
+    static string PC(Material mat, string property) =&gt;
+        mat != null &amp;&amp; mat.HasProperty(property) ? C(mat.GetColor(property)) : &quot;n/a&quot;;
+
+    static string F(float value) =&gt; value.ToString(&quot;0.######&quot;, CultureInfo.InvariantCulture);
+    static string R(ViewerRange value) =&gt; F(value.Min) + &quot;..&quot; + F(value.Max);
+    static string V(Vector3 value) =&gt; &quot;(&quot; + F(value.x) + &quot;,&quot; + F(value.y) + &quot;,&quot; + F(value.z) + &quot;)&quot;;
+    static string V(Vector4 value) =&gt; &quot;(&quot; + F(value.x) + &quot;,&quot; + F(value.y) + &quot;,&quot; + F(value.z) + &quot;,&quot; + F(value.w) + &quot;)&quot;;
+    static string C(Color value) =&gt; &quot;(&quot; + F(value.r) + &quot;,&quot; + F(value.g) + &quot;,&quot; + F(value.b) + &quot;,&quot; + F(value.a) + &quot;)&quot;;
+    static string Q(string value) =&gt; &quot;\&quot;&quot; + (value ?? &quot;&lt;null&gt;&quot;).Replace(&quot;\&quot;&quot;, &quot;&#x27;&quot;) + &quot;\&quot;&quot;;
+}
+</pre>
+            
+</body>
+</html>

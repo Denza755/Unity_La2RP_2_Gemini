@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q368_TrespassingIntoTheSacredArea.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q368_TrespassingIntoTheSacredArea.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q368_TrespassingIntoTheSacredArea extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q368_TrespassingIntoTheSacredArea&quot;;
+	
+	// NPC
+	private static final int RESTINA = 30926;
+	
+	// Item
+	private static final int FANG = 5881;
+	
+	// Drop chances
+	private static final Map&lt;Integer, Integer&gt; CHANCES = new HashMap&lt;&gt;();
+	{
+		CHANCES.put(20794, 500000);
+		CHANCES.put(20795, 770000);
+		CHANCES.put(20796, 500000);
+		CHANCES.put(20797, 480000);
+	}
+	
+	public Q368_TrespassingIntoTheSacredArea()
+	{
+		super(368, &quot;Trespassing into the Sacred Area&quot;);
+		
+		setItemsIds(FANG);
+		
+		addQuestStart(RESTINA);
+		addTalkId(RESTINA);
+		
+		addMyDying(20794, 20795, 20796, 20797);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30926-02.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30926-05.htm&quot;))
+		{
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 36) ? &quot;30926-01a.htm&quot; : &quot;30926-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int fangs = player.getInventory().getItemCount(FANG);
+				if (fangs == 0)
+					htmltext = &quot;30926-03.htm&quot;;
+				else
+				{
+					final int reward = 250 * fangs + (fangs &gt; 10 ? 5730 : 2000);
+					
+					htmltext = &quot;30926-04.htm&quot;;
+					takeItems(player, 5881, -1);
+					rewardItems(player, 57, reward);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(st.getPlayer(), FANG, 1, 0, CHANCES.get(npc.getNpcId()));
+	}
+}</pre>
+            
+</body>
+</html>

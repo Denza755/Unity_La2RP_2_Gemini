@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q155_FindSirWindawood.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q155_FindSirWindawood.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q155_FindSirWindawood extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q155_FindSirWindawood&quot;;
+	
+	// Items
+	private static final int OFFICIAL_LETTER = 1019;
+	private static final int HASTE_POTION = 734;
+	
+	// NPCs
+	private static final int ABELLOS = 30042;
+	private static final int WINDAWOOD = 30311;
+	
+	public Q155_FindSirWindawood()
+	{
+		super(155, &quot;Find Sir Windawood&quot;);
+		
+		setItemsIds(OFFICIAL_LETTER);
+		
+		addQuestStart(ABELLOS);
+		addTalkId(WINDAWOOD, ABELLOS);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30042-02.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+			giveItems(player, OFFICIAL_LETTER, 1);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 3) ? &quot;30042-01a.htm&quot; : &quot;30042-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				switch (npc.getNpcId())
+				{
+					case ABELLOS:
+						htmltext = &quot;30042-03.htm&quot;;
+						break;
+					
+					case WINDAWOOD:
+						if (player.getInventory().hasItem(OFFICIAL_LETTER))
+						{
+							htmltext = &quot;30311-01.htm&quot;;
+							takeItems(player, OFFICIAL_LETTER, 1);
+							rewardItems(player, HASTE_POTION, 1);
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(false);
+						}
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/item/SellList.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/item/SellList.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.item;
+
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class SellList extends L2GameServerPacket
+{
+	private final int _money;
+	private final List&lt;ItemInstance&gt; _items;
+	private final boolean _openTab;
+	
+	public SellList(int adena, List&lt;ItemInstance&gt; items, boolean openTab)
+	{
+		_money = adena;
+		_items = items;
+		_openTab = openTab;
+	}
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0x10);
+		writeC(_openTab ? (byte) 1 : (byte) 0);
+		writeD(_money);
+		writeD(0x00);
+		writeH(_items.size());
+		
+		for (ItemInstance item : _items)
+		{
+			writeH(item.getItem().getType1());
+			writeD(item.getObjectId());
+			writeD(item.getItemId());
+			writeD(item.getCount());
+			writeH(item.getItem().getType2());
+			writeH(item.getCustomType1());
+			writeD(item.getItem().getBodyPart());
+			writeH(item.getEnchantLevel());
+			writeH(item.getCustomType2());
+			writeH(0x00);
+			writeD(item.getItem().getReferencePrice() / 2);
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

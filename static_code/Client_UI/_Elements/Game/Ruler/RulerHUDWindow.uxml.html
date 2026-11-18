@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/Ruler/RulerHUDWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/Ruler/RulerHUDWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/Ruler/RulerHUDWindow.uss?fileID=7433441132597879392&amp;amp;guid=f4a63560d9f9fef459f3a3592e928918&amp;amp;type=3#RulerHUDWindow&quot; /&gt;
+    
+    &lt;ui:VisualElement name=&quot;RulerHUDWindow&quot; picking-mode=&quot;Ignore&quot; style=&quot;position: absolute; width: 100%; height: 100%;&quot;&gt;
+        &lt;!-- Top Right Ruler Control Panel --&gt;
+        &lt;ui:VisualElement name=&quot;RulerTopPanel&quot; class=&quot;ruler-top-panel&quot; picking-mode=&quot;Position&quot;&gt;
+            &lt;ui:VisualElement name=&quot;RulerHeader&quot; class=&quot;ruler-header&quot; picking-mode=&quot;Ignore&quot;&gt;
+                &lt;ui:Label text=&quot;👑 RULER MODE&quot; name=&quot;RulerTitleLabel&quot; class=&quot;ruler-title-label&quot; picking-mode=&quot;Ignore&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            
+            &lt;ui:VisualElement name=&quot;RulerBody&quot; class=&quot;ruler-body&quot; picking-mode=&quot;Ignore&quot;&gt;
+                &lt;ui:Button text=&quot;RTS Camera: OFF&quot; name=&quot;BtnToggleRtsCamera&quot; class=&quot;ruler-main-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+                
+                &lt;ui:VisualElement name=&quot;RulerSubModesContainer&quot; class=&quot;ruler-submodes-container&quot; picking-mode=&quot;Ignore&quot;&gt;
+                    &lt;ui:Button text=&quot;Observe Mode&quot; name=&quot;BtnObserveMode&quot; class=&quot;ruler-mode-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+                    &lt;ui:Button text=&quot;Build Mode&quot; name=&quot;BtnBuildMode&quot; class=&quot;ruler-mode-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+
+        &lt;!-- Bottom Build Bar (Only visible in Build Mode) --&gt;
+        &lt;ui:VisualElement name=&quot;RulerBuildBar&quot; class=&quot;ruler-build-bar&quot; picking-mode=&quot;Position&quot;&gt;
+            &lt;ui:VisualElement name=&quot;BuildBarHeader&quot; class=&quot;build-bar-header&quot; picking-mode=&quot;Ignore&quot;&gt;
+                &lt;ui:Label text=&quot;BUILDINGS&quot; name=&quot;BuildBarTitle&quot; class=&quot;build-bar-title&quot; picking-mode=&quot;Ignore&quot; /&gt;
+                
+                &lt;ui:VisualElement name=&quot;PaginationContainer&quot; class=&quot;pagination-container&quot; picking-mode=&quot;Ignore&quot;&gt;
+                    &lt;ui:Button text=&quot;&amp;lt; Prev&quot; name=&quot;BtnPrevPage&quot; class=&quot;pagination-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+                    &lt;ui:Label text=&quot;Page 1/3&quot; name=&quot;PageLabel&quot; class=&quot;pagination-label&quot; picking-mode=&quot;Ignore&quot; /&gt;
+                    &lt;ui:Button text=&quot;Next &amp;gt;&quot; name=&quot;BtnNextPage&quot; class=&quot;pagination-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+
+                &lt;ui:VisualElement style=&quot;flex-grow: 1;&quot; picking-mode=&quot;Ignore&quot; /&gt;
+                &lt;ui:Button text=&quot;Demolish Under Cursor (Del)&quot; name=&quot;BtnDemolish&quot; class=&quot;build-bar-action-btn demolish-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+                &lt;ui:Button text=&quot;Cancel / Clear (Esc)&quot; name=&quot;BtnCancelSelection&quot; class=&quot;build-bar-action-btn cancel-btn&quot; picking-mode=&quot;Position&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+
+            &lt;ui:VisualElement name=&quot;BuildingsGridContainer&quot; class=&quot;buildings-grid-container&quot; picking-mode=&quot;Position&quot; /&gt;
+
+            &lt;ui:VisualElement name=&quot;BuildBarFooter&quot; class=&quot;build-bar-footer&quot; picking-mode=&quot;Ignore&quot;&gt;
+                &lt;ui:Label text=&quot;Controls: [LMB] Place | [R] Rotate 90° | [Shift+R] Rotate 45° | [RMB / Esc] Cancel | [Del] Demolish&quot; name=&quot;HelpTextLabel&quot; class=&quot;ruler-help-text&quot; picking-mode=&quot;Ignore&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

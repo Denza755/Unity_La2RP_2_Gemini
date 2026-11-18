@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Plugins/TextMesh Pro/Shaders/TMP_SDF-Mobile SSD.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Plugins/TextMesh Pro/Shaders/TMP_SDF-Mobile SSD.shader</h1>
+            <pre>﻿// Simplified SDF shader:
+// - No Shading Option (bevel / bump / env map)
+// - No Glow Option
+// - Softness is applied on both side of the outline
+
+Shader &quot;TextMeshPro/Mobile/Distance Field SSD&quot; {
+
+Properties {
+	_FaceColor		    (&quot;Face Color&quot;, Color) = (1,1,1,1)
+	_FaceDilate			(&quot;Face Dilate&quot;, Range(-1,1)) = 0
+
+	_OutlineColor	    (&quot;Outline Color&quot;, Color) = (0,0,0,1)
+	_OutlineWidth		(&quot;Outline Thickness&quot;, Range(0,1)) = 0
+	_OutlineSoftness	(&quot;Outline Softness&quot;, Range(0,1)) = 0
+
+	_UnderlayColor		(&quot;Border Color&quot;, Color) = (0,0,0,.5)
+	_UnderlayOffsetX 	(&quot;Border OffsetX&quot;, Range(-1,1)) = 0
+	_UnderlayOffsetY 	(&quot;Border OffsetY&quot;, Range(-1,1)) = 0
+	_UnderlayDilate		(&quot;Border Dilate&quot;, Range(-1,1)) = 0
+	_UnderlaySoftness 	(&quot;Border Softness&quot;, Range(0,1)) = 0
+
+	_WeightNormal		(&quot;Weight Normal&quot;, float) = 0
+	_WeightBold			(&quot;Weight Bold&quot;, float) = .5
+
+	_ShaderFlags		(&quot;Flags&quot;, float) = 0
+	_ScaleRatioA		(&quot;Scale RatioA&quot;, float) = 1
+	_ScaleRatioB		(&quot;Scale RatioB&quot;, float) = 1
+	_ScaleRatioC		(&quot;Scale RatioC&quot;, float) = 1
+
+	_MainTex			(&quot;Font Atlas&quot;, 2D) = &quot;white&quot; {}
+	_TextureWidth		(&quot;Texture Width&quot;, float) = 512
+	_TextureHeight		(&quot;Texture Height&quot;, float) = 512
+	_GradientScale		(&quot;Gradient Scale&quot;, float) = 5
+	_ScaleX				(&quot;Scale X&quot;, float) = 1
+	_ScaleY				(&quot;Scale Y&quot;, float) = 1
+	_PerspectiveFilter	(&quot;Perspective Correction&quot;, Range(0, 1)) = 0.875
+	_Sharpness			(&quot;Sharpness&quot;, Range(-1,1)) = 0
+
+	_VertexOffsetX		(&quot;Vertex OffsetX&quot;, float) = 0
+	_VertexOffsetY		(&quot;Vertex OffsetY&quot;, float) = 0
+
+	_ClipRect			(&quot;Clip Rect&quot;, vector) = (-32767, -32767, 32767, 32767)
+	_MaskSoftnessX		(&quot;Mask SoftnessX&quot;, float) = 0
+	_MaskSoftnessY		(&quot;Mask SoftnessY&quot;, float) = 0
+	_MaskTex			(&quot;Mask Texture&quot;, 2D) = &quot;white&quot; {}
+	_MaskInverse		(&quot;Inverse&quot;, float) = 0
+	_MaskEdgeColor		(&quot;Edge Color&quot;, Color) = (1,1,1,1)
+	_MaskEdgeSoftness	(&quot;Edge Softness&quot;, Range(0, 1)) = 0.01
+	_MaskWipeControl	(&quot;Wipe Position&quot;, Range(0, 1)) = 0.5
+
+	_StencilComp		(&quot;Stencil Comparison&quot;, Float) = 8
+	_Stencil			(&quot;Stencil ID&quot;, Float) = 0
+	_StencilOp			(&quot;Stencil Operation&quot;, Float) = 0
+	_StencilWriteMask	(&quot;Stencil Write Mask&quot;, Float) = 255
+	_StencilReadMask	(&quot;Stencil Read Mask&quot;, Float) = 255
+
+    _CullMode           (&quot;Cull Mode&quot;, Float) = 0
+	_ColorMask			(&quot;Color Mask&quot;, Float) = 15
+}
+
+SubShader {
+	Tags {
+		&quot;Queue&quot;=&quot;Transparent&quot;
+		&quot;IgnoreProjector&quot;=&quot;True&quot;
+		&quot;RenderType&quot;=&quot;Transparent&quot;
+	}
+
+	Stencil
+	{
+		Ref [_Stencil]
+		Comp [_StencilComp]
+		Pass [_StencilOp]
+		ReadMask [_StencilReadMask]
+		WriteMask [_StencilWriteMask]
+	}
+
+	Cull [_CullMode]
+	ZWrite Off
+	Lighting Off
+	Fog { Mode Off }
+	ZTest [unity_GUIZTestMode]
+	Blend One OneMinusSrcAlpha
+	ColorMask [_ColorMask]
+
+	Pass {
+		CGPROGRAM
+		#pragma vertex VertShader
+		#pragma fragment PixShader
+		#pragma shader_feature __ OUTLINE_ON
+		#pragma shader_feature __ UNDERLAY_ON UNDERLAY_INNER
+
+		#pragma multi_compile __ UNITY_UI_CLIP_RECT
+		#pragma multi_compile __ UNITY_UI_ALPHACLIP
+
+		#include &quot;UnityCG.cginc&quot;
+		#include &quot;UnityUI.cginc&quot;
+		#include &quot;TMPro_Properties.cginc&quot;
+
+		#include &quot;TMPro_Mobile.cginc&quot;
+
+		ENDCG
+	}
+}
+
+CustomEditor &quot;TMPro.EditorUtilities.TMP_SDFShaderGUI&quot;
+}
+</pre>
+            
+</body>
+</html>

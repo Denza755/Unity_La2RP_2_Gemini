@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/PartyLeaderWarrior/PartyLeaderPhysicalSpecial2/PartyLeaderHeretic2Aggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/PartyLeaderWarrior/PartyLeaderPhysicalSpecial2/PartyLeaderHeretic2Aggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.PartyLeaderWarrior.PartyLeaderPhysicalSpecial2;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.ClassId;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class PartyLeaderHeretic2Aggressive extends PartyLeaderPhysicalSpecial2
+{
+	public PartyLeaderHeretic2Aggressive()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/PartyLeaderWarrior/PartyLeaderPhysicalSpecial2&quot;);
+	}
+	
+	public PartyLeaderHeretic2Aggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		22155,
+		22159,
+		22167
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai3 = 0;
+		
+		super.onCreated(npc);
+		
+		npc.getAI().addMoveToDesire(npc.getSpawnLocation(), 30);
+	}
+	
+	@Override
+	public void onNoDesire(Npc npc)
+	{
+		npc.getAI().addMoveToDesire(npc.getSpawnLocation(), 30);
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST)
+			broadcastScriptEventEx(npc, 10033, creature.getObjectId(), npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;HelpCastRange&quot;, 500));
+		
+		if (!(creature instanceof Playable))
+			return;
+		
+		tryToAttack(npc, creature);
+		
+		if (creature != npc)
+		{
+			npc.getAI().addCastDesire(creature, getNpcSkillByType(npc, NpcSkillType.SPECIAL_ATTACK), 1000000);
+			npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.SELF_MAGIC_HEAL), 1000000);
+		}
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST)
+			broadcastScriptEventEx(npc, 10033, attacker.getObjectId(), npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;HelpCastRange&quot;, 500));
+		
+		if (npc.getStatus().getHpRatio() &lt; 0.4 &amp;&amp; Rnd.get(100) &lt; 33)
+		{
+			final int playerClassID = attacker.getActingPlayer().getClassId().getId();
+			final boolean isInClericGroup = ClassId.isInGroup(attacker.getActingPlayer(), &quot;@cleric_group&quot;);
+			
+			if (Rnd.get(100) &lt; 33 &amp;&amp; (playerClassID == 5 || playerClassID == 90 || isInClericGroup))
+				broadcastScriptEventEx(npc, 10002, attacker.getObjectId(), npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;HelpCastRange&quot;, 500));
+		}
+		
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onPartyAttacked(Npc caller, Npc called, Creature target, int damage)
+	{
+		if (called.getStatus().getHpRatio() &lt; 0.4 &amp;&amp; Rnd.get(100) &lt; 33 &amp;&amp; called._i_ai3 == 0)
+			called.lookNeighbor();
+		
+		super.onPartyAttacked(caller, called, target, damage);
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (skill == getNpcSkillByType(npc, NpcSkillType.SELF_MAGIC_HEAL) &amp;&amp; success)
+			npc._i_ai3 = 1;
+	}
+	
+	@Override
+	public void onSeeSpell(Npc npc, Player caster, L2Skill skill, Creature[] targets, boolean isPet)
+	{
+		if (npc.getStatus().getHpRatio() &lt; 0.4 &amp;&amp; Rnd.get(100) &lt; 33 &amp;&amp; ClassId.isInGroup(caster.getActingPlayer(), &quot;@cleric_group&quot;))
+			broadcastScriptEventEx(npc, 10002, caster.getObjectId(), npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;HelpCastRange&quot;, 500));
+		
+		super.onSeeSpell(npc, caster, skill, targets, isPet);
+	}
+	
+	@Override
+	public void onOutOfTerritory(Npc npc)
+	{
+		npc.removeAllAttackDesire();
+		npc.getAI().addMoveToDesire(npc.getSpawnLocation(), 100);
+		broadcastScriptEvent(npc, 10035, npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;DistNoDesire&quot;, 500));
+	}
+}
+</pre>
+            
+</body>
+</html>

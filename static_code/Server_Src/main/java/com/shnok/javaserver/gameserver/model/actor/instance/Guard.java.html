@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Guard.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Guard.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.List;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.EventHandler;
+import com.shnok.javaserver.gameserver.model.actor.Attackable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+/**
+ * This class extends {@link Attackable} and manages all {@link Guard}s.&lt;br&gt;
+ * &lt;br&gt;
+ * A {@link Guard} is used to protect Players from Player Killers (PKs).
+ */
+public final class Guard extends Attackable
+{
+	public Guard(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onSpawn()
+	{
+		setNoRndWalk(true);
+		super.onSpawn();
+	}
+	
+	@Override
+	public String getHtmlPath(int npcId, int val)
+	{
+		String filename = &quot;&quot;;
+		if (val == 0)
+			filename = &quot;&quot; + npcId;
+		else
+			filename = npcId + &quot;-&quot; + val;
+		
+		return &quot;data/html/guard/&quot; + filename + &quot;.htm&quot;;
+	}
+	
+	@Override
+	public void onInteract(Player player)
+	{
+		switch (getNpcId())
+		{
+			case 30733, 31032, 31033, 31034, 31035, 31036, 31671, 31672, 31673, 31674: // Guards in start villages &amp; patrols
+				return;
+		}
+		
+		getAI().onRandomAnimation(Rnd.get(8));
+		
+		player.getQuestList().setLastQuestNpcObjectId(getObjectId());
+		
+		List&lt;Quest&gt; scripts = getTemplate().getEventQuests(EventHandler.FIRST_TALK);
+		if (scripts.size() == 1)
+			scripts.get(0).notifyFirstTalk(this, player);
+		else
+			showChatWindow(player);
+	}
+	
+	@Override
+	public boolean isGuard()
+	{
+		return true;
+	}
+	
+	@Override
+	public int getDriftRange()
+	{
+		return 20;
+	}
+}</pre>
+            
+</body>
+</html>

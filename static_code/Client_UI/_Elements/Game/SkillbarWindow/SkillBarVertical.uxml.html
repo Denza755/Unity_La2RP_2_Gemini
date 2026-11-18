@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/SkillbarWindow/SkillBarVertical.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/SkillbarWindow/SkillBarVertical.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;Slot&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Slot/InventorySlot.uxml?fileID=9197481963319205126&amp;amp;guid=9d85f669bd3786246b11558e35706780&amp;amp;type=3#InventorySlot&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/SkillbarWindow/SkillbarWindow.uss?fileID=7433441132597879392&amp;amp;guid=85e555579f5424d4a9ae3b12d87518a2&amp;amp;type=3#SkillbarWindow&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;SkillBar1&quot; class=&quot;skillbar skillbar-vertical&quot; style=&quot;height: 508px; min-height: 508px;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Wrapper&quot; class=&quot;skillbar-wrapper skillbar-wrapper-vertical&quot;&gt;
+            &lt;ui:VisualElement name=&quot;DragArea&quot; class=&quot;skillbar-drag skillbar-drag-vertical&quot;&gt;
+                &lt;ui:GroupBox name=&quot;Frame_DF_Ver&quot; class=&quot;frame_df_ver frame_df_ver-vertical&quot;&gt;
+                    &lt;ui:VisualElement style=&quot;flex-grow: 1; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Frame/Frame_DF_Ver/Frame_DF_Ver_Small_Top.png?fileID=2800000&amp;amp;guid=3616eb66b6343964d92d1c6d7d5a936d&amp;amp;type=3#Frame_DF_Ver_Small_Top&amp;quot;); height: 8px; max-height: 8px; -unity-slice-left: 3; -unity-slice-top: 3; -unity-slice-right: 3; -unity-slice-bottom: 3; -unity-slice-scale: 0.9px;&quot; /&gt;
+                    &lt;ui:VisualElement name=&quot;VisualElement&quot; style=&quot;flex-grow: 1; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Frame/Frame_DF_Ver/Frame_DF_Ver_Small_Center.png?fileID=2800000&amp;amp;guid=3adb856d45b78b242a89388ef2b70652&amp;amp;type=3#Frame_DF_Ver_Small_Center&amp;quot;); -unity-slice-left: 3; -unity-slice-top: 3; -unity-slice-right: 3; -unity-slice-bottom: 3; -unity-slice-scale: 0.9px;&quot; /&gt;
+                    &lt;ui:VisualElement name=&quot;VisualElement&quot; style=&quot;flex-grow: 1; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Frame/Frame_DF_Ver/Frame_DF_Ver_Small_Center.png?fileID=2800000&amp;amp;guid=3adb856d45b78b242a89388ef2b70652&amp;amp;type=3#Frame_DF_Ver_Small_Center&amp;quot;); -unity-slice-left: 3; -unity-slice-top: 3; -unity-slice-right: 3; -unity-slice-bottom: 3; -unity-slice-scale: 0.9px;&quot; /&gt;
+                    &lt;ui:VisualElement name=&quot;VisualElement&quot; style=&quot;flex-grow: 1; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Frame/Frame_DF_Ver/Frame_DF_Ver_Small_Bottom.png?fileID=2800000&amp;amp;guid=4e98b48730be8f04ba5e021a1a1a32bc&amp;amp;type=3#Frame_DF_Ver_Small_Bottom&amp;quot;); height: 8px; max-height: 8px; -unity-slice-left: 3; -unity-slice-top: 3; -unity-slice-right: 3; -unity-slice-bottom: 3; -unity-slice-scale: 0.9px;&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+                &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ExpandBtn&quot; class=&quot;skillbar-footer-btn button-expand button-expand-vertical&quot; /&gt;
+                &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;MinimizeBtn&quot; class=&quot;skillbar-footer-btn button-minimize button-minimize-vertical&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;InnerContainer&quot; class=&quot;skillbar-inner-container skillbar-inner-container-vertical&quot;&gt;
+                &lt;ui:VisualElement name=&quot;NumberGroupBox&quot; class=&quot;skillbar-arrow-control skillbar-arrow-control-vertical&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;SkillArrowInputVertical&quot; class=&quot;skill-arrow-input skill-arrow-input-vertical&quot;&gt;
+                        &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;RightArrow&quot; class=&quot;skillbar-footer-btn skillbar-arrow-input-right&quot; style=&quot;margin-right: 5px;&quot; /&gt;
+                        &lt;ui:TextField picking-mode=&quot;Ignore&quot; focusable=&quot;false&quot; readonly=&quot;true&quot; name=&quot;L2Input&quot; value=&quot;1&quot; class=&quot;skill-arrow-input-label&quot; /&gt;
+                        &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;LeftArrow&quot; class=&quot;skillbar-footer-btn skillbar-arrow-input-left&quot; style=&quot;margin-left: -1px;&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;SlotContainer&quot; class=&quot;skillbar-slot-container skillbar-slot-container-vertical&quot; style=&quot;margin-left: 4px; margin-top: 0; align-items: flex-start; padding-top: 1px; padding-bottom: 5px;&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Darkener&quot; class=&quot;skillbar-darkener skillbar-darkener-vertical&quot; style=&quot;margin-left: -3px; width: 41px; margin-top: 151px; height: 153px;&quot; /&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor1&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor2&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor3&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor4&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;Spacer&quot; class=&quot;skillbar-slot-spacer&quot; style=&quot;flex-shrink: 0; width: 39px; flex-grow: 1;&quot; /&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor5&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor6&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor7&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor8&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;Spacer&quot; class=&quot;skillbar-slot-spacer&quot; style=&quot;flex-shrink: 0; width: 38px;&quot; /&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor9&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor10&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor11&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SlotAnchor12&quot; class=&quot;skillbar-slot-anchor skillbar-slot-anchor-vertical&quot;&gt;
+                        &lt;ui:Instance template=&quot;Slot&quot; name=&quot;Slot&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;FooterContainer&quot; class=&quot;footer-container-vertical&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Footer&quot; class=&quot;skillbar-footer skillbar-footer-vertical&quot;&gt;
+                        &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;TooltipBtn&quot; class=&quot;skillbar-footer-btn button-tooltip&quot; /&gt;
+                        &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;RotateBtn&quot; class=&quot;skillbar-footer-btn button-rotate&quot; style=&quot;margin-top: 1px;&quot; /&gt;
+                        &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;LockBtn&quot; class=&quot;skillbar-footer-btn button-lock&quot; style=&quot;margin-top: 1px;&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

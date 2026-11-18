@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Crypto/RSACrypt.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Crypto/RSACrypt.cs</h1>
+            <pre>using System;
+using System.Security.Cryptography;
+using UnityEngine;
+
+public class RSACrypt
+{
+    private RSACryptoServiceProvider _rsaProvider;
+    private RSA _rsa;
+    private RSAParameters _rsaParams;
+    // hardcoded modulus
+    private byte[] _exponent = new byte[] { 1, 0, 1 };
+
+
+    public RSACrypt(byte[] exponent, bool needUnscramble) {
+        if(needUnscramble) {
+            UnscrambledRSAKey(exponent);
+        }
+
+        InitRSACrypt(exponent);
+    }
+
+    private void InitRSACrypt(byte[] modulus) {
+        _rsaParams = new RSAParameters {
+            Modulus = modulus,
+            Exponent = _exponent
+        };
+
+        _rsaProvider = new RSACryptoServiceProvider();
+        _rsaProvider.ImportParameters(_rsaParams);
+        _rsa = RSA.Create();
+        _rsa.ImportParameters(_rsaParams);
+    }
+
+    public byte[] DecryptRSABlock(byte[] encryptedData) {
+        try {
+            // Encrypt without padding
+            return _rsaProvider.Decrypt(encryptedData, false);
+        } catch (Exception ex) {
+            // Handle other unexpected errors
+            Debug.LogError($&quot;Unexpected error during RSA encryption: {ex.Message}&quot;);
+            return null;
+        }
+    }
+
+    public byte[] EncryptRSANoPadding(byte[] block) {
+        try {
+            // Encrypt without padding
+            return _rsaProvider.Encrypt(block, false);
+        } catch (Exception ex) {
+            // Handle other unexpected errors
+            Debug.LogError($&quot;Unexpected error during RSA encryption: {ex.Message}&quot;);
+            return null;
+        }
+    }
+
+    public byte[] EncryptRSAPskc1(byte[] block) {
+        try {
+            byte[] encryptedBlock = _rsa.Encrypt(block, RSAEncryptionPadding.Pkcs1);
+            return encryptedBlock;        
+        } catch (CryptographicException ex) {
+            // Handle cryptographic errors
+            Debug.LogError($&quot;RSA encryption error: {ex.Message}&quot;);
+        } catch (Exception ex) {
+            // Handle other unexpected errors
+            Debug.LogError($&quot;Unexpected error during RSA encryption: {ex.Message}&quot;);
+        }
+
+        return null;
+    }
+
+    public void UnscrambledRSAKey(byte[] rsaKey) {
+        Debug.Log($&quot;Scrambled RSA: {StringUtils.ByteArrayToString(rsaKey)}&quot;);
+
+        // step 4 : xor last 0x40 bytes with  first 0x40 bytes
+        for (int i = 0; i &lt; 0x40; i++) {
+            rsaKey[0x40 + i] = (byte)(rsaKey[0x40 + i] ^ rsaKey[i]);
+        }
+        // step 3 : xor bytes 0x0d-0x10 with bytes 0x34-0x38
+        for (int i = 0; i &lt; 4; i++) {
+            rsaKey[0x0d + i] = (byte)(rsaKey[0x0d + i] ^ rsaKey[0x34 + i]);
+        }
+        // step 2 : xor first 0x40 bytes with  last 0x40 bytes 
+        for (int i = 0; i &lt; 0x40; i++) {
+            rsaKey[i] = (byte)(rsaKey[i] ^ rsaKey[0x40 + i]);
+        }
+        // step 1 : 0x4d-0x50 &lt;-&gt; 0x00-0x04
+        for (int i = 0; i &lt; 4; i++) {
+            byte temp = rsaKey[0x00 + i];
+            rsaKey[0x00 + i] = rsaKey[0x4d + i];
+            rsaKey[0x4d + i] = temp;
+        }
+
+        Debug.Log($&quot;Unscrambled RSA {rsaKey.Length} : {StringUtils.ByteArrayToString(rsaKey)}&quot;);
+    }
+}
+</pre>
+            
+</body>
+</html>

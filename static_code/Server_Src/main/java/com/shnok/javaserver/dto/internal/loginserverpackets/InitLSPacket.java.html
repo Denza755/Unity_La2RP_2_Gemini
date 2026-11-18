@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/dto/internal/loginserverpackets/InitLSPacket.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/dto/internal/loginserverpackets/InitLSPacket.java</h1>
+            <pre>package com.shnok.javaserver.dto.internal.loginserverpackets;
+
+import com.shnok.javaserver.dto.SendablePacket;
+import com.shnok.javaserver.enums.packettypes.internal.LoginServerPacketType;
+import lombok.extern.log4j.Log4j2;
+
+import java.util.Arrays;
+import static com.shnok.javaserver.config.Configuration.server;
+
+@Log4j2
+public class InitLSPacket extends SendablePacket {
+    public InitLSPacket(byte[] publicKey) {
+        super(LoginServerPacketType.InitLS.getValue());
+        writeI(server.revision());
+        writeI(publicKey.length);
+        writeB(publicKey);
+
+        log.debug(&quot;Sent RSA public key {} - {}&quot;, publicKey.length, Arrays.toString(publicKey));
+
+        buildPacket();
+    }
+}
+</pre>
+            
+</body>
+</html>

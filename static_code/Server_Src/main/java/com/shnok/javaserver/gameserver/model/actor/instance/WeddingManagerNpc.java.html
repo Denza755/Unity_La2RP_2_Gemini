@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/WeddingManagerNpc.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/WeddingManagerNpc.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.CastleManager;
+import com.shnok.javaserver.gameserver.data.manager.CoupleManager;
+import com.shnok.javaserver.gameserver.data.manager.RelationManager;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ConfirmDlg;
+import com.shnok.javaserver.gameserver.network.serverpackets.skill.MagicSkillUse;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class WeddingManagerNpc extends Folk
+{
+	public WeddingManagerNpc(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onInteract(Player player)
+	{
+		// Married people got access to another menu
+		if (player.getCoupleId() &gt; 0)
+			sendHtmlMessage(player, &quot;data/html/mods/wedding/start2.htm&quot;);
+		// &quot;Under marriage acceptance&quot; people go to this one
+		else if (player.isUnderMarryRequest())
+			sendHtmlMessage(player, &quot;data/html/mods/wedding/waitforpartner.htm&quot;);
+		// And normal players go here :)
+		else
+			sendHtmlMessage(player, &quot;data/html/mods/wedding/start.htm&quot;);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;AskWedding&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command);
+			st.nextToken();
+			
+			if (st.hasMoreTokens())
+			{
+				final Player partner = World.getInstance().getPlayer(st.nextToken());
+				if (partner == null)
+				{
+					sendHtmlMessage(player, &quot;data/html/mods/wedding/notfound.htm&quot;);
+					return;
+				}
+				
+				// check conditions
+				if (!weddingConditions(player, partner))
+					return;
+				
+				// block the wedding manager until an answer is given.
+				player.setUnderMarryRequest(true);
+				partner.setUnderMarryRequest(true);
+				
+				// memorize the requesterId for future use, and send a popup to the target
+				partner.setRequesterId(player.getObjectId());
+				partner.sendPacket(new ConfirmDlg(1983).addString(player.getName() + &quot; asked you to marry. Do you want to start a new relationship ?&quot;));
+			}
+			else
+				sendHtmlMessage(player, &quot;data/html/mods/wedding/notfound.htm&quot;);
+		}
+		else if (command.startsWith(&quot;Divorce&quot;))
+			CoupleManager.getInstance().deleteCouple(player.getCoupleId());
+		else if (command.startsWith(&quot;GoToLove&quot;))
+		{
+			// Find the partner using the couple id.
+			final int partnerId = CoupleManager.getInstance().getPartnerId(player.getCoupleId(), player.getObjectId());
+			if (partnerId == 0)
+			{
+				player.sendMessage(&quot;Your partner can&#x27;t be found.&quot;);
+				return;
+			}
+			
+			final Player partner = World.getInstance().getPlayer(partnerId);
+			if (partner == null)
+			{
+				player.sendMessage(&quot;Your partner is not online.&quot;);
+				return;
+			}
+			
+			// Simple checks to avoid exploits
+			if (partner.isInsideZone(ZoneId.NO_SUMMON_FRIEND) || partner.isInJail() || partner.isInOlympiadMode() || partner.isInDuel() || partner.isFestivalParticipant() || partner.isInObserverMode())
+			{
+				player.sendMessage(&quot;Due to the current partner&#x27;s status, the teleportation failed.&quot;);
+				return;
+			}
+			
+			if (partner.getClan() != null &amp;&amp; CastleManager.getInstance().getCastleByOwner(partner.getClan()) != null &amp;&amp; CastleManager.getInstance().getCastleByOwner(partner.getClan()).getSiege().isInProgress())
+			{
+				player.sendMessage(&quot;As your partner is in siege, you can&#x27;t go to him/her.&quot;);
+				return;
+			}
+			
+			// If all checks are successfully passed, teleport the player to the partner
+			player.teleportTo(partner.getX(), partner.getY(), partner.getZ(), 20);
+		}
+	}
+	
+	private boolean weddingConditions(Player requester, Player partner)
+	{
+		// Check if player target himself
+		if (partner.getObjectId() == requester.getObjectId())
+		{
+			sendHtmlMessage(requester, &quot;data/html/mods/wedding/error_wrongtarget.htm&quot;);
+			return false;
+		}
+		
+		// Sex check
+		if (!Config.WEDDING_SAMESEX &amp;&amp; partner.getAppearance().getSex() == requester.getAppearance().getSex())
+		{
+			sendHtmlMessage(requester, &quot;data/html/mods/wedding/error_sex.htm&quot;);
+			return false;
+		}
+		
+		// Check if player has the target on friendlist
+		if (!RelationManager.getInstance().areFriends(requester.getObjectId(), partner.getObjectId()))
+		{
+			sendHtmlMessage(requester, &quot;data/html/mods/wedding/error_friendlist.htm&quot;);
+			return false;
+		}
+		
+		// Target mustn&#x27;t be already married
+		if (partner.getCoupleId() &gt; 0)
+		{
+			sendHtmlMessage(requester, &quot;data/html/mods/wedding/error_alreadymarried.htm&quot;);
+			return false;
+		}
+		
+		// Check for Formal Wear
+		if (Config.WEDDING_FORMALWEAR &amp;&amp; (!requester.isWearingFormalWear() || !partner.isWearingFormalWear()))
+		{
+			sendHtmlMessage(requester, &quot;data/html/mods/wedding/error_noformal.htm&quot;);
+			return false;
+		}
+		
+		// Check and reduce wedding price
+		if (requester.getAdena() &lt; Config.WEDDING_PRICE || partner.getAdena() &lt; Config.WEDDING_PRICE)
+		{
+			sendHtmlMessage(requester, &quot;data/html/mods/wedding/error_adena.htm&quot;);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	public static void justMarried(Player requester, Player partner)
+	{
+		// Unlock the wedding manager for both users, and set them as married.
+		requester.setUnderMarryRequest(false);
+		partner.setUnderMarryRequest(false);
+		
+		// Reduce Adena amount according to configs.
+		requester.reduceAdena(Config.WEDDING_PRICE, true);
+		partner.reduceAdena(Config.WEDDING_PRICE, true);
+		
+		// Messages to the couple.
+		requester.sendMessage(&quot;Congratulations, you are now married with &quot; + partner.getName() + &quot; !&quot;);
+		partner.sendMessage(&quot;Congratulations, you are now married with &quot; + requester.getName() + &quot; !&quot;);
+		
+		// Wedding march.
+		requester.broadcastPacket(new MagicSkillUse(requester, requester, 2230, 1, 1, 0));
+		partner.broadcastPacket(new MagicSkillUse(partner, partner, 2230, 1, 1, 0));
+		
+		// Fireworks.
+		requester.broadcastPacket(new MagicSkillUse(requester, requester, 2025, 1, 1, 0));
+		partner.broadcastPacket(new MagicSkillUse(partner, partner, 2025, 1, 1, 0));
+		
+		World.announceToOnlinePlayers(&quot;Congratulations to &quot; + requester.getName() + &quot; and &quot; + partner.getName() + &quot;! They have been married.&quot;);
+	}
+	
+	private void sendHtmlMessage(Player player, String file)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(file);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		html.replace(&quot;%adenaCost%&quot;, StringUtil.formatNumber(Config.WEDDING_PRICE));
+		html.replace(&quot;%needOrNot%&quot;, Config.WEDDING_FORMALWEAR ? &quot;will&quot; : &quot;won&#x27;t&quot;);
+		player.sendPacket(html);
+	}
+}
+</pre>
+            
+</body>
+</html>

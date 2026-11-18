@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Buff/BuffWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Buff/BuffWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class BuffWindow : AbstractEffectWindow
+{
+    private static BuffWindow _instance;
+    public static BuffWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/BuffWindow/BuffWindow&quot;);
+        _buffSlot = LoadAsset(&quot;Data/UI/_Elements/Game/BuffWindow/BuffSlot&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        _effectType = EffectType.Buff;
+
+        base.Init(root);
+
+        _buffRowContainers = new VisualElement[3];
+        _buffRowContainers[0] = _windowEle.Q&lt;VisualElement&gt;(&quot;NormalBuffs&quot;);
+        _buffRowContainers[1] = _windowEle.Q&lt;VisualElement&gt;(&quot;SpecialBuffs&quot;);
+        _buffRowContainers[2] = _windowEle.Q&lt;VisualElement&gt;(&quot;ToggleBuffs&quot;);
+
+        yield return new WaitForEndOfFrame();
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    public override void SetEtcEffects(PlayerBuffStatus status)
+    {
+        base.SetEtcEffects(status);
+        // to fix: skillid - duelist sonic focus = 8 or tyrant focus force = 50 
+        if (status != null &amp;&amp; status.Charges &gt; 0)
+        {
+            AddEffect(8, status.Charges, 600, BuffType.Special);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

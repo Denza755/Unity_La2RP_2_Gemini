@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Login/CharSelectWindow/CharSelectWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Login/CharSelectWindow/CharSelectWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2Bar&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Bar/L2Bar.uxml?fileID=9197481963319205126&amp;amp;guid=e7da9ee05d38b14459d91eca9fc49926&amp;amp;type=3#L2Bar&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uss?fileID=7433441132597879392&amp;amp;guid=b1d2114f9ed155f45a3eb16e5ef02441&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Login/CharSelectWindow/CharSelectWindow.uss?fileID=7433441132597879392&amp;amp;guid=4d5750aba8227744bab7289de968de39&amp;amp;type=3#CharSelectWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Bar/L2Bar.uss?fileID=7433441132597879392&amp;amp;guid=a56090906dc32294994ed8860c7b159e&amp;amp;type=3#L2Bar&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;CharSelectWindow&quot; picking-mode=&quot;Ignore&quot; class=&quot;char-select-window&quot;&gt;
+        &lt;ui:VisualElement picking-mode=&quot;Ignore&quot; class=&quot;charselect-col-1&quot;&gt;
+            &lt;ui:VisualElement name=&quot;CharSelectDetailWindow&quot; tabindex=&quot;-1&quot; class=&quot;char-select-detail-window&quot;&gt;
+                &lt;ui:VisualElement name=&quot;row&quot; class=&quot;char-select-row&quot; style=&quot;flex-grow: 0; height: 28px; width: 80%;&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;UserSelectContainer&quot; class=&quot;char-select-col char-select-user-select-container&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;row&quot; class=&quot;char-select-row&quot; style=&quot;flex-grow: 0; height: 30px; align-items: center;&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col l2-color-2&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Lv.&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;LevelLabelL&quot; class=&quot;char-select-label char-select-level-l&quot; /&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;1&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;LevelLabel&quot; class=&quot;char-select-label char-select-level&quot; /&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Dark Fighter&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ClassLabel&quot; class=&quot;char-select-label char-select-class&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;row&quot; class=&quot;char-select-row&quot; style=&quot;flex-grow: 0; align-items: flex-start; -unity-text-align: upper-left;&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;HP&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Label&quot; class=&quot;char-select-label l2-color-4&quot; /&gt;
+                        &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;HPBar&quot; class=&quot;l2-bar&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col char-select-col-right&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;SP&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Label&quot; class=&quot;char-select-label l2-color-4&quot; /&gt;
+                        &lt;ui:VisualElement name=&quot;SPContainer&quot; template=&quot;HpBar&quot; class=&quot;char-select-detail-numbers&quot;&gt;
+                            &lt;ui:VisualElement name=&quot;UserInputBg&quot; tabindex=&quot;-1&quot; class=&quot;login-input-bg char-select-detail-numbers-bg&quot; /&gt;
+                            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;SPLabel&quot; class=&quot;char-select-detail-numbers-label l2-color-2&quot; /&gt;
+                        &lt;/ui:VisualElement&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;row&quot; class=&quot;char-select-row&quot; style=&quot;margin-top: 4px;&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;MP&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Label&quot; class=&quot;char-select-label l2-color-4&quot; /&gt;
+                        &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;MPBar&quot; class=&quot;l2-bar mp&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col char-select-col-right&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Kar.&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Label&quot; class=&quot;char-select-label l2-color-4&quot; /&gt;
+                        &lt;ui:VisualElement name=&quot;KarmaContainer&quot; template=&quot;HpBar&quot; class=&quot;char-select-detail-numbers&quot;&gt;
+                            &lt;ui:VisualElement name=&quot;UserInputBg&quot; tabindex=&quot;-1&quot; class=&quot;login-input-bg char-select-detail-numbers-bg&quot; /&gt;
+                            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;KarmaLabel&quot; class=&quot;char-select-detail-numbers-label l2-color-2&quot; /&gt;
+                        &lt;/ui:VisualElement&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;row&quot; class=&quot;char-select-row&quot; style=&quot;margin-top: 4px;&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;col&quot; class=&quot;char-select-col&quot; style=&quot;padding-right: 16px;&quot;&gt;
+                        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Exp&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Label&quot; class=&quot;char-select-label l2-color-4&quot; /&gt;
+                        &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;EXPBar&quot; class=&quot;l2-bar exp&quot;&gt;
+                            &lt;AttributeOverrides element-name=&quot;Text&quot; text=&quot;100.00%&quot; /&gt;
+                        &lt;/ui:Instance&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement picking-mode=&quot;Ignore&quot; class=&quot;charselect-col-2&quot;&gt;
+            &lt;ui:VisualElement name=&quot;StartButtonWindow&quot; tabindex=&quot;-1&quot; class=&quot;char-select-middle-box&quot;&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;StartButton&quot; class=&quot;l2-button-template&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Start&quot; /&gt;
+                &lt;/ui:Instance&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement picking-mode=&quot;Ignore&quot; class=&quot;charselect-col-3&quot;&gt;
+            &lt;ui:VisualElement name=&quot;MenuWindow&quot; tabindex=&quot;-1&quot; class=&quot;char-select-side-menu&quot;&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;CreateButton&quot; class=&quot;l2-button-template&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Create&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;DeleteButton&quot; class=&quot;l2-button-template&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Delete&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;ReloginButton&quot; class=&quot;l2-button-template&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Re-Login&quot; /&gt;
+                &lt;/ui:Instance&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

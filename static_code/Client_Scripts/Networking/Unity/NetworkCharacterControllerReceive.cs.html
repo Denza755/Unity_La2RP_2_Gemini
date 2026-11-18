@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs</h1>
+            <pre>using UnityEngine;
+
+[RequireComponent(typeof(NetworkTransformReceive), typeof(CharacterController))]
+public class NetworkCharacterControllerReceive : MonoBehaviour
+{
+    private CharacterController _characterController;
+    private NetworkTransformReceive _networkTransformReceive;
+    private Entity _entity;
+    [SerializeField] private Vector3 _direction;
+    [SerializeField] private float _distanceToDestination;
+    [SerializeField] private float _speed;
+    [SerializeField] private Vector3 _destination;
+    [SerializeField] private Vector3 _lastDestination;
+    [SerializeField] private float _gravity = 28f;
+    [SerializeField] private float _moveSpeedMultiplier = 1f;
+    [SerializeField] private float _stopAtRange = 0;
+    [SerializeField] private float _stopAtRangeDefault = 0.02f;
+
+    public long lastUpdateTimestamp = 0;
+    [SerializeField] private float _verticalVelocity = 0;
+    [SerializeField] public bool _isJumping = false;
+    public Vector3 MoveDirection { get { return _direction; } set { _direction = value; } }
+
+    private float _pendingFinalRotation;
+    private bool _hasPendingRotation = false;
+    private Vector3 _prevPosition;
+    private float _stuckTimer = 0f;
+
+    void Start()
+    {
+        if (World.Instance.OfflineMode)
+        {
+            this.enabled = false;
+        }
+        _entity = GetComponent&lt;Entity&gt;();
+        _networkTransformReceive = GetComponent&lt;NetworkTransformReceive&gt;();
+        _characterController = GetComponent&lt;CharacterController&gt;();
+        if (_characterController != null)
+        {
+            _characterController.stepOffset = Mathf.Min(0.3f, _characterController.height * 0.35f);
+            _characterController.slopeLimit = 65f;
+        }
+
+        _direction = Vector3.zero;
+        _destination = Vector3.zero;
+        _prevPosition = transform.position;
+    }
+
+    private void FixedUpdate()
+    {
+        if (_entity == null)
+        {
+            _entity = GetComponent&lt;Entity&gt;();
+        }
+
+        if (_entity != null &amp;&amp; _entity.Combat != null &amp;&amp; _entity.Combat.IsCastingSkill)
+        {
+            _direction = Vector3.zero;
+            _destination = Vector3.zero;
+            _hasPendingRotation = false;
+            return;
+        }
+
+        UpdateSpeed();
+        float currentSpeed = _speed * _moveSpeedMultiplier;
+        Vector3 horizMove = Vector3.zero;
+
+        if (_destination != Vector3.zero)
+        {
+            Vector3 currentFlat = VectorUtils.To2D(transform.position);
+            Vector3 destinationFlat = VectorUtils.To2D(_destination);
+            Vector3 toDestFlat = destinationFlat - currentFlat;
+            _distanceToDestination = toDestFlat.magnitude;
+
+            float effectiveStopRange = _stopAtRange &gt; 0 ? _stopAtRange : _stopAtRangeDefault;
+
+            if (_distanceToDestination &lt;= effectiveStopRange)
+            {
+                _direction = Vector3.zero;
+                _destination = Vector3.zero;
+                _stuckTimer = 0f;
+
+                if (_hasPendingRotation)
+                {
+                    _networkTransformReceive.SetFinalRotation(_pendingFinalRotation);
+                    _hasPendingRotation = false;
+                }
+
+                _entity.OnStopMoving();
+                _networkTransformReceive.SetNewPosition(transform.position);
+                _networkTransformReceive.ResumePositionSync();
+            }
+            else
+            {
+                _direction = toDestFlat / _distanceToDestination;
+                _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+
+                if (_entity != null &amp;&amp; _entity.AnimationController != null)
+                {
+                    _entity.AnimationController.Move();
+                }
+
+                float maxStepDist = currentSpeed * Time.fixedDeltaTime;
+                if (_distanceToDestination &lt; maxStepDist)
+                {
+                    horizMove = _direction * (_distanceToDestination / Time.fixedDeltaTime);
+                }
+                else
+                {
+                    horizMove = _direction * currentSpeed;
+                }
+            }
+        }
+        else if (_direction != Vector3.zero)
+        {
+            horizMove = _direction * currentSpeed;
+        }
+
+        Vector3 adjustedDirection = horizMove;
+        adjustedDirection = ApplyGravity(adjustedDirection);
+
+        if (_destination != Vector3.zero &amp;&amp; _direction != Vector3.zero)
+        {
+            float yDiff = _destination.y - transform.position.y;
+            if (yDiff &gt; 0.1f)
+            {
+                adjustedDirection.y += Mathf.Clamp(yDiff * 2f, 0f, 3f);
+            }
+        }
+
+        ManageJump();
+
+        _characterController.Move(adjustedDirection * Time.fixedDeltaTime);
+
+        // Отслеживание фактического перемещения за кадр
+        Vector3 posAfterMove = transform.position;
+        float deltaXZ = VectorUtils.Distance2D(posAfterMove, _prevPosition);
+        float realSpeedXZ = Time.fixedDeltaTime &gt; 0 ? deltaXZ / Time.fixedDeltaTime : 0;
+        _prevPosition = posAfterMove;
+
+        if (_destination != Vector3.zero || _direction != Vector3.zero)
+        {
+            if (realSpeedXZ &lt; 0.05f)
+            {
+                _stuckTimer += Time.fixedDeltaTime;
+                if (_stuckTimer &gt;= 0.6f)
+                {
+                    ResetDestination();
+                    _stuckTimer = 0f;
+                }
+            }
+            else
+            {
+                _stuckTimer = 0f;
+            }
+        }
+        else
+        {
+            _stuckTimer = 0f;
+        }
+    }
+    private Vector3 ApplyGravity(Vector3 dir)
+    {
+        /* Handle gravity */
+        if (_characterController.isGrounded)
+        {
+            if (_verticalVelocity &lt; -1.25f)
+            {
+                _verticalVelocity = -1.25f;
+
+            }
+            // _isJumping = false;
+
+        }
+        else
+        {
+            _verticalVelocity -= _gravity * Time.deltaTime;
+            // _isJumping = true;
+        }
+        dir.y = _verticalVelocity;
+
+        return dir;
+    }
+
+    // Player move direction packets
+    public void UpdateMoveDirection(Vector3 position, Vector3 direction, float verticalVelocity, long timestamp)
+    {
+        if (_entity != null &amp;&amp; _entity.Combat != null &amp;&amp; _entity.Combat.IsCastingSkill)
+        {
+            return;
+        }
+
+        if (lastUpdateTimestamp &gt; timestamp)
+        {
+            Debug.LogWarning(&quot;UpdateMoveDirection: is outdated &quot; + direction + &quot; timestamp: &quot; + timestamp + &quot; lastUpdateTimestamp: &quot; + lastUpdateTimestamp);
+            return;
+        }
+        _networkTransformReceive.SetNewPosition(position);
+        lastUpdateTimestamp = timestamp;
+
+        UpdateSpeed();
+        _direction = direction;
+
+        if (direction.x != 0 || direction.z != 0)
+        {
+            _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(direction.x, direction.z));
+            _entity.AnimationController.Move();
+            _networkTransformReceive.PausePositionSync();
+        }
+        else
+        {
+            float dist = VectorUtils.Distance2D(transform.position, position);
+            if (dist &gt; 0.05f &amp;&amp; dist &lt;= 5.0f)
+            {
+                _destination = position;
+                _lastDestination = position;
+                _stopAtRange = 0f;
+                _hasPendingRotation = false;
+                _stuckTimer = 0f;
+
+                Vector3 transformFlat = VectorUtils.To2D(transform.position);
+                Vector3 destinationFlat = VectorUtils.To2D(_destination);
+                _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
+                _direction = (destinationFlat - transformFlat).normalized;
+
+                _networkTransformReceive.PausePositionSync();
+                _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+                _entity.AnimationController.Move();
+            }
+            else
+            {
+                _direction = Vector3.zero;
+                _destination = Vector3.zero;
+                _hasPendingRotation = false;
+                _stuckTimer = 0f;
+                _entity.AnimationController.Wait();
+                _networkTransformReceive.ResumePositionSync();
+            }
+        }
+
+        if (verticalVelocity &gt;= 4.0f)
+        {
+            _isJumping = true;
+            _entity.AnimationController.Jump();
+            _verticalVelocity = verticalVelocity;
+        }
+    }
+
+    private void ManageJump()
+    {
+        if (_isJumping &amp;&amp; _verticalVelocity &lt;= 0 &amp;&amp; _characterController.isGrounded) // jump is done
+        {
+            _isJumping = false;
+            if (IsMoving())
+            {
+                _entity.AnimationController.Move();
+            }
+            else
+            {
+                _entity.AnimationController.Wait();
+            }
+        }
+    }
+
+    // Move to destination packets
+    public void SetDestination(Vector3 destination, float stopAtRange)
+    {
+        if (_entity != null &amp;&amp; _entity.Combat != null &amp;&amp; _entity.Combat.IsCastingSkill)
+        {
+            return;
+        }
+
+        if (_lastDestination == destination &amp;&amp; _direction != Vector3.zero)
+        {
+            return;
+        }
+
+        _lastDestination = destination;
+        _stopAtRange = stopAtRange &gt; 0 ? stopAtRange : 0;
+        _destination = destination;
+        _hasPendingRotation = false;
+        _stuckTimer = 0f;
+        UpdateSpeed();
+
+        Vector3 transformFlat = VectorUtils.To2D(transform.position);
+        Vector3 destinationFlat = VectorUtils.To2D(_destination);
+        _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
+        _direction = (destinationFlat - transformFlat).normalized;
+
+        float effectiveStopRange = _stopAtRange &gt; 0 ? _stopAtRange : _stopAtRangeDefault;
+        if (_distanceToDestination &gt; effectiveStopRange)
+        {
+            _entity.AnimationController.Move();
+            _networkTransformReceive.PausePositionSync();
+            _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+        }
+        else
+        {
+            _direction = Vector3.zero;
+            _destination = Vector3.zero;
+            _entity.OnStopMoving();
+            _networkTransformReceive.SetNewPosition(transform.position);
+            _networkTransformReceive.ResumePositionSync();
+        }
+    }
+
+    // Серверный StopMove: добегаем последние шаги до финальной stopPosition со штатной скоростью и анимацией бега
+    public void OnServerStopMove(Vector3 stopPosition, float finalRotation)
+    {
+        if (_entity == null)
+        {
+            _entity = GetComponent&lt;Entity&gt;();
+        }
+
+        if (_entity != null &amp;&amp; _entity.Combat != null &amp;&amp; _entity.Combat.IsCastingSkill)
+        {
+            return;
+        }
+
+        float dist = VectorUtils.Distance2D(transform.position, stopPosition);
+
+        // Грубый рассинхрон или телепорт (&gt; 5м)
+        if (dist &gt; 5.0f)
+        {
+            stopPosition.y = World.Instance.GetGroundHeight(stopPosition);
+            transform.position = stopPosition;
+            _destination = Vector3.zero;
+            _direction = Vector3.zero;
+            _hasPendingRotation = false;
+            _stuckTimer = 0f;
+            _networkTransformReceive.SetFinalRotation(finalRotation);
+            _networkTransformReceive.SetNewPosition(stopPosition);
+            _networkTransformReceive.ResumePositionSync();
+            _entity.OnStopMoving();
+            return;
+        }
+
+        // Персонаж уже фактически в точке остановки (&lt;= 0.05м)
+        if (dist &lt;= 0.05f)
+        {
+            _destination = Vector3.zero;
+            _direction = Vector3.zero;
+            _hasPendingRotation = false;
+            _stuckTimer = 0f;
+            _networkTransformReceive.SetFinalRotation(finalRotation);
+            _networkTransformReceive.SetNewPosition(stopPosition);
+            _networkTransformReceive.ResumePositionSync();
+            _entity.OnStopMoving();
+            return;
+        }
+
+        // Персонаж еще на бегу (последние 1-2 шага: 0.05м - 5м):
+        // Доводим его точно до финальной точки stopPosition со штатной скоростью и анимацией бега!
+        _destination = stopPosition;
+        _lastDestination = stopPosition;
+        _stopAtRange = 0f;
+        _pendingFinalRotation = finalRotation;
+        _hasPendingRotation = true;
+        _stuckTimer = 0f;
+        UpdateSpeed();
+
+        Vector3 transformFlat = VectorUtils.To2D(transform.position);
+        Vector3 destinationFlat = VectorUtils.To2D(_destination);
+        _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
+        _direction = (destinationFlat - transformFlat).normalized;
+
+        _networkTransformReceive.PausePositionSync();
+        _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+
+        if (_entity != null &amp;&amp; _entity.AnimationController != null)
+        {
+            _entity.AnimationController.Move();
+        }
+    }
+
+    public void ResetDestination()
+    {
+        _destination = Vector3.zero;
+        _direction = Vector3.zero;
+        _hasPendingRotation = false;
+        _stuckTimer = 0f;
+        _entity.OnStopMoving();
+        _networkTransformReceive.SetNewPosition(transform.position);
+        _networkTransformReceive.ResumePositionSync();
+    }
+
+    public void UpdateSpeed()
+    {
+        if (_entity == null)
+        {
+            _entity = GetComponent&lt;Entity&gt;();
+        }
+
+        if (_entity != null &amp;&amp; _entity.Stats != null)
+        {
+            float runSpd = _entity.Stats.ScaledRunSpeed &gt; 0 ? _entity.Stats.ScaledRunSpeed : 4.0f;
+            float walkSpd = _entity.Stats.ScaledWalkSpeed &gt; 0 ? _entity.Stats.ScaledWalkSpeed : 2.0f;
+            _speed = _entity.Running ? runSpd : walkSpd;
+        }
+        else
+        {
+            _speed = 4.0f;
+        }
+    }
+
+    public bool IsMoving()
+    {
+        return !VectorUtils.IsVectorZero2D(_direction) || _destination != Vector3.zero;
+    }
+}
+</pre>
+            
+</body>
+</html>

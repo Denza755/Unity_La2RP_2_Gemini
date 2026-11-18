@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/template/NpcTemplate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/template/NpcTemplate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.template;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.util.ArraysUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.CastleManager;
+import com.shnok.javaserver.gameserver.data.manager.ClanHallManager;
+import com.shnok.javaserver.gameserver.enums.EventHandler;
+import com.shnok.javaserver.gameserver.enums.actors.ClassId;
+import com.shnok.javaserver.gameserver.enums.actors.NpcRace;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.item.DropCategory;
+import com.shnok.javaserver.gameserver.model.memo.NpcMemo;
+import com.shnok.javaserver.gameserver.model.records.PrivateData;
+import com.shnok.javaserver.gameserver.model.residence.Residence;
+import com.shnok.javaserver.gameserver.model.residence.castle.Castle;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHall;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.SiegableHall;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class NpcTemplate extends CreatureTemplate
+{
+	private final int _npcId;
+	private final int _idTemplate;
+	
+	private final String _name;
+	private final String _title;
+	private final String _alias;
+	
+	private final boolean _usingServerSideName;
+	private final boolean _usingServerSideTitle;
+	
+	private final String _type;
+	private final byte _level;
+	private final double _hitTimeFactor;
+	private final int _rHand;
+	private final int _lHand;
+	private final double _exp;
+	private final double _sp;
+	
+	private final int _baseAttackRange;
+	private final int[] _baseDamageRange;
+	private final int _baseRandomDamage;
+	
+	private final NpcRace _race;
+	
+	private final int _ssCount;
+	private final int _spsCount;
+	
+	private final boolean _isUndying;
+	private final boolean _canBeAttacked;
+	private final int _corpseTime;
+	private final boolean _isNoSleepMode;
+	private final int _aggroRange;
+	private final boolean _canMove;
+	private final boolean _isSeedable;
+	private final boolean _canSeeThrough;
+	
+	private final NpcMemo _aiParams;
+	private final List&lt;DropCategory&gt; _categories;
+	private final List&lt;PrivateData&gt; _privateData;
+	
+	private final List&lt;L2Skill&gt; _passives;
+	private final Map&lt;NpcSkillType, L2Skill&gt; _skills;
+	
+	private final Map&lt;EventHandler, List&lt;Quest&gt;&gt; _questEvents = new EnumMap&lt;&gt;(EventHandler.class);
+	
+	private String[] _clans;
+	private int _clanRange;
+	private int[] _ignoredIds;
+	
+	private List&lt;ClassId&gt; _teachInfo;
+	
+	private Residence _residence;
+	
+	public NpcTemplate(StatSet set)
+	{
+		super(set);
+		
+		_npcId = set.getInteger(&quot;id&quot;);
+		_idTemplate = set.getInteger(&quot;idTemplate&quot;, _npcId);
+		
+		_name = set.getString(&quot;name&quot;);
+		_title = set.getString(&quot;title&quot;, &quot;&quot;);
+		_alias = set.getString(&quot;alias&quot;, &quot;&quot;);
+		
+		_usingServerSideName = set.getBool(&quot;usingServerSideName&quot;, false);
+		_usingServerSideTitle = set.getBool(&quot;usingServerSideTitle&quot;, false);
+		
+		_type = set.getString(&quot;type&quot;);
+		_level = set.getByte(&quot;level&quot;, (byte) 1);
+		_hitTimeFactor = set.getDouble(&quot;hitTimeFactor&quot;, 0.);
+		_rHand = set.getInteger(&quot;rHand&quot;, 0);
+		_lHand = set.getInteger(&quot;lHand&quot;, 0);
+		_exp = set.getDouble(&quot;exp&quot;, 0.);
+		_sp = set.getDouble(&quot;sp&quot;, 0.);
+		
+		_baseAttackRange = set.getInteger(&quot;baseAttackRange&quot;, 0);
+		_baseDamageRange = set.getIntegerArray(&quot;baseDamageRange&quot;);
+		_baseRandomDamage = set.getInteger(&quot;baseRandomDamage&quot;, 0);
+		
+		_race = set.getEnum(&quot;race&quot;, NpcRace.class, NpcRace.DUMMY);
+		
+		_ssCount = set.getInteger(&quot;ssCount&quot;, 0);
+		_spsCount = set.getInteger(&quot;spsCount&quot;, 0);
+		
+		_isUndying = set.getBool(&quot;undying&quot;, false);
+		_canBeAttacked = set.getBool(&quot;canBeAttacked&quot;, true);
+		_corpseTime = set.getInteger(&quot;corpseTime&quot;, 7);
+		_isNoSleepMode = set.getBool(&quot;noSleepMode&quot;, false);
+		_aggroRange = set.getInteger(&quot;aggroRange&quot;, 0);
+		_canMove = set.getBool(&quot;canMove&quot;, true);
+		_isSeedable = set.getBool(&quot;seedable&quot;, false);
+		_canSeeThrough = set.getBool(&quot;canSeeThrough&quot;, false);
+		
+		_aiParams = (set.containsKey(&quot;aiParams&quot;)) ? new NpcMemo(set.getMap(&quot;aiParams&quot;)) : NpcMemo.DUMMY_SET;
+		_categories = set.getList(&quot;drops&quot;);
+		_privateData = set.getList(&quot;privates&quot;);
+		
+		_passives = set.getList(&quot;passives&quot;);
+		_skills = set.getMap(&quot;skills&quot;);
+		
+		if (set.containsKey(&quot;clan&quot;))
+		{
+			_clans = set.getStringArray(&quot;clan&quot;);
+			_clanRange = set.getInteger(&quot;clanRange&quot;);
+			
+			if (set.containsKey(&quot;ignoredIds&quot;))
+				_ignoredIds = set.getIntegerArray(&quot;ignoredIds&quot;);
+		}
+		
+		if (set.containsKey(&quot;teachTo&quot;))
+		{
+			final int[] classIds = set.getIntegerArray(&quot;teachTo&quot;);
+			
+			_teachInfo = new ArrayList&lt;&gt;(classIds.length);
+			for (int classId : classIds)
+				_teachInfo.add(ClassId.VALUES[classId]);
+		}
+		
+		// Set the Castle if existing.
+		for (Castle castle : CastleManager.getInstance().getCastles())
+		{
+			if (castle.getNpcs().contains(_npcId))
+			{
+				_residence = castle;
+				break;
+			}
+		}
+		
+		if (_residence == null)
+		{
+			// Set the ClanHall if existing.
+			for (ClanHall ch : ClanHallManager.getInstance().getClanHalls().values())
+			{
+				if (ch.getNpcs().contains(_npcId))
+				{
+					_residence = (ch instanceof SiegableHall sh) ? sh : ch;
+					break;
+				}
+			}
+		}
+	}
+	
+	public int getNpcId()
+	{
+		return _npcId;
+	}
+	
+	public int getIdTemplate()
+	{
+		return _idTemplate;
+	}
+	
+	public String getName()
+	{
+		return _name;
+	}
+	
+	public String getTitle()
+	{
+		return _title;
+	}
+	
+	public String getAlias()
+	{
+		return _alias;
+	}
+	
+	public boolean isUsingServerSideName()
+	{
+		return _usingServerSideName;
+	}
+	
+	public boolean isUsingServerSideTitle()
+	{
+		return _usingServerSideTitle;
+	}
+	
+	public String getType()
+	{
+		return _type;
+	}
+	
+	/**
+	 * @param type : the type to check.
+	 * @return true if the instance type written as {@link String} is the same as this {@link NpcTemplate}, or false otherwise.
+	 */
+	public boolean isType(String type)
+	{
+		return _type.equalsIgnoreCase(type);
+	}
+	
+	public byte getLevel()
+	{
+		return _level;
+	}
+	
+	public double getHitTimeFactor()
+	{
+		return _hitTimeFactor;
+	}
+	
+	public int getRightHand()
+	{
+		return _rHand;
+	}
+	
+	public int getLeftHand()
+	{
+		return _lHand;
+	}
+	
+	public double getRewardExp()
+	{
+		return _exp;
+	}
+	
+	public double getRewardSp()
+	{
+		return _sp;
+	}
+	
+	public int getBaseAttackRange()
+	{
+		return _baseAttackRange;
+	}
+	
+	public int[] getBaseDamageRange()
+	{
+		return _baseDamageRange;
+	}
+	
+	public int getBaseRandomDamage()
+	{
+		return _baseRandomDamage;
+	}
+	
+	public NpcRace getRace()
+	{
+		return _race;
+	}
+	
+	public String[] getClans()
+	{
+		return _clans;
+	}
+	
+	public int getClanRange()
+	{
+		return _clanRange;
+	}
+	
+	public int[] getIgnoredIds()
+	{
+		return _ignoredIds;
+	}
+	
+	public int getSsCount()
+	{
+		return _ssCount;
+	}
+	
+	public int getSpsCount()
+	{
+		return _spsCount;
+	}
+	
+	public boolean isUndying()
+	{
+		return _isUndying;
+	}
+	
+	public boolean canBeAttacked()
+	{
+		return _canBeAttacked;
+	}
+	
+	public int getCorpseTime()
+	{
+		return _corpseTime;
+	}
+	
+	public boolean isNoSleepMode()
+	{
+		return _isNoSleepMode;
+	}
+	
+	public int getAggroRange()
+	{
+		return _aggroRange;
+	}
+	
+	public boolean canMove()
+	{
+		return _canMove;
+	}
+	
+	public boolean isSeedable()
+	{
+		return _isSeedable;
+	}
+	
+	public boolean canSeeThrough()
+	{
+		return _canSeeThrough;
+	}
+	
+	public Residence getResidence()
+	{
+		return _residence;
+	}
+	
+	public NpcMemo getAiParams()
+	{
+		return _aiParams;
+	}
+	
+	/**
+	 * @return the {@link List} of all {@link DropCategory}s of this {@link NpcTemplate}.
+	 */
+	public List&lt;DropCategory&gt; getDropData()
+	{
+		return _categories;
+	}
+	
+	/**
+	 * Add a {@link DropCategory} to drop list.
+	 * @param category : The {@link DropCategory} to be added.
+	 */
+	public void addDropData(DropCategory category)
+	{
+		_categories.add(category);
+	}
+	
+	/**
+	 * @return the {@link List} of all {@link PrivateData}.
+	 */
+	public List&lt;PrivateData&gt; getPrivateData()
+	{
+		return _privateData;
+	}
+	
+	/**
+	 * @return the {@link List} holding the passive {@link L2Skill}s.
+	 */
+	public List&lt;L2Skill&gt; getPassives()
+	{
+		return _passives;
+	}
+	
+	/**
+	 * @return the {@link Map} holding the active {@link L2Skill}s.
+	 */
+	public Map&lt;NpcSkillType, L2Skill&gt; getSkills()
+	{
+		return _skills;
+	}
+	
+	/**
+	 * @param types : The {@link NpcSkillType}s to test.
+	 * @return the {@link List} of {@link L2Skill}s based on given {@link NpcSkillType}s.
+	 */
+	public List&lt;L2Skill&gt; getSkills(NpcSkillType... types)
+	{
+		return _skills.entrySet().stream().filter(s -&gt; ArraysUtil.contains(types, s.getKey())).map(Map.Entry::getValue).toList();
+	}
+	
+	/**
+	 * @param type : The {@link NpcSkillType} to test.
+	 * @return the {@link L2Skill} based on a given {@link NpcSkillType}.
+	 */
+	public L2Skill getSkill(NpcSkillType type)
+	{
+		return _skills.get(type);
+	}
+	
+	/**
+	 * @param classId : The ClassId to check.
+	 * @return true if _teachInfo exists and if it contains the {@link ClassId} set as parameter, or false otherwise.
+	 */
+	public boolean canTeach(ClassId classId)
+	{
+		return _teachInfo != null &amp;&amp; _teachInfo.contains((classId.getLevel() == 3) ? classId.getParent() : classId);
+	}
+	
+	/**
+	 * @return the {@link Map} of {@link Quest}s {@link List} categorized by {@link EventHandler}.
+	 */
+	public Map&lt;EventHandler, List&lt;Quest&gt;&gt; getEventQuests()
+	{
+		return _questEvents;
+	}
+	
+	/**
+	 * @param type : The ScriptEventType to refer.
+	 * @return the {@link List} of {@link Quest}s associated to a {@link EventHandler}.
+	 */
+	public List&lt;Quest&gt; getEventQuests(EventHandler type)
+	{
+		return _questEvents.getOrDefault(type, Collections.emptyList());
+	}
+	
+	/**
+	 * Add a {@link Quest} to the given {@link EventHandler} {@link List}.&lt;br&gt;
+	 * &lt;br&gt;
+	 * Create the category if it&#x27;s not existing.
+	 * @param type : The ScriptEventType to test.
+	 * @param quest : The Quest to add.
+	 */
+	public void addQuestEvent(EventHandler type, Quest quest)
+	{
+		List&lt;Quest&gt; list = _questEvents.get(type);
+		if (list == null)
+		{
+			list = new ArrayList&lt;&gt;(5);
+			list.add(quest);
+			
+			_questEvents.put(type, list);
+		}
+		else
+		{
+			list.remove(quest);
+			
+			if (type.isMultipleRegistrationAllowed() || list.isEmpty())
+				list.add(quest);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

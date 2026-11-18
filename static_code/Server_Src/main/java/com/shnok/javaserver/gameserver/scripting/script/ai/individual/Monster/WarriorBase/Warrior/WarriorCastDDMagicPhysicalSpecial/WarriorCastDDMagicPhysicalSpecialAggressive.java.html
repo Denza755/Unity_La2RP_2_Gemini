@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagicPhysicalSpecial/WarriorCastDDMagicPhysicalSpecialAggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagicPhysicalSpecial/WarriorCastDDMagicPhysicalSpecialAggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.WarriorCastDDMagicPhysicalSpecial;
+
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WarriorCastDDMagicPhysicalSpecialAggressive extends WarriorCastDDMagicPhysicalSpecial
+{
+	public WarriorCastDDMagicPhysicalSpecialAggressive()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagicPhysicalSpecial&quot;);
+	}
+	
+	public WarriorCastDDMagicPhysicalSpecialAggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21308,
+		21392,
+		21389,
+		21429,
+		21393
+	};
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (!(creature instanceof Playable))
+		{
+			super.onSeeCreature(npc, creature);
+			return;
+		}
+		
+		if (npc.getAI().getLifeTime() &gt; 7 &amp;&amp; npc.getAI().getTopDesireTarget() == null &amp;&amp; npc.isInMyTerritory())
+		{
+			if (npc.distance2D(creature) &gt; 200)
+			{
+				final L2Skill longRangeDD = getNpcSkillByType(npc, NpcSkillType.W_LONG_RANGE_DD_MAGIC);
+				npc.getAI().addCastDesire(creature, longRangeDD, 1000000);
+			}
+			
+			tryToAttack(npc, creature);
+			
+			super.onSeeCreature(npc, creature);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

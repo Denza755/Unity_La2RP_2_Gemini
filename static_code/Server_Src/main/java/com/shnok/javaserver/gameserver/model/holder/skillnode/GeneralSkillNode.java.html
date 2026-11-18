@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/holder/skillnode/GeneralSkillNode.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/holder/skillnode/GeneralSkillNode.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.holder.skillnode;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+/**
+ * A datatype used by general skill types. It extends {@link SkillNode}.
+ */
+public class GeneralSkillNode extends SkillNode
+{
+	private final int _cost;
+	
+	public GeneralSkillNode(StatSet set)
+	{
+		super(set);
+		
+		_cost = set.getInteger(&quot;cost&quot;);
+	}
+	
+	public int getCost()
+	{
+		return _cost;
+	}
+	
+	/**
+	 * Method used for Divine Inspiration skill implementation, since it uses -1 as cost (easier management). We couldn&#x27;t keep 0, otherwise it would be considered as an autoGet and be freely given ; and using a boolean tag would kill me.&lt;br&gt;
+	 * &lt;br&gt;
+	 * &lt;b&gt;Only used to display the correct value to client, regular uses must be -1.&lt;/b&gt;
+	 * @return 0 or the initial cost if superior to 0.
+	 */
+	public int getCorrectedCost()
+	{
+		return Math.max(0, _cost);
+	}
+}</pre>
+            
+</body>
+</html>

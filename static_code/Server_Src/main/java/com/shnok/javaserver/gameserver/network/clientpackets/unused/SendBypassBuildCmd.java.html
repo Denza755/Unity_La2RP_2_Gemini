@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/SendBypassBuildCmd.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/SendBypassBuildCmd.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import java.util.logging.Logger;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.xml.AdminData;
+import com.shnok.javaserver.gameserver.handler.AdminCommandHandler;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public final class SendBypassBuildCmd extends L2GameClientPacket
+{
+	private static final Logger GMAUDIT_LOG = Logger.getLogger(&quot;gmaudit&quot;);
+	
+	private String _command;
+	
+	@Override
+	protected void readImpl()
+	{
+		_command = readS();
+		if (_command != null)
+			_command = _command.trim();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		String command = &quot;admin_&quot; + _command.split(&quot; &quot;)[0];
+		
+		final IAdminCommandHandler ach = AdminCommandHandler.getInstance().getHandler(command);
+		if (ach == null)
+		{
+			if (player.isGM())
+				player.sendMessage(&quot;The command &quot; + command.substring(6) + &quot; doesn&#x27;t exist.&quot;);
+			
+			return;
+		}
+		
+		if (!AdminData.getInstance().hasAccess(command, player.getAccessLevel()))
+		{
+			player.sendMessage(&quot;You don&#x27;t have the access right to use this command.&quot;);
+			LOGGER.warn(&quot;{} tried to use admin command &#x27;{}&#x27;, but has no access to use it.&quot;, player.getName(), command);
+			return;
+		}
+		
+		if (Config.GMAUDIT)
+			GMAUDIT_LOG.info(player.getName() + &quot; [&quot; + player.getObjectId() + &quot;] used &#x27;&quot; + _command + &quot;&#x27; command on: &quot; + ((player.getTarget() != null) ? player.getTarget().getName() : &quot;none&quot;));
+		
+		ach.useAdminCommand(&quot;admin_&quot; + _command, player);
+	}
+}</pre>
+            
+</body>
+</html>

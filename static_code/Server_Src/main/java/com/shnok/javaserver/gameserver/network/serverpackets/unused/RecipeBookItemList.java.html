@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/RecipeBookItemList.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/RecipeBookItemList.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.Collection;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.records.Recipe;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class RecipeBookItemList extends L2GameServerPacket
+{
+	private Collection&lt;Recipe&gt; _recipes;
+	private final boolean _isDwarven;
+	private final int _maxMp;
+	
+	public RecipeBookItemList(Player player, boolean isDwarven)
+	{
+		_recipes = player.getRecipeBook().get(isDwarven);
+		_isDwarven = isDwarven;
+		_maxMp = player.getStatus().getMaxMp();
+	}
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0xD6);
+		
+		writeD((_isDwarven) ? 0x00 : 0x01);
+		writeD(_maxMp);
+		
+		if (_recipes == null)
+			writeD(0);
+		else
+		{
+			writeD(_recipes.size());
+			
+			int i = 0;
+			for (Recipe recipe : _recipes)
+			{
+				writeD(recipe.id());
+				writeD(++i);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

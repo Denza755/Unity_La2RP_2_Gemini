@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/RaidBoss/RaidBossStandard.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/RaidBoss/RaidBossStandard.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.RaidBoss;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.PlaySound;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.MonsterAI;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class RaidBossStandard extends MonsterAI
+{
+	public RaidBossStandard()
+	{
+		super(&quot;ai/individual/Monster/RaidBoss/RaidBossStandard&quot;);
+	}
+	
+	public RaidBossStandard(String descr)
+	{
+		super(descr);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1001&quot;))
+		{
+			if (!npc.isInMyTerritory() &amp;&amp; Rnd.nextBoolean() &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK)
+			{
+				npc.abortAll(true);
+				npc.removeAllAttackDesire();
+				npc.teleportTo(npc.getSpawnLocation(), 0);
+			}
+			
+			if (Rnd.get(5) &lt; 1)
+				npc.getAI().getAggroList().randomizeAttack();
+		}
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Player player &amp;&amp; player.getMountType() == 1)
+		{
+			final L2Skill striderSlow = SkillTable.getInstance().getInfo(4258, 1);
+			if (getAbnormalLevel(attacker, striderSlow) &lt;= 0)
+				npc.getAI().addCastDesire(attacker, striderSlow, 1000000);
+		}
+		
+		if (attacker.getStatus().getLevel() &gt; (npc.getStatus().getLevel() + 8))
+		{
+			final L2Skill raidCurse = SkillTable.getInstance().getInfo(4515, 1);
+			if (getAbnormalLevel(attacker, raidCurse) == -1)
+			{
+				npc.getAI().addCastDesire(attacker, raidCurse, 1000000);
+				npc.getAI().getAggroList().stopHate(attacker);
+				return;
+			}
+		}
+		
+		if (attacker instanceof Playable)
+		{
+			if (damage == 0)
+				damage = 1;
+			
+			npc.getAI().addAttackDesire(attacker, ((1.0 * damage) / (npc.getStatus().getLevel() + 7)) * 20000);
+		}
+		
+		if (npc.getMove().getGeoPathFailCount() &gt; 10)
+		{
+			final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+			if (topDesireTarget != null &amp;&amp; npc.distance2D(topDesireTarget) &lt; 1000)
+			{
+				npc.abortAll(false);
+				npc.teleportTo(topDesireTarget.getPosition(), 0);
+			}
+			else
+			{
+				npc.removeAllAttackDesire();
+				
+				if (attacker instanceof Playable)
+				{
+					if (damage == 0)
+						damage = 1;
+					
+					npc.getAI().addAttackDesire(attacker, ((1.0 * damage) / (npc.getStatus().getLevel() + 7)) * 20000);
+				}
+				npc.abortAll(false);
+				npc.teleportTo(attacker.getPosition(), 0);
+			}
+		}
+		
+		if (npc.isInsideZone(ZoneId.PEACE))
+		{
+			npc.abortAll(false);
+			npc.removeAllAttackDesire();
+			npc.teleportTo(npc.getSpawnLocation(), 0);
+		}
+	}
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc.broadcastPacket(new PlaySound(1, npc.getTemplate().getAiParams().getOrDefault(&quot;RaidSpawnMusic&quot;, &quot;Rm01_A&quot;), npc));
+		
+		startQuestTimerAtFixedRate(&quot;1001&quot;, npc, null, 1000, 60000);
+	}
+	
+	@Override
+	public void onSeeSpell(Npc npc, Player caster, L2Skill skill, Creature[] targets, boolean isPet)
+	{
+		if (caster.getStatus().getLevel() &gt; (npc.getStatus().getLevel() + 8))
+		{
+			final L2Skill raidMute = SkillTable.getInstance().getInfo(4215, 1);
+			if (getAbnormalLevel(caster, raidMute) &lt;= 0)
+			{
+				npc.getAI().addCastDesire(caster, raidMute, 1000000);
+				return;
+			}
+		}
+		
+		final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+		if (topDesireTarget != null)
+		{
+			if (skill.getAggroPoints() &gt; 0 &amp;&amp; npc.getAI().getCurrentIntention().getType() == IntentionType.ATTACK &amp;&amp; topDesireTarget != caster)
+				npc.getAI().addAttackDesire(caster, (((skill.getAggroPoints() / npc.getStatus().getMaxHp()) * 4000) * 150));
+			
+			if (npc.getMove().getGeoPathFailCount() &gt; 10 &amp;&amp; caster == topDesireTarget &amp;&amp; npc.getStatus().getHp() != npc.getStatus().getMaxHp())
+			{
+				npc.abortAll(false);
+				npc.teleportTo(caster.getPosition(), 0);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Common/L2FxHold.hlsl</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Common/L2FxHold.hlsl</h1>
+            <pre>#ifndef L2_FX_HOLD_INCLUDED
+#define L2_FX_HOLD_INCLUDED
+
+// _Hold from ParticleSingle: fraction of particle lifetime (0.413 = 41.3% of 2s).
+// Split ages when hold &gt; 0:
+// - motionAge:  capped at holdRef during full hold; resumes on release (hold &lt; holdRef)
+// - spinAge:    raw elapsed
+// - loopAgeNorm: color loop tail via fmod after hold cap
+// - sizeAgeNorm: SizeScale linear to holdRef, frozen on hold loop, then continues to curve end on release
+
+float L2Fx_HoldCapSeconds(float lifetime, float hold)
+{
+    lifetime = max(lifetime, 1e-4);
+    return lifetime * max(0.0, hold);
+}
+
+// 0 = full hold at holdRef, 1 = hold fully released (hold -&gt; 0).
+float L2Fx_HoldReleaseT(float hold, float holdSizeReference)
+{
+    if (holdSizeReference &lt;= 1e-4)
+    {
+        return hold &lt;= 1e-4 ? 1.0 : 0.0;
+    }
+
+    if (hold &lt;= 1e-4)
+    {
+        return 1.0;
+    }
+
+    if (hold &gt;= holdSizeReference - 1e-4)
+    {
+        return 0.0;
+    }
+
+    return 1.0 - hold / holdSizeReference;
+}
+
+float L2Fx_HoldMotionAge(float elapsed, float lifetime, float hold)
+{
+    lifetime = max(lifetime, 1e-4);
+    elapsed = max(0.0, elapsed);
+
+    if (hold &lt;= 0.0)
+    {
+        return elapsed;
+    }
+
+    return min(elapsed, L2Fx_HoldCapSeconds(lifetime, hold));
+}
+
+// Motion: rise to holdRef cap, hold, then resume path when C# lowers _Hold for release.
+float L2Fx_HoldMotionAgeStable(float elapsed, float lifetime, float hold, float holdSizeReference)
+{
+    lifetime = max(lifetime, 1e-4);
+    elapsed = max(0.0, elapsed);
+
+    if (holdSizeReference &lt;= 1e-4)
+    {
+        return L2Fx_HoldMotionAge(elapsed, lifetime, hold);
+    }
+
+    float capSec = L2Fx_HoldCapSeconds(lifetime, holdSizeReference);
+    float releaseT = L2Fx_HoldReleaseT(hold, holdSizeReference);
+
+    if (elapsed &lt; capSec)
+    {
+        return elapsed;
+    }
+
+    if (releaseT &lt;= 1e-4)
+    {
+        return capSec;
+    }
+
+    return lerp(capSec, elapsed, releaseT);
+}
+
+float L2Fx_HoldSpinAge(float elapsed)
+{
+    return max(0.0, elapsed);
+}
+
+float L2Fx_HoldLoopAgeNorm(float elapsed, float lifetime, float hold)
+{
+    lifetime = max(lifetime, 1e-4);
+    elapsed = max(0.0, elapsed);
+
+    if (hold &lt;= 0.0)
+    {
+        return saturate(elapsed / lifetime);
+    }
+
+    float holdSec = L2Fx_HoldCapSeconds(lifetime, hold);
+    float holdNorm = saturate(hold);
+
+    if (elapsed &lt;= holdSec)
+    {
+        return saturate(elapsed / lifetime);
+    }
+
+    float tailDuration = max(1e-4, lifetime - holdSec);
+    float tailPhase = fmod(elapsed - holdSec, tailDuration) / tailDuration;
+    return saturate(holdNorm + tailPhase * (1.0 - holdNorm));
+}
+
+// SizeScale: linear to holdRef, hold loop freeze, release continues toward curve end (norm 1).
+float L2Fx_HoldSizeAgeNorm(float elapsed, float lifetime, float hold, float holdSizeReference)
+{
+    lifetime = max(lifetime, 1e-4);
+    elapsed = max(0.0, elapsed);
+    float linearNorm = saturate(elapsed / lifetime);
+
+    if (holdSizeReference &lt;= 1e-4)
+    {
+        return linearNorm;
+    }
+
+    float capSec = L2Fx_HoldCapSeconds(lifetime, holdSizeReference);
+    float releaseT = L2Fx_HoldReleaseT(hold, holdSizeReference);
+
+    if (elapsed &lt; capSec)
+    {
+        return linearNorm;
+    }
+
+    if (releaseT &lt;= 1e-4)
+    {
+        return saturate(holdSizeReference);
+    }
+
+    // On hold release scrub the remaining SizeScale curve [holdRef..1], not just wall-clock linearNorm.
+    return lerp(holdSizeReference, 1.0, releaseT);
+}
+
+#endif
+</pre>
+            
+</body>
+</html>

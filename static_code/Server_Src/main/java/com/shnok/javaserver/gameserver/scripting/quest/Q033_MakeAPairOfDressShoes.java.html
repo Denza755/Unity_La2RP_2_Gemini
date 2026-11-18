@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q033_MakeAPairOfDressShoes.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q033_MakeAPairOfDressShoes.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q033_MakeAPairOfDressShoes extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q033_MakeAPairOfDressShoes&quot;;
+	
+	// NPCs
+	private static final int WOODLEY = 30838;
+	private static final int IAN = 30164;
+	private static final int LEIKAR = 31520;
+	
+	// Items
+	private static final int LEATHER = 1882;
+	private static final int THREAD = 1868;
+	private static final int ADENA = 57;
+	
+	// Rewards
+	public static int DRESS_SHOES_BOX = 7113;
+	
+	public Q033_MakeAPairOfDressShoes()
+	{
+		super(33, &quot;Make a Pair of Dress Shoes&quot;);
+		
+		addQuestStart(WOODLEY);
+		addTalkId(WOODLEY, IAN, LEIKAR);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30838-1.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31520-1.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30838-3.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30838-5.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(LEATHER) &gt;= 200 &amp;&amp; player.getInventory().getItemCount(THREAD) &gt;= 600 &amp;&amp; player.getInventory().getItemCount(ADENA) &gt;= 200000)
+			{
+				st.setCond(4);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, ADENA, 200000);
+				takeItems(player, LEATHER, 200);
+				takeItems(player, THREAD, 600);
+			}
+			else
+				htmltext = &quot;30838-4a.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30164-1.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(ADENA) &gt;= 300000)
+			{
+				st.setCond(5);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, ADENA, 300000);
+			}
+			else
+				htmltext = &quot;30164-1a.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30838-7.htm&quot;))
+		{
+			giveItems(player, DRESS_SHOES_BOX, 1);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getStatus().getLevel() &gt;= 60)
+				{
+					QuestState fwear = player.getQuestList().getQuestState(&quot;Q037_MakeFormalWear&quot;);
+					if (fwear != null &amp;&amp; fwear.getCond() == 7)
+						htmltext = &quot;30838-0.htm&quot;;
+					else
+						htmltext = &quot;30838-0a.htm&quot;;
+				}
+				else
+					htmltext = &quot;30838-0b.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case WOODLEY:
+						if (cond == 1)
+							htmltext = &quot;30838-1.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;30838-2.htm&quot;;
+						else if (cond == 3)
+						{
+							if (player.getInventory().getItemCount(LEATHER) &gt;= 200 &amp;&amp; player.getInventory().getItemCount(THREAD) &gt;= 600 &amp;&amp; player.getInventory().getItemCount(ADENA) &gt;= 200000)
+								htmltext = &quot;30838-4.htm&quot;;
+							else
+								htmltext = &quot;30838-4a.htm&quot;;
+						}
+						else if (cond == 4)
+							htmltext = &quot;30838-5a.htm&quot;;
+						else if (cond == 5)
+							htmltext = &quot;30838-6.htm&quot;;
+						break;
+					
+					case LEIKAR:
+						if (cond == 1)
+							htmltext = &quot;31520-0.htm&quot;;
+						else if (cond &gt; 1)
+							htmltext = &quot;31520-1a.htm&quot;;
+						break;
+					
+					case IAN:
+						if (cond == 4)
+							htmltext = &quot;30164-0.htm&quot;;
+						else if (cond == 5)
+							htmltext = &quot;30164-2.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

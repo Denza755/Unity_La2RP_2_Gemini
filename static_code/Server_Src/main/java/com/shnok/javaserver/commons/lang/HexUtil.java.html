@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/lang/HexUtil.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/lang/HexUtil.java</h1>
+            <pre>package com.shnok.javaserver.commons.lang;
+
+public class HexUtil
+{
+	private HexUtil()
+	{
+		throw new IllegalStateException(&quot;Utility class&quot;);
+	}
+	
+	/**
+	 * Convert the given byte array into a formatted hexadecimal string.&lt;br&gt;
+	 * &lt;br&gt;
+	 * The output format includes both the hex representation and the ASCII equivalent. Each line of output represents 16 bytes.
+	 * @param data : The byte array to be converted.
+	 * @param len : The number of bytes from the array to be processed.
+	 * @return A {@link String} with the hexadecimal and ASCII representation of the byte array.
+	 */
+	public static String printData(byte[] data, int len)
+	{
+		StringBuilder result = new StringBuilder();
+		
+		// Calculate the number of full 16-byte lines and any remaining bytes.
+		int fullLines = len / 16;
+		int remainingBytes = len % 16;
+		
+		// Process each full 16-byte line.
+		for (int line = 0; line &lt; fullLines; line++)
+		{
+			int offset = line * 16;
+			
+			result.append(fillHex(offset, 4)).append(&quot;: &quot;);
+			appendHexBytes(result, data, offset, 16);
+			
+			appendAsciiRepresentation(result, data, offset, 16);
+			result.append(&quot;\n&quot;);
+		}
+		
+		// Process any remaining bytes that do not form a full 16-byte line.
+		if (remainingBytes &gt; 0)
+		{
+			int offset = fullLines * 16;
+			
+			result.append(fillHex(offset, 4)).append(&quot;: &quot;);
+			appendHexBytes(result, data, offset, remainingBytes);
+			
+			// Padding to align ASCII output.
+			result.append(&quot;   &quot;.repeat(16 - remainingBytes));
+			
+			appendAsciiRepresentation(result, data, offset, remainingBytes);
+			result.append(&quot;\n&quot;);
+		}
+		
+		return result.toString();
+	}
+	
+	/**
+	 * Append the hexadecimal representation of the specified bytes to the result.
+	 * @param result : The {@link StringBuilder} to append the hex bytes to.
+	 * @param data : The byte array containing the data.
+	 * @param offset : The starting index in the byte array.
+	 * @param length : The number of bytes to process.
+	 */
+	private static void appendHexBytes(StringBuilder result, byte[] data, int offset, int length)
+	{
+		for (int i = 0; i &lt; length; i++)
+			result.append(fillHex(data[offset + i] &amp; 0xFF, 2)).append(&quot; &quot;);
+	}
+	
+	/**
+	 * Append the ASCII representation of the specified bytes to the result. Non-printable characters are represented by a dot.
+	 * @param result : The {@link StringBuilder} to append the ASCII characters to.
+	 * @param data : The byte array containing the data.
+	 * @param offset : The starting index in the byte array.
+	 * @param length : The number of bytes to process.
+	 */
+	private static void appendAsciiRepresentation(StringBuilder result, byte[] data, int offset, int length)
+	{
+		for (int i = 0; i &lt; length; i++)
+		{
+			int value = data[offset + i] &amp; 0xFF;
+			
+			// Printable ASCII range.
+			if (value &gt;= 0x20 &amp;&amp; value &lt;= 0x7E)
+				result.append((char) value);
+			else
+				result.append(&#x27;.&#x27;);
+		}
+	}
+	
+	/**
+	 * Convert the given integer into a zero-padded hexadecimal string.
+	 * @param data : The integer to convert.
+	 * @param digits : The minimum number of hexadecimal digits to produce.
+	 * @return A zero-padded hexadecimal string representing the integer.
+	 */
+	public static String fillHex(int data, int digits)
+	{
+		return String.format(&quot;%0&quot; + digits + &quot;x&quot;, data);
+	}
+	
+	/**
+	 * Convert the entire byte array into a formatted hexadecimal string.
+	 * @param raw : The byte array to be converted.
+	 * @return A {@link String} with the hexadecimal and ASCII representation of the entire byte array.
+	 */
+	public static String printData(byte[] raw)
+	{
+		return printData(raw, raw.length);
+	}
+}</pre>
+            
+</body>
+</html>

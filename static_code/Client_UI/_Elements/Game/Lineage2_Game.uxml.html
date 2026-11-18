@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/Lineage2_Game.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/Lineage2_Game.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;True&quot;&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ActionWindow/ActionWindow.uss?fileID=7433441132597879392&amp;amp;guid=f4d84007fdeb6b546a816ff6abeec917&amp;amp;type=3#ActionWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/CharacterInfoWindow/CharacterInfoWindow.uss?fileID=7433441132597879392&amp;amp;guid=83dd09427ff9d154f987a15749d48dbc&amp;amp;type=3#CharacterInfoWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ChatWindow/ChatWindow.uss?fileID=7433441132597879392&amp;amp;guid=0f1fc063049f5064a9a2f798c3ecd11f&amp;amp;type=3#ChatWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ExitWindow/ExitWindow.uss?fileID=7433441132597879392&amp;amp;guid=41fc118377fcae544b8bce5a99b79d7f&amp;amp;type=3#ExitWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/InventoryWindow/InventoryWindow.uss?fileID=7433441132597879392&amp;amp;guid=4eda97cd2431b9546835901512514faa&amp;amp;type=3#InventoryWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/MenuWindow/MenuWindow.uss?fileID=7433441132597879392&amp;amp;guid=4993d0b30d020034db13cb53c66ef619&amp;amp;type=3#MenuWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/Nameplate/Nameplate.uss?fileID=7433441132597879392&amp;amp;guid=610f407baa5809b45bfd81a28ca613f9&amp;amp;type=3#Nameplate&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/NpcHtmlWindow/HtmlStyle.uss?fileID=7433441132597879392&amp;amp;guid=cda0e1b8c5d18ae4a9b23a3e3b79a4b6&amp;amp;type=3#HtmlStyle&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/RestartLocationWindow/RestartLocationWindow.uss?fileID=7433441132597879392&amp;amp;guid=7ac8492aa54dcab45a1454085d96beb6&amp;amp;type=3#RestartLocationWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/SkillbarWindow/SkillbarWindow.uss?fileID=7433441132597879392&amp;amp;guid=85e555579f5424d4a9ae3b12d87518a2&amp;amp;type=3#SkillbarWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/StatusWindow/StatusWindow.uss?fileID=7433441132597879392&amp;amp;guid=c3937ba47fc202d49921ef21838f11c8&amp;amp;type=3#StatusWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/SystemMenuWindow/SystemMenuWindow.uss?fileID=7433441132597879392&amp;amp;guid=cd7c9bdc31b4eb747bceb5a353bf4383&amp;amp;type=3#SystemMenuWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/TargetWindow/TargetWindow.uss?fileID=7433441132597879392&amp;amp;guid=9ab070af2d137fd4693b412525478adf&amp;amp;type=3#TargetWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/SkillLearnWindow/SkillLearnWindow.uss?fileID=7433441132597879392&amp;amp;guid=d5d3f5a8db6d7b90d98496e68b124270&amp;amp;type=3#SkillLearnWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/SkillWindow/SkillWindow.uss?fileID=7433441132597879392&amp;amp;guid=3d1507b2b56445989f31adb160ec9b21&amp;amp;type=3#SkillWindow&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ShopWindow/ShopStyle.uss?fileID=7433441132597879392&amp;amp;guid=9e85dc28fcf6a6f4fa0432707a81e0fd&amp;amp;type=3#ShopStyle&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/BuffWindow/BuffWindow.uss?fileID=7433441132597879392&amp;amp;guid=56ce323d272748eaa021f080b9d0b65d&amp;amp;type=3#BuffWindow&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;NameplatesContainer&quot; focusable=&quot;false&quot; usage-hints=&quot;GroupTransform&quot; picking-mode=&quot;Ignore&quot; style=&quot;opacity: 1; display: flex; background-color: rgba(173, 110, 0, 0); flex-grow: 1; position: absolute; width: 100%; height: 100%;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Spacer&quot; picking-mode=&quot;Ignore&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+    &lt;/ui:VisualElement&gt;
+    &lt;ui:VisualElement name=&quot;UIContainer&quot; focusable=&quot;false&quot; usage-hints=&quot;GroupTransform&quot; style=&quot;opacity: 1; display: flex; background-color: rgba(173, 110, 0, 0); flex-grow: 1; position: absolute; width: 100%; height: 100%;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Spacer&quot; picking-mode=&quot;Ignore&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+    &lt;/ui:VisualElement&gt;
+    &lt;ui:VisualElement name=&quot;UIContainerPopup&quot; focusable=&quot;false&quot; usage-hints=&quot;None&quot; picking-mode=&quot;Ignore&quot; style=&quot;opacity: 1; display: flex; background-color: rgba(173, 110, 0, 0); flex-grow: 0; width: 100%; height: 100%; flex-shrink: 0;&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;UIContainerTooltip&quot; focusable=&quot;false&quot; usage-hints=&quot;None&quot; picking-mode=&quot;Ignore&quot; style=&quot;opacity: 1; display: flex; background-color: rgba(173, 110, 0, 0); flex-grow: 0; width: 100%; height: 100%; flex-shrink: 0; position: absolute;&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;UIContainerSlot&quot; focusable=&quot;false&quot; usage-hints=&quot;None&quot; picking-mode=&quot;Ignore&quot; style=&quot;opacity: 1; display: flex; background-color: rgba(173, 110, 0, 0); flex-grow: 0; width: 100%; height: 100%; flex-shrink: 0; position: absolute;&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;Loading&quot; picking-mode=&quot;Ignore&quot; style=&quot;flex-grow: 1; position: absolute; background-color: rgb(0, 0, 0); width: 100%; height: 100%; align-self: center; justify-content: flex-end; display: none;&quot;&gt;
+        &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Loading...&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Label&quot; picking-mode=&quot;Ignore&quot; style=&quot;justify-content: space-around; align-items: flex-end; -unity-text-align: upper-right; -unity-font: resource(&amp;apos;Data/UI/Assets/Font/tahoma&amp;apos;); -unity-font-definition: initial; color: rgb(255, 255, 255); margin-bottom: 17px; margin-left: 3px; margin-right: 19px; font-size: 25px;&quot; /&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

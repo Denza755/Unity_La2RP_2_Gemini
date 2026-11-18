@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/Effect/ParticleManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/Effect/ParticleManager.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ParticleManager : MonoBehaviour
+{
+    private static ParticleManager _instance;
+    public static ParticleManager Instance { get { return _instance; } }
+
+    private Queue&lt;PooledEffect&gt; _activeEffects;
+    private Dictionary&lt;string, Queue&lt;PooledEffect&gt;&gt; _effectPool;
+
+    private Queue&lt;PooledEffect&gt; _activeHitEffects;
+    private Dictionary&lt;int, Queue&lt;PooledEffect&gt;&gt; _hitEffectPool;
+
+    private GameObject _effectContainer;
+    private GameObject _effectPoolContainer;
+
+    [SerializeField] private float _hitHeightOffsetMultiplier = 1.0f;
+
+    private GameObject _arrowPrefab;
+
+    public Dictionary&lt;string, Queue&lt;PooledEffect&gt;&gt; EffectPool
+    {
+        get
+        {
+            if (_effectPool == null)
+            {
+                _effectPool = new Dictionary&lt;string, Queue&lt;PooledEffect&gt;&gt;();
+            }
+
+            return _effectPool;
+        }
+        private set
+        {
+            _effectPool = value;
+        }
+    }
+
+    public Queue&lt;PooledEffect&gt; ActiveEffects
+    {
+        get
+        {
+            if (_activeEffects == null)
+            {
+                _activeEffects = new Queue&lt;PooledEffect&gt;();
+            }
+
+            return _activeEffects;
+        }
+        private set
+        {
+            _activeEffects = value;
+        }
+    }
+
+    public Queue&lt;PooledEffect&gt; ActiveHitEffects
+    {
+        get
+        {
+            if (_activeHitEffects == null)
+            {
+                _activeHitEffects = new Queue&lt;PooledEffect&gt;();
+            }
+
+            return _activeHitEffects;
+        }
+        private set
+        {
+            _activeHitEffects = value;
+        }
+    }
+
+    public Dictionary&lt;int, Queue&lt;PooledEffect&gt;&gt; HitEffectPool
+    {
+        get
+        {
+            if (_hitEffectPool == null)
+            {
+                _hitEffectPool = new Dictionary&lt;int, Queue&lt;PooledEffect&gt;&gt;();
+            }
+
+            return _hitEffectPool;
+        }
+        private set
+        {
+            _hitEffectPool = value;
+        }
+    }
+
+
+    #region Initialization
+    void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+
+        _effectPoolContainer = new GameObject(&quot;EffectPool&quot;);
+        _effectContainer = new GameObject(&quot;EffectContainer&quot;);
+        Transform worldEffectsContainer = GameObject.Find(&quot;Effects&quot;).transform;
+        _effectPoolContainer.transform.parent = worldEffectsContainer;
+        _effectContainer.transform.parent = worldEffectsContainer;
+    }
+
+    private void Start()
+    {
+        PrepareEffectPool();
+        _arrowPrefab = ModelTable.Instance.GetItemModelById(17);
+    }
+
+    private void PrepareEffectPool()
+    {
+        foreach (KeyValuePair&lt;string, GameObject&gt; kvp in ParticleEffectTable.Instance.ParticleEffects)
+        {
+            if (EffectPool.ContainsKey(kvp.Key))
+            {
+                continue;
+            }
+
+            // Debug.Log(&quot;Prepared effect pool: &quot; + kvp.Key);
+            EffectPool.Add(kvp.Key, new Queue&lt;PooledEffect&gt;());
+        }
+
+        EffectPool.Add(&quot;arrow&quot;, new Queue&lt;PooledEffect&gt;());
+
+        Array enums = Enum.GetValues(typeof(EtcEffectInfo));
+        foreach (int item in enums)
+        {
+            HitEffectPool[item * 2] = new Queue&lt;PooledEffect&gt;(); // ss grade
+            HitEffectPool[item * 2 + 1] = new Queue&lt;PooledEffect&gt;(); // ss grade + crit
+        }
+
+        HitEffectPool[0] = new Queue&lt;PooledEffect&gt;(); // hit effect
+        HitEffectPool[1] = new Queue&lt;PooledEffect&gt;(); // non-ss crit effect
+    }
+    #endregion
+
+    #region Particle Management tasks
+    private void FixedUpdate()
+    {
+        ManageActiveEffectsTask();
+
+        PoolCleanupTask();
+    }
+
+    private void ManageActiveEffectsTask()
+    {
+        if (ActiveEffects.Count &gt; 0)
+        {
+            PooledEffect effect = ActiveEffects.Dequeue();
+
+            float age = Time.time - effect.StartTime;
+            if (age &gt; effect.EffectDurationSec)
+            {
+                Debug.Log($&quot;Moving effect {effect.EffectClass} to pool. Age: {age} Effect Duration: {effect.EffectDurationSec}.&quot;);
+
+
+                if (effect.GameObject != null)
+                {
+                    effect.GameObject.transform.parent = _effectPoolContainer.transform;
+                    EffectPool[effect.EffectClass].Enqueue(effect);
+                    effect.GameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                ActiveEffects.Enqueue(effect);
+            }
+        }
+
+        if (ActiveHitEffects.Count &gt; 0)
+        {
+            PooledEffect effect = ActiveHitEffects.Dequeue();
+
+            float age = Time.time - effect.StartTime;
+            if (age &gt; effect.EffectDurationSec)
+            {
+                Debug.Log($&quot;Moving effect {effect.GameObject.name} to pool.&quot;);
+
+
+                if (effect.GameObject != null)
+                {
+                    effect.GameObject.transform.parent = _effectPoolContainer.transform;
+                    HitEffectPool[effect.HitEffectIndex].Enqueue(effect);
+                    effect.GameObject.SetActive(false);
+                }
+                else
+                {
+                    ActiveEffects.Enqueue(effect);
+                }
+            }
+        }
+    }
+
+    public void PoolCleanupTask()
+    {
+        foreach (KeyValuePair&lt;string, Queue&lt;PooledEffect&gt;&gt; kvp in EffectPool)
+        {
+            CleanUpPoolQueue(kvp.Value);
+        }
+
+        foreach (KeyValuePair&lt;int, Queue&lt;PooledEffect&gt;&gt; kvp in HitEffectPool)
+        {
+            CleanUpPoolQueue(kvp.Value);
+        }
+    }
+
+    private void CleanUpPoolQueue(Queue&lt;PooledEffect&gt; queue)
+    {
+        if (queue.Count &gt; 0)
+        {
+            PooledEffect effect = queue.Peek();
+            float age = Time.time - effect.StartTime;
+            if (age &gt; effect.MaximumInactiveTimeSec)
+            {
+                queue.Dequeue();
+
+                if (effect.GameObject != null)
+                {
+                    Debug.Log($&quot;Removing effect {effect.GameObject.name} from pool.&quot;);
+                    GameObject.Destroy(effect.GameObject);
+                }
+            }
+        }
+    }
+    #endregion
+
+    #region Skill Particles
+    public PooledEffect[] SpawnCastParticles(Entity caster, Skill skill, int hitTime)
+{
+    // Intercept Life Drain (Skill ID 1090) to use modern effect system
+    if (skill != null &amp;&amp; skill.SkillId == 1090)
+    {
+        global::ModernSpellEffects.SpawnCastEffect(caster, skill);
+        return null; // No traditional pooled effects used
+    }
+    // Original implementation for other skills
+    List&lt;EffectEmitter&gt; castingActions = skill.SkillEffect.CastingActions;
+    if (castingActions == null || castingActions.Count == 0)
+    {
+        Debug.Log(&quot;Skill doesn&#x27;t have any casting action.&quot;);
+        return null;
+    }
+
+    PooledEffect[] castEffects = new PooledEffect[castingActions.Count];
+
+    for (int i = 0; i &lt; castingActions.Count; i++)
+    {
+        EffectEmitter action = castingActions[i];
+        AttachMethod attachOn = action.AttachOn;
+        string effectClass = action.EffectClass;
+        byte repeatCount = 1;
+
+        if (action.EtcEffect == EtcEffect.EET_SOULSHOT)
+        {
+            if (caster.Gear?.WeaponType == WeaponType.bow)
+            {
+                attachOn = AttachMethod.AM_LH;
+            }
+
+            if (caster.Gear?.WeaponType == WeaponType.bow || caster.Gear?.WeaponType == WeaponType.fist)
+            {
+                effectClass = action.SecondaryEffectClass;
+            }
+
+            if (caster.Gear?.WeaponType == WeaponType.fist || caster.Gear?.WeaponType == WeaponType.dual)
+            {
+                repeatCount = 2;
+            }
+        }
+
+        for (int r = 0; r &lt; repeatCount; r++)
+        {
+            if (repeatCount &gt; 1)
+            {
+                if (r == 0)
+                {
+                    attachOn = AttachMethod.AM_LH;
+                }
+                else
+                {
+                    attachOn = AttachMethod.AM_RH;
+                }
+            }
+
+            PooledEffect effect = SpawnEffect(effectClass);
+            if (effect == null || effect.GameObject == null)
+            {
+                Debug.LogWarning($&quot;Can&#x27;t spawn skill effect {effectClass} for skill {skill.SkillId}.&quot;);
+                continue;
+            }
+
+            effect.HitTime = hitTime / 1000f; //in seconds
+
+            effect.GameObject.transform.parent = GetAttachTransform(caster, attachOn);
+
+            UpdateSkillEffectTransform(caster, action, effect.GameObject.transform, effect, attachOn);
+
+            float effectRatio = CalculateCastParticleSizeRatio(caster);
+            effect.GameObject.transform.localScale = effect.GameObject.transform.localScale * effectRatio;
+
+            ActiveEffects.Enqueue(effect);
+
+            castEffects[i] = effect;
+        }
+    }
+
+    return castEffects;
+}
+    private float CalculateCastParticleSizeRatio(Entity caster)
+    {
+        float colRadius = caster.Appearance.CollisionRadius;
+        // FDarkElf     radius 0.15     ratio 1.45
+        // GiantSpider  radius 0.495    ratio 2.2
+
+        // Using linear interpolation based on given data points:
+        // (0.15, 1.45) and (0.495, 2.2)
+        float ratio = 1.42f + (colRadius - 0.14f) * ((2.5f - 1.42f) / (0.495f - 0.14f));
+
+        return Mathf.Clamp(ratio, 0.5f, 3f);
+    }
+
+    private float CalculateHitParticleSizeRatio(Entity target)
+    {
+        float colHeight = target.Appearance.CollisionHeight;
+        /*
+        a_common_people_FElf_m00  			rad: 7 				height: 0.485		ratio: 1.25
+        gremlin					  			rad: 10 			height: 0.285		ratio: 1		
+        a_smith_MDwarf_m00  				rad: 7 				height: 0.314		ratio: ?
+        */
+        float ratio = 1.25f * colHeight + 0.64375f;
+        ratio *= 1.1f;
+        return Mathf.Clamp(ratio, 0.5f, 3f);
+    }
+
+    public void SpawnSkillShotParticle(Entity caster, Entity target, Skill skill, float hitTime)
+    {
+        if (caster == null || skill == null || skill.SkillEffect == null) return;
+        if (target == null) target = caster;
+
+        List&lt;EffectEmitter&gt; shotActions = skill.SkillEffect.ShotActions;
+        if (shotActions == null || shotActions.Count == 0)
+        {
+            Debug.Log(&quot;Skill doesn&#x27;t have any shot action.&quot;);
+            return;
+        }
+
+        foreach (EffectEmitter action in shotActions)
+        {
+            if (action.Arrow)
+            {
+                SpawnArrowProjectile(caster, target, hitTime, true);
+                continue;
+            }
+
+            AttachMethod attachOn = action.AttachOn;
+            string effectClass = action.EffectClass;
+
+            PooledEffect effect = SpawnEffect(effectClass);
+            if (effect == null || effect.GameObject == null)
+            {
+                Debug.LogError($&quot;Can&#x27;t spawn skill effect {effectClass} for skill {skill.SkillId}.&quot;);
+                return;
+            }
+
+            effect.Target = target;
+            effect.Caster = caster;
+            effect.IsArrow = false;
+
+            if ((action.SpawnOnTarget || skill.Skillgrps[0].IconType == SkillType.Physical) &amp;&amp; !action.ChargedArrow) //To verify
+                                                                                                                     // SpawnOnTarget value is inconsistent
+            {
+                // Transform to attach
+                effect.GameObject.transform.parent = GetAttachTransform(target, attachOn);
+
+                PlaceHitParticle(effect, caster, target, action);
+
+                // Phase 2-&gt;3: If this is a life drain skill (e.g. Life Drain 1090, Drain Health 70),
+                // spawn a return projectile flying from target (mob) back to caster (mage)
+                if (skill.SkillId == 1090 || skill.SkillId == 70)
+                {
+                    SpawnDrainReturnProjectile(caster, target, skill);
+                }
+            }
+            else
+            {
+                effect.HitSuccess = true;
+                effect.HitTime = hitTime;
+                effect.EffectDurationSec = Mathf.Max(0.5f, hitTime - Time.time);
+
+                // Transform to attach
+                effect.GameObject.transform.parent = GetAttachTransform(caster, attachOn);
+
+                // Set initial position
+                UpdateSkillEffectTransform(caster, action, effect.GameObject.transform, effect, attachOn);
+
+                if (action.ChargedArrow) // Effect is supposed to follow arrow position
+                {
+                    effect.GameObject.transform.SetPositionAndRotation(caster.Gear.Arrow.position, caster.Gear.Arrow.rotation);
+                    effect.StartingPosition = effect.GameObject.transform.position;
+                }
+
+                // Remove effect for attach transform
+                effect.GameObject.transform.parent = _effectContainer.transform;
+
+                // Set initial position to current position
+                effect.StartingPosition = effect.GameObject.transform.position;
+
+                effect.Skill = skill;
+
+                ProjectileManager.Instance.AddProjectile(effect);
+            }
+
+            ActiveEffects.Enqueue(effect);
+        }
+    }
+
+    public void SpawnDrainReturnProjectile(Entity caster, Entity target, Skill skill)
+    {
+        if (caster == null || target == null || skill == null) return;
+
+        // Try to spawn return projectile effect (e.g. m_u003_c or p_u003_a)
+        string effectName = &quot;m_u003_c&quot;;
+        PooledEffect drainProj = SpawnEffect(effectName);
+        if (drainProj == null || drainProj.GameObject == null)
+        {
+            drainProj = SpawnEffect(&quot;p_u003_a&quot;);
+        }
+
+        if (drainProj == null || drainProj.GameObject == null)
+        {
+            Debug.LogWarning($&quot;[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}&quot;);
+            return;
+        }
+
+        if (drainProj == null || drainProj.GameObject == null)
+        {
+            Debug.LogWarning($&quot;[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}&quot;);
+            return;
+        }
+
+        float targetCenterY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
+        float casterCenterY = caster.Appearance != null ? caster.Appearance.CollisionHeight * 0.7f : 1.0f;
+
+        Vector3 startPos = target.transform.position + Vector3.up * targetCenterY;
+        Vector3 endPos = caster.transform.position + Vector3.up * casterCenterY;
+
+        drainProj.Caster = target; // Flies FROM target
+        drainProj.Target = caster; // TO caster
+        drainProj.IsDrainReturn = true;
+        drainProj.IsArrow = false;
+        drainProj.Skill = skill;
+        drainProj.EffectClass = effectName;
+
+        drainProj.GameObject.transform.parent = _effectContainer.transform;
+        drainProj.GameObject.transform.position = startPos;
+        drainProj.GameObject.transform.localScale = Vector3.one * 0.8f;
+        drainProj.GameObject.SetActive(true);
+
+        drainProj.StartingPosition = startPos;
+        drainProj.TargetPosition = endPos;
+        drainProj.StartTime = Time.time;
+
+        float distance = Vector3.Distance(startPos, endPos);
+        float flightDuration = Mathf.Clamp(distance / 14.0f, 0.35f, 1.2f);
+        drainProj.HitTime = Time.time + flightDuration;
+        drainProj.EffectDurationSec = flightDuration + 0.5f;
+        drainProj.HitSuccess = true;
+
+        drainProj.OnArrival = () =&gt;
+        {
+            // Trigger healing burst on caster upon blood essence reaching caster
+            PooledEffect healFx = SpawnEffect(&quot;e_u003_a&quot;);
+            if (healFx != null &amp;&amp; healFx.GameObject != null)
+            {
+                healFx.GameObject.transform.parent = _effectContainer.transform;
+                healFx.GameObject.transform.position = caster.transform.position;
+                healFx.GameObject.transform.localScale = Vector3.one * 1.0f;
+                healFx.GameObject.SetActive(true);
+                healFx.StartTime = Time.time;
+                healFx.EffectDurationSec = 1.2f;
+                ActiveEffects.Enqueue(healFx);
+            }
+            SpellDynamicLight.TriggerSelfFlash(caster, skill);
+        };
+
+        drainProj.Restart();
+        ProjectileManager.Instance.AddProjectile(drainProj);
+        ActiveEffects.Enqueue(drainProj);
+    }
+
+    public void SpawnSkillExplosionParticle(Entity caster, Entity target, Skill skill)
+    {
+        if (caster == null || skill == null || skill.SkillEffect == null) return;
+        if (target == null) target = caster;
+
+        List&lt;EffectEmitter&gt; explosionActions = skill.SkillEffect.ExplosionActions;
+        if (explosionActions == null || explosionActions.Count == 0)
+        {
+            Debug.Log(&quot;Skill doesn&#x27;t have any explosion action.&quot;);
+            return;
+        }
+
+        foreach (EffectEmitter action in explosionActions)
+        {
+            string effectClass = action.EffectClass;
+
+            PooledEffect effect = SpawnEffect(effectClass);
+            if (effect == null || effect.GameObject == null)
+            {
+                Debug.LogError($&quot;Can&#x27;t spawn skill effect {effectClass} for skill {skill.SkillId}.&quot;);
+                return;
+            }
+
+            effect.Target = target;
+            effect.Caster = caster;
+            effect.IsArrow = false;
+
+            PlaceHitParticle(effect, caster, target, action);
+
+            ActiveEffects.Enqueue(effect);
+        }
+    }
+
+    private void UpdateSkillEffectTransform(Entity caster, EffectEmitter emitter, Transform effectTransform, PooledEffect effect, AttachMethod attachMethod)
+    {
+        effectTransform.localPosition = new Vector3(0, caster.Appearance.CollisionHeight, 0);
+        // Debug.LogWarning(emitter.EffectClass + &quot; &quot; + emitter.RelativeToCylinder + &quot; &quot; + emitter.Offset);
+        if (emitter.RelativeToCylinder)
+        {
+            //X*=CollisionRadius, Y*=CollisionHeight, Z*=1
+            effectTransform.localPosition += new Vector3(emitter.Offset.x, emitter.Offset.y * caster.Appearance.CollisionHeight, emitter.Offset.z * caster.Appearance.CollisionRadius);
+            Debug.Log(&quot;UpdateSkillEffectTransform: &quot; + emitter.Offset + &quot; &quot; + effectTransform.localPosition);
+        }
+        else if (attachMethod == AttachMethod.AM_TRAIL || attachMethod == AttachMethod.AM_NONE)
+        {
+            // effectTransform.localPosition *= 1.2f;
+            effectTransform.localPosition += emitter.Offset / 52.5f;
+        }
+        else
+        {
+            effectTransform.localPosition = emitter.Offset;
+        }
+
+        effectTransform.localScale = emitter.ScaleSize &gt; 0 ? Vector3.one * emitter.ScaleSize : Vector3.one;
+        effectTransform.localScale *= (attachMethod == AttachMethod.AM_RH || attachMethod == AttachMethod.AM_LH) ? 0.01f : 1f;
+        effectTransform.localRotation = Quaternion.Euler(Vector3.zero);
+
+        effect.GameObject.SetActive(true);
+        effect.StartTime = Time.time;
+        effect.Restart();
+    }
+
+    public PooledEffect SpawnEffect(string effectClass)
+    {
+        //verify if present in pool
+        if (EffectPool.TryGetValue(effectClass, out Queue&lt;PooledEffect&gt; effects))
+        {
+            if (effects.Count &gt; 0)
+            {
+                PooledEffect readyEffect = effects.Dequeue();
+                readyEffect.StartTime = Time.time;
+                Debug.Log($&quot;Retrieving effect {effectClass} from pool.&quot;);
+                if (readyEffect.GameObject != null)
+                {
+                    return readyEffect;
+                }
+                else
+                {
+                    Debug.LogError($&quot;Effect {effectClass} from pool doesn&#x27;t have a gameobject!&quot;);
+                }
+            }
+            else
+            {
+                // if not get for particle effect table and instantiate
+                if (ParticleEffectTable.Instance.ParticleEffects.TryGetValue(effectClass, out GameObject gameObject))
+                {
+                    Debug.Log($&quot;Created new effect {effectClass}.&quot;);
+                    GameObject effectGo = GameObject.Instantiate(gameObject);
+                    L2Particle l2p = effectGo.GetComponent&lt;L2Particle&gt;();
+                    if (l2p == null)
+                    {
+                        l2p = effectGo.AddComponent&lt;L2Particle&gt;();
+                    }
+                    PooledEffect effect = l2p.PooledEffect;
+                    if (effect == null)
+                    {
+                        effect = new PooledEffect();
+                    }
+                    effect.GameObject = effectGo.gameObject;
+                    effect.EffectClass = effectClass;
+                    return effect;
+                }
+                else
+                {
+                    Debug.LogError($&quot;Effect {effectClass} doesn&#x27;t exist!&quot;);
+                }
+            }
+        }
+        else
+        {
+            Debug.LogError($&quot;Trying to spawn an unknown effect with class: {effectClass}.&quot;);
+        }
+
+        return null;
+    }
+
+    public Transform GetAttachTransform(Entity entity, AttachMethod attachMethod)
+    {
+        if (entity == null) return null;
+
+        Transform attachTo;
+        switch (attachMethod)
+        {
+            case AttachMethod.AM_NONE:
+                attachTo = entity.transform;
+                break;
+            case AttachMethod.AM_RH:
+                attachTo = entity.Gear != null ? entity.Gear.RightHandBone : entity.transform;
+                break;
+            case AttachMethod.AM_LH:
+                attachTo = entity.Gear != null ? entity.Gear.LeftHandBone : entity.transform;
+                break;
+            default:
+                attachTo = entity.transform;
+                break;
+        }
+
+        return attachTo != null ? attachTo : entity.transform;
+    }
+    #endregion
+
+
+    #region Hit Particles
+    public void SpawnHitParticle(Entity attacker, Entity target, Hit hit)
+    {
+        if (hit.hasSoulshot()) // Always spawn base hit particle with the soulshot particle
+        {
+            PooledEffect basecritParticle = SpawnSingleHitParticle(false, false, hit.getSsGrade());
+            PlaceHitParticle(basecritParticle, attacker, target, null);
+            ActiveHitEffects.Enqueue(basecritParticle);
+            basecritParticle.GameObject.transform.parent = _effectContainer.transform;
+
+            PooledEffect hitParticle = SpawnSingleHitParticle(hit.isCrit(), true, hit.getSsGrade());
+            PlaceHitParticle(hitParticle, attacker, target, null);
+            ActiveHitEffects.Enqueue(hitParticle);
+            hitParticle.GameObject.transform.parent = _effectContainer.transform;
+        }
+        else
+        {
+            // Spawn default hit or crit particle 
+            PooledEffect baseHitParticle = SpawnSingleHitParticle(hit.isCrit(), false, hit.getSsGrade());
+            PlaceHitParticle(baseHitParticle, attacker, target, null);
+            ActiveHitEffects.Enqueue(baseHitParticle);
+            baseHitParticle.GameObject.transform.parent = _effectContainer.transform;
+        }
+    }
+
+    private Vector3 CalculateHitParticlePosition(Entity attacker, Entity target, EffectEmitter action)
+    {
+        float particleHeight;
+
+        if (action != null)
+        {
+            particleHeight = target.Appearance.CollisionHeight + target.Appearance.CollisionHeight * action.Offset.y;
+        }
+        else
+        {
+            particleHeight = target.Appearance.CollisionHeight * _hitHeightOffsetMultiplier;
+        }
+
+        // var heading = attacker.transform.position - target.transform.position;
+        // float angle = Vector3.Angle(heading, target.transform.forward);
+        // Vector3 cross = Vector3.Cross(heading, target.transform.forward);
+        // if (cross.y &gt;= 0) angle = -angle;
+        // Vector3 direction = Quaternion.Euler(0, angle, 0) * target.transform.forward;
+        // Vector3 position = target.transform.position + direction * target.Appearance.CollisionRadius + Vector3.up * particleHeight;
+
+        Vector3 position = target.transform.position + Vector3.up * particleHeight;
+
+        return position;
+    }
+
+    private void PlaceHitParticle(PooledEffect effect, Entity attacker, Entity target, EffectEmitter action)
+    {
+        effect.GameObject.SetActive(true);
+        effect.StartTime = Time.time;
+        effect.GameObject.transform.position = CalculateHitParticlePosition(attacker, target, action);
+        effect.GameObject.transform.LookAt(attacker.transform);
+        effect.GameObject.transform.eulerAngles = new Vector3(0, effect.GameObject.transform.eulerAngles.y - 90f, 0);
+        effect.GameObject.transform.localScale = (action != null ? action.ScaleSize : 1) * CalculateHitParticleSizeRatio(target) * Vector3.one;
+        effect.Restart();
+    }
+
+    private PooledEffect SpawnSingleHitParticle(bool crit, bool soulshot, int soulshotGrade)
+    {
+        int index = soulshot ? (soulshotGrade * 2 + (crit ? 1 : 0) + 2) : (crit ? 1 : 0);
+
+        Queue&lt;PooledEffect&gt; queue = HitEffectPool[index];
+        if (queue.Count &gt; 0)
+        {
+            // Get particle from pool
+            return queue.Dequeue();
+        }
+        else
+        {
+            // Create new particle
+            GameObject go;
+            if (soulshot)
+            {
+                go = ParticleEffectTable.Instance.SoulshotHitParticles[soulshotGrade, crit ? 1 : 0];
+            }
+            else
+            {
+                go = ParticleEffectTable.Instance.DefaultHitParticles[crit ? 1 : 0];
+            }
+
+            if (go == null)
+            {
+                Debug.LogError($&quot;Hit particle gameobject is null. Paraneters: crit:{crit} soulshot:{soulshot} soulshotGrade:{soulshotGrade}&quot;);
+                return null;
+            }
+
+            Debug.Log($&quot;Created new hit effect.&quot;);
+
+            GameObject effectGo = GameObject.Instantiate(go);
+            L2Particle l2p = effectGo.GetComponent&lt;L2Particle&gt;();
+            if (l2p == null)
+            {
+                l2p = effectGo.AddComponent&lt;L2Particle&gt;();
+            }
+            PooledEffect effect = l2p.PooledEffect;
+            if (effect == null)
+            {
+                effect = new PooledEffect();
+            }
+            effect.HitEffectIndex = index;
+            effect.GameObject = effectGo.gameObject;
+
+            return effect;
+        }
+    }
+    #endregion
+
+    #region Arrow
+    public void SpawnArrowProjectile(Entity caster, Entity target, float hitTime, bool hitSuccess)
+    {
+        PooledEffect arrowEffect = SpawnArrow();
+        arrowEffect.GameObject.SetActive(true);
+        // arrowEffect.Restart();
+
+        arrowEffect.StartTime = Time.time;
+        arrowEffect.Caster = caster;
+        arrowEffect.Target = target;
+        arrowEffect.HitTime = hitTime;
+        arrowEffect.HitSuccess = hitSuccess;
+
+        Transform arrowSource = (caster != null &amp;&amp; caster.Gear != null) ? caster.Gear.Arrow : null;
+        if (arrowSource != null)
+        {
+            arrowEffect.GameObject.transform.SetPositionAndRotation(arrowSource.position, arrowSource.rotation);
+            arrowEffect.GameObject.transform.localScale = arrowSource.lossyScale;
+            arrowEffect.ArrowForwardAxis = caster.Gear.ArrowForwardAxis;
+        }
+        else if (caster != null &amp;&amp; caster.Gear != null &amp;&amp; caster.Gear.RightHandBone != null)
+        {
+            arrowEffect.GameObject.transform.SetPositionAndRotation(caster.Gear.RightHandBone.position, caster.Gear.RightHandBone.rotation);
+            arrowEffect.GameObject.transform.localScale = Vector3.one * 100f;
+            arrowEffect.ArrowForwardAxis = caster.Gear.ArrowForwardAxis;
+        }
+        else if (caster != null)
+        {
+            arrowEffect.GameObject.transform.SetPositionAndRotation(caster.transform.position + Vector3.up * 1.0f, caster.transform.rotation);
+            arrowEffect.GameObject.transform.localScale = Vector3.one * 100f;
+            arrowEffect.ArrowForwardAxis = Gear.GetArrowForwardAxis(arrowEffect.GameObject);
+        }
+        else
+        {
+            arrowEffect.GameObject.transform.localScale = Vector3.one * 100f;
+            arrowEffect.ArrowForwardAxis = Gear.GetArrowForwardAxis(arrowEffect.GameObject);
+        }
+        arrowEffect.StartingPosition = arrowEffect.GameObject.transform.position;
+        arrowEffect.IsArrow = true;
+
+        arrowEffect.GameObject.transform.parent = _effectContainer.transform;
+
+        ActiveEffects.Enqueue(arrowEffect);
+
+        ProjectileManager.Instance.AddProjectile(arrowEffect);
+    }
+
+    private PooledEffect SpawnArrow()
+    {
+        if (EffectPool.TryGetValue(&quot;arrow&quot;, out Queue&lt;PooledEffect&gt; effects))
+        {
+            if (effects.Count &gt; 0)
+            {
+                PooledEffect readyEffect = effects.Dequeue();
+                readyEffect.StartTime = Time.time;
+                Debug.Log($&quot;Retrieving effect arrow from pool.&quot;);
+                if (readyEffect.GameObject != null)
+                {
+                    return readyEffect;
+                }
+                else
+                {
+                    Debug.LogError($&quot;Effect arrow from pool doesn&#x27;t have a gameobject!&quot;);
+                }
+            }
+            else
+            {
+                GameObject arrow = GameObject.Instantiate(_arrowPrefab);
+                PooledEffect arrowEffect = new PooledEffect()
+                {
+                    EffectClass = &quot;arrow&quot;,
+                    EffectDurationSec = 12,
+                    StartTime = Time.time,
+                    MaximumInactiveTimeSec = 120,
+                    GameObject = arrow
+                };
+
+                return arrowEffect;
+            }
+        }
+        else
+        {
+            Debug.LogError($&quot;Trying to spawn an unknown effect with class: arrow.&quot;);
+        }
+
+        return null;
+    }
+    #endregion
+
+    public void DestroyAllParticles()
+    {
+        DestroyQueue(_activeEffects);
+        DestroyQueue(_activeHitEffects);
+        DestroyPool(_effectPool);
+        DestroyPool(_hitEffectPool);
+    }
+
+    private void DestroyPool&lt;T&gt;(Dictionary&lt;T, Queue&lt;PooledEffect&gt;&gt; pool)
+    {
+        if (pool == null)
+        {
+            return;
+        }
+
+        foreach (Queue&lt;PooledEffect&gt; queue in pool.Values)
+        {
+            DestroyQueue(queue);
+        }
+
+        // pool.Clear();
+    }
+
+    private void DestroyQueue(Queue&lt;PooledEffect&gt; queue)
+    {
+        if (queue != null &amp;&amp; queue.Count != 0)
+        {
+            for (int i = 0; i &lt; queue.Count; i++)
+            {
+                if (queue.Count &gt; 0)
+                {
+                    PooledEffect e = queue.Dequeue();
+                    if (e != null &amp;&amp; e.GameObject != null)
+                    {
+                        Destroy(e.GameObject);
+                    }
+                }
+            }
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

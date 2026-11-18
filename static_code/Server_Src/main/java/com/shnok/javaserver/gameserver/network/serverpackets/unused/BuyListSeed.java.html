@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/BuyListSeed.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/BuyListSeed.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.data.manager.CastleManorManager;
+import com.shnok.javaserver.gameserver.model.manor.SeedProduction;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public final class BuyListSeed extends L2GameServerPacket
+{
+	private final int _manorId;
+	private final List&lt;SeedProduction&gt; _list;
+	private final int _money;
+	
+	public BuyListSeed(int currentMoney, int castleId)
+	{
+		_money = currentMoney;
+		_manorId = castleId;
+		
+		_list = new ArrayList&lt;&gt;();
+		for (SeedProduction s : CastleManorManager.getInstance().getSeedProduction(castleId, false))
+		{
+			if (s.getAmount() &gt; 0 &amp;&amp; s.getPrice() &gt; 0)
+				_list.add(s);
+		}
+	}
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0xE8);
+		
+		writeD(_money);
+		writeD(_manorId);
+		
+		if (!_list.isEmpty())
+		{
+			writeH(_list.size());
+			for (SeedProduction s : _list)
+			{
+				writeH(0x04);
+				writeD(s.getId());
+				writeD(s.getId());
+				writeD(s.getAmount());
+				writeH(0x04);
+				writeH(0x00);
+				writeD(s.getPrice());
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

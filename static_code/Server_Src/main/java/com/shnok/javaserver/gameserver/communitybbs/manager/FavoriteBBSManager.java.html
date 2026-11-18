@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/FavoriteBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/FavoriteBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.communitybbs.model.Favorite;
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+public class FavoriteBBSManager extends BaseBBSManager
+{
+	private static final String SELECT_FAVORITES = &quot;SELECT * FROM bbs_favorite ORDER BY id ASC&quot;;
+	private static final String INSERT_FAVORITE = &quot;INSERT INTO bbs_favorite (id,player_id,title,bypass,date) VALUES (?,?,?,?,?)&quot;;
+	private static final String DELETE_FAVORITE = &quot;DELETE FROM bbs_favorite WHERE id=?&quot;;
+	
+	private final Map&lt;Integer, Set&lt;Favorite&gt;&gt; _favorites = new ConcurrentHashMap&lt;&gt;();
+	
+	private int _lastFavoriteId = 0;
+	
+	protected FavoriteBBSManager()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(SELECT_FAVORITES);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+			{
+				getFavorites(rs.getInt(&quot;player_id&quot;)).add(new Favorite(rs));
+				
+				// Calculate last used Favorite id.
+				final int favoriteId = rs.getInt(&quot;id&quot;);
+				if (favoriteId &gt; _lastFavoriteId)
+					_lastFavoriteId = favoriteId;
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load favorites.&quot;, e);
+		}
+	}
+	
+	@Override
+	public void parseCmd(String command, Player player)
+	{
+		if (command.equals(&quot;_bbsgetfav&quot;))
+		{
+			String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;favorite/favorite-get.htm&quot;);
+			
+			final Set&lt;Favorite&gt; favorites = _favorites.get(player.getObjectId());
+			if (favorites == null)
+				content = content.replace(&quot;&lt;?FAV_LIST?&gt;&quot;, &quot;&quot;);
+			else
+			{
+				final StringBuilder sb = new StringBuilder();
+				for (Favorite favorite : favorites)
+				{
+					String template = HtmCache.getInstance().getHtm(CB_PATH + &quot;favorite/template.htm&quot;);
+					template = template.replace(&quot;&lt;?sDate?&gt;&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(favorite.getDate()));
+					template = template.replace(&quot;&lt;?fav_id?&gt;&quot;, Integer.toString(favorite.getId()));
+					template = template.replace(&quot;&lt;?bypass?&gt;&quot;, favorite.getBypass());
+					template = template.replace(&quot;&lt;?arg_last?&gt;&quot;, favorite.getTitle());
+					
+					sb.append(template);
+				}
+				content = content.replace(&quot;&lt;?FAV_LIST?&gt;&quot;, sb.toString());
+			}
+			separateAndSend(content, player);
+		}
+		else if (command.startsWith(&quot;_bbsgetfav_add&quot;))
+		{
+			/* 
+			 * @formatter:off TODO
+			 * 
+			// Retrieve &#x27;add_fav&#x27; PlayerMemo.
+			final String storedFav = player.getMemos().get(&quot;add_fav&quot;);
+			if (storedFav == null)
+				return;
+			
+			// Remove it, to avoid being it available on next button press.
+			player.getMemos().remove(&quot;add_fav&quot;);
+			
+			* @formatter:on
+			*/
+			
+			final String storedFav = &quot;Testing favorites&amp;_bbshome&quot;;
+			
+			// Split the parameters.
+			final String[] params = storedFav.split(&quot;&amp;&quot;);
+			if (params.length &gt; 1)
+			{
+				final int id = getNewFavoriteId();
+				final int playerId = player.getObjectId();
+				final String title = params[0];
+				final String bypass = params[1];
+				final Timestamp date = new Timestamp(System.currentTimeMillis());
+				
+				// Store the new Favorite on memory.
+				getFavorites(playerId).add(new Favorite(id, playerId, title, bypass, date));
+				
+				// Store it aswell on database.
+				try (Connection con = ConnectionPool.getConnection();
+					PreparedStatement ps = con.prepareStatement(INSERT_FAVORITE))
+				{
+					ps.setInt(1, id);
+					ps.setInt(2, playerId);
+					ps.setString(3, title);
+					ps.setString(4, bypass);
+					ps.setTimestamp(5, date);
+					ps.execute();
+				}
+				catch (Exception e)
+				{
+					LOGGER.error(&quot;Couldn&#x27;t add the favorite.&quot;, e);
+				}
+			}
+			
+			// Move to the Favorites.
+			parseCmd(&quot;_bbsgetfav&quot;, player);
+		}
+		else if (command.startsWith(&quot;_bbsgetfav_del&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;_&quot;);
+			st.nextToken();
+			st.nextToken();
+			
+			final int id = Integer.parseInt(st.nextToken());
+			
+			// Cleanup memory.
+			if (getFavorites(player.getObjectId()).removeIf(f -&gt; f.getId() == id))
+			{
+				// Cleanup database.
+				try (Connection con = ConnectionPool.getConnection();
+					PreparedStatement ps = con.prepareStatement(DELETE_FAVORITE))
+				{
+					ps.setInt(1, id);
+					ps.execute();
+				}
+				catch (Exception e)
+				{
+					LOGGER.error(&quot;Couldn&#x27;t delete favorite #{}.&quot;, e, id);
+				}
+			}
+			
+			// Move to the Favorites.
+			parseCmd(&quot;_bbsgetfav&quot;, player);
+		}
+		else
+			super.parseCmd(command, player);
+	}
+	
+	@Override
+	protected String getFolder()
+	{
+		return &quot;favorite/&quot;;
+	}
+	
+	private synchronized int getNewFavoriteId()
+	{
+		return ++_lastFavoriteId;
+	}
+	
+	private Set&lt;Favorite&gt; getFavorites(int objectId)
+	{
+		return _favorites.computeIfAbsent(objectId, f -&gt; ConcurrentHashMap.newKeySet());
+	}
+	
+	public static FavoriteBBSManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final FavoriteBBSManager INSTANCE = new FavoriteBBSManager();
+	}
+}</pre>
+            
+</body>
+</html>

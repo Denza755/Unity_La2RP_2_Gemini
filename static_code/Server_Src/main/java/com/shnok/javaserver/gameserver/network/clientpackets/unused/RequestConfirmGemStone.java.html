@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestConfirmGemStone.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestConfirmGemStone.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.item.LifeStone;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExConfirmVariationGemstone;
+
+public final class RequestConfirmGemStone extends AbstractRefinePacket
+{
+	private int _targetItemObjId;
+	private int _refinerItemObjId;
+	private int _gemstoneItemObjId;
+	private int _gemStoneCount;
+	
+	@Override
+	protected void readImpl()
+	{
+		_targetItemObjId = readD();
+		_refinerItemObjId = readD();
+		_gemstoneItemObjId = readD();
+		_gemStoneCount = readD();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		final ItemInstance targetItem = player.getInventory().getItemByObjectId(_targetItemObjId);
+		if (targetItem == null)
+			return;
+		
+		final ItemInstance refinerItem = player.getInventory().getItemByObjectId(_refinerItemObjId);
+		if (refinerItem == null)
+			return;
+		
+		final ItemInstance gemStoneItem = player.getInventory().getItemByObjectId(_gemstoneItemObjId);
+		if (gemStoneItem == null)
+			return;
+		
+		// Make sure the item is a gemstone
+		if (!isValid(player, targetItem, refinerItem, gemStoneItem))
+		{
+			player.sendPacket(SystemMessageId.THIS_IS_NOT_A_SUITABLE_ITEM);
+			return;
+		}
+		
+		// Check for gemstone count
+		final LifeStone ls = getLifeStone(refinerItem.getItemId());
+		if (ls == null)
+			return;
+		
+		if (_gemStoneCount != targetItem.getItem().getCrystalType().getGemstoneCount())
+		{
+			player.sendPacket(SystemMessageId.GEMSTONE_QUANTITY_IS_INCORRECT);
+			return;
+		}
+		
+		player.sendPacket(new ExConfirmVariationGemstone(_gemstoneItemObjId, _gemStoneCount));
+	}
+}</pre>
+            
+</body>
+</html>

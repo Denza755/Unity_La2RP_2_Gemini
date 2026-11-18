@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Controller/StateMachine/Intention/SkillIntention.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Controller/StateMachine/Intention/SkillIntention.cs</h1>
+            <pre>using UnityEngine;
+
+public class SkillIntention : IntentionBase
+{
+    private static SkillInfo _lastSkillIntention = null;
+    private static Skillgrp _lastSkillIntentionGrp = null;
+    public static bool CtrlPressed = false;
+    public static bool ShiftPressed = false;
+
+    public SkillIntention(PlayerStateMachine stateMachine) : base(stateMachine) { }
+
+    public override void Enter(object arg0)
+    {
+        if (arg0 != null)
+        {
+            _lastSkillIntention = (SkillInfo)arg0;
+            CtrlPressed = InputManager.Instance.Ctrl;
+            ShiftPressed = InputManager.Instance.Shift;
+            _lastSkillIntentionGrp = SkillgrpTable.Instance.GetSkillgrp(_lastSkillIntention.Id)?[_lastSkillIntention.Level];
+        }
+
+        if (_lastSkillIntention == null)
+        {
+            return;
+        }
+
+        //TODO: Use skill levels skillgrp
+        if (_lastSkillIntentionGrp == null || _lastSkillIntentionGrp.Id != _lastSkillIntention.Id)
+        {
+            Debug.LogWarning($&quot;Can&#x27;t retrieve skillgrp for skill id: {_lastSkillIntentionGrp.Id}.&quot;);
+            return;
+        }
+
+        if (SkillRequiresTarget()) // target required?
+        {
+            Transform target = TargetManager.Instance.Target?.transform;
+            if (target == null)
+            {
+                if (SkillIsABuffOrHeal())
+                {
+                    TargetManager.Instance.SetTarget(PlayerEntity.Instance);
+                }
+                else
+                {
+                    Debug.Log(&quot;Skill requires a target but no target was selected.&quot;);
+                    return;
+                }
+            }
+
+            // TODO: If buff or heal and require target, if not target selected send skill on self
+            float skillRange = _lastSkillIntentionGrp.CastRange / 52.5f * 0.95f; //5% error margin
+            Entity targetEntity = TargetManager.Instance.Target;
+            Vector3 targetPos = targetEntity.transform.position;
+
+            float distance = Vector3.Distance(VectorUtils.To2D(PlayerEntity.Instance.transform.position), VectorUtils.To2D(targetPos));
+
+            // Debug.Log($&quot;Distance: {distance} SkillRange: {skillRange}&quot;);
+            if (distance &lt;= skillRange &amp;&amp; !_stateMachine.WaitingForServerReply)
+            {
+                Debug.Log(&quot;Using skill on target&quot;);
+
+                _stateMachine.ChangeState(PlayerState.IDLE);
+
+                if (!targetEntity.IsDead)
+                {
+                    _stateMachine.NotifyEvent(Event.READY_TO_SKILL, _lastSkillIntention);
+                }
+            }
+            else
+            {
+                // Move to target with a 5% error margin
+                PathFinderController.Instance.MoveTo(targetPos, skillRange, () =&gt;
+                {
+                    _stateMachine.ChangeIntention(Intention.INTENTION_FOLLOW, MoveReason.SKILL);
+                });
+            }
+        }
+        else
+        {
+            _stateMachine.NotifyEvent(Event.READY_TO_SKILL, _lastSkillIntention);
+        }
+    }
+
+    private bool SkillRequiresTarget()
+    {
+        Skillgrp skillgrp = _lastSkillIntentionGrp;
+        bool hasRange = skillgrp.CastRange != -1;
+        // bool isDamage = skillgrp.IconType == SkillIconType.Physical || skillgrp.IconType == SkillIconType.Magic;
+        // bool isDebuff = skillgrp.IconType == SkillIconType.Debuff;
+        // bool isBuff = skillgrp.IconType == SkillIconType.Buff;
+
+        bool result = hasRange;// &amp;&amp; (isDamage || isDebuff || isBuff);
+
+        if (result)
+        {
+            Debug.Log($&quot;Skill {_lastSkillIntentionGrp.Id} requires a target.&quot;);
+        }
+        else
+        {
+            Debug.Log($&quot;Skill {_lastSkillIntentionGrp.Id} doesn&#x27;t require a target.&quot;);
+        }
+
+        return result;
+    }
+
+    private bool SkillIsABuffOrHeal()
+    {
+        Skillgrp skillgrp = _lastSkillIntentionGrp;
+        bool isBuff = skillgrp.IconType == SkillType.Buff;
+        bool isHeal = skillgrp.OperateType == SkillOperateType.Heal;
+        //TODO: 
+        // Create an operate type for heals so that they can behave like buffs 
+        // (auto target self when no target selected)
+        bool result = isBuff || isHeal;
+        if (result)
+        {
+            Debug.Log($&quot;Skill {_lastSkillIntentionGrp.Id} is a buff/heal.&quot;);
+        }
+        else
+        {
+            Debug.Log($&quot;Skill {_lastSkillIntentionGrp.Id} isn&#x27;t a buff/heal.&quot;);
+        }
+
+        return result;
+    }
+
+    public override void Exit() { }
+    public override void Update()
+    {
+
+    }
+}</pre>
+            
+</body>
+</html>

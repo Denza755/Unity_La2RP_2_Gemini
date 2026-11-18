@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/siegablehall/BanditStronghold.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/siegablehall/BanditStronghold.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.siegablehall;
+
+import java.text.SimpleDateFormat;
+import java.util.Map.Entry;
+
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+/**
+ * In order to participate in a battle to occupy the Brigand&#x27;s Hideaway clan hall, the head of a clan of level 4 or above must complete the Brigand&#x27;s Hideaway quest within a certain time before the clan hall battle is started. Only the first five clans that complete the hideaway quest first can
+ * participate. The number of clan members that can participate per clan is limited to 18 people. The quest to participate in the Brigand&#x27;s Hideaway clan hall battle is only valid for participating in the clan hall battle on that date. Having completed the quest previously does not make it possible
+ * to participate in the clan battle.&lt;br&gt;
+ * &lt;br&gt;
+ * Once the decision is made to participate in the clan battle, the clan leader must register the 18 clan members and select the NPC that he will protect by conversing with the herald NPC. Clans that currently occupy the clan hall must register the 18 clan members to participate in the defense.
+ */
+public final class BanditStronghold extends FlagWar
+{
+	public static final String QUEST_NAME = &quot;Q504_CompetitionForTheBanditStronghold&quot;;
+	
+	private static final int TARLK_AMULET = 4332;
+	private static final int CONTEST_CERTIFICATE = 4333;
+	private static final int TROPHY_OF_ALLIANCE = 5009;
+	
+	public BanditStronghold()
+	{
+		super(&quot;siegablehall&quot;, BANDIT_STRONGHOLD);
+		
+		MAKER_NAME = &quot;oren15_azit_teleporter01&quot;;
+		
+		ROYAL_FLAG = 35422;
+		FLAG_RED = 35423;
+		FLAG_YELLOW = 35424;
+		FLAG_GREEN = 35425;
+		FLAG_BLUE = 35426;
+		FLAG_PURPLE = 35427;
+		
+		ALLY_1 = 35428;
+		ALLY_2 = 35429;
+		ALLY_3 = 35430;
+		ALLY_4 = 35431;
+		ALLY_5 = 35432;
+		
+		TELEPORT_1 = 35560;
+		
+		MESSENGER = 35437;
+		
+		OUTTER_DOORS = new int[2];
+		OUTTER_DOORS[0] = 22170001;
+		OUTTER_DOORS[1] = 22170002;
+		
+		INNER_DOORS = new int[2];
+		INNER_DOORS[0] = 22170003;
+		INNER_DOORS[1] = 22170004;
+		
+		FLAG_COORDS = new SpawnLocation[7];
+		FLAG_COORDS[0] = new SpawnLocation(83699, -17468, -1774, 19048);
+		FLAG_COORDS[1] = new SpawnLocation(82053, -17060, -1784, 5432);
+		FLAG_COORDS[2] = new SpawnLocation(82142, -15528, -1799, 58792);
+		FLAG_COORDS[3] = new SpawnLocation(83544, -15266, -1770, 44976);
+		FLAG_COORDS[4] = new SpawnLocation(84609, -16041, -1769, 35816);
+		FLAG_COORDS[5] = new SpawnLocation(81981, -15708, -1858, 60392);
+		FLAG_COORDS[6] = new SpawnLocation(84375, -17060, -1860, 27712);
+		
+		CENTER = new SpawnLocation(82882, -16280, -1894, 0);
+		
+		attachListeners();
+	}
+	
+	@Override
+	public String getFlagHtml(int flag)
+	{
+		switch (flag)
+		{
+			case 35423:
+				return &quot;agit_oel_mahum_messeger_4a.htm&quot;;
+			
+			case 35424:
+				return &quot;agit_oel_mahum_messeger_4b.htm&quot;;
+			
+			case 35425:
+				return &quot;agit_oel_mahum_messeger_4c.htm&quot;;
+			
+			case 35426:
+				return &quot;agit_oel_mahum_messeger_4d.htm&quot;;
+			
+			case 35427:
+				return &quot;agit_oel_mahum_messeger_4e.htm&quot;;
+		}
+		return null;
+	}
+	
+	@Override
+	public String getAllyHtml(int ally)
+	{
+		switch (ally)
+		{
+			case 35428:
+				return &quot;agit_oel_mahum_messeger_17.htm&quot;;
+			
+			case 35429:
+				return &quot;agit_oel_mahum_messeger_18.htm&quot;;
+			
+			case 35430:
+				return &quot;agit_oel_mahum_messeger_19.htm&quot;;
+			
+			case 35431:
+				return &quot;agit_oel_mahum_messeger_20.htm&quot;;
+			
+			case 35432:
+				return &quot;agit_oel_mahum_messeger_23.htm&quot;;
+		}
+		return null;
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		String html = null;
+		
+		if (npc.getNpcId() == MESSENGER)
+		{
+			if (!_hall.isFree())
+			{
+				final Clan clan = ClanTable.getInstance().getClan(_hall.getOwnerId());
+				
+				html = getHtmlText(&quot;azit_messenger001.htm&quot;);
+				html = html.replace(&quot;%my_pledge_name%&quot;, (clan == null) ? &quot;no owner&quot; : clan.getName());
+				html = html.replace(&quot;%my_owner_name%&quot;, (clan == null) ? &quot;no owner&quot; : clan.getLeaderName());
+			}
+			else
+				html = &quot;azit_messenger002.htm&quot;;
+		}
+		
+		if (html == null)
+			return super.onFirstTalk(npc, player);
+		
+		return html;
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String html = event;
+		
+		final Clan clan = player.getClan();
+		
+		if (event.equalsIgnoreCase(&quot;register&quot;))
+		{
+			if (player.isOverweight())
+			{
+				player.sendPacket(SystemMessageId.INVENTORY_LESS_THAN_80_PERCENT);
+				return &quot;&quot;;
+			}
+			
+			if (_hall.isWaitingBattle())
+				html = &quot;agit_oel_mahum_messeger_1.htm&quot;;
+			else
+			{
+				html = getHtmlText(&quot;azit_messenger_q0504_09.htm&quot;);
+				html = html.replace(&quot;%next_siege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(_hall.getSiegeDate().getTime()));
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;view_participants&quot;))
+		{
+			html = getRegisteredPledgeList(player);
+		}
+		else if (event.equalsIgnoreCase(&quot;register_clan&quot;))
+		{
+			if (!_hall.isWaitingBattle())
+			{
+				html = getHtmlText(&quot;azit_messenger_q0504_03.htm&quot;);
+				html = html.replace(&quot;%next_siege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(_hall.getSiegeDate().getTime()));
+			}
+			else if (clan == null || _hall.getOwnerId() != player.getClanId())
+				html = getClanRegisterStatus(player, false);
+			else
+				html = &quot;agit_oel_mahum_messeger_22.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;register_clan_member&quot;))
+		{
+			if (!_hall.isWaitingBattle())
+			{
+				html = getHtmlText(&quot;azit_messenger_q0504_03.htm&quot;);
+				html = html.replace(&quot;%next_siege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(_hall.getSiegeDate().getTime()));
+			}
+			else if (!player.isClanLeader())
+				html = registerClanMember(player);
+			else
+				html = &quot;agit_oel_mahum_messeger_5.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;register_with_adena&quot;))
+		{
+			if (!_hall.isWaitingBattle())
+			{
+				html = getHtmlText(&quot;azit_messenger_q0504_03.htm&quot;);
+				html = html.replace(&quot;%next_siege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(_hall.getSiegeDate().getTime()));
+			}
+			else
+				html = getClanRegisterStatus(player, true);
+		}
+		else if (event.equalsIgnoreCase(&quot;select_clan_npc&quot;) || event.equalsIgnoreCase(&quot;view_clan_npc&quot;))
+		{
+			if (!_hall.isWaitingBattle())
+			{
+				html = getHtmlText(&quot;azit_messenger_q0504_03.htm&quot;);
+				html = html.replace(&quot;%next_siege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(_hall.getSiegeDate().getTime()));
+			}
+			else
+				html = getNpcType(player);
+		}
+		else if (event.startsWith(&quot;select_npc_&quot;))
+		{
+			try
+			{
+				final int npcId = 35427 + Integer.parseInt(event.substring(&quot;select_npc_&quot;.length()));
+				
+				html = setNpcType(player, npcId);
+			}
+			catch (NumberFormatException e)
+			{
+				// Handle the case where the npcIndex is not a valid integer
+				LOGGER.error(&quot;Invalid NPC index in event: &quot; + event);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;reselect_npc&quot;))
+		{
+			html = getHtmlText(&quot;agit_oel_mahum_messeger_6.htm&quot;);
+		}
+		else if (event.startsWith(&quot;info_npc_&quot;))
+		{
+			try
+			{
+				final int npcIndex = Integer.parseInt(event.substring(&quot;info_npc_&quot;.length()));
+				final String htmlFilename = String.format(&quot;agit_oel_mahum_messeger_%d.htm&quot;, 10 + npcIndex);
+				
+				return getHtmlText(htmlFilename);
+			}
+			catch (NumberFormatException e)
+			{
+				// Handle the case where the npcIndex is not a valid integer
+				LOGGER.error(&quot;Invalid NPC index in event: &quot; + event);
+			}
+		}
+		
+		return html;
+	}
+	
+	@Override
+	public void spawnNpcs()
+	{
+		// Do nothing.
+	}
+	
+	@Override
+	public void unspawnNpcs()
+	{
+		// Do nothing.
+	}
+	
+	/**
+	 * Check if the {@link Player}&#x27;s clan can be registered for the battle and registers it if possible.
+	 * @param player : The {@link Player} whose clan is to be checked and registered.
+	 * @return A {@link String} indicating the result of the registration process.
+	 */
+	private String checkAndRegisterClan(Player player)
+	{
+		final Clan clan = player.getClan();
+		
+		// Check if the hall is waiting for battle, the Player has a Clan, and the number of attacker clans is within the limit.
+		if (!_hall.isWaitingBattle() || clan == null || getAttackerClans().size() &gt;= (5 + (_hall.getOwnerId() == 0 ? 1 : 0)))
+			return &quot;agit_oel_mahum_messeger_3.htm&quot;;
+		
+		ClanData cd = _data.get(clan.getClanId());
+		if (cd == null)
+		{
+			// Take required items from the Player.
+			takeItems(player, TARLK_AMULET, 30);
+			takeItems(player, CONTEST_CERTIFICATE, -1);
+			takeItems(player, TROPHY_OF_ALLIANCE, -1);
+			
+			// Check if the Player has the quest, and exit it if he does.
+			final QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+			if (st != null)
+			{
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(true);
+			}
+			
+			// Register the Player&#x27;s Clan.
+			cd = registerClan(clan);
+		}
+		
+		// Return the HTML for the Clan&#x27;s flag.
+		return getFlagHtml(cd.flag);
+	}
+	
+	/**
+	 * Determine the registration status of the {@link Player}&#x27;s clan and generates the corresponding HTML response.
+	 * @param player : The {@link Player} whose clan registration status is being determined. Must not be null.
+	 * @param withAdena : A boolean indicating whether the registration is being checked with Adena.
+	 * @return A {@link String} representing the HTML page that indicates the clan&#x27;s registration status.
+	 */
+	private String getClanRegisterStatus(Player player, boolean withAdena)
+	{
+		final Clan clan = player.getClan();
+		final ClanData cd = _data.get(player.getClanId());
+		
+		// Check if the clan and ClanData exist.
+		if (clan != null &amp;&amp; cd != null)
+			return getFlagHtml(cd.flag);
+		
+		// Check if the maximum number of attacker clans has been reached.
+		if (getAttackerClans().size() &gt;= (5 + (_hall.getOwnerId() == 0 ? 1 : 0)))
+			return &quot;agit_oel_mahum_messeger_21.htm&quot;;
+		
+		// Check if the Player&#x27;s clan owns the hall.
+		if (clan != null &amp;&amp; _hall.getOwnerId() == player.getClanId())
+			return &quot;agit_oel_mahum_messeger_22.htm&quot;;
+		
+		// Check registration without Adena.
+		if (!withAdena)
+		{
+			if (!player.destroyItemByItemId(TROPHY_OF_ALLIANCE, 1, true))
+				return &quot;agit_oel_mahum_messeger_24.htm&quot;;
+		}
+		else
+		{
+			// Check if the Clan is null or already has a ClanHall.
+			if (clan == null || clan.hasClanHall())
+				return &quot;azit_messenger_q0504_10.htm&quot;;
+			
+			// Check if the Player is the Clan leader.
+			if (!player.isClanLeader())
+				return &quot;azit_messenger_q0504_05.htm&quot;;
+			
+			// Check if the Clan level is at least 4.
+			if (clan.getLevel() &lt; 4)
+				return &quot;azit_messenger_q0504_04.htm&quot;;
+			
+			// Check if the player has enough Adena.
+			if (!player.reduceAdena(200000, true))
+				return &quot;agit_oel_mahum_messeger_26.htm&quot;;
+		}
+		
+		// Register the Clan if all conditions are met.
+		return checkAndRegisterClan(player);
+	}
+	
+	/**
+	 * Determine the NPC type to display based on the {@link Player}&#x27;s clan status and role.
+	 * @param player : The {@link Player} for whom the Npc type is being determined.
+	 * @return A {@link String} indicating the Npc type to be displayed.
+	 **/
+	private String getNpcType(Player player)
+	{
+		final Clan clan = player.getClan();
+		
+		// Check if the Player is in a Clan and owns the hall.
+		if (clan != null &amp;&amp; _hall.getOwnerId() == clan.getClanId())
+			return &quot;agit_oel_mahum_messeger_25.htm&quot;;
+		
+		final ClanData cd = _data.get(player.getClanId());
+		
+		// Check if the Player is not in a Clan or the Clan data is null.
+		if (clan == null || cd == null)
+			return &quot;agit_oel_mahum_messeger_7.htm&quot;;
+		
+		// Check if the Npc data is not zero.
+		if (cd.npc != 0)
+			return getAllyHtml(cd.npc);
+		
+		// Check if the Player is a Clan leader.
+		if (player.isClanLeader())
+			return &quot;agit_oel_mahum_messeger_6.htm&quot;;
+		
+		// Default case.
+		return &quot;agit_oel_mahum_messeger_10.htm&quot;;
+	}
+	
+	/**
+	 * Set the NPC type for the {@link Player}&#x27;s clan based on the given ally Npc ID.
+	 * @param player : The {@link Player} setting the Npc type. Must be a clan leader.
+	 * @param allyNpcId : The ID of the ally Npc to set. Must be within the range 35428 to 35432.
+	 * @return A {@link String} indicating the result of the operation.
+	 **/
+	private String setNpcType(Player player, int allyNpcId)
+	{
+		final ClanData cd = _data.get(player.getClanId());
+		
+		// Check if the player is a clan leader and if the player&#x27;s clan exists in the data.
+		if (!player.isClanLeader() || cd == null)
+			return &quot;agit_oel_mahum_messeger_7.htm&quot;;
+		
+		// Check if the allyNpcId is within the valid range.
+		if (allyNpcId &gt;= 35428 &amp;&amp; allyNpcId &lt;= 35432)
+		{
+			// Update the NPC type in the ClanData and save it.
+			cd.npc = allyNpcId;
+			saveNpc(allyNpcId, player.getClanId());
+			
+			return &quot;agit_oel_mahum_messeger_9.htm&quot;;
+		}
+		
+		// Return an empty string for invalid allyNpcId.
+		return &quot;&quot;;
+	}
+	
+	/**
+	 * Generate the HTML list of registered clans and their member counts for a given {@link Player}.
+	 * @param player : The {@link Player} for whom the registered pledge list is being generated. Must not be null.
+	 * @return A {@link String} representing the HTML page with the list of registered clans and their member counts.
+	 */
+	private String getRegisteredPledgeList(Player player)
+	{
+		// Retrieve the base HTML template.
+		String html = getHtmlText(&quot;azit_messenger003.htm&quot;);
+		
+		int i = 0;
+		for (Entry&lt;Integer, ClanData&gt; entry : _data.entrySet())
+		{
+			// Get the clan associated with the current entry.
+			final Clan attacker = ClanTable.getInstance().getClan(entry.getKey());
+			if (attacker == null || attacker.getClanId() == _hall.getOwnerId())
+				continue;
+			
+			// Replace placeholders in the HTML with the clan&#x27;s name and member count.
+			html = html.replaceAll(&quot;%clan&quot; + i + &quot;%&quot;, attacker.getName());
+			html = html.replaceAll(&quot;%clanMem&quot; + i + &quot;%&quot;, String.valueOf(entry.getValue().players.size()));
+			i++;
+		}
+		
+		// If there are fewer than 5 registered clans, fill the remaining slots with &quot;unregistered&quot; placeholders.
+		if (_data.size() &lt; 5)
+		{
+			for (int c = 0; c &lt; 5; c++)
+			{
+				html = html.replaceAll(&quot;%clan&quot; + c + &quot;%&quot;, &quot;**unregistered**&quot;);
+				html = html.replaceAll(&quot;%clanMem&quot; + c + &quot;%&quot;, &quot;&quot;);
+			}
+		}
+		
+		// Return the populated HTML.
+		return html;
+	}
+	
+	/**
+	 * Register the given {@link Player} if registration is allowed and the ClanData has not reached its member limit.
+	 * @param player : The {@link Player} to register as a Clan member. Must not be null.
+	 * @return A {@link String} representing the HTML page that indicates the result of the registration attempt.
+	 */
+	private String registerClanMember(Player player)
+	{
+		final int clanId = player.getClanId();
+		final ClanData cd = _data.get(clanId);
+		
+		// Check if the ClanData exists and registration is allowed.
+		if (cd == null || !_hall.isRegistering())
+			return &quot;agit_oel_mahum_messeger_7.htm&quot;;
+		
+		// Check if the Clan has reached its member limit.
+		if (cd.players.size() &gt;= 18)
+			return &quot;agit_oel_mahum_messeger_8.htm&quot;;
+		
+		// Add the Player&#x27;s objectId to the Clan&#x27;s list of members.
+		cd.players.add(player.getObjectId());
+		
+		// Persist the registration.
+		saveMember(clanId, player.getObjectId());
+		
+		// Return the resulting HTML page.
+		return &quot;agit_oel_mahum_messeger_9.htm&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q104_SpiritOfMirrors.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q104_SpiritOfMirrors.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.Paperdoll;
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.enums.actors.ClassRace;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.SocialAction;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q104_SpiritOfMirrors extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q104_SpiritOfMirrors&quot;;
+	
+	// Items
+	private static final int GALLINS_OAK_WAND = 748;
+	private static final int WAND_SPIRITBOUND_1 = 1135;
+	private static final int WAND_SPIRITBOUND_2 = 1136;
+	private static final int WAND_SPIRITBOUND_3 = 1137;
+	
+	// Rewards
+	private static final int WAND_OF_ADEPT = 747;
+	private static final int LESSER_HEALING_POT = 1060;
+	private static final int SOULSHOT_NO_GRADE = 1835;
+	private static final int SPIRITSHOT_NO_GRADE = 2509;
+	private static final int ECHO_BATTLE = 4412;
+	private static final int ECHO_LOVE = 4413;
+	private static final int ECHO_SOLITUDE = 4414;
+	private static final int ECHO_FEAST = 4415;
+	private static final int ECHO_CELEBRATION = 4416;
+	
+	// NPCs
+	private static final int GALLINT = 30017;
+	private static final int ARNOLD = 30041;
+	private static final int JOHNSTONE = 30043;
+	private static final int KENYOS = 30045;
+	
+	public Q104_SpiritOfMirrors()
+	{
+		super(104, &quot;Spirit of Mirrors&quot;);
+		
+		setItemsIds(GALLINS_OAK_WAND, WAND_SPIRITBOUND_1, WAND_SPIRITBOUND_2, WAND_SPIRITBOUND_3);
+		
+		addQuestStart(GALLINT);
+		addTalkId(GALLINT, ARNOLD, JOHNSTONE, KENYOS);
+		
+		addMyDying(27003, 27004, 27005);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30017-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+			giveItems(player, GALLINS_OAK_WAND, 1);
+			giveItems(player, GALLINS_OAK_WAND, 1);
+			giveItems(player, GALLINS_OAK_WAND, 1);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getRace() != ClassRace.HUMAN)
+					htmltext = &quot;30017-00.htm&quot;;
+				else if (player.getStatus().getLevel() &lt; 10)
+					htmltext = &quot;30017-01.htm&quot;;
+				else
+					htmltext = &quot;30017-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case GALLINT:
+						if (cond == 1 || cond == 2)
+							htmltext = &quot;30017-04.htm&quot;;
+						else if (cond == 3)
+						{
+							htmltext = &quot;30017-05.htm&quot;;
+							
+							takeItems(player, WAND_SPIRITBOUND_1, -1);
+							takeItems(player, WAND_SPIRITBOUND_2, -1);
+							takeItems(player, WAND_SPIRITBOUND_3, -1);
+							
+							giveItems(player, WAND_OF_ADEPT, 1);
+							
+							if (player.isMageClass())
+								rewardItems(player, SPIRITSHOT_NO_GRADE, 500);
+							else
+								rewardItems(player, SOULSHOT_NO_GRADE, 1000);
+							
+							rewardNewbieShots(player, 0, 3000);
+							rewardItems(player, LESSER_HEALING_POT, 100);
+							rewardItems(player, ECHO_BATTLE, 10);
+							rewardItems(player, ECHO_LOVE, 10);
+							rewardItems(player, ECHO_SOLITUDE, 10);
+							rewardItems(player, ECHO_FEAST, 10);
+							rewardItems(player, ECHO_CELEBRATION, 10);
+							
+							player.broadcastPacket(new SocialAction(player, 3));
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(false);
+						}
+						break;
+					
+					case KENYOS, JOHNSTONE, ARNOLD:
+						htmltext = npc.getNpcId() + &quot;-01.htm&quot;;
+						if (cond == 1)
+						{
+							st.setCond(2);
+							playSound(player, SOUND_MIDDLE);
+						}
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		if (player.getInventory().getItemIdFrom(Paperdoll.RHAND) == GALLINS_OAK_WAND)
+		{
+			switch (npc.getNpcId())
+			{
+				case 27003:
+					if (!player.getInventory().hasItem(WAND_SPIRITBOUND_1))
+					{
+						takeItems(player, GALLINS_OAK_WAND, 1);
+						giveItems(player, WAND_SPIRITBOUND_1, 1);
+						
+						if (player.getInventory().hasItems(WAND_SPIRITBOUND_2, WAND_SPIRITBOUND_3))
+						{
+							st.setCond(3);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else
+							playSound(player, SOUND_ITEMGET);
+					}
+					break;
+				
+				case 27004:
+					if (!player.getInventory().hasItem(WAND_SPIRITBOUND_2))
+					{
+						takeItems(player, GALLINS_OAK_WAND, 1);
+						giveItems(player, WAND_SPIRITBOUND_2, 1);
+						
+						if (player.getInventory().hasItems(WAND_SPIRITBOUND_1, WAND_SPIRITBOUND_3))
+						{
+							st.setCond(3);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else
+							playSound(player, SOUND_ITEMGET);
+					}
+					break;
+				
+				case 27005:
+					if (!player.getInventory().hasItem(WAND_SPIRITBOUND_3))
+					{
+						takeItems(player, GALLINS_OAK_WAND, 1);
+						giveItems(player, WAND_SPIRITBOUND_3, 1);
+						
+						if (player.getInventory().hasItems(WAND_SPIRITBOUND_1, WAND_SPIRITBOUND_2))
+						{
+							st.setCond(3);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else
+							playSound(player, SOUND_ITEMGET);
+					}
+					break;
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

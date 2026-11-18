@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/siegeguards/GludioCleric.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/siegeguards/GludioCleric.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.siegeguards;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class GludioCleric extends DefaultNpc
+{
+	public GludioCleric()
+	{
+		super(&quot;ai/siegeguards&quot;);
+	}
+	
+	public GludioCleric(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		35018,
+		35028,
+		35038,
+		35048,
+		35058,
+		35068,
+		35110,
+		35152,
+		35194,
+		35237,
+		35284,
+		35328,
+		35473,
+		35520
+	};
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (caller.getStatus().getHpRatio() &lt; 0.6 &amp;&amp; Rnd.get(100) &lt; 20)
+			called.getAI().addCastDesire(caller, getNpcSkillByType(called, NpcSkillType.MAGIC_HEAL), 1000000);
+	}
+}</pre>
+            
+</body>
+</html>

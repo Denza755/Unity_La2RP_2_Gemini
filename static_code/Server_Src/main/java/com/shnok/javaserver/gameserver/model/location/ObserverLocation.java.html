@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/ObserverLocation.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/ObserverLocation.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.location;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+public class ObserverLocation extends Location
+{
+	private final int _locId;
+	
+	private final int _yaw;
+	private final int _pitch;
+	private final int _cost;
+	
+	private final int _castleId;
+	
+	public ObserverLocation(int locId, int x, int y, int z, int yaw, int pitch, int cost, int castleId)
+	{
+		super(x, y, z);
+		
+		_locId = locId;
+		
+		_yaw = yaw;
+		_pitch = pitch;
+		_cost = cost;
+		_castleId = castleId;
+	}
+	
+	public ObserverLocation(int locId, Location loc, int yaw, int pitch, int cost, int castleId)
+	{
+		this(locId, loc.getX(), loc.getY(), loc.getZ(), yaw, pitch, cost, castleId);
+	}
+	
+	public ObserverLocation(StatSet set)
+	{
+		this(set.getInteger(&quot;locId&quot;), set.getInteger(&quot;x&quot;), set.getInteger(&quot;y&quot;), set.getInteger(&quot;z&quot;), set.getInteger(&quot;yaw&quot;), set.getInteger(&quot;pitch&quot;), set.getInteger(&quot;cost&quot;), set.getInteger(&quot;castle&quot;));
+	}
+	
+	public int getLocId()
+	{
+		return _locId;
+	}
+	
+	public int getYaw()
+	{
+		return _yaw;
+	}
+	
+	public int getPitch()
+	{
+		return _pitch;
+	}
+	
+	public int getCost()
+	{
+		return _cost;
+	}
+	
+	public int getCastleId()
+	{
+		return _castleId;
+	}
+}</pre>
+            
+</body>
+</html>

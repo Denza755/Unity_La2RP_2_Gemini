@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q640_TheZeroHour.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q640_TheZeroHour.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q640_TheZeroHour extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q640_TheZeroHour&quot;;
+	
+	// NPC
+	private static final int KAHMAN = 31554;
+	
+	// Item
+	private static final int FANG_OF_STAKATO = 8085;
+	
+	private static final int[][] REWARDS =
+	{
+		{
+			12,
+			4042,
+			1
+		},
+		{
+			6,
+			4043,
+			1
+		},
+		{
+			6,
+			4044,
+			1
+		},
+		{
+			81,
+			1887,
+			10
+		},
+		{
+			33,
+			1888,
+			5
+		},
+		{
+			30,
+			1889,
+			10
+		},
+		{
+			150,
+			5550,
+			10
+		},
+		{
+			131,
+			1890,
+			10
+		},
+		{
+			123,
+			1893,
+			5
+		}
+	};
+	
+	public Q640_TheZeroHour()
+	{
+		super(640, &quot;The Zero Hour&quot;);
+		
+		setItemsIds(FANG_OF_STAKATO);
+		
+		addQuestStart(KAHMAN);
+		addTalkId(KAHMAN);
+		
+		// All &quot;spiked&quot; stakatos types, except babies and cannibalistic followers.
+		addMyDying(22105, 22106, 22107, 22108, 22109, 22110, 22111, 22113, 22114, 22115, 22116, 22117, 22118, 22119, 22121);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31554-02.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31554-05.htm&quot;))
+		{
+			if (!player.getInventory().hasItem(FANG_OF_STAKATO))
+				htmltext = &quot;31554-06.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;31554-08.htm&quot;))
+		{
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		else if (StringUtil.isDigit(event))
+		{
+			final int[] reward = REWARDS[Integer.parseInt(event)];
+			
+			if (player.getInventory().getItemCount(FANG_OF_STAKATO) &gt;= reward[0])
+			{
+				htmltext = &quot;31554-09.htm&quot;;
+				takeItems(player, FANG_OF_STAKATO, reward[0]);
+				rewardItems(player, reward[1], reward[2]);
+			}
+			else
+				htmltext = &quot;31554-06.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getStatus().getLevel() &lt; 66)
+					htmltext = &quot;31554-00.htm&quot;;
+				else
+				{
+					QuestState st2 = player.getQuestList().getQuestState(&quot;Q109_InSearchOfTheNest&quot;);
+					htmltext = (st2 != null &amp;&amp; st2.isCompleted()) ? &quot;31554-01.htm&quot; : &quot;31554-10.htm&quot;;
+				}
+				break;
+			
+			case STARTED:
+				htmltext = (player.getInventory().hasItem(FANG_OF_STAKATO)) ? &quot;31554-04.htm&quot; : &quot;31554-03.htm&quot;;
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItemsAlways(st.getPlayer(), FANG_OF_STAKATO, 1, 0);
+	}
+}</pre>
+            
+</body>
+</html>

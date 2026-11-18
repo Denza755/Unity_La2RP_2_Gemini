@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q383_SearchingForTreasure.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q383_SearchingForTreasure.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q383_SearchingForTreasure extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q383_SearchingForTreasure&quot;;
+	
+	// NPCs
+	private static final int ESPEN = 30890;
+	private static final int PIRATE_CHEST = 31148;
+	
+	// Items
+	private static final int PIRATE_TREASURE_MAP = 5915;
+	private static final int THIEF_KEY = 1661;
+	
+	public Q383_SearchingForTreasure()
+	{
+		super(383, &quot;Searching for Treasure&quot;);
+		
+		addQuestStart(ESPEN);
+		addTalkId(ESPEN, PIRATE_CHEST);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30890-04.htm&quot;))
+		{
+			// Sell the map.
+			if (player.getInventory().hasItem(PIRATE_TREASURE_MAP))
+			{
+				takeItems(player, PIRATE_TREASURE_MAP, 1);
+				rewardItems(player, 57, 1000);
+			}
+			else
+				htmltext = &quot;30890-06.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30890-07.htm&quot;))
+		{
+			// Listen the story.
+			if (player.getInventory().hasItem(PIRATE_TREASURE_MAP))
+			{
+				st.setState(QuestStatus.STARTED);
+				st.setCond(1);
+				playSound(player, SOUND_ACCEPT);
+			}
+			else
+				htmltext = &quot;30890-06.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30890-11.htm&quot;))
+		{
+			// Decipher the map.
+			if (player.getInventory().hasItem(PIRATE_TREASURE_MAP))
+			{
+				st.setCond(2);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, PIRATE_TREASURE_MAP, 1);
+			}
+			else
+				htmltext = &quot;30890-06.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;31148-02.htm&quot;))
+		{
+			if (player.getInventory().hasItem(THIEF_KEY))
+			{
+				takeItems(player, THIEF_KEY, 1);
+				
+				// Adena reward.
+				int i1 = 0;
+				
+				int i0 = Rnd.get(100);
+				if (i0 &lt; 5)
+					giveItems(player, 2450, 1);
+				else if (i0 &lt; 6)
+					giveItems(player, 2451, 1);
+				else if (i0 &lt; 18)
+					giveItems(player, 956, 1);
+				else if (i0 &lt; 28)
+					giveItems(player, 952, 1);
+				else
+					i1 += 500;
+				
+				i0 = Rnd.get(1000);
+				if (i0 &lt; 25)
+					giveItems(player, 4481, 1);
+				else if (i0 &lt; 50)
+					giveItems(player, 4482, 1);
+				else if (i0 &lt; 75)
+					giveItems(player, 4483, 1);
+				else if (i0 &lt; 100)
+					giveItems(player, 4484, 1);
+				else if (i0 &lt; 125)
+					giveItems(player, 4485, 1);
+				else if (i0 &lt; 150)
+					giveItems(player, 4486, 1);
+				else if (i0 &lt; 175)
+					giveItems(player, 4487, 1);
+				else if (i0 &lt; 200)
+					giveItems(player, 4488, 1);
+				else if (i0 &lt; 225)
+					giveItems(player, 4489, 1);
+				else if (i0 &lt; 250)
+					giveItems(player, 4490, 1);
+				else if (i0 &lt; 275)
+					giveItems(player, 4491, 1);
+				else if (i0 &lt; 300)
+					giveItems(player, 4492, 1);
+				else
+					i1 += 300;
+				
+				i0 = Rnd.get(100);
+				if (i0 &lt; 4)
+					giveItems(player, 1337, 1);
+				else if (i0 &lt; 8)
+					giveItems(player, 1338, 2);
+				else if (i0 &lt; 12)
+					giveItems(player, 1339, 2);
+				else if (i0 &lt; 16)
+					giveItems(player, 3447, 2);
+				else if (i0 &lt; 20)
+					giveItems(player, 3450, 1);
+				else if (i0 &lt; 25)
+					giveItems(player, 3453, 1);
+				else if (i0 &lt; 27)
+					giveItems(player, 3456, 1);
+				else
+					i1 += 500;
+				
+				i0 = Rnd.get(100);
+				if (i0 &lt; 20)
+					giveItems(player, 4408, 1);
+				else if (i0 &lt; 40)
+					giveItems(player, 4409, 1);
+				else if (i0 &lt; 60)
+					giveItems(player, 4418, 1);
+				else if (i0 &lt; 80)
+					giveItems(player, 4419, 1);
+				else
+					i1 += 500;
+				
+				rewardItems(player, 57, i1);
+				
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(true);
+			}
+			else
+				htmltext = &quot;31148-03.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 42 || !player.getInventory().hasItem(PIRATE_TREASURE_MAP)) ? &quot;30890-01.htm&quot; : &quot;30890-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case ESPEN:
+						if (cond == 1)
+							htmltext = &quot;30890-07a.htm&quot;;
+						else
+							htmltext = &quot;30890-12.htm&quot;;
+						break;
+					
+					case PIRATE_CHEST:
+						if (cond == 2)
+							htmltext = &quot;31148-01.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

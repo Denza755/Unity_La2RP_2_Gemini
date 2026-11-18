@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/ai/DesireQueue.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/ai/DesireQueue.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.ai;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+
+/**
+ * Set of {@link Desire}s, which is used to determine what kind of {@link Intention} the owner should do.&lt;br&gt;
+ * &lt;br&gt;
+ * {@link #getLast()} method returns the {@link Desire} with the highest weight.&lt;br&gt;
+ * &lt;br&gt;
+ * If the {@link Desire} with a set of parameters is already in the list, only the weight will be added to the existing one.
+ */
+public class DesireQueue
+{
+	private static final int MAX_CAPACITY = 50;
+	
+	private final Set&lt;Desire&gt; _desires = ConcurrentHashMap.newKeySet();
+	
+	public Set&lt;Desire&gt; getDesires()
+	{
+		return _desires;
+	}
+	
+	public void addOrUpdate(Desire desire)
+	{
+		final List&lt;Desire&gt; desires = _desires.stream().filter(d -&gt; d.equals(desire)).toList();
+		if (!desires.isEmpty())
+			desires.forEach(d -&gt; d.addWeight(desire.getWeight()));
+		else if (_desires.size() &lt; MAX_CAPACITY)
+			_desires.add(desire);
+	}
+	
+	public void decreaseWeightByType(IntentionType intentionType, double amount)
+	{
+		_desires.stream().filter(d -&gt; d.getType() == intentionType).forEach(d -&gt;
+		{
+			if (d.getWeight() - amount &lt; 0)
+				_desires.remove(d);
+			else
+				d.reduceWeight(amount);
+		});
+	}
+	
+	public Desire getLast()
+	{
+		if (_desires.isEmpty())
+			return null;
+		
+		return _desires.stream().max(Comparator.comparingDouble(Desire::getWeight)).orElse(null);
+	}
+}</pre>
+            
+</body>
+</html>

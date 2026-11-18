@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/ItemTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/ItemTable.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class ItemTable
+{
+    private static ItemTable _instance;
+    public static ItemTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new ItemTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    [SerializeField] private List&lt;int&gt; weaponsToLoad = new List&lt;int&gt;();
+    [SerializeField] private List&lt;int&gt; armorsToLoad = new List&lt;int&gt;();
+    [SerializeField] private List&lt;int&gt; itemsToLoad = new List&lt;int&gt;();
+
+    private Dictionary&lt;int, Weapon&gt; _weapons = new Dictionary&lt;int, Weapon&gt;();
+    private Dictionary&lt;int, Armor&gt; _armors = new Dictionary&lt;int, Armor&gt;();
+    private Dictionary&lt;int, EtcItem&gt; _etcItems = new Dictionary&lt;int, EtcItem&gt;();
+
+    public Dictionary&lt;int, Weapon&gt; Weapons { get { return _weapons; } }
+    public Dictionary&lt;int, Armor&gt; Armors { get { return _armors; } }
+    public Dictionary&lt;int, EtcItem&gt; EtcItems { get { return _etcItems; } }
+
+    public static int NAKED_CHEST = 21;
+    public static int NAKED_LEGS = 28;
+    public static int NAKED_GLOVES = 48;
+    public static int NAKED_BOOTS = 35;
+    private bool _loadAll = true;
+
+    public void Initialize()
+    {
+        if (!_loadAll)
+        {
+            FillDataToLoad();
+        }
+    }
+
+    // private void OnDestroy()
+    // {
+    //     _weapons.Clear();
+    //     _armors.Clear();
+    //     _instance = null;
+    // }
+
+    public void CacheItems()
+    {
+        CacheWeapons();
+        CacheArmors();
+        CacheEtcItems();
+    }
+
+    private void FillDataToLoad()
+    {
+        weaponsToLoad = new List&lt;int&gt; { 1, 2, 3, 4, 5, 6, 7, 10, 14, 89, 102, 129, 177, 188, 156, 275, 2369, 2370, 5284, 20 };
+        armorsToLoad = new List&lt;int&gt; { NAKED_CHEST, NAKED_LEGS, NAKED_GLOVES, NAKED_BOOTS, 425, 461, 1146, 1147, 45, 118, 112, 116 };
+        itemsToLoad = new List&lt;int&gt;() { 1835, 3947, 2509, 57, 736, 5588, 17 };
+    }
+
+    public bool ShouldLoadItem(int id)
+    {
+        if (_loadAll) return true;
+
+        if (weaponsToLoad.Count == 0 &amp;&amp; armorsToLoad.Count == 0 &amp;&amp; itemsToLoad.Count == 0)
+        {
+            return true;
+        }
+
+        if (weaponsToLoad.Contains(id))
+        {
+            return true;
+        }
+        if (armorsToLoad.Contains(id))
+        {
+            return true;
+        }
+        if (itemsToLoad.Contains(id))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void CacheWeapons()
+    {
+        foreach (KeyValuePair&lt;int, Weapongrp&gt; kvp in WeapongrpTable.Instance.WeaponGrps)
+        {
+            if (_weapons.ContainsKey(kvp.Key))
+            {
+                continue;
+            }
+
+            Weapongrp weapongrp = kvp.Value;
+            ItemName itemName = ItemNameTable.Instance.GetItemName(kvp.Key);
+            ItemStatData itemStatData = ItemStatDataTable.Instance.GetItemStatData(kvp.Key);
+
+            Weapon weapon = new Weapon(kvp.Key, itemName, itemStatData, weapongrp);
+
+            _weapons.TryAdd(kvp.Key, weapon);
+
+        }
+    }
+
+    private void CacheArmors()
+    {
+        foreach (KeyValuePair&lt;int, Armorgrp&gt; kvp in ArmorgrpTable.Instance.ArmorGrps)
+        {
+            if (_armors.ContainsKey(kvp.Key))
+            {
+                continue;
+            }
+
+            Armorgrp armorgrp = kvp.Value;
+            ItemName itemName = ItemNameTable.Instance.GetItemName(kvp.Key);
+            ItemStatData itemStatData = ItemStatDataTable.Instance.GetItemStatData(kvp.Key);
+
+            Armor armor = new Armor(kvp.Key, itemName, itemStatData, armorgrp);
+            _armors.TryAdd(kvp.Key, armor);
+        }
+    }
+
+    private void CacheEtcItems()
+    {
+        foreach (KeyValuePair&lt;int, EtcItemgrp&gt; kvp in EtcItemgrpTable.Instance.EtcItemGrps)
+        {
+            if (_etcItems.ContainsKey(kvp.Key))
+            {
+                continue;
+            }
+
+            EtcItemgrp itemgrp = kvp.Value;
+            ItemName itemName = ItemNameTable.Instance.GetItemName(kvp.Key);
+            ItemStatData itemStatData = ItemStatDataTable.Instance.GetItemStatData(kvp.Key);
+
+            EtcItem item = new EtcItem(kvp.Key, itemName, itemStatData, itemgrp);
+            _etcItems.TryAdd(kvp.Key, item);
+        }
+    }
+
+    public Weapon GetWeapon(int id)
+    {
+        Weapon weapon;
+        _weapons.TryGetValue(id, out weapon);
+
+        return weapon;
+    }
+
+    public Armor GetArmor(int id)
+    {
+        Armor armor;
+        _armors.TryGetValue(id, out armor);
+
+        return armor;
+    }
+
+    public EtcItem GetEtcItem(int id)
+    {
+        EtcItem item;
+        _etcItems.TryGetValue(id, out item);
+
+        return item;
+    }
+
+    public AbstractItem GetItem(int id)
+    {
+        if (_weapons.TryGetValue(id, out Weapon weapon))
+        {
+            return weapon;
+        }
+        if (_armors.TryGetValue(id, out Armor armor))
+        {
+            return armor;
+        }
+        if (_etcItems.TryGetValue(id, out EtcItem etcItem))
+        {
+            return etcItem;
+        }
+
+        return null;
+    }
+}
+</pre>
+            
+</body>
+</html>

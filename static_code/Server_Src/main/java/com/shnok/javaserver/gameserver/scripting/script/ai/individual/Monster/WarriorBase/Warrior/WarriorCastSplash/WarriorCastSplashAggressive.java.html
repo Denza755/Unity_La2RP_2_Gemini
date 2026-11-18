@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastSplash/WarriorCastSplashAggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastSplash/WarriorCastSplashAggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.WarriorCastSplash;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+
+public class WarriorCastSplashAggressive extends WarriorCastSplash
+{
+	public WarriorCastSplashAggressive()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/WarriorCastSplash&quot;);
+	}
+	
+	public WarriorCastSplashAggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21428,
+		20815,
+		20212,
+		20294,
+		20512,
+		20549,
+		21141,
+		21147,
+		21149,
+		21153,
+		21159,
+		21164
+	};
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (!(creature instanceof Playable))
+			return;
+		
+		tryToAttack(npc, creature);
+		
+		super.onSeeCreature(npc, creature);
+	}
+}</pre>
+            
+</body>
+</html>

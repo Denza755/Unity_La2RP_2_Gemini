@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/World/Spawner/PlayerSpawner.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/World/Spawner/PlayerSpawner.cs</h1>
+            <pre>using UnityEngine;
+
+public class PlayerSpawner : EntitySpawnStrategy&lt;PlayerAppearance, PlayerStats, PlayerStatus&gt;
+{
+    public PlayerSpawner(EventProcessor eventProcessor)
+        : base(eventProcessor)
+    {
+    }
+
+    #region Spawn
+    protected override void SpawnEntity(NetworkIdentity identity, PlayerStatus status,
+        PlayerStats stats, PlayerAppearance appearance, EntityActionInfo actionInfo)
+    {
+        identity.SetPosY(World.Instance.GetGroundHeight(identity.Position));
+        identity.EntityType = EntityType.Player;
+
+        CharacterRace race = (CharacterRace)appearance.Race;
+
+        CharacterModelType raceId = CharacterModelTypeParser.ParseRace(race, appearance.Sex, identity.IsMage);
+
+        GameObject go = CharacterBuilder.Instance.BuildCharacterBase(raceId, appearance, identity.EntityType);
+        float rotation = VectorUtils.ConvertRotToUnity(identity.Heading);
+        go.transform.eulerAngles = new Vector3(go.transform.eulerAngles.x, rotation, go.transform.eulerAngles.z);
+        go.transform.position = identity.Position;
+        go.transform.name = &quot;_Player&quot;;
+
+        PlayerEntity player = go.GetComponent&lt;PlayerEntity&gt;();
+        player.AnimationController.Initialize();
+        go.GetComponent&lt;NetworkTransformShare&gt;().enabled = true;
+        go.GetComponent&lt;PlayerController&gt;().enabled = true;
+        go.GetComponent&lt;PlayerController&gt;().Initialize();
+
+        go.SetActive(true);
+        player.Stats = new PlayerStats();
+        player.Status = new PlayerStatus();
+
+        player.Gear.Initialize(player.Identity.Id);
+
+        UpdateEntityAsync(identity, status, stats, appearance, actionInfo);
+
+        player.Initialize();
+
+        CameraController.Instance.enabled = true;
+        CameraController.Instance.SetTarget(go);
+
+        if (RulerManager.Instance != null &amp;&amp; RulerManager.Instance.HasRulerAccess())
+        {
+            if (RulerHUDWindow.Instance != null)
+            {
+                RulerHUDWindow.Instance.RefreshState();
+            }
+        }
+
+        PlayerStateMachine.Instance.ChangeState(PlayerState.IDLE);
+
+        WorldSpawner.Instance.AddObject(identity.Id, player);
+
+        Debug.Log($&quot;Spawn player {race} - {raceId}&quot;);
+
+    }
+    #endregion
+
+    #region Update
+    protected override void UpdateEntityAsync(NetworkIdentity identity, PlayerStatus status, PlayerStats stats,
+    PlayerAppearance appearance, EntityActionInfo actionInfo)
+    {
+        PlayerEntity.Instance.Identity.UpdateIdentity(identity);
+        ((PlayerStatus)PlayerEntity.Instance.Status).UpdateStatus(status);
+
+        UpdateStatsAndAppearance(PlayerEntity.Instance, stats, appearance, actionInfo);
+
+        CharacterInfoWindow.Instance.UpdateValues();
+        InventoryWindow.Instance.RefreshWeight();
+        TargetWindow.Instance?.RefreshTargetColor();
+
+        GameManager.Instance.NotifyEvent(GameEvent.CHAR_LOADED);
+
+        NetworkTransformShare.Instance.SharePosition();
+    }
+
+    protected override void UpdateEntitySync(Entity entity, NetworkIdentity identity, PlayerStatus status, PlayerStats stats, PlayerAppearance appearance, EntityActionInfo actionInfo)
+    {
+
+    }
+
+    private void UpdateStatsAndAppearance(PlayerEntity entity, PlayerStats stats,
+        PlayerAppearance appearance, EntityActionInfo actionInfo)
+    {
+        entity.UpdateMoveType(actionInfo.Running);
+
+        entity.UpdateAppearance(appearance);
+        entity.UpdatePAtkSpeed(stats.PAtkSpd);
+        entity.UpdateMAtkSpeed(stats.MAtkSpd);
+        entity.UpdateWalkSpeed(stats.WalkSpeed);
+        entity.UpdateRunSpeed(stats.RunSpeed);
+
+        ((PlayerStats)entity.Stats).UpdateStats(stats);
+
+        entity.UpdateAppearance(appearance);
+
+        UpdateAction(entity, actionInfo);
+    }
+    #endregion
+}</pre>
+            
+</body>
+</html>

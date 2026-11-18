@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/service/GameServerListenerService.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/service/GameServerListenerService.java</h1>
+            <pre>package com.shnok.javaserver.service;
+
+import com.shnok.javaserver.thread.GameServerThread;
+import lombok.extern.log4j.Log4j2;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.shnok.javaserver.config.Configuration.server;
+
+@Log4j2
+public class GameServerListenerService extends Thread {
+    private final List&lt;GameServerThread&gt; gameservers = new ArrayList&lt;&gt;();
+
+    private int port;
+    private ServerSocket serverSocket;
+
+    private static GameServerListenerService instance;
+    public static GameServerListenerService getInstance() {
+        if (instance == null) {
+            instance = new GameServerListenerService();
+        }
+        return instance;
+    }
+
+    public void initialize() {
+        try {
+            port = server.gameserverPort();
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            throw new RuntimeException(&quot;Could not create ServerSocket &quot;, e);
+        }
+    }
+
+    @Override
+    public void run() {
+        log.info(&quot;Listening for new gameservers on port: {}. &quot;, port);
+        while (true) {
+            Socket connection = null;
+            try {
+                connection = serverSocket.accept();
+                addGameServer(connection);
+            } catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    if (connection != null) {
+                        connection.close();
+                    }
+                } catch (Exception e2) {
+                    e2.printStackTrace();
+                }
+
+                if (isInterrupted()) {
+                    try {
+                        serverSocket.close();
+                    } catch (IOException io) {
+                        io.printStackTrace();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public void addGameServer(Socket socket) {
+        GameServerThread client = new GameServerThread(socket);
+        client.start();
+        gameservers.add(client);
+    }
+
+    public void removeGameServer(GameServerThread s) {
+        synchronized (gameservers) {
+            gameservers.remove(s);
+        }
+    }
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/FriendsBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/FriendsBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.util.Set;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.data.manager.RelationManager;
+import com.shnok.javaserver.gameserver.data.sql.PlayerInfoTable;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.FriendList;
+
+public class FriendsBBSManager extends BaseBBSManager
+{
+	private static final String FRIENDLIST_DELETE_BUTTON = &quot;&lt;br&gt;\n&lt;table&gt;&lt;tr&gt;&lt;td width=10&gt;&lt;/td&gt;&lt;td&gt;Are you sure you want to delete all friends from your Friends List?&lt;/td&gt;&lt;td width=20&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=\&quot;OK\&quot; action=\&quot;bypass _friend;delall\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;;
+	private static final String BLOCKLIST_DELETE_BUTTON = &quot;&lt;br&gt;\n&lt;table&gt;&lt;tr&gt;&lt;td width=10&gt;&lt;/td&gt;&lt;td&gt;Are you sure you want to delete all players from your Block List?&lt;/td&gt;&lt;td width=20&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=\&quot;OK\&quot; action=\&quot;bypass _block;delall\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;;
+	
+	protected FriendsBBSManager()
+	{
+	}
+	
+	@Override
+	public void parseCmd(String command, Player player)
+	{
+		if (command.startsWith(&quot;_friendlist&quot;))
+			showFriendsList(player, false);
+		else if (command.startsWith(&quot;_blocklist&quot;))
+			showBlockList(player, false);
+		else if (command.startsWith(&quot;_friend&quot;))
+		{
+			StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			String action = st.nextToken();
+			
+			if (action.equals(&quot;select&quot;))
+			{
+				player.selectFriend((st.hasMoreTokens()) ? Integer.valueOf(st.nextToken()) : 0);
+				showFriendsList(player, false);
+			}
+			else if (action.equals(&quot;deselect&quot;))
+			{
+				player.deselectFriend((st.hasMoreTokens()) ? Integer.valueOf(st.nextToken()) : 0);
+				showFriendsList(player, false);
+			}
+			else if (action.equals(&quot;delall&quot;))
+			{
+				RelationManager.getInstance().removeAllFromFriendList(player);
+				player.getSelectedFriendList().clear();
+				
+				showFriendsList(player, false);
+				
+				player.sendMessage(&quot;You have cleared your friends list.&quot;);
+				player.sendPacket(new FriendList(player));
+			}
+			else if (action.equals(&quot;delconfirm&quot;))
+				showFriendsList(player, true);
+			else if (action.equals(&quot;del&quot;))
+			{
+				for (int friendId : player.getSelectedFriendList())
+				{
+					// Update friend&#x27;s friendlist.
+					final Player friend = World.getInstance().getPlayer(friendId);
+					if (friend != null)
+					{
+						RelationManager.getInstance().removeFromFriendList(friend, player.getObjectId());
+						friend.sendPacket(new FriendList(friend));
+					}
+					
+					// The friend is deleted from your friendlist.
+					RelationManager.getInstance().removeFromFriendList(player, friendId);
+				}
+				
+				player.getSelectedFriendList().clear();
+				showFriendsList(player, false);
+				
+				player.sendPacket(new FriendList(player)); // update friendList *heavy method*
+			}
+			else if (action.equals(&quot;mail&quot;))
+			{
+				if (!player.getSelectedFriendList().isEmpty())
+					showMailWrite(player);
+			}
+		}
+		else if (command.startsWith(&quot;_block&quot;))
+		{
+			StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			String action = st.nextToken();
+			
+			boolean delMsg = false;
+			
+			if (action.equals(&quot;select&quot;))
+				player.selectBlock((st.hasMoreTokens()) ? Integer.valueOf(st.nextToken()) : 0);
+			else if (action.equals(&quot;deselect&quot;))
+				player.deselectBlock((st.hasMoreTokens()) ? Integer.valueOf(st.nextToken()) : 0);
+			else if (action.equals(&quot;delall&quot;))
+			{
+				RelationManager.getInstance().removeAllFromBlockList(player);
+				player.getSelectedBlocksList().clear();
+			}
+			else if (action.equals(&quot;delconfirm&quot;))
+				delMsg = true;
+			else if (action.equals(&quot;del&quot;))
+			{
+				for (int blockId : player.getSelectedBlocksList())
+					RelationManager.getInstance().removeFromBlockList(player, blockId);
+				
+				player.getSelectedBlocksList().clear();
+			}
+			showBlockList(player, delMsg);
+		}
+		else
+			super.parseCmd(command, player);
+	}
+	
+	@Override
+	public void parseWrite(String ar1, String ar2, String ar3, String ar4, String ar5, Player player)
+	{
+		if (ar1.equalsIgnoreCase(&quot;mail&quot;))
+		{
+			MailBBSManager.getInstance().sendMail(ar2, ar4, ar5, player);
+			showFriendsList(player, false);
+		}
+		else
+			super.parseWrite(ar1, ar2, ar3, ar4, ar5, player);
+	}
+	
+	@Override
+	protected String getFolder()
+	{
+		return &quot;friend/&quot;;
+	}
+	
+	private static void showFriendsList(Player player, boolean delMsg)
+	{
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;friend/friend-list.htm&quot;);
+		if (content == null)
+			return;
+		
+		// Retrieve player&#x27;s friendlist and selected
+		final Set&lt;Integer&gt; list = RelationManager.getInstance().getFriendList(player.getObjectId());
+		final Set&lt;Integer&gt; selectedList = player.getSelectedFriendList();
+		
+		final StringBuilder sb = new StringBuilder();
+		
+		// Friendlist
+		for (Integer id : list)
+		{
+			if (selectedList.contains(id))
+				continue;
+			
+			final String friendName = PlayerInfoTable.getInstance().getPlayerName(id);
+			if (friendName == null)
+				continue;
+			
+			final Player friend = World.getInstance().getPlayer(id);
+			StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass _friend;select;&quot;, id, &quot;\&quot;&gt;[Select]&lt;/a&gt;&amp;nbsp;&quot;, friendName, &quot; &quot;, ((friend != null &amp;&amp; friend.isOnline()) ? &quot;(on)&quot; : &quot;(off)&quot;), &quot;&lt;br1&gt;&quot;);
+		}
+		content = content.replace(&quot;%friendslist%&quot;, sb.toString());
+		
+		// Cleanup sb.
+		sb.setLength(0);
+		
+		// Selected friendlist
+		for (Integer id : selectedList)
+		{
+			final String friendName = PlayerInfoTable.getInstance().getPlayerName(id);
+			if (friendName == null)
+				continue;
+			
+			final Player friend = World.getInstance().getPlayer(id);
+			StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass _friend;deselect;&quot;, id, &quot;\&quot;&gt;[Deselect]&lt;/a&gt;&amp;nbsp;&quot;, friendName, &quot; &quot;, ((friend != null &amp;&amp; friend.isOnline()) ? &quot;(on)&quot; : &quot;(off)&quot;), &quot;&lt;br1&gt;&quot;);
+		}
+		content = content.replace(&quot;%selectedFriendsList%&quot;, sb.toString());
+		
+		// Delete button.
+		content = content.replace(&quot;%deleteMSG%&quot;, (delMsg) ? FRIENDLIST_DELETE_BUTTON : &quot;&quot;);
+		
+		separateAndSend(content, player);
+	}
+	
+	private static void showBlockList(Player player, boolean delMsg)
+	{
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;friend/friend-blocklist.htm&quot;);
+		if (content == null)
+			return;
+		
+		// Retrieve player&#x27;s blocklist and selected
+		final Set&lt;Integer&gt; list = RelationManager.getInstance().getBlockList(player.getObjectId());
+		final Set&lt;Integer&gt; selectedList = player.getSelectedBlocksList();
+		
+		final StringBuilder sb = new StringBuilder();
+		
+		// Blocklist
+		for (Integer id : list)
+		{
+			if (selectedList.contains(id))
+				continue;
+			
+			final String blockName = PlayerInfoTable.getInstance().getPlayerName(id);
+			if (blockName == null)
+				continue;
+			
+			final Player block = World.getInstance().getPlayer(id);
+			StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass _block;select;&quot;, id, &quot;\&quot;&gt;[Select]&lt;/a&gt;&amp;nbsp;&quot;, blockName, &quot; &quot;, ((block != null &amp;&amp; block.isOnline()) ? &quot;(on)&quot; : &quot;(off)&quot;), &quot;&lt;br1&gt;&quot;);
+		}
+		content = content.replace(&quot;%blocklist%&quot;, sb.toString());
+		
+		// Cleanup sb.
+		sb.setLength(0);
+		
+		// Selected Blocklist
+		for (Integer id : selectedList)
+		{
+			final String blockName = PlayerInfoTable.getInstance().getPlayerName(id);
+			if (blockName == null)
+				continue;
+			
+			final Player block = World.getInstance().getPlayer(id);
+			StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass _block;deselect;&quot;, id, &quot;\&quot;&gt;[Deselect]&lt;/a&gt;&amp;nbsp;&quot;, blockName, &quot; &quot;, ((block != null &amp;&amp; block.isOnline()) ? &quot;(on)&quot; : &quot;(off)&quot;), &quot;&lt;br1&gt;&quot;);
+		}
+		content = content.replace(&quot;%selectedBlocksList%&quot;, sb.toString());
+		
+		// Delete button.
+		content = content.replace(&quot;%deleteMSG%&quot;, (delMsg) ? BLOCKLIST_DELETE_BUTTON : &quot;&quot;);
+		
+		separateAndSend(content, player);
+	}
+	
+	public static final void showMailWrite(Player player)
+	{
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;friend/friend-mail.htm&quot;);
+		if (content == null)
+			return;
+		
+		final StringBuilder sb = new StringBuilder();
+		for (int id : player.getSelectedFriendList())
+		{
+			String friendName = PlayerInfoTable.getInstance().getPlayerName(id);
+			if (friendName == null)
+				continue;
+			
+			if (sb.length() &gt; 0)
+				sb.append(&quot;;&quot;);
+			
+			sb.append(friendName);
+		}
+		
+		content = content.replace(&quot;%list%&quot;, sb.toString());
+		
+		separateAndSend(content, player);
+	}
+	
+	public static FriendsBBSManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final FriendsBBSManager INSTANCE = new FriendsBBSManager();
+	}
+}</pre>
+            
+</body>
+</html>

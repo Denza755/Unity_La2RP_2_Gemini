@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/spawn/MultiSpawn.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/spawn/MultiSpawn.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.spawn;
+
+import java.io.InvalidClassException;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.geometry.AShape;
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.enums.MakerSpawnTime;
+import com.shnok.javaserver.gameserver.geoengine.GeoEngine;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.model.memo.SpawnMemo;
+import com.shnok.javaserver.gameserver.model.records.PrivateData;
+
+/**
+ * This class manages the spawn and respawn of {@link Npc}s defined by {@link NpcMaker} in a territory based system.&lt;br&gt;
+ * The {@link SpawnLocation} can be:
+ * &lt;ul&gt;
+ * &lt;li&gt;Fixed coordinates.
+ * &lt;li&gt;Random one of defined coordinates.
+ * &lt;li&gt;Random coordinate from a {@link Territory} of linked {@link NpcMaker}.
+ * &lt;/ul&gt;
+ */
+public final class MultiSpawn extends ASpawn
+{
+	private static final int RANDOM_WALK_LOOP_LIMIT = 3;
+	
+	private final NpcMaker _npcMaker;
+	private final int _total;
+	private final int[][] _coords;
+	
+	private final Set&lt;Npc&gt; _npcs = ConcurrentHashMap.newKeySet();
+	
+	public MultiSpawn(NpcMaker npcMaker, NpcTemplate template, int total, int respawnDelay, int respawnRandom, List&lt;PrivateData&gt; privateData, SpawnMemo aiParams, int[][] coords, SpawnData spawnData) throws SecurityException, ClassNotFoundException, NoSuchMethodException, InvalidClassException
+	{
+		super(template);
+		
+		_respawnDelay = Math.max(0, respawnDelay);
+		_respawnRandom = Math.min(respawnDelay, Math.max(0, respawnRandom));
+		
+		_privateData = privateData;
+		_aiParams = aiParams;
+		
+		_npcMaker = npcMaker;
+		_coords = coords;
+		_spawnData = spawnData;
+		
+		// Database name is specified -&gt; single spawn (ignore total value, only 1 instance of NPC may exist).
+		if (_spawnData != null)
+			_total = 1;
+		// Coordinates specified -&gt; fixed spawn.
+		else if (_coords != null)
+			_total = total;
+		// Coordinates not specified -&gt; random spawn.
+		else
+			_total = (int) Math.round(total * Config.SPAWN_MULTIPLIER);
+	}
+	
+	@Override
+	public Npc getNpc()
+	{
+		if (_npcs.isEmpty())
+			return null;
+		
+		return _npcs.iterator().next();
+	}
+	
+	@Override
+	public SpawnLocation getSpawnLocation()
+	{
+		// &quot;anywhere&quot;, spawn is random, generate random coordinates from territory.
+		if (_coords == null)
+			return _npcMaker.getTerritory().getRandomLocation(_npcMaker.getBannedTerritory());
+		
+		// &quot;fixed&quot;, spawn is defined by one set of coordinates.
+		if (_coords.length == 1)
+			return new SpawnLocation(_coords[0][0], _coords[0][1], _coords[0][2], _coords[0][3]);
+		
+		// &quot;fixed_random&quot;, spawn is defined by more sets of coordinates, pick one random.
+		int chance = Rnd.get(100);
+		for (int[] coord : _coords)
+		{
+			chance -= coord[4];
+			if (chance &lt; 0)
+				return new SpawnLocation(coord[0], coord[1], coord[2], Rnd.get(65536));
+		}
+		
+		// Should never happen.
+		return null;
+	}
+	
+	@Override
+	public Location getRandomWalkLocation(Npc npc, int offset)
+	{
+		// Generate a new Location object based on Npc position.
+		final Location loc = npc.getPosition().clone();
+		
+		// Npc position is out of the territory, return a random location based on NpcMaker&#x27;s Territory.
+		final AShape shape = _npcMaker.getTerritory().getShape(loc);
+		if (shape == null)
+			return _npcMaker.getTerritory().getRandomLocation();
+		
+		// Attempt three times to find a random Location matching the offset and banned territory.
+		for (int loop = 0; loop &lt; RANDOM_WALK_LOOP_LIMIT; loop++)
+		{
+			// Generate random location based on offset. Reset each attempt to current Npc position.
+			loc.set(npc.getPosition());
+			loc.addRandomOffsetBetween(offset / Rnd.get(2, 4), offset);
+			
+			// Validate location using NpcMaker&#x27;s territory.
+			if (!_npcMaker.getTerritory().isInside(loc))
+				continue;
+			
+			// Validate location using NpcMaker&#x27;s banned territory.
+			if (_npcMaker.getBannedTerritory() != null &amp;&amp; _npcMaker.getBannedTerritory().isInside(loc))
+				continue;
+			
+			// Validate location using geodata.
+			loc.set(GeoEngine.getInstance().getValidLocation(npc, loc));
+			return loc;
+		}
+		
+		// We didn&#x27;t find a valid Location ; find the current AShape associated to the Npc position, and aim for its center.
+		loc.set(GeoEngine.getInstance().getValidLocation(npc, shape.getCenter().getX(), shape.getCenter().getY(), npc.getZ()));
+		
+		return loc;
+	}
+	
+	@Override
+	public boolean isInMyTerritory(WorldObject worldObject)
+	{
+		final Location loc = worldObject.getPosition().clone();
+		
+		// Check location using NpcMaker&#x27;s banned territory.
+		if (_npcMaker.getBannedTerritory() != null &amp;&amp; _npcMaker.getBannedTerritory().isInside(loc))
+			return false;
+		
+		// Check location using NpcMaker&#x27;s territory.
+		return _npcMaker.getTerritory().isInside(loc);
+	}
+	
+	@Override
+	public Npc doSpawn(boolean isSummonSpawn, Creature summoner)
+	{
+		final Npc npc = super.doSpawn(isSummonSpawn, summoner);
+		if (npc == null)
+		{
+			LOGGER.warn(&quot;Can not spawn id {} from maker {}.&quot;, getNpcId(), _npcMaker.getName());
+			return null;
+		}
+		
+		// Process dynamic Residence setting.
+		final MakerSpawnTime mst = _npcMaker.getMakerSpawnTime();
+		if (mst != null &amp;&amp; mst != MakerSpawnTime.DOOR_OPEN)
+		{
+			final String[] params = _npcMaker.getMakerSpawnTimeParams();
+			if (params != null)
+				npc.setResidence(params[0]);
+		}
+		
+		_npcs.add(npc);
+		return npc;
+	}
+	
+	@Override
+	public void onSpawn(Npc npc)
+	{
+		synchronized (_npcMaker)
+		{
+			// Notify NpcMaker.
+			_npcMaker.onSpawn(npc);
+		}
+	}
+	
+	@Override
+	public void doDelete()
+	{
+		// Copying set prevents deleteAll to trigger onNpcDeleted and double spawns.
+		Set&lt;Npc&gt; tmpNpcs = Set.copyOf(_npcs);
+		
+		_npcs.clear();
+		
+		tmpNpcs.forEach(npc -&gt;
+		{
+			// Cancel respawn task.
+			npc.cancelRespawn();
+			
+			// Delete privates which were manually spawned via createOnePrivate / createOnePrivateEx.
+			if (npc.isMaster())
+				npc.getMinions().forEach(Npc::deleteMe);
+			
+			// Delete the NPC.
+			npc.deleteMe();
+		});
+		
+		// Reset spawn data.
+		if (_spawnData != null)
+			_spawnData.setStatus((byte) -1);
+	}
+	
+	@Override
+	public void onDecay(Npc npc)
+	{
+		synchronized (_npcMaker)
+		{
+			// Notify NpcMaker.
+			_npcMaker.onDecay(npc);
+			
+			if (getRespawnDelay() &gt; 0)
+			{
+				// Calculate the random delay.
+				final long respawnDelay = calculateRespawnDelay() * 1000;
+				
+				// Check spawn data and set respawn.
+				if (_spawnData != null)
+					_spawnData.setRespawn(respawnDelay);
+			}
+			else
+			{
+				// Respawn is disabled, delete NPC.
+				_npcs.remove(npc);
+			}
+		}
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;MultiSpawn [id=&quot; + getNpcId() + &quot;]&quot;;
+	}
+	
+	@Override
+	public String getDescription()
+	{
+		return &quot;NpcMaker: &quot; + _npcMaker.getName();
+	}
+	
+	@Override
+	public void updateSpawnData()
+	{
+		if (_spawnData == null)
+			return;
+		
+		_npcs.forEach(npc -&gt; _spawnData.setStats(npc));
+	}
+	
+	@Override
+	public void sendScriptEvent(int eventId, int arg1, int arg2)
+	{
+		_npcs.forEach(npc -&gt; npc.sendScriptEvent(eventId, arg1, arg2));
+	}
+	
+	public NpcMaker getNpcMaker()
+	{
+		return _npcMaker;
+	}
+	
+	public int[][] getCoords()
+	{
+		return _coords;
+	}
+	
+	public int getTotal()
+	{
+		return _total;
+	}
+	
+	public Set&lt;Npc&gt; getNpcs()
+	{
+		return _npcs;
+	}
+	
+	public int getNpcsAmount()
+	{
+		return _npcs.size();
+	}
+	
+	public long getSpawned()
+	{
+		return _npcs.stream().filter(n -&gt; !n.isDecayed()).count();
+	}
+	
+	public long getDecayed()
+	{
+		return _npcs.stream().filter(Npc::isDecayed).count();
+	}
+	
+	/**
+	 * Respawns all {@link Npc}s of this {@link MultiSpawn}.
+	 */
+	public void doRespawn()
+	{
+		final Npc toRespawn = _npcs.stream().filter(Npc::isDecayed).findFirst().orElse(null);
+		
+		if (toRespawn != null)
+			doRespawn(toRespawn);
+	}
+	
+	public void loadDBNpcInfo()
+	{
+		_npcMaker.getMaker().onNpcDBInfo(this, _spawnData, _npcMaker);
+	}
+}</pre>
+            
+</body>
+</html>

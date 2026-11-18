@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Action/SitStandAction.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Action/SitStandAction.cs</h1>
+            <pre>using UnityEngine;
+
+public class SitStandAction : L2Action
+{
+    public SitStandAction() : base() { }
+
+    // Local action
+    public override void UseAction()
+    {
+        if (PlayerStateMachine.Instance.State == PlayerState.DEAD)
+        {
+            return;
+        }
+
+        if (PlayerStateMachine.Instance.State == PlayerState.SITTING || PlayerStateMachine.Instance.State == PlayerState.SIT_WAIT)
+        {
+            PlayerStateMachine.Instance.ChangeIntention(Intention.INTENTION_STAND);
+        }
+        else
+        {
+            PlayerStateMachine.Instance.ChangeIntention(Intention.INTENTION_SIT);
+        }
+    }
+}</pre>
+            
+</body>
+</html>

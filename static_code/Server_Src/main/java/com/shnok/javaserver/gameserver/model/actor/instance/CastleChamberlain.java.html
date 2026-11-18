@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/CastleChamberlain.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/CastleChamberlain.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.Calendar;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.CastleManorManager;
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.PrivilegeType;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcTalkCond;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowCropInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowCropSetting;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowManorDefaultInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowSeedInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowSeedSetting;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SiegeInfo;
+
+/**
+ * An instance type extending {@link Merchant}, used for castle chamberlains.&lt;br&gt;
+ * &lt;br&gt;
+ * It handles following actions :
+ * &lt;ul&gt;
+ * &lt;li&gt;Tax rate control&lt;/li&gt;
+ * &lt;li&gt;Regional manor system control&lt;/li&gt;
+ * &lt;li&gt;Castle treasure control&lt;/li&gt;
+ * &lt;li&gt;Siege time modifier&lt;/li&gt;
+ * &lt;li&gt;Items production&lt;/li&gt;
+ * &lt;li&gt;Doors management &amp;&amp; Doors/walls upgrades&lt;/li&gt;
+ * &lt;li&gt;Traps management &amp;&amp; upgrades&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public class CastleChamberlain extends Merchant
+{
+	private static final int CERTIFICATES_BUNDLE = 10;
+	private static final int CERTIFICATES_PRICE = 1000;
+	
+	private int _preHour = 6;
+	
+	public CastleChamberlain(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		final NpcTalkCond condition = getNpcTalkCond(player);
+		if (condition == NpcTalkCond.NONE)
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/chamberlain/noprivs.htm&quot;);
+			player.sendPacket(html);
+			return;
+		}
+		
+		if (condition == NpcTalkCond.UNDER_SIEGE)
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/chamberlain/busy.htm&quot;);
+			player.sendPacket(html);
+			return;
+		}
+		
+		StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		String actualCommand = st.nextToken(); // Get actual command
+		
+		String val = &quot;&quot;;
+		if (st.hasMoreTokens())
+			val = st.nextToken();
+		
+		if (actualCommand.equalsIgnoreCase(&quot;banish_foreigner&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_RIGHT_TO_DISMISS))
+				return;
+			
+			// Move non-clan members off castle area, and send html
+			getCastle().banishForeigners();
+			sendFileMessage(player, &quot;data/html/chamberlain/banishafter.htm&quot;);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;banish_foreigner_show&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_RIGHT_TO_DISMISS))
+				return;
+			
+			sendFileMessage(player, &quot;data/html/chamberlain/banishfore.htm&quot;);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;manage_functions&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			sendFileMessage(player, &quot;data/html/chamberlain/manage.htm&quot;);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;products&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_USE_FUNCTIONS))
+				return;
+			
+			sendFileMessage(player, &quot;data/html/chamberlain/products.htm&quot;);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;list_siege_clans&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_MANAGE_SIEGE_WAR))
+				return;
+			
+			player.sendPacket(new SiegeInfo(getCastle()));
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;receive_report&quot;))
+		{
+			if (condition == NpcTalkCond.CLAN_MEMBER)
+				sendFileMessage(player, &quot;data/html/chamberlain/noprivs.htm&quot;);
+			else
+			{
+				final Clan clan = ClanTable.getInstance().getClan(getCastle().getOwnerId());
+				
+				final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+				html.setFile(&quot;data/html/chamberlain/report.htm&quot;);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				html.replace(&quot;%clanname%&quot;, clan.getName());
+				html.replace(&quot;%clanleadername%&quot;, clan.getLeaderName());
+				html.replace(&quot;%castlename%&quot;, getCastle().getName());
+				html.replace(&quot;%ss_event%&quot;, SevenSignsManager.getInstance().getCurrentPeriod().getName());
+				
+				switch (SevenSignsManager.getInstance().getSealOwner(SealType.AVARICE))
+				{
+					case NORMAL:
+						html.replace(&quot;%ss_avarice%&quot;, &quot;Not in Possession&quot;);
+						break;
+					
+					case DAWN:
+						html.replace(&quot;%ss_avarice%&quot;, &quot;Lords of Dawn&quot;);
+						break;
+					
+					case DUSK:
+						html.replace(&quot;%ss_avarice%&quot;, &quot;Revolutionaries of Dusk&quot;);
+						break;
+				}
+				
+				switch (SevenSignsManager.getInstance().getSealOwner(SealType.GNOSIS))
+				{
+					case NORMAL:
+						html.replace(&quot;%ss_gnosis%&quot;, &quot;Not in Possession&quot;);
+						break;
+					
+					case DAWN:
+						html.replace(&quot;%ss_gnosis%&quot;, &quot;Lords of Dawn&quot;);
+						break;
+					
+					case DUSK:
+						html.replace(&quot;%ss_gnosis%&quot;, &quot;Revolutionaries of Dusk&quot;);
+						break;
+				}
+				
+				switch (SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE))
+				{
+					case NORMAL:
+						html.replace(&quot;%ss_strife%&quot;, &quot;Not in Possession&quot;);
+						break;
+					
+					case DAWN:
+						html.replace(&quot;%ss_strife%&quot;, &quot;Lords of Dawn&quot;);
+						break;
+					
+					case DUSK:
+						html.replace(&quot;%ss_strife%&quot;, &quot;Revolutionaries of Dusk&quot;);
+						break;
+				}
+				player.sendPacket(html);
+			}
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;items&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_USE_FUNCTIONS))
+				return;
+			
+			if (val.isEmpty())
+				return;
+			
+			showBuyWindow(player, Integer.parseInt(val + &quot;1&quot;));
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;manage_vault&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_MANAGE_TAXES))
+				return;
+			
+			String filename = &quot;data/html/chamberlain/vault.htm&quot;;
+			int amount = 0;
+			if (st.hasMoreTokens())
+				amount = Integer.parseInt(st.nextToken());
+			
+			if (amount &gt; 0)
+			{
+				if (val.equalsIgnoreCase(&quot;deposit&quot;))
+				{
+					if (getCastle().getTreasury() + amount &lt; Integer.MAX_VALUE &amp;&amp; player.reduceAdena(amount, true))
+						getCastle().editTreasury(amount, true);
+				}
+				else if (val.equalsIgnoreCase(&quot;withdraw&quot;))
+				{
+					if (getCastle().getTreasury() &lt; amount)
+						filename = &quot;data/html/chamberlain/vault-no.htm&quot;;
+					else if (getCastle().editTreasury(-amount, true))
+						player.addAdena(amount, true);
+				}
+			}
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(filename);
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			html.replace(&quot;%tax_income%&quot;, StringUtil.formatNumber(getCastle().getTreasury()));
+			html.replace(&quot;%tax_income_reserved%&quot;, StringUtil.formatNumber(getCastle().getTaxRevenue()));
+			html.replace(&quot;%seed_income%&quot;, StringUtil.formatNumber(getCastle().getSeedIncome()));
+			html.replace(&quot;%withdraw_amount%&quot;, StringUtil.formatNumber(amount));
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;operate_door&quot;)) // door control
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_ENTRY_EXIT_RIGHTS))
+				return;
+			
+			if (val.isEmpty())
+			{
+				final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+				html.setFile(&quot;data/html/chamberlain/&quot; + getNpcId() + &quot;-d.htm&quot;);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+				return;
+			}
+			
+			boolean open = (Integer.parseInt(val) == 1);
+			while (st.hasMoreTokens())
+			{
+				if (open)
+					getCastle().openDoor(player, Integer.parseInt(st.nextToken()));
+				else
+					getCastle().closeDoor(player, Integer.parseInt(st.nextToken()));
+			}
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile((open) ? &quot;data/html/chamberlain/doors-open.htm&quot; : &quot;data/html/chamberlain/doors-close.htm&quot;);
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+			
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;tax_set&quot;)) // tax rates control
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			if (!validatePrivileges(player, PrivilegeType.CP_MANAGE_TAXES))
+			{
+				html.setFile(&quot;data/html/chamberlain/tax-member.htm&quot;);
+				html.replace(&quot;%currentTaxRate%&quot;, getCastle().getCurrentTaxPercent());
+				html.replace(&quot;%nextTaxRate%&quot;, getCastle().getNextTaxPercent());
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+				return;
+			}
+			
+			html.setFile(&quot;data/html/chamberlain/tax-leader.htm&quot;);
+			html.replace(&quot;%currentTaxRate%&quot;, getCastle().getCurrentTaxPercent());
+			html.replace(&quot;%nextTaxRate%&quot;, getCastle().getNextTaxPercent());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			html.replace(&quot;%taxLimit%&quot;, getTaxLimit());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;tax_adjust&quot;)) // tax rates control
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			final int taxLimit = getTaxLimit();
+			final int taxRate = (val.isEmpty()) ? 0 : Integer.parseInt(val);
+			
+			if (taxRate &lt; 0 || taxRate &gt; taxLimit)
+			{
+				html.setFile(&quot;data/html/chamberlain/tax-toohigh.htm&quot;);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				html.replace(&quot;%taxLimit%&quot;, taxLimit);
+				player.sendPacket(html);
+				return;
+			}
+			
+			// Set the next tax rate.
+			getCastle().setNextTaxPercent(taxRate, true);
+			
+			html.setFile(&quot;data/html/chamberlain/tax-after.htm&quot;);
+			html.replace(&quot;%nextTaxRate%&quot;, getCastle().getNextTaxPercent());
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;manor&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_MANOR_ADMINISTRATION))
+				return;
+			
+			String filename = &quot;&quot;;
+			if (!Config.ALLOW_MANOR)
+				filename = &quot;data/html/npcdefault.htm&quot;;
+			else
+			{
+				int cmd = Integer.parseInt(val);
+				switch (cmd)
+				{
+					case 0:
+						filename = &quot;data/html/chamberlain/manor/manor.htm&quot;;
+						break;
+					
+					// TODO: correct in html&#x27;s to 1
+					case 4:
+						filename = &quot;data/html/chamberlain/manor/manor_help00&quot; + st.nextToken() + &quot;.htm&quot;;
+						break;
+					
+					default:
+						filename = &quot;data/html/chamberlain/no.htm&quot;;
+						break;
+				}
+			}
+			
+			if (filename.length() != 0)
+			{
+				final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+				html.setFile(filename);
+				html.replace(&quot;%objectId%&quot;, getObjectId());
+				player.sendPacket(html);
+			}
+		}
+		else if (command.startsWith(&quot;manor_menu_select&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_MANOR_ADMINISTRATION))
+				return;
+			
+			final CastleManorManager manor = CastleManorManager.getInstance();
+			if (manor.isUnderMaintenance())
+			{
+				player.sendPacket(ActionFailed.STATIC_PACKET);
+				player.sendPacket(SystemMessageId.THE_MANOR_SYSTEM_IS_CURRENTLY_UNDER_MAINTENANCE);
+				return;
+			}
+			
+			final String params = command.substring(command.indexOf(&quot;?&quot;) + 1);
+			final StringTokenizer str = new StringTokenizer(params, &quot;&amp;&quot;);
+			
+			final int ask = Integer.parseInt(str.nextToken().split(&quot;=&quot;)[1]);
+			final int state = Integer.parseInt(str.nextToken().split(&quot;=&quot;)[1]);
+			final boolean time = str.nextToken().split(&quot;=&quot;)[1].equals(&quot;1&quot;);
+			
+			final int castleId = (state == -1) ? getCastle().getId() : state;
+			
+			switch (ask)
+			{
+				case 3: // Current seeds (Manor info)
+					player.sendPacket(new ExShowSeedInfo(castleId, time, true));
+					break;
+				
+				case 4: // Current crops (Manor info)
+					player.sendPacket(new ExShowCropInfo(castleId, time, true));
+					break;
+				
+				case 5: // Basic info (Manor info)
+					player.sendPacket(new ExShowManorDefaultInfo(true));
+					break;
+				
+				case 7: // Edit seed setup
+					if (manor.isManorApproved())
+						player.sendPacket(SystemMessageId.A_MANOR_CANNOT_BE_SET_UP_BETWEEN_6_AM_AND_8_PM);
+					else
+						player.sendPacket(new ExShowSeedSetting(castleId));
+					break;
+				
+				case 8: // Edit crop setup
+					if (manor.isManorApproved())
+						player.sendPacket(SystemMessageId.A_MANOR_CANNOT_BE_SET_UP_BETWEEN_6_AM_AND_8_PM);
+					else
+						player.sendPacket(new ExShowCropSetting(castleId));
+					break;
+			}
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;siege_change&quot;)) // set siege time
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_MANAGE_SIEGE_WAR))
+				return;
+			
+			if (getCastle().getSiege().getSiegeRegistrationEndDate() &lt; Calendar.getInstance().getTimeInMillis())
+				sendFileMessage(player, &quot;data/html/chamberlain/siegetime1.htm&quot;);
+			else if (getCastle().getSiege().isTimeRegistrationOver())
+				sendFileMessage(player, &quot;data/html/chamberlain/siegetime2.htm&quot;);
+			else
+				sendFileMessage(player, &quot;data/html/chamberlain/siegetime3.htm&quot;);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;siege_time_set&quot;)) // set preDay
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_MANAGE_SIEGE_WAR))
+				return;
+			
+			switch (Integer.parseInt(val))
+			{
+				case 1:
+					_preHour = Integer.parseInt(st.nextToken());
+					break;
+				
+				default:
+					break;
+			}
+			
+			if (_preHour != 6)
+			{
+				getCastle().getSiegeDate().set(Calendar.HOUR_OF_DAY, _preHour + 12);
+				
+				// now store the changed time and finished next Siege Time registration
+				getCastle().getSiege().endTimeRegistration(false);
+				sendFileMessage(player, &quot;data/html/chamberlain/siegetime8.htm&quot;);
+				return;
+			}
+			
+			sendFileMessage(player, &quot;data/html/chamberlain/siegetime6.htm&quot;);
+		}
+		else if (actualCommand.equals(&quot;give_crown&quot;))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			if (condition == NpcTalkCond.OWNER)
+			{
+				if (player.getInventory().getItemByItemId(6841) == null)
+				{
+					player.addItem(6841, 1, true);
+					
+					html.setFile(&quot;data/html/chamberlain/gavecrown.htm&quot;);
+					html.replace(&quot;%CharName%&quot;, player.getName());
+					html.replace(&quot;%FeudName%&quot;, getCastle().getName());
+				}
+				else
+					html.setFile(&quot;data/html/chamberlain/hascrown.htm&quot;);
+			}
+			else
+				html.setFile(&quot;data/html/chamberlain/noprivs.htm&quot;);
+			
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equals(&quot;manor_certificate&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_USE_FUNCTIONS))
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			// Player is registered as dusk, or we aren&#x27;t in the good side of competition.
+			if (SevenSignsManager.getInstance().isSealValidationPeriod())
+			{
+				if (SevenSignsManager.getInstance().getPlayerCabal(player.getObjectId()) == CabalType.DUSK)
+					html.setFile(&quot;data/html/chamberlain/not-dawn-or-event.htm&quot;);
+				// We already reached the tickets limit.
+				else if (getCastle().getLeftCertificates() == 0)
+					html.setFile(&quot;data/html/chamberlain/not-enough-ticket.htm&quot;);
+				else
+				{
+					html.setFile(&quot;data/html/chamberlain/sell-dawn-ticket.htm&quot;);
+					html.replace(&quot;%left%&quot;, getCastle().getLeftCertificates());
+					html.replace(&quot;%bundle%&quot;, CERTIFICATES_BUNDLE);
+					html.replace(&quot;%price%&quot;, CERTIFICATES_PRICE);
+				}
+			}
+			else
+				html.setFile(&quot;data/html/chamberlain/not-dawn-or-event.htm&quot;);
+			
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equals(&quot;validate_certificate&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_USE_FUNCTIONS))
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			// Player is registered as dusk, or we aren&#x27;t in the good side of competition.
+			if (SevenSignsManager.getInstance().isSealValidationPeriod())
+			{
+				if (SevenSignsManager.getInstance().getPlayerCabal(player.getObjectId()) == CabalType.DUSK)
+					html.setFile(&quot;data/html/chamberlain/not-dawn-or-event.htm&quot;);
+				// We already reached the tickets limit.
+				else if (getCastle().getLeftCertificates() == 0)
+					html.setFile(&quot;data/html/chamberlain/not-enough-ticket.htm&quot;);
+				else if (player.reduceAdena(CERTIFICATES_BUNDLE * CERTIFICATES_PRICE, true))
+				{
+					// We add certificates.
+					player.addItem(6388, CERTIFICATES_BUNDLE, true);
+					
+					// We update that castle certificates count.
+					getCastle().setLeftCertificates(getCastle().getLeftCertificates() - 10, true);
+					
+					html.setFile(&quot;data/html/chamberlain/sell-dawn-ticket.htm&quot;);
+					html.replace(&quot;%left%&quot;, getCastle().getLeftCertificates());
+					html.replace(&quot;%bundle%&quot;, CERTIFICATES_BUNDLE);
+					html.replace(&quot;%price%&quot;, CERTIFICATES_PRICE);
+				}
+				else
+					html.setFile(&quot;data/html/chamberlain/not-enough-adena.htm&quot;);
+			}
+			else
+				html.setFile(&quot;data/html/chamberlain/not-dawn-or-event.htm&quot;);
+			
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;castle_devices&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			sendFileMessage(player, &quot;data/html/chamberlain/devices.htm&quot;);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;doors_update&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			if (val.isEmpty())
+				html.setFile(&quot;data/html/chamberlain/&quot; + getNpcId() + &quot;-gu.htm&quot;);
+			else
+			{
+				html.setFile(&quot;data/html/chamberlain/doors-update.htm&quot;);
+				html.replace(&quot;%id%&quot;, val);
+				html.replace(&quot;%type%&quot;, st.nextToken());
+			}
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;doors_choose_upgrade&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			final String id = val;
+			final String type = st.nextToken();
+			final String level = st.nextToken();
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/chamberlain/doors-confirm.htm&quot;);
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			html.replace(&quot;%id%&quot;, id);
+			html.replace(&quot;%level%&quot;, level);
+			html.replace(&quot;%type%&quot;, type);
+			html.replace(&quot;%price%&quot;, getDoorCost(Integer.parseInt(type), Integer.parseInt(level)));
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;doors_confirm_upgrade&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			final int type = Integer.parseInt(st.nextToken());
+			final int level = Integer.parseInt(st.nextToken());
+			final int price = getDoorCost(type, level);
+			
+			if (price == 0)
+				return;
+			
+			final int id = Integer.parseInt(val);
+			final Door door = getCastle().getDoor(id);
+			if (door == null)
+				return;
+			
+			final int currentHpRatio = door.getStatus().getUpgradeHpRatio();
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			if (currentHpRatio &gt;= level)
+			{
+				html.setFile(&quot;data/html/chamberlain/doors-already-updated.htm&quot;);
+				html.replace(&quot;%level%&quot;, currentHpRatio * 100);
+			}
+			else if (!player.reduceAdena(price, true))
+				html.setFile(&quot;data/html/chamberlain/not-enough-adena.htm&quot;);
+			else
+			{
+				getCastle().upgradeDoor(id, level, true);
+				
+				html.setFile(&quot;data/html/chamberlain/doors-success.htm&quot;);
+			}
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;traps_update&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			if (val.isEmpty())
+				html.setFile(&quot;data/html/chamberlain/&quot; + getNpcId() + &quot;-tu.htm&quot;);
+			else
+			{
+				html.setFile(&quot;data/html/chamberlain/traps-update&quot; + ((getCastle().getName().equalsIgnoreCase(&quot;aden&quot;)) ? &quot;1&quot; : &quot;&quot;) + &quot;.htm&quot;);
+				html.replace(&quot;%trapIndex%&quot;, val);
+			}
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;traps_choose_upgrade&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			final String trapIndex = val;
+			final String level = st.nextToken();
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/chamberlain/traps-confirm.htm&quot;);
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			html.replace(&quot;%trapIndex%&quot;, trapIndex);
+			html.replace(&quot;%level%&quot;, level);
+			html.replace(&quot;%price%&quot;, getTrapCost(Integer.parseInt(level)));
+			player.sendPacket(html);
+		}
+		else if (actualCommand.equalsIgnoreCase(&quot;traps_confirm_upgrade&quot;))
+		{
+			if (!validatePrivileges(player, PrivilegeType.CP_SET_FUNCTIONS))
+				return;
+			
+			final int level = Integer.parseInt(st.nextToken());
+			final int price = getTrapCost(level);
+			
+			if (price == 0)
+				return;
+			
+			final int trapIndex = Integer.parseInt(val);
+			final int currentLevel = getCastle().getTrapUpgradeLevel(trapIndex);
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			
+			if (currentLevel &gt;= level)
+			{
+				html.setFile(&quot;data/html/chamberlain/traps-already-updated.htm&quot;);
+				html.replace(&quot;%level%&quot;, currentLevel);
+			}
+			else if (!player.reduceAdena(price, true))
+				html.setFile(&quot;data/html/chamberlain/not-enough-adena.htm&quot;);
+			else
+			{
+				getCastle().setTrapUpgrade(trapIndex, level, true);
+				
+				html.setFile(&quot;data/html/chamberlain/traps-success.htm&quot;);
+			}
+			html.replace(&quot;%objectId%&quot;, getObjectId());
+			player.sendPacket(html);
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player)
+	{
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		
+		switch (getNpcTalkCond(player))
+		{
+			case NONE:
+				html.setFile(&quot;data/html/chamberlain/no.htm&quot;);
+				break;
+			
+			case UNDER_SIEGE:
+				html.setFile(&quot;data/html/chamberlain/busy.htm&quot;);
+				break;
+			
+			default:
+				html.setFile(&quot;data/html/chamberlain/chamberlain.htm&quot;);
+				break;
+		}
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	protected NpcTalkCond getNpcTalkCond(Player player)
+	{
+		if (getCastle() != null &amp;&amp; player.getClan() != null)
+		{
+			if (getCastle().getSiege().isInProgress())
+				return NpcTalkCond.UNDER_SIEGE;
+			
+			if (getCastle().getOwnerId() == player.getClanId())
+			{
+				if (player.isClanLeader())
+					return NpcTalkCond.OWNER;
+				
+				return NpcTalkCond.CLAN_MEMBER;
+			}
+		}
+		return NpcTalkCond.NONE;
+	}
+	
+	private boolean validatePrivileges(Player player, PrivilegeType privilege)
+	{
+		if (!player.hasClanPrivileges(privilege))
+		{
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/chamberlain/noprivs.htm&quot;);
+			player.sendPacket(html);
+			return false;
+		}
+		return true;
+	}
+	
+	private void sendFileMessage(Player player, String htmlMessage)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(htmlMessage);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		html.replace(&quot;%npcId%&quot;, getNpcId());
+		html.replace(&quot;%time%&quot;, getCastle().getSiegeDate().getTime().toString());
+		player.sendPacket(html);
+	}
+	
+	/**
+	 * Retrieve the price of the door, following its type, required level of upgrade and current Seven Signs state.
+	 * @param type : The type of doors (1: normal gates, 2: metallic gates, 3: walls).
+	 * @param level : The required level of upgrade (x2, x3 or x5 HPs).
+	 * @return The price modified by Seal of Strife state (-20% if Dawn is winning, x3 if Dusk is winning).
+	 */
+	private static int getDoorCost(int type, int level)
+	{
+		int price = 0;
+		
+		switch (type)
+		{
+			case 1:
+				switch (level)
+				{
+					case 2:
+						price = 300000;
+						break;
+					case 3:
+						price = 400000;
+						break;
+					case 5:
+						price = 500000;
+						break;
+				}
+				break;
+			
+			case 2:
+				switch (level)
+				{
+					case 2:
+						price = 750000;
+						break;
+					case 3:
+						price = 900000;
+						break;
+					case 5:
+						price = 1000000;
+						break;
+				}
+				break;
+			
+			case 3:
+				switch (level)
+				{
+					case 2:
+						price = 1600000;
+						break;
+					case 3:
+						price = 1800000;
+						break;
+					case 5:
+						price = 2000000;
+						break;
+				}
+				break;
+		}
+		
+		switch (SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE))
+		{
+			case DUSK:
+				price *= 3;
+				break;
+			
+			case DAWN:
+				price *= 0.8;
+				break;
+		}
+		
+		return price;
+	}
+	
+	/**
+	 * Retrieve the price of traps, following its level.
+	 * @param level : The required level of upgrade.
+	 * @return The price modified by Seal of Strife state (-20% if Dawn is winning, x3 if Dusk is winning).
+	 */
+	private static int getTrapCost(int level)
+	{
+		int price = 0;
+		
+		switch (level)
+		{
+			case 1:
+				price = 3000000;
+				break;
+			
+			case 2:
+				price = 4000000;
+				break;
+			
+			case 3:
+				price = 5000000;
+				break;
+			
+			case 4:
+				price = 6000000;
+				break;
+		}
+		
+		switch (SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE))
+		{
+			case DUSK:
+				price *= 3;
+				break;
+			
+			case DAWN:
+				price *= 0.8;
+				break;
+		}
+		
+		return price;
+	}
+	
+	private static int getTaxLimit()
+	{
+		switch (SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE))
+		{
+			case DAWN:
+				return 25;
+			
+			case DUSK:
+				return 5;
+			
+			default:
+				return 15;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

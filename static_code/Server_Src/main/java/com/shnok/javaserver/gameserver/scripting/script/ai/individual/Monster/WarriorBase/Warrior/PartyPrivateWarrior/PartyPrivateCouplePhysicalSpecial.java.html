@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/PartyPrivateWarrior/PartyPrivateCouplePhysicalSpecial.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/PartyPrivateWarrior/PartyPrivateCouplePhysicalSpecial.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.PartyPrivateWarrior;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class PartyPrivateCouplePhysicalSpecial extends PartyPrivateWarrior
+{
+	public PartyPrivateCouplePhysicalSpecial()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/PartyPrivateWarrior&quot;);
+	}
+	
+	public PartyPrivateCouplePhysicalSpecial(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21433
+	};
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable &amp;&amp; npc._i_ai0 == 0)
+		{
+			final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+			if (topDesireTarget == attacker &amp;&amp; npc.getStatus().getHpRatio() &lt; 0.2 &amp;&amp; Rnd.get(100) &lt; 33)
+			{
+				npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.PHYSICAL_SPECIAL), 1000000);
+				
+				npc._i_ai0 = 1;
+			}
+		}
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable &amp;&amp; called.getAI().getLifeTime() &gt; 7 &amp;&amp; called._i_ai0 == 0 &amp;&amp; Rnd.get(100) &lt; 33)
+		{
+			called.getAI().addCastDesire(attacker, getNpcSkillByType(called, NpcSkillType.PHYSICAL_SPECIAL), 1000000);
+			
+			called._i_ai0 = 1;
+		}
+		super.onClanAttacked(caller, called, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onPartyDied(Npc caller, Npc called)
+	{
+		if (caller != called &amp;&amp; called.distance2D(caller) &lt; 100)
+		{
+			called.getAI().addCastDesire(called, getNpcSkillByType(called, NpcSkillType.MAGIC_HEAL), 1000000);
+			called.getAI().addCastDesire(called, getNpcSkillByType(called, NpcSkillType.SELF_BUFF), 1000000);
+			
+			final Creature topDesireTarget = called.getAI().getTopDesireTarget();
+			if (topDesireTarget != null)
+			{
+				called.removeAllAttackDesire();
+				called.getAI().addAttackDesire(topDesireTarget, 1000);
+			}
+		}
+		super.onPartyDied(caller, called);
+	}
+}</pre>
+            
+</body>
+</html>

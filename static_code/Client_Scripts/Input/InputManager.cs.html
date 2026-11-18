@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Input/InputManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Input/InputManager.cs</h1>
+            <pre>﻿using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.InputSystem;
+
+public class InputManager : MonoBehaviour
+{
+    #region InputActions
+    // Mouse
+    private InputAction _leftClickAction;
+    private InputAction _rightClickAction;
+    // Camera
+    private InputAction _cameraAxisAction;
+    private InputAction _zoomAxisAction;
+    // Movements
+    private InputAction _moveAction;
+    private InputAction _arrowUpAction;
+    private InputAction _arrowDownAction;
+    private InputAction _jumpAction;
+    private InputAction _attackAction;
+    private InputAction _nextTargetAction;
+    private InputAction _targetSelfAction;
+    private InputAction _sitAction;
+    private InputAction _ctrlAction;
+    private InputAction _shiftAction;
+    // UI
+    private InputAction _inventoryAction;
+    private InputAction _characterStatusAction;
+    private InputAction _actionsAction;
+    private InputAction _closeWindowAction;
+    private InputAction _systemMenuAction;
+    private InputAction _validateAction;
+    // Test
+    private InputAction _testAction;
+
+    #endregion
+
+    #region InputValues
+    [field: Header(&quot;Mouse&quot;)]
+    // Mouse
+    [field: SerializeField] public bool LeftClickDown { get; private set; }
+    [field: SerializeField] public bool RightClickDown { get; private set; }
+    [field: SerializeField] public bool RightClickUp { get; private set; }
+    [field: SerializeField] public bool LeftClickHeld { get; private set; }
+    [field: SerializeField] public bool RightClickHeld { get; private set; }
+
+    // Camera
+    [field: Header(&quot;Camera&quot;)]
+    [field: SerializeField] public Vector2 CameraAxis { get; private set; }
+    [field: SerializeField] public bool CameraMoving { get; private set; }
+    [field: SerializeField] public bool TurnCamera { get; private set; }
+    [field: SerializeField] public float ZoomAxis { get; private set; }
+
+    // Movements
+    [field: Header(&quot;Movements&quot;)]
+    [field: SerializeField] public Vector2 MoveInput { get; private set; }
+    [field: SerializeField] public bool ArrowUp { get; private set; }
+    [field: SerializeField] public bool ArrowDown { get; private set; }
+    [field: SerializeField] public bool Move { get; private set; }
+    [field: SerializeField] public bool MoveForward { get; private set; }
+    [field: SerializeField] public bool Jump { get; private set; }
+    [field: SerializeField] public bool Attack { get; private set; }
+    [field: SerializeField] public bool NextTarget { get; private set; }
+    [field: SerializeField] public bool TargetSelf { get; private set; }
+    [field: SerializeField] public bool Sit { get; private set; }
+    [field: SerializeField] public bool ToggleWalkRun { get; private set; }
+    [field: SerializeField] public bool Ctrl { get; private set; }
+    [field: SerializeField] public bool Shift { get; private set; }
+
+    // UI
+    [field: Header(&quot;UI&quot;)]
+    [field: SerializeField] public bool OpenInventory { get; private set; }
+    [field: SerializeField] public bool OpenCharacerStatus { get; private set; }
+    [field: SerializeField] public bool OpenSystemMenu { get; private set; }
+    [field: SerializeField] public bool OpenActions { get; private set; }
+    [field: SerializeField] public bool OpenSkills { get; private set; }
+    [field: SerializeField] public bool OpenMap { get; private set; }
+    [field: SerializeField] public bool CloseWindow { get; private set; }
+    [field: SerializeField] public bool Validate { get; private set; }
+
+    // UI
+    [field: Header(&quot;Test&quot;)]
+    [field: SerializeField] public bool Test { get; private set; }
+
+    public InputAction[,] SkillbarActions { get; private set; }
+    public bool[,] SkillbarInputs { get; private set; }
+
+    #endregion
+
+    private PlayerInput _playerInput;
+
+    private static InputManager _instance;
+    public static InputManager Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+
+        _playerInput = GetComponent&lt;PlayerInput&gt;();
+
+        SetupInputActions();
+    }
+
+    private void SetupInputActions()
+    {
+        _leftClickAction = _playerInput.actions[&quot;LeftClick&quot;];
+        _rightClickAction = _playerInput.actions[&quot;RightClick&quot;];
+
+        _cameraAxisAction = _playerInput.actions[&quot;CameraAxis&quot;];
+        _zoomAxisAction = _playerInput.actions[&quot;ZoomAxis&quot;];
+
+        _moveAction = _playerInput.actions[&quot;Move&quot;];
+        _arrowUpAction = _playerInput.actions[&quot;ArrowUp&quot;];
+        _arrowDownAction = _playerInput.actions[&quot;ArrowDown&quot;];
+        _jumpAction = _playerInput.actions[&quot;Jump&quot;];
+        _nextTargetAction = _playerInput.actions[&quot;NextTarget&quot;];
+        _targetSelfAction = _playerInput.actions[&quot;TargetSelf&quot;];
+        _attackAction = _playerInput.actions[&quot;Attack&quot;];
+        _sitAction = _playerInput.actions[&quot;Sit&quot;];
+        _ctrlAction = _playerInput.actions[&quot;Ctrl&quot;];
+        _shiftAction = _playerInput.actions[&quot;Shift&quot;];
+
+        _inventoryAction = _playerInput.actions[&quot;Inventory&quot;];
+        _characterStatusAction = _playerInput.actions[&quot;CharacterStatus&quot;];
+        _actionsAction = _playerInput.actions[&quot;Actions&quot;];
+        _closeWindowAction = _playerInput.actions[&quot;CloseWindow&quot;];
+        _systemMenuAction = _playerInput.actions[&quot;SystemMenu&quot;];
+        _validateAction = _playerInput.actions[&quot;Validate&quot;];
+
+        _testAction = _playerInput.actions[&quot;Test&quot;];
+
+        SkillbarActions = new InputAction[5, 12];
+
+        for (int skillbar = 1; skillbar &lt;= 5; skillbar++)
+        {
+            for (int i = 1; i &lt;= 12; i++)
+            {
+                SkillbarActions[skillbar - 1, i - 1] = _playerInput.actions[$&quot;Shortcut{skillbar}-{i}&quot;];
+            }
+        }
+
+        SkillbarInputs = new bool[5, 12];
+    }
+
+    void Update()
+    {
+        UpdateInputs();
+    }
+
+    private void UpdateInputs()
+    {
+        CameraAxis = _cameraAxisAction.ReadValue&lt;Vector2&gt;();
+        CameraMoving = CameraAxis.y != 0 || CameraAxis.x != 0;
+
+        LeftClickDown = _leftClickAction.WasPerformedThisFrame();
+        RightClickDown = _rightClickAction.WasPerformedThisFrame();
+        RightClickUp = _rightClickAction.WasReleasedThisFrame();
+        LeftClickHeld = _leftClickAction.IsPressed();
+        RightClickHeld = _rightClickAction.IsPressed();
+
+        CloseWindow = _closeWindowAction.WasPerformedThisFrame();
+        Validate = _validateAction.WasPerformedThisFrame();
+        Ctrl = _ctrlAction.IsPressed();
+        Shift = _shiftAction.IsPressed();
+
+        if (!L2GameUI.Instance.MouseOverUI)
+        {
+            if (RightClickHeld &amp;&amp; CameraMoving)
+            {
+                // In Ruler RTS mode, do not disable mouse or lock cursor into L2 3rd-person TurnCamera!
+                if (RulerManager.Instance == null || !RulerManager.Instance.IsRtsActive)
+                {
+                    TurnCamera = true;
+                    L2GameUI.Instance.DisableMouse();
+                }
+            }
+
+            if (RulerManager.Instance == null || !RulerManager.Instance.IsRtsActive)
+            {
+                ZoomAxis = _zoomAxisAction.ReadValue&lt;float&gt;();
+            }
+            else
+            {
+                ZoomAxis = 0f;
+            }
+        }
+
+        if (RightClickUp)
+        {
+            TurnCamera = false;
+            L2GameUI.Instance.EnableMouse();
+        }
+
+        if (ChatWindow.Instance != null &amp;&amp; !ChatWindow.Instance.ChatOpened &amp;&amp; !L2GameUI.Instance.IsTyping)
+        {
+            // In Ruler RTS mode, do not feed keyboard WASD into player character movement!
+            if (RulerManager.Instance != null &amp;&amp; RulerManager.Instance.IsRtsActive)
+            {
+                MoveInput = Vector2.zero;
+            }
+            else
+            {
+                MoveInput = _moveAction.ReadValue&lt;Vector2&gt;();
+            }
+            Jump = _jumpAction.WasPerformedThisFrame();
+            Attack = _attackAction.WasPerformedThisFrame();
+            NextTarget = _nextTargetAction.WasPerformedThisFrame();
+            TargetSelf = _targetSelfAction.WasPerformedThisFrame();
+            Sit = _sitAction.WasPerformedThisFrame();
+
+            OpenCharacerStatus = _characterStatusAction.WasPerformedThisFrame();
+            OpenInventory = _inventoryAction.WasPerformedThisFrame();
+            OpenSystemMenu = _systemMenuAction.WasPerformedThisFrame();
+            OpenActions = _actionsAction.WasPerformedThisFrame();
+
+            bool altPressed = false;
+            bool mPressed = false;
+            if (Keyboard.current != null)
+            {
+                altPressed = Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed;
+                mPressed = Keyboard.current.mKey.wasPressedThisFrame;
+            }
+            if (!altPressed)
+            {
+                altPressed = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            }
+            if (!mPressed)
+            {
+                mPressed = Input.GetKeyDown(KeyCode.M);
+            }
+            OpenMap = altPressed &amp;&amp; mPressed;
+
+            bool walkRunPressed = false;
+            if (Keyboard.current != null)
+            {
+                walkRunPressed = (Keyboard.current.numpadDivideKey != null &amp;&amp; Keyboard.current.numpadDivideKey.wasPressedThisFrame)
+                              || (Keyboard.current.slashKey != null &amp;&amp; Keyboard.current.slashKey.wasPressedThisFrame);
+            }
+            if (!walkRunPressed)
+            {
+                walkRunPressed = Input.GetKeyDown(KeyCode.KeypadDivide) || Input.GetKeyDown(KeyCode.Slash);
+            }
+            ToggleWalkRun = walkRunPressed;
+
+            for (int skillbar = 0; skillbar &lt; 5; skillbar++)
+            {
+                for (int i = 0; i &lt; 12; i++)
+                {
+                    SkillbarInputs[skillbar, i] = SkillbarActions[skillbar, i].WasPerformedThisFrame();
+                }
+            }
+        }
+        else
+        {
+            MoveInput = Vector2.zero;
+            ToggleWalkRun = false;
+            OpenMap = false;
+        }
+
+        ArrowUp = _arrowUpAction.WasPerformedThisFrame();
+        ArrowDown = _arrowDownAction.WasPerformedThisFrame();
+
+        MoveForward = LeftClickHeld &amp;&amp; RightClickHeld;
+        Move = MoveInput.y != 0 || MoveInput.x != 0 || MoveForward;
+
+        Test = _testAction.WasPerformedThisFrame();
+    }
+
+    void OnDestroy()
+    {
+        _instance = null;
+    }
+}
+</pre>
+            
+</body>
+</html>

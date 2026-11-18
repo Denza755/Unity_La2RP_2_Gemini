@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/InventoryWindow/InventoryWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/InventoryWindow/InventoryWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xmlns=&quot;UnityEngine.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;WindowTemplate&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;amp;type=3#WindowTemplate&quot; /&gt;
+    &lt;ui:Template name=&quot;L2TabView&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2TabView/L2TabView.uxml?fileID=9197481963319205126&amp;amp;guid=df1c3d52e66191742a30ae9bd4520b5a&amp;amp;type=3#L2TabView&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Bar&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Bar/L2Bar.uxml?fileID=9197481963319205126&amp;amp;guid=e7da9ee05d38b14459d91eca9fc49926&amp;amp;type=3#L2Bar&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/InventoryWindow/InventoryWindow.uss?fileID=7433441132597879392&amp;amp;guid=4eda97cd2431b9546835901512514faa&amp;amp;type=3#InventoryWindow&quot; /&gt;
+    &lt;ui:Instance template=&quot;WindowTemplate&quot; class=&quot;inventory-window&quot; style=&quot;display: flex; position: absolute;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;ExtraHeader&quot; class=&quot;inventory-extra-buttons&quot;&gt;
+            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;(0/80)&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;InventoryCount&quot; class=&quot;l2-color-2 inventory-count&quot; /&gt;
+            &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Expand-Window-Button&quot; class=&quot;btn-exp-frame expand-btn&quot;&gt;
+                &lt;ui:VisualElement name=&quot;ButtonBg&quot; class=&quot;expand-btn-bg&quot; /&gt;
+            &lt;/ui:Button&gt;
+            &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Minimize-Window-Button&quot; class=&quot;btn-coll-frame minimize-btn&quot; /&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement name=&quot;Content&quot; class=&quot;inventory-content&quot;&gt;
+            &lt;ui:VisualElement name=&quot;Container&quot; class=&quot;inventory-content-container&quot;&gt;
+                &lt;ui:GroupBox name=&quot;BoxContent&quot; class=&quot;inventory-content-container-inner&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;Gear&quot; class=&quot;inventory-gear-container&quot;&gt;
+                        &lt;ui:VisualElement name=&quot;GearContent&quot; class=&quot;inventory-gear&quot;&gt;
+                            &lt;ui:VisualElement name=&quot;GearRow1&quot; class=&quot;inventory-gear-row-1&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;Hat1&quot; style=&quot;flex-grow: 0; width: 34px; margin-left: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Helmet&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Hat2&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                            &lt;/ui:VisualElement&gt;
+                            &lt;ui:VisualElement name=&quot;GearRow2&quot; class=&quot;inventory-gear-row-2&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;Gloves&quot; style=&quot;flex-grow: 0; width: 34px; margin-left: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Torso&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Boots&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                            &lt;/ui:VisualElement&gt;
+                            &lt;ui:VisualElement name=&quot;GearRow3&quot; class=&quot;inventory-gear-row-3&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;Underwear&quot; style=&quot;flex-grow: 0; width: 34px; margin-left: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Legs&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Belt&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                            &lt;/ui:VisualElement&gt;
+                            &lt;ui:VisualElement name=&quot;GearRow4&quot; class=&quot;inventory-gear-row-4&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;Rhand&quot; style=&quot;flex-grow: 0; width: 34px; margin-left: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Lhand&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Agathion&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                            &lt;/ui:VisualElement&gt;
+                            &lt;ui:VisualElement name=&quot;GearRow5&quot; class=&quot;inventory-gear-row-5&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;Neck&quot; style=&quot;flex-grow: 0; width: 34px; margin-left: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Rear&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Lear&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                            &lt;/ui:VisualElement&gt;
+                            &lt;ui:VisualElement name=&quot;GearRow6&quot; class=&quot;inventory-gear-row-6&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;Pendant&quot; style=&quot;flex-grow: 0; width: 34px; margin-left: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Rring&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Spacer&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                                &lt;ui:VisualElement name=&quot;Lring&quot; style=&quot;flex-grow: 0; width: 34px; margin-right: 1px;&quot; /&gt;
+                            &lt;/ui:VisualElement&gt;
+                        &lt;/ui:VisualElement&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;InventoryContent&quot; class=&quot;inventory-item-container&quot;&gt;
+                        &lt;ui:Instance template=&quot;L2TabView&quot; name=&quot;InventoryTabView&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                        &lt;ui:GroupBox name=&quot;Footer&quot; class=&quot;inventory-item-footer&quot;&gt;
+                            &lt;ui:Button text=&quot;Button&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;AdenaDistribBtn&quot; class=&quot;l2-button inventory-button&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;ButtonBg&quot; class=&quot;l2-button-bg inventory-button-bg&quot; /&gt;
+                            &lt;/ui:Button&gt;
+                            &lt;ui:Button text=&quot;Button&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;CompoundBtn&quot; class=&quot;l2-button inventory-button&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;ButtonBg&quot; class=&quot;l2-button-bg inventory-button-bg&quot; /&gt;
+                            &lt;/ui:Button&gt;
+                            &lt;ui:VisualElement style=&quot;flex-grow: 1;&quot; /&gt;
+                            &lt;ui:GroupBox name=&quot;StatisticBox&quot; class=&quot;item-statistics-container&quot;&gt;
+                                &lt;ui:GroupBox name=&quot;Image&quot; class=&quot;item-statistic-icons&quot;&gt;
+                                    &lt;ui:VisualElement class=&quot;item-statistic-icon icon-adena&quot; /&gt;
+                                    &lt;ui:VisualElement class=&quot;item-statistic-icon icon-bag&quot; /&gt;
+                                &lt;/ui:GroupBox&gt;
+                                &lt;ui:GroupBox name=&quot;Gauge&quot; class=&quot;item-statistic-gauges&quot;&gt;
+                                    &lt;ui:GroupBox name=&quot;TextBox&quot; class=&quot;inventory-adena-box&quot;&gt;
+                                        &lt;ui:GroupBox class=&quot;inventory-adena-box-inner&quot;&gt;
+                                            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;AdenaCount&quot; class=&quot;inventory-adena-count&quot; /&gt;
+                                        &lt;/ui:GroupBox&gt;
+                                    &lt;/ui:GroupBox&gt;
+                                    &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;WeightBar&quot; class=&quot;l2-bar weight-3&quot;&gt;
+                                        &lt;AttributeOverrides element-name=&quot;Text&quot; text=&quot;100.00%&quot; /&gt;
+                                    &lt;/ui:Instance&gt;
+                                &lt;/ui:GroupBox&gt;
+                            &lt;/ui:GroupBox&gt;
+                            &lt;ui:Button text=&quot;Button&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;TrashBtn&quot; class=&quot;l2-button inventory-button&quot;&gt;
+                                &lt;ui:VisualElement name=&quot;ButtonBg&quot; class=&quot;l2-button-bg inventory-button-bg&quot; /&gt;
+                            &lt;/ui:Button&gt;
+                        &lt;/ui:GroupBox&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:Instance&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

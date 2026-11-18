@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/CursorManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/CursorManager.cs</h1>
+            <pre>using UnityEngine;
+
+public class CursorManager : MonoBehaviour
+{
+    [SerializeField] private CursorType _lastCursorType = CursorType.Default;
+    public enum CursorType
+    {
+        Default,
+        Attack,
+        Talk,
+        Pickup
+    }
+
+    [SerializeField] private Texture2D _defaultCursorTexture;
+    [SerializeField] private Texture2D _attackCursorTexture;
+    [SerializeField] private Texture2D _talkCursorTexture;
+    [SerializeField] private Texture2D _pickupCursorTexture;
+    private string _cursorFolder = &quot;Data/UI/Assets/Cursor/&quot;;
+
+    private static CursorManager _instance;
+    public static CursorManager Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+
+        _defaultCursorTexture = Resources.Load&lt;Texture2D&gt;(_cursorFolder + &quot;Default&quot;);
+        _attackCursorTexture = Resources.Load&lt;Texture2D&gt;(_cursorFolder + &quot;Attack&quot;);
+        _talkCursorTexture = Resources.Load&lt;Texture2D&gt;(_cursorFolder + &quot;Talk&quot;);
+        _pickupCursorTexture = Resources.Load&lt;Texture2D&gt;(_cursorFolder + &quot;Pickup&quot;);
+    }
+
+    public void ChangeCursor(CursorType cursorType)
+    {
+        if (_lastCursorType == cursorType)
+        {
+            return;
+        }
+
+        _lastCursorType = cursorType;
+
+
+        switch (cursorType)
+        {
+            case CursorType.Default:
+                UnityEngine.Cursor.SetCursor(_defaultCursorTexture, Vector2.zero, CursorMode.Auto);
+                break;
+            case CursorType.Attack:
+                UnityEngine.Cursor.SetCursor(_attackCursorTexture, Vector2.zero, CursorMode.Auto);
+                break;
+            case CursorType.Talk:
+                UnityEngine.Cursor.SetCursor(_talkCursorTexture, Vector2.zero, CursorMode.Auto);
+                break;
+            case CursorType.Pickup:
+                UnityEngine.Cursor.SetCursor(_pickupCursorTexture, Vector2.zero, CursorMode.Auto);
+                break;
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

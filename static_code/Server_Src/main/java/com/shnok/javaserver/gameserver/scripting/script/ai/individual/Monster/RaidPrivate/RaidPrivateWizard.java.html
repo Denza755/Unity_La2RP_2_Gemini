@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/RaidPrivate/RaidPrivateWizard.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/RaidPrivate/RaidPrivateWizard.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.RaidPrivate;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class RaidPrivateWizard extends RaidPrivateStandard
+{
+	public RaidPrivateWizard()
+	{
+		super(&quot;ai/individual/Monster/RaidPrivate/RaidPrivateWizard&quot;);
+	}
+	
+	public RaidPrivateWizard(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		25002,
+		25033,
+		25061,
+		25071,
+		25083,
+		25090,
+		25096,
+		25110,
+		25113,
+		25120,
+		25129,
+		25138,
+		25156,
+		25180,
+		25190,
+		25200,
+		25209,
+		25215,
+		25221,
+		25224,
+		25242,
+		25250,
+		25253,
+		25264,
+		25274,
+		25284,
+		25291,
+		25297,
+		25303,
+		25320,
+		25323,
+		25329,
+		25330,
+		25331,
+		25345,
+		25347,
+		25350,
+		25399,
+		25403,
+		25416,
+		25421,
+		25436,
+		25440,
+		25451,
+		25454,
+		25471,
+		25479,
+		25488,
+		29034,
+		29038,
+		29044,
+		25508,
+		29063,
+		25515
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._c_ai0 = npc;
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1001&quot;))
+		{
+			if (npc._c_ai0 != null &amp;&amp; npc._c_ai0 != npc &amp;&amp; npc.distance2D(npc._c_ai0) &lt; 200)
+				npc.getAI().addFleeDesire(npc._c_ai0, Config.MAX_DRIFT_RANGE, 100000000);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		npc._c_ai0 = attacker;
+		
+		if (npc.hasMaster() &amp;&amp; npc.getMaster().isDead())
+		{
+			if (attacker instanceof Playable &amp;&amp; Rnd.get(30) &lt; 1)
+			{
+				final L2Skill DDMagic_a = getNpcSkillByType(npc, NpcSkillType.DD_MAGIC_A);
+				
+				npc.getAI().addCastDesire(attacker, DDMagic_a, 1000000);
+			}
+			
+			final L2Skill debuff_a = getNpcSkillByType(npc, NpcSkillType.DEBUFF_A);
+			if (getAbnormalLevel(attacker, debuff_a) == -1 &amp;&amp; Rnd.get(75) &lt; 1)
+				npc.getAI().addCastDesire(attacker, debuff_a, 1000000);
+		}
+		
+		if (npc.isInsideZone(ZoneId.PEACE))
+		{
+			npc.abortAll(false);
+			npc.instantTeleportTo(npc.getSpawnLocation(), 0);
+			npc.removeAllAttackDesire();
+		}
+	}
+	
+	@Override
+	public void onPartyAttacked(Npc caller, Npc called, Creature target, int damage)
+	{
+		final L2Skill DDMagic_a = getNpcSkillByType(called, NpcSkillType.DD_MAGIC_A);
+		final L2Skill debuff_a = getNpcSkillByType(called, NpcSkillType.DEBUFF_A);
+		
+		if (target.getStatus().getLevel() &gt;= (called.getStatus().getLevel() + 8))
+		{
+			if (target instanceof Playable &amp;&amp; Rnd.get(300) &lt; 1)
+				called.getAI().addCastDesire(target, DDMagic_a, 1000000);
+			
+			if (getAbnormalLevel(target, debuff_a) == -1 &amp;&amp; Rnd.get(750) &lt; 1)
+				called.getAI().addCastDesire(target, debuff_a, 1000000);
+		}
+		else if (target instanceof Playable &amp;&amp; Rnd.get(30) &lt; 1)
+			called.getAI().addCastDesire(target, DDMagic_a, 1000000);
+		
+		if (getAbnormalLevel(target, debuff_a) == -1 &amp;&amp; Rnd.get(75) &lt; 1)
+			called.getAI().addCastDesire(target, debuff_a, 1000000);
+		
+		super.onPartyAttacked(caller, called, target, damage);
+	}
+	
+	@Override
+	public void onSeeSpell(Npc npc, Player caster, L2Skill skill, Creature[] targets, boolean isPet)
+	{
+		final L2Skill DDMagic_a = getNpcSkillByType(npc, NpcSkillType.DD_MAGIC_A);
+		if (Rnd.get(30) &lt; 1)
+			npc.getAI().addCastDesire(caster, DDMagic_a, 1000000);
+		
+		final L2Skill debuff_a = getNpcSkillByType(npc, NpcSkillType.DEBUFF_A);
+		if (getAbnormalLevel(caster, debuff_a) == -1 &amp;&amp; Rnd.get(75) &lt; 1)
+			npc.getAI().addCastDesire(caster, debuff_a, 1000000);
+		
+		super.onSeeSpell(npc, caster, skill, targets, isPet);
+	}
+}</pre>
+            
+</body>
+</html>

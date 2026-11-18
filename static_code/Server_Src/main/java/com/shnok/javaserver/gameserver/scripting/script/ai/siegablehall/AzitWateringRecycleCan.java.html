@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/siegablehall/AzitWateringRecycleCan.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/siegablehall/AzitWateringRecycleCan.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.siegablehall;
+
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+
+public class AzitWateringRecycleCan extends DefaultNpc
+{
+	public AzitWateringRecycleCan()
+	{
+		super(&quot;ai/siegeablehall&quot;);
+	}
+	
+	public AzitWateringRecycleCan(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		35600
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		startQuestTimer(&quot;1011&quot;, npc, null, ((5 * 60) * 1000));
+		startQuestTimerAtFixedRate(&quot;1002&quot;, npc, null, 30000, 30000);
+		npc.lookItem(450, 20);
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		npc.broadcastNpcSay(NpcStringId.ID_1010639);
+		
+		return null;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1002&quot;))
+		{
+			npc.lookItem(450, 20);
+		}
+		else if (name.equalsIgnoreCase(&quot;1011&quot;))
+		{
+			npc.deleteMe();
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public void onSeeItem(Npc npc, int quantity, List&lt;ItemInstance&gt; items)
+	{
+		if (items.isEmpty())
+			return;
+		
+		for (int i = 0; i &lt; items.size(); i++)
+		{
+			final ItemInstance item = items.get(i);
+			npc.getAI().addPickUpDesire(item.getObjectId(), item.getItemId() &gt;= 8035 &amp;&amp; item.getItemId() &lt;= 8055 ? (10000 - i) * 2 : (10000 - i));
+		}
+	}
+	
+	@Override
+	public void onPickedItem(Npc npc, ItemInstance item)
+	{
+		if (item.getItemId() == 8190 || item.getItemId() == 8689)
+			npc.broadcastNpcSay(NpcStringId.ID_1800023);
+	}
+}
+</pre>
+            
+</body>
+</html>

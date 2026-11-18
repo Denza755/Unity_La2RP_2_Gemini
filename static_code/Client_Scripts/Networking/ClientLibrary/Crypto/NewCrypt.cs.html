@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Crypto/NewCrypt.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Crypto/NewCrypt.cs</h1>
+            <pre>namespace L2_login
+{
+    class NewCrypt {
+        public static bool verifyChecksum(byte[] raw) {
+            return verifyChecksum(raw, 0, raw.Length);
+        }
+
+        public static bool verifyChecksum(byte[] raw, int offset, int size) {
+            // check if size is multiple of 4 and if there is more then only the checksum
+            if ((size &amp; 3) != 0 || size &lt;= 4) {
+                return false;
+            }
+
+            ulong chksum = 0;
+            int count = size - 4;
+            ulong check = ulong.MaxValue;
+            int i;
+
+            for (i = offset; i &lt; count; i += 4) {
+                check = (ulong)raw[i] &amp; 0xff;
+                check |= (ulong)raw[i + 1] &lt;&lt; 8 &amp; 0xff00;
+                check |= (ulong)raw[i + 2] &lt;&lt; 0x10 &amp; 0xff0000;
+                check |= (ulong)raw[i + 3] &lt;&lt; 0x18 &amp; 0xff000000;
+
+                chksum ^= check;
+            }
+
+            check = (ulong)raw[i] &amp; 0xff;
+            check |= (ulong)raw[i + 1] &lt;&lt; 8 &amp; 0xff00;
+            check |= (ulong)raw[i + 2] &lt;&lt; 0x10 &amp; 0xff0000;
+            check |= (ulong)raw[i + 3] &lt;&lt; 0x18 &amp; 0xff000000;
+
+            return check == chksum;
+        }
+
+        public static void appendChecksum(byte[] raw) {
+            appendChecksum(raw, 0, raw.Length);
+        }
+
+        public static void appendChecksum(byte[] raw, int offset, int size) {
+            ulong chksum = 0;
+            int count = size - 4;
+            ulong ecx;
+            int i;
+
+            for (i = offset; i &lt; count; i += 4) {
+                ecx = (ulong)raw[i] &amp; 0xff;
+                ecx |= (ulong)raw[i + 1] &lt;&lt; 8 &amp; 0xff00;
+                ecx |= (ulong)raw[i + 2] &lt;&lt; 0x10 &amp; 0xff0000;
+                ecx |= (ulong)raw[i + 3] &lt;&lt; 0x18 &amp; 0xff000000;
+
+                chksum ^= ecx;
+            }
+
+            ecx = (ulong)raw[i] &amp; 0xff;
+            ecx |= (ulong)raw[i + 1] &lt;&lt; 8 &amp; 0xff00;
+            ecx |= (ulong)raw[i + 2] &lt;&lt; 0x10 &amp; 0xff0000;
+            ecx |= (ulong)raw[i + 3] &lt;&lt; 0x18 &amp; 0xff000000;
+
+            raw[i] = (byte)(chksum &amp; 0xff);
+            raw[i + 1] = (byte)(chksum &gt;&gt; 0x08 &amp; 0xff);
+            raw[i + 2] = (byte)(chksum &gt;&gt; 0x10 &amp; 0xff);
+            raw[i + 3] = (byte)(chksum &gt;&gt; 0x18 &amp; 0xff);
+        }
+
+        /**
+	     * Packet is first XOR encoded with &lt;code&gt;key&lt;/code&gt;
+	     * Then, the last 4 bytes are overwritten with the the XOR &quot;key&quot;.
+	     * Thus this assume that there is enough room for the key to fit without overwriting data.
+	     * @param raw The raw bytes to be encrypted
+	     * @param key The 4 bytes (int) XOR key
+	     */
+        public static void encXORPass(byte[] raw, int key) {
+            encXORPass(raw, 0, raw.Length, key);
+        }
+
+        /**
+	     * Packet is first XOR encoded with &lt;code&gt;key&lt;/code&gt;
+	     * Then, the last 4 bytes are overwritten with the the XOR &quot;key&quot;.
+	     * Thus this assume that there is enough room for the key to fit without overwriting data.
+	     * @param raw The raw bytes to be encrypted
+	     * @param offset The begining of the data to be encrypted
+	     * @param size Length of the data to be encrypted
+	     * @param key The 4 bytes (int) XOR key
+	     */
+        public static void encXORPass(byte[] raw, int offset, int size, int key) {
+            int stop = size - 8;
+            int pos = 4 + offset;
+            int edx;
+            int ecx = key; // Initial xor key
+
+            while (pos &lt; stop) {
+                edx = raw[pos] &amp; 0xFF;
+                edx |= (raw[pos + 1] &amp; 0xFF) &lt;&lt; 8;
+                edx |= (raw[pos + 2] &amp; 0xFF) &lt;&lt; 16;
+                edx |= (raw[pos + 3] &amp; 0xFF) &lt;&lt; 24;
+
+                ecx += edx;
+
+                edx ^= ecx;
+
+                raw[pos] = (byte)(edx &amp; 0xFF);
+                raw[pos + 1] = (byte)(edx &gt;&gt; 8 &amp; 0xFF);
+                raw[pos + 2] = (byte)(edx &gt;&gt; 16 &amp; 0xFF);
+                raw[pos + 3] = (byte)(edx &gt;&gt; 24 &amp; 0xFF);
+                pos += 4;
+            }
+
+            raw[pos++] = (byte)(ecx &amp; 0xFF);
+            raw[pos++] = (byte)(ecx &gt;&gt; 8 &amp; 0xFF);
+            raw[pos++] = (byte)(ecx &gt;&gt; 16 &amp; 0xFF);
+            raw[pos++] = (byte)(ecx &gt;&gt; 24 &amp; 0xFF);
+        }
+
+
+        public static bool decXORPass(byte[] packet) {
+            int blen = packet.Length;
+
+            if (blen &lt; 1 || packet == null)
+                return false; // TODO: Handle error or throw exception
+
+            // Get XOR key
+            int xorOffset = 8;
+            uint xorKey = 0;
+            xorKey |= packet[blen - xorOffset];
+            xorKey |= (uint)(packet[blen - xorOffset + 1] &lt;&lt; 8);
+            xorKey |= (uint)(packet[blen - xorOffset + 2] &lt;&lt; 16);
+            xorKey |= (uint)(packet[blen - xorOffset + 3] &lt;&lt; 24);
+
+            // Decrypt XOR encrypted portion
+            int offset = blen - xorOffset - 4;
+            uint ecx = xorKey;
+            uint edx = 0;
+
+            while (offset &gt; 2) // Adjust this condition if needed
+            {
+                edx = (uint)(packet[offset + 0] &amp; 0xFF);
+                edx |= (uint)(packet[offset + 1] &amp; 0xFF) &lt;&lt; 8;
+                edx |= (uint)(packet[offset + 2] &amp; 0xFF) &lt;&lt; 16;
+                edx |= (uint)(packet[offset + 3] &amp; 0xFF) &lt;&lt; 24;
+
+                edx ^= ecx;
+                ecx -= edx;
+
+                packet[offset + 0] = (byte)((edx) &amp; 0xFF);
+                packet[offset + 1] = (byte)((edx &gt;&gt; 8) &amp; 0xFF);
+                packet[offset + 2] = (byte)((edx &gt;&gt; 16) &amp; 0xFF);
+                packet[offset + 3] = (byte)((edx &gt;&gt; 24) &amp; 0xFF);
+
+                offset -= 4;
+            }
+
+
+            return true;
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

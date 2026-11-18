@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/Main.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/Main.java</h1>
+            <pre>package com.shnok.javaserver;
+
+import com.shnok.javaserver.service.*;
+import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.core.config.Configurator;
+
+@Log4j2
+public class Main {
+    public static void main(String[] args) {
+       runServer(args);
+    }
+
+    public static void runServer(String... args)  {
+        log.info(&quot;Starting application.&quot;);
+
+        Configurator.initialize(null, &quot;conf/log4j2.properties&quot;);
+
+        ThreadPoolManagerService.getInstance().initialize();
+        Runtime.getRuntime().addShutdownHook(ServerShutdownService.getInstance());
+
+        LoginServerListenerService.getInstance().initialize();
+        LoginServerListenerService.getInstance().start();
+
+        GameServerController.getInstance();
+        GameServerListenerService.getInstance().initialize();
+        GameServerListenerService.getInstance().start();
+        try {
+            LoginServerListenerService.getInstance().join();
+            GameServerListenerService.getInstance().join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        log.info(&quot;Application closed&quot;);
+    }
+}
+</pre>
+            
+</body>
+</html>

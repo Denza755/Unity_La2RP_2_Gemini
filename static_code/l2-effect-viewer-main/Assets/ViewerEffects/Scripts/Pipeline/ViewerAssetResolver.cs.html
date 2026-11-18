@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/ViewerAssetResolver.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/ViewerAssetResolver.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+using UnityEngine;
+
+public sealed class ViewerResolvedAssets
+{
+    public Mesh Mesh;
+    public Texture Texture;
+    public string MeshSource;
+    public string TextureSource;
+    public string FbxPath;
+    public string UModelLog;
+}
+
+public static class ViewerAssetResolver
+{
+    static readonly Regex TextureImport = new Regex(
+        @&quot;Texture&#x27;([^&#x27;]+)&#x27;&quot;,
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    public static ViewerResolvedAssets Resolve(ViewerEffectData effect, ViewerEmitterData emitter)
+    {
+        var result = new ViewerResolvedAssets();
+        string cache = Path.Combine(ViewerPaths.AssetsCacheDir, Sanitize(effect.ClassName), Sanitize(emitter.ObjectName));
+        Directory.CreateDirectory(cache);
+
+        if (emitter.Kind == ViewerEmitterKind.Mesh)
+            result.Mesh = ResolveMesh(emitter, cache, result);
+
+        string textureRef = emitter.Texture;
+        if (string.IsNullOrEmpty(textureRef))
+            textureRef = FirstMeshTextureHint(result, cache);
+
+        result.Texture = ResolveTextureRef(textureRef, cache, result) ?? RuntimeTextureLoader.White();
+        if (!string.IsNullOrEmpty(result.TextureSource))
+            Debug.Log(&quot;[ViewerEffects] texture &quot; + emitter.DisplayName + &quot; ← &quot; + result.TextureSource);
+        else if (emitter.Kind == ViewerEmitterKind.Mesh)
+            Debug.LogWarning(&quot;[ViewerEffects] mesh &quot; + emitter.DisplayName + &quot; has no texture (UC Texture empty, umodel material unresolved)&quot;);
+
+        ViewerMaterialFactory.WriteSidecarMat(
+            Path.Combine(cache, Sanitize(emitter.DisplayName) + &quot;.mat.txt&quot;),
+            emitter,
+            result.TextureSource);
+        return result;
+    }
+
+    static Mesh ResolveMesh(ViewerEmitterData emitter, string cache, ViewerResolvedAssets result)
+    {
+        if (!UnrealAssetRef.TryParse(emitter.StaticMesh, out UnrealAssetRef meshRef))
+            return CreateFallbackQuad();
+
+        string psk = FindFirst(cache, meshRef.Name, &quot;.psk&quot;, &quot;.pskx&quot;);
+        string extractLog = ReadCacheLog(cache, meshRef.Name);
+        bool cacheHasPng = HasPng(cache);
+        // Old cache had mesh but no material PNG (umodel path missed .utx) → solid red/white.
+        if (psk != null &amp;&amp; !cacheHasPng &amp;&amp; string.IsNullOrEmpty(emitter.Texture))
+            psk = null;
+        string extractDir = null;
+        if (psk == null &amp;&amp; UModelExtractor.IsAvailable)
+        {
+            foreach (string pkg in PackageLocator.FindPackageFiles(meshRef.Package, texture: false))
+            {
+                ViewerStatus.Instance.Set(&quot;создание&quot;, &quot;UModel mesh &quot; + meshRef.Name + &quot; / &quot; + Path.GetFileName(pkg));
+                extractDir = UModelExtractor.ExtractObject(pkg, meshRef.Name, &quot;StaticMesh&quot;, out extractLog);
+                psk = FindFirst(extractDir, meshRef.Name, &quot;.psk&quot;, &quot;.pskx&quot;);
+                if (psk != null)
+                    break;
+            }
+        }
+        if (psk == null)
+            psk = PackageLocator.FindUnpackedMesh(meshRef.Name);
+
+        if (psk == null)
+            throw new FileNotFoundException(
+                &quot;Mesh not found: &quot; + emitter.StaticMesh +
+                &quot; (put LineageEffectsStaticmeshes package in meshe_essend, or keep unpack fallback). &quot; + extractLog);
+
+        result.MeshSource = psk;
+        result.UModelLog = extractLog;
+        string destPsk = Path.Combine(cache, Path.GetFileName(psk));
+        CopyIfNeeded(psk, destPsk);
+        if (!string.IsNullOrEmpty(extractLog))
+            File.WriteAllText(Path.Combine(cache, meshRef.Name + &quot;.umodel.log.txt&quot;), extractLog);
+
+        CopySidecarProps(psk, cache);
+        if (!string.IsNullOrEmpty(extractDir))
+            CopyPngsFromExtract(extractDir, cache);
+
+        string fbx = Path.Combine(cache, meshRef.Name + &quot;.fbx&quot;);
+        try
+        {
+            ViewerStatus.Instance.Set(&quot;конвертация&quot;, &quot;PSK→FBX &quot; + meshRef.Name);
+            PskToFbxConverter.Convert(destPsk, fbx, out string blenderLog);
+            result.FbxPath = fbx;
+            File.WriteAllText(Path.Combine(cache, meshRef.Name + &quot;.fbx.log.txt&quot;), blenderLog);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning(&quot;[ViewerEffects] Blender convert skipped: &quot; + ex.Message);
+        }
+
+        return PskMeshLoader.Load(destPsk);
+    }
+
+    static Texture ResolveTextureRef(string rawRef, string cache, ViewerResolvedAssets result)
+    {
+        if (!UnrealAssetRef.TryParse(rawRef, out UnrealAssetRef texRef) || string.IsNullOrEmpty(texRef.Name))
+            return null;
+
+        string png = FindFirst(cache, texRef.Name, &quot;.png&quot;, &quot;.tga&quot;);
+        string extractLog = &quot;&quot;;
+        if (png == null &amp;&amp; UModelExtractor.IsAvailable)
+        {
+            string pkg = PackageLocator.FindPackageFile(
+                             string.IsNullOrEmpty(texRef.Package) ? &quot;LineageEffectsTextures&quot; : texRef.Package,
+                             texture: true)
+                         ?? PackageLocator.FindPackageFile(&quot;LineageEffectsTextures&quot;, texture: true);
+            if (pkg != null)
+            {
+                ViewerStatus.Instance.Set(&quot;создание&quot;, &quot;UModel texture &quot; + texRef.Name);
+                string outDir = UModelExtractor.ExtractObject(pkg, texRef.Name, &quot;Texture&quot;, out extractLog);
+                png = FindFirst(outDir, texRef.Name, &quot;.png&quot;, &quot;.tga&quot;);
+            }
+        }
+        if (png == null)
+            png = PackageLocator.FindUnpackedTexture(texRef.Name);
+
+        if (png == null)
+        {
+            Debug.LogWarning(&quot;[ViewerEffects] Texture not found: &quot; + rawRef + &quot; &quot; + extractLog);
+            return null;
+        }
+
+        result.TextureSource = png;
+        string dest = Path.Combine(cache, Path.GetFileName(png));
+        CopyIfNeeded(png, dest);
+        return RuntimeTextureLoader.LoadPng(dest);
+    }
+
+    static string FirstMeshTextureHint(ViewerResolvedAssets result, string cache)
+    {
+        foreach (string png in SafeGetFiles(cache, &quot;*.png&quot;))
+            return Path.GetFileNameWithoutExtension(png);
+
+        string log = result.UModelLog ?? &quot;&quot;;
+        foreach (string file in SafeGetFiles(cache, &quot;*.umodel.log.txt&quot;))
+            log += &quot;\n&quot; + File.ReadAllText(file);
+        foreach (string file in SafeGetFiles(cache, &quot;*.props.txt&quot;))
+            log += &quot;\n&quot; + File.ReadAllText(file);
+        if (!string.IsNullOrEmpty(result.MeshSource))
+        {
+            string props = Path.ChangeExtension(result.MeshSource, &quot;.props.txt&quot;);
+            if (File.Exists(props))
+                log += &quot;\n&quot; + File.ReadAllText(props);
+        }
+
+        foreach (Match match in TextureImport.Matches(log))
+        {
+            string raw = match.Groups[1].Value;
+            if (UnrealAssetRef.TryParse(raw, out UnrealAssetRef tex) &amp;&amp; !string.IsNullOrEmpty(tex.Name))
+                return raw;
+        }
+        return null;
+    }
+
+    static void CopySidecarProps(string psk, string cache)
+    {
+        string props = Path.ChangeExtension(psk, &quot;.props.txt&quot;);
+        if (File.Exists(props))
+            CopyIfNeeded(props, Path.Combine(cache, Path.GetFileName(props)));
+    }
+
+    static void CopyPngsFromExtract(string extractDir, string cache)
+    {
+        if (string.IsNullOrEmpty(extractDir) || !Directory.Exists(extractDir))
+            return;
+        foreach (string png in Directory.GetFiles(extractDir, &quot;*.png&quot;, SearchOption.AllDirectories))
+            CopyIfNeeded(png, Path.Combine(cache, Path.GetFileName(png)));
+    }
+
+    static bool HasPng(string dir)
+    {
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+            return false;
+        return Directory.GetFiles(dir, &quot;*.png&quot;, SearchOption.AllDirectories).Length &gt; 0;
+    }
+
+    static string ReadCacheLog(string cache, string meshName)
+    {
+        string path = Path.Combine(cache, meshName + &quot;.umodel.log.txt&quot;);
+        return File.Exists(path) ? File.ReadAllText(path) : &quot;&quot;;
+    }
+
+    static string FindFirst(string dir, string name, params string[] exts)
+    {
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+            return null;
+        foreach (string ext in exts)
+        {
+            string[] hits = Directory.GetFiles(dir, name + ext, SearchOption.AllDirectories);
+            if (hits.Length &gt; 0)
+                return hits[0];
+        }
+        return null;
+    }
+
+    static IEnumerable&lt;string&gt; SafeGetFiles(string dir, string pattern)
+    {
+        if (!Directory.Exists(dir))
+            yield break;
+        string[] files;
+        try { files = Directory.GetFiles(dir, pattern, SearchOption.AllDirectories); }
+        catch { yield break; }
+        foreach (string file in files)
+            yield return file;
+    }
+
+    static void CopyIfNeeded(string src, string dest)
+    {
+        if (string.Equals(src, dest, StringComparison.OrdinalIgnoreCase))
+            return;
+        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+        File.Copy(src, dest, true);
+    }
+
+    static string Sanitize(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return &quot;unnamed&quot;;
+        foreach (char c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, &#x27;_&#x27;);
+        return name;
+    }
+
+    static Mesh CreateFallbackQuad()
+    {
+        var mesh = new Mesh { name = &quot;ViewerQuad&quot; };
+        mesh.vertices = new[]
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f)
+        };
+        mesh.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
+        mesh.triangles = new[] { 0, 2, 1, 2, 3, 1 };
+        mesh.RecalculateNormals();
+        return mesh;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/teleport/ElmoredenCemeteryTeleporter.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/teleport/ElmoredenCemeteryTeleporter.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.teleport;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class ElmoredenCemeteryTeleporter extends Quest
+{
+	// Items
+	private static final int USED_GRAVE_PASS = 7261;
+	private static final int ANTIQUE_BROOCH = 7262;
+	
+	// Locations
+	private static final Location FOUR_SEPULCHERS_LOC = new Location(178127, -84435, -7215);
+	private static final Location IMPERIAL_TOMB_LOC = new Location(186699, -75915, -2826);
+	
+	public ElmoredenCemeteryTeleporter()
+	{
+		super(-1, &quot;teleport&quot;);
+		
+		addTalkId(31919, 31920);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = null;
+		
+		if (event.equalsIgnoreCase(&quot;4S&quot;))
+		{
+			if (player.getInventory().hasItem(ANTIQUE_BROOCH))
+			{
+				player.teleportTo(FOUR_SEPULCHERS_LOC, 0);
+			}
+			else if (player.getInventory().hasItem(USED_GRAVE_PASS))
+			{
+				takeItems(player, USED_GRAVE_PASS, 1);
+				player.teleportTo(FOUR_SEPULCHERS_LOC, 0);
+			}
+			else
+				htmltext = npc.getNpcId() + &quot;-1.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;IT&quot;))
+		{
+			if (player.getInventory().hasItem(ANTIQUE_BROOCH))
+			{
+				player.teleportTo(IMPERIAL_TOMB_LOC, 0);
+			}
+			else if (player.getInventory().hasItem(USED_GRAVE_PASS))
+			{
+				takeItems(player, USED_GRAVE_PASS, 1);
+				player.teleportTo(IMPERIAL_TOMB_LOC, 0);
+			}
+			else
+				htmltext = npc.getNpcId() + &quot;-1.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

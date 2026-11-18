@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/item/RequestSellItem.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/item/RequestSellItem.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.item;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.instance.Fisherman;
+import com.shnok.javaserver.gameserver.model.actor.instance.MercenaryManagerNpc;
+import com.shnok.javaserver.gameserver.model.actor.instance.Merchant;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public final class RequestSellItem extends L2GameClientPacket
+{
+	private static final int BATCH_LENGTH = 12; // length of the one item
+	
+	private int _listId;
+	private IntIntHolder[] _items = null;
+	
+	@Override
+	protected void readImpl()
+	{
+		_listId = readD();
+		int count = readD();
+		if (count &lt;= 0 || count &gt; Config.MAX_ITEM_IN_PACKET || count * BATCH_LENGTH != _buf.remaining() - 4)
+			return;
+		
+		_items = new IntIntHolder[count];
+		for (int i = 0; i &lt; count; i++)
+		{
+			int objectId = readD();
+			int itemId = readD();
+			int cnt = readD();
+			
+			if (objectId &lt; 1 || itemId &lt; 1 || cnt &lt; 1)
+			{
+				_items = null;
+				return;
+			}
+			
+			_items[i] = new IntIntHolder(objectId, cnt);
+		}
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		if (_items == null)
+			return;
+		
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		final Npc merchant = (player.getTarget() instanceof Merchant || player.getTarget() instanceof MercenaryManagerNpc) ? (Npc) player.getTarget() : null;
+		if (merchant == null || !player.getAI().canDoInteract(merchant))
+			return;
+		
+		if (_listId &gt; 1000000 &amp;&amp; merchant.getTemplate().getNpcId() != _listId - 1000000)
+			return;
+		
+		long totalPrice = 0;
+		
+		// Proceed the sell
+		for (IntIntHolder i : _items)
+		{
+			ItemInstance item = player.checkItemManipulation(i.getId(), i.getValue());
+			if (item == null || (!item.isSellable()))
+				continue;
+			
+			int price = item.getReferencePrice() / 2;
+			totalPrice += price * i.getValue();
+			if ((Integer.MAX_VALUE / i.getValue()) &lt; price || totalPrice &gt; Integer.MAX_VALUE)
+				return;
+			
+			player.getInventory().destroyItem(i.getId(), i.getValue());
+		}
+		
+		player.addAdena((int) totalPrice, false);
+		
+		// Send the htm, if existing.
+		String htmlFolder = &quot;&quot;;
+		if (merchant instanceof Fisherman)
+			htmlFolder = &quot;fisherman&quot;;
+		else if (merchant instanceof Merchant)
+			htmlFolder = &quot;merchant&quot;;
+		
+		if (!htmlFolder.isEmpty())
+		{
+			final String content = HtmCache.getInstance().getHtm(&quot;data/html/&quot; + htmlFolder + &quot;/&quot; + merchant.getNpcId() + &quot;-sold.htm&quot;);
+			if (content != null)
+			{
+				final NpcHtmlMessage html = new NpcHtmlMessage(merchant.getObjectId());
+				html.setHtml(content);
+				html.replace(&quot;%objectId%&quot;, merchant.getObjectId());
+				player.sendPacket(html);
+			}
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

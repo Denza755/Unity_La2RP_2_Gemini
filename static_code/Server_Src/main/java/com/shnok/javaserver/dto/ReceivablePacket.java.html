@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/dto/ReceivablePacket.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/dto/ReceivablePacket.java</h1>
+            <pre>package com.shnok.javaserver.dto;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
+public abstract class ReceivablePacket extends Packet {
+    private int iterator;
+
+    public ReceivablePacket(byte[] data) {
+        super(data);
+        readB();
+    }
+
+    protected byte readB() {
+        return packetData[iterator++];
+    }
+
+    protected byte[] readB(int size) {
+        byte[] readBytes = Arrays.copyOfRange(packetData, iterator, iterator + size);
+        iterator += size;
+        return readBytes;
+    }
+
+//    protected int readI() {
+//        byte[] array = new byte[4];
+//        System.arraycopy(packetData, iterator, array, 0, 4);
+//        iterator += 4;
+//        return ByteBuffer.wrap(array).getInt();
+//    }
+
+    protected int readI() {
+        return (packetData[iterator++] &amp; 0xff) | ((packetData[iterator++] &amp; 0xff) &lt;&lt; 8) | ((packetData[iterator++] &amp; 0xff) &lt;&lt; 16) | ((packetData[iterator++] &amp; 0xff) &lt;&lt; 24);
+    }
+
+    public int readH()
+    {
+        return (packetData[iterator++] &amp; 0xff) | ((packetData[iterator++] &amp; 0xff) &lt;&lt; 8);
+    }
+//    protected float readF() {
+//        byte[] array = new byte[4];
+//        System.arraycopy(packetData, iterator, array, 0, 4);
+//        iterator += 4;
+//        return ByteBuffer.wrap(array).getFloat();
+//    }
+
+//    protected String readS() {
+//        byte strLen = readB();
+//        byte[] data = new byte[strLen];
+//        System.arraycopy(packetData, iterator, data, 0, strLen);
+//        iterator += strLen;
+//
+//        return new String(data, 0, strLen, StandardCharsets.UTF_8);
+//    }
+
+    public String readS() {
+        final int start = iterator;
+
+        // Find the null terminator in UTF-16LE encoding.
+        int end = start;
+        while (end &lt; packetData.length - 1 &amp;&amp; (packetData[end] != 0 || packetData[end + 1] != 0))
+            end += 2;
+
+        // Move the offset past the string and the null terminator.
+        iterator += (end - start) + 2;
+
+        // Create a string from the bytes between start and end.
+        String s = new String(packetData, start, end - start, StandardCharsets.UTF_16LE);
+
+        byte[] data = new byte[end - start];
+        System.arraycopy(packetData, start, data, 0, end - start);
+        return s;
+    }
+}
+</pre>
+            
+</body>
+</html>

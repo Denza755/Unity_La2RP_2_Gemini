@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminPunish.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminPunish.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.LoginServerThread;
+import com.shnok.javaserver.gameserver.enums.PunishmentType;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+
+public class AdminPunish implements IAdminCommandHandler
+{
+	private static final String UPDATE_BAN = &quot;UPDATE characters SET punish_level=?, punish_timer=? WHERE char_name=?&quot;;
+	private static final String UPDATE_JAIL = &quot;UPDATE characters SET x=-114356, y=-249645, z=-2984, punish_level=?, punish_timer=? WHERE char_name=?&quot;;
+	private static final String UPDATE_UNJAIL = &quot;UPDATE characters SET x=17836, y=170178, z=-3507, punish_level=0, punish_timer=0 WHERE char_name=?&quot;;
+	private static final String UPDATE_ACCESS = &quot;UPDATE characters SET accesslevel=? WHERE char_name=?&quot;;
+	
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_ban&quot;,
+		&quot;admin_jail&quot;,
+		&quot;admin_kick&quot;,
+		&quot;admin_unban&quot;,
+		&quot;admin_unjail&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command);
+		st.nextToken();
+		
+		if (command.startsWith(&quot;admin_ban&quot;))
+		{
+			try
+			{
+				final String param = st.nextToken();
+				
+				String name = null;
+				int duration = -1;
+				Player targetPlayer = null;
+				
+				// One parameter, player name
+				if (st.hasMoreTokens())
+				{
+					name = st.nextToken();
+					targetPlayer = World.getInstance().getPlayer(name);
+					
+					// Second parameter, duration
+					if (st.hasMoreTokens())
+						duration = Integer.parseInt(st.nextToken());
+				}
+				// If there is no name, select target
+				else
+					targetPlayer = getTargetPlayer(player, false);
+				
+				// Can&#x27;t ban yourself
+				if (player == targetPlayer)
+				{
+					player.sendPacket(SystemMessageId.CANNOT_USE_ON_YOURSELF);
+					return;
+				}
+				
+				switch (param)
+				{
+					case &quot;account&quot;:
+						if (targetPlayer == null)
+						{
+							if (StringUtil.isEmpty(name))
+							{
+								player.sendMessage(&quot;Usage: //ban account [name].&quot;);
+								return;
+							}
+							
+							LoginServerThread.getInstance().sendAccessLevel(name, -100);
+							player.sendMessage(&quot;Ban request sent for account &quot; + name + &quot;.&quot;);
+						}
+						else
+						{
+							targetPlayer.getPunishment().setType(PunishmentType.ACC, 0);
+							player.sendMessage(targetPlayer.getAccountName() + &quot; account is banned.&quot;);
+						}
+						break;
+					
+					case &quot;chat&quot;:
+						if (targetPlayer == null)
+						{
+							if (StringUtil.isEmpty(name))
+							{
+								player.sendMessage(&quot;Usage: //ban chat [name duration].&quot;);
+								return;
+							}
+							
+							banChatOfflinePlayer(player, name, duration, true);
+						}
+						else
+						{
+							if (targetPlayer.getPunishment().getType() != PunishmentType.NONE)
+							{
+								player.sendMessage(targetPlayer.getName() + &quot; is already &quot; + targetPlayer.getPunishment().getType().getDescription() + &quot;, and can&#x27;t receive another punishment.&quot;);
+								return;
+							}
+							
+							targetPlayer.getPunishment().setType(PunishmentType.CHAT, duration);
+							
+							player.sendMessage(targetPlayer.getName() + &quot; is chat banned&quot; + ((duration &gt; 0) ? &quot; for &quot; + duration + &quot; minutes.&quot; : &quot;.&quot;));
+						}
+						break;
+					
+					case &quot;player&quot;:
+						changeCharAccessLevel(targetPlayer, name, player, -1);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage : //ban account|chat|player [name [time]]&quot;);
+			}
+		}
+		else if (command.startsWith(&quot;admin_kick&quot;))
+		{
+			try
+			{
+				final String param = st.nextToken();
+				switch (param)
+				{
+					case &quot;all&quot;:
+						for (Player worldPlayer : World.getInstance().getPlayers())
+						{
+							if (worldPlayer.isGM())
+								continue;
+							
+							worldPlayer.logout(false);
+						}
+						break;
+					
+					default:
+						final Player targetPlayer = getTargetPlayer(player, param, false);
+						if (targetPlayer == null)
+						{
+							player.sendPacket(SystemMessageId.INVALID_TARGET);
+							return;
+						}
+						targetPlayer.logout(false);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage : //kick [all|name]&quot;);
+			}
+		}
+		else if (command.startsWith(&quot;admin_jail&quot;))
+		{
+			String name = null;
+			int duration = -1;
+			Player targetPlayer = null;
+			
+			if (st.hasMoreTokens())
+			{
+				name = st.nextToken();
+				targetPlayer = World.getInstance().getPlayer(name);
+				
+				if (st.hasMoreTokens())
+					duration = Integer.parseInt(st.nextToken());
+			}
+			else
+				targetPlayer = getTargetPlayer(player, false);
+			
+			// Can&#x27;t ban yourself
+			if (player == targetPlayer)
+			{
+				player.sendPacket(SystemMessageId.CANNOT_USE_ON_YOURSELF);
+				return;
+			}
+			
+			if (targetPlayer == null)
+				jailOfflinePlayer(player, name, duration);
+			else
+			{
+				targetPlayer.getPunishment().setType(PunishmentType.JAIL, duration);
+				player.sendMessage(targetPlayer.getName() + &quot; is jailed&quot; + ((duration &gt; 0) ? &quot; for &quot; + duration + &quot; minutes.&quot; : &quot;.&quot;));
+			}
+		}
+		else if (command.startsWith(&quot;admin_unban&quot;))
+		{
+			try
+			{
+				final String param = st.nextToken();
+				
+				String name = null;
+				Player targetPlayer = null;
+				
+				if (st.hasMoreTokens())
+				{
+					name = st.nextToken();
+					targetPlayer = World.getInstance().getPlayer(name);
+				}
+				
+				// Can&#x27;t unban yourself.
+				if (player == targetPlayer)
+				{
+					player.sendPacket(SystemMessageId.CANNOT_USE_ON_YOURSELF);
+					return;
+				}
+				
+				switch (param)
+				{
+					case &quot;account&quot;:
+						if (targetPlayer != null)
+						{
+							player.sendMessage(targetPlayer.getName() + &quot; account isn&#x27;t actually banned.&quot;);
+							return;
+						}
+						
+						LoginServerThread.getInstance().sendAccessLevel(name, 0);
+						player.sendMessage(&quot;Unban request sent for account &quot; + name + &quot;.&quot;);
+						break;
+					
+					case &quot;chat&quot;:
+						if (targetPlayer == null)
+							banChatOfflinePlayer(player, name, 0, false);
+						else
+						{
+							if (targetPlayer.isChatBanned())
+							{
+								targetPlayer.getPunishment().setType(PunishmentType.NONE, 0);
+								player.sendMessage(targetPlayer.getName() + &quot;&#x27;s chat ban has been lifted.&quot;);
+							}
+							else
+								player.sendMessage(targetPlayer.getName() + &quot; isn&#x27;t currently chat banned.&quot;);
+						}
+						break;
+					
+					case &quot;player&quot;:
+						if (targetPlayer != null)
+						{
+							player.sendMessage(targetPlayer.getName() + &quot; player isn&#x27;t actually banned.&quot;);
+							return;
+						}
+						
+						changeCharAccessLevel(null, name, player, 0);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage : //unban account|chat|player name&quot;);
+			}
+		}
+		else if (command.startsWith(&quot;admin_unjail&quot;))
+		{
+			try
+			{
+				String name = null;
+				Player targetPlayer;
+				
+				if (st.hasMoreTokens())
+				{
+					name = st.nextToken();
+					targetPlayer = World.getInstance().getPlayer(name);
+				}
+				else
+					targetPlayer = getTargetPlayer(player, false);
+				
+				if (targetPlayer == null)
+					unjailOfflinePlayer(player, name);
+				else
+				{
+					targetPlayer.getPunishment().setType(PunishmentType.NONE, 0);
+					player.sendMessage(targetPlayer.getName() + &quot; has been unjailed.&quot;);
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage : //unjail name&quot;);
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+	
+	private static void banChatOfflinePlayer(Player player, String playerName, int delay, boolean ban)
+	{
+		PunishmentType punishement;
+		long value = 0;
+		
+		if (ban)
+		{
+			punishement = PunishmentType.CHAT;
+			value = ((delay &gt; 0) ? delay * 60000L : 60000);
+		}
+		else
+			punishement = PunishmentType.NONE;
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_BAN))
+		{
+			ps.setInt(1, punishement.ordinal());
+			ps.setLong(2, value);
+			ps.setString(3, playerName);
+			ps.execute();
+			
+			final int count = ps.getUpdateCount();
+			if (count == 0)
+				player.sendMessage(&quot;This Player isn&#x27;t found.&quot;);
+			else if (ban)
+				player.sendMessage(playerName + &quot; is chat banned&quot; + ((delay &gt; 0) ? &quot; for &quot; + delay + &quot; minutes.&quot; : &quot;.&quot;));
+			else
+				player.sendMessage(playerName + &quot;&#x27;s chat ban has been lifted.&quot;);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t chatban offline Player.&quot;, e);
+		}
+	}
+	
+	private static void jailOfflinePlayer(Player player, String playerName, int delay)
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_JAIL))
+		{
+			ps.setInt(1, PunishmentType.JAIL.ordinal());
+			ps.setLong(2, ((delay &gt; 0) ? delay * 60000L : 0));
+			ps.setString(3, playerName);
+			ps.execute();
+			
+			final int count = ps.getUpdateCount();
+			if (count == 0)
+				player.sendMessage(&quot;This Player isn&#x27;t found.&quot;);
+			else
+				player.sendMessage(playerName + &quot; has been jailed&quot; + ((delay &gt; 0) ? &quot; for &quot; + delay + &quot; minutes.&quot; : &quot;.&quot;));
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t jail offline Player.&quot;, e);
+		}
+	}
+	
+	private static void unjailOfflinePlayer(Player player, String playerName)
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_UNJAIL))
+		{
+			ps.setString(1, playerName);
+			ps.execute();
+			
+			final int count = ps.getUpdateCount();
+			if (count == 0)
+				player.sendMessage(&quot;This Player isn&#x27;t found.&quot;);
+			else
+				player.sendMessage(playerName + &quot; has been unjailed.&quot;);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t unjail offline Player.&quot;, e);
+		}
+	}
+	
+	private static void changeCharAccessLevel(Player targetPlayer, String name, Player player, int lvl)
+	{
+		if (targetPlayer != null)
+		{
+			targetPlayer.setAccessLevel(lvl);
+			targetPlayer.logout(false);
+			
+			player.sendMessage(targetPlayer.getName() + &quot; has been banned.&quot;);
+		}
+		else
+		{
+			if (StringUtil.isEmpty(name))
+			{
+				player.sendMessage((lvl == 0) ? &quot;Usage: //unban player [name].&quot; : &quot;Usage: //ban player [name].&quot;);
+				return;
+			}
+			
+			try (Connection con = ConnectionPool.getConnection();
+				PreparedStatement ps = con.prepareStatement(UPDATE_ACCESS))
+			{
+				ps.setInt(1, lvl);
+				ps.setString(2, name);
+				ps.execute();
+				
+				final int count = ps.getUpdateCount();
+				if (count == 0)
+				{
+					player.sendMessage(&quot;This Player isn&#x27;t found, or the AccessLevel was unaltered.&quot;);
+					return;
+				}
+				
+				player.sendMessage(name + &quot; now has an access level of &quot; + lvl + &quot;.&quot;);
+			}
+			catch (Exception e)
+			{
+				LOGGER.error(&quot;Couldn&#x27;t change Player&#x27;s AccessLevel.&quot;, e);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

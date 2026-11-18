@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/template/CreatureTemplate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/template/CreatureTemplate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.template;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+/**
+ * The generic datatype used by any character template. It holds basic informations, such as base stats (STR, CON, DEX,...) and extended stats (power attack, magic attack, hp/mp regen, collision values).
+ */
+public class CreatureTemplate
+{
+	private final int _baseSTR;
+	private final int _baseCON;
+	private final int _baseDEX;
+	private final int _baseINT;
+	private final int _baseWIT;
+	private final int _baseMEN;
+	
+	private final double _baseHpMax;
+	private final double _baseMpMax;
+	
+	private final double _baseHpRegen;
+	private final double _baseMpRegen;
+	
+	private final double _basePAtk;
+	private final double _baseMAtk;
+	private final double _basePDef;
+	private final double _baseMDef;
+	
+	private final double _basePAtkSpd;
+	
+	private final double _baseCritRate;
+	
+	private final double _baseWalkSpd;
+	private final double _baseRunSpd;
+	
+	protected final double _collisionRadius;
+	protected final double _collisionHeight;
+	
+	public CreatureTemplate(StatSet set)
+	{
+		_baseSTR = set.getInteger(&quot;str&quot;, 40);
+		_baseCON = set.getInteger(&quot;con&quot;, 21);
+		_baseDEX = set.getInteger(&quot;dex&quot;, 30);
+		_baseINT = set.getInteger(&quot;int&quot;, 20);
+		_baseWIT = set.getInteger(&quot;wit&quot;, 43);
+		_baseMEN = set.getInteger(&quot;men&quot;, 20);
+		
+		_baseHpMax = set.getDouble(&quot;hp&quot;, 0.);
+		_baseMpMax = set.getDouble(&quot;mp&quot;, 0.);
+		
+		_baseHpRegen = set.getDouble(&quot;hpRegen&quot;, 1.5);
+		_baseMpRegen = set.getDouble(&quot;mpRegen&quot;, 0.9);
+		
+		_basePAtk = set.getDouble(&quot;pAtk&quot;);
+		_baseMAtk = set.getDouble(&quot;mAtk&quot;);
+		_basePDef = set.getDouble(&quot;pDef&quot;);
+		_baseMDef = set.getDouble(&quot;mDef&quot;);
+		
+		_basePAtkSpd = set.getDouble(&quot;atkSpd&quot;, 300.);
+		
+		_baseCritRate = set.getDouble(&quot;crit&quot;, 4.);
+		
+		_baseWalkSpd = set.getDouble(&quot;walkSpd&quot;, 0.);
+		_baseRunSpd = set.getDouble(&quot;runSpd&quot;, 1.);
+		
+		_collisionRadius = set.getDouble(&quot;radius&quot;);
+		_collisionHeight = set.getDouble(&quot;height&quot;);
+	}
+	
+	public final int getBaseSTR()
+	{
+		return _baseSTR;
+	}
+	
+	public final int getBaseCON()
+	{
+		return _baseCON;
+	}
+	
+	public final int getBaseDEX()
+	{
+		return _baseDEX;
+	}
+	
+	public final int getBaseINT()
+	{
+		return _baseINT;
+	}
+	
+	public final int getBaseWIT()
+	{
+		return _baseWIT;
+	}
+	
+	public final int getBaseMEN()
+	{
+		return _baseMEN;
+	}
+	
+	public double getBaseHpMax(int level)
+	{
+		return _baseHpMax;
+	}
+	
+	public double getBaseMpMax(int level)
+	{
+		return _baseMpMax;
+	}
+	
+	public double getBaseHpRegen(int level)
+	{
+		return _baseHpRegen;
+	}
+	
+	public double getBaseMpRegen(int level)
+	{
+		return _baseMpRegen;
+	}
+	
+	public final double getBasePAtk()
+	{
+		return _basePAtk;
+	}
+	
+	public final double getBaseMAtk()
+	{
+		return _baseMAtk;
+	}
+	
+	public final double getBasePDef()
+	{
+		return _basePDef;
+	}
+	
+	public final double getBaseMDef()
+	{
+		return _baseMDef;
+	}
+	
+	public final double getBasePAtkSpd()
+	{
+		return _basePAtkSpd;
+	}
+	
+	public final double getBaseCritRate()
+	{
+		return _baseCritRate;
+	}
+	
+	public final double getBaseWalkSpeed()
+	{
+		return _baseWalkSpd;
+	}
+	
+	public final double getBaseRunSpeed()
+	{
+		return _baseRunSpd;
+	}
+	
+	public final double getCollisionRadius()
+	{
+		return _collisionRadius;
+	}
+	
+	public final double getCollisionHeight()
+	{
+		return _collisionHeight;
+	}
+}</pre>
+            
+</body>
+</html>

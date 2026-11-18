@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Combat/Target/TargetData.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Combat/Target/TargetData.cs</h1>
+            <pre>using UnityEngine;
+
+[System.Serializable]
+public class TargetData
+{
+    [SerializeField] private Status _status;
+    [SerializeField] private Stats _stats;
+    [SerializeField] private NetworkIdentity _identity;
+    [SerializeField] private ObjectData _data;
+    [SerializeField] private float _distance;
+
+    public Status Status { get { return _status; } }
+    public Stats Stats { get { return _stats; } }
+    public NetworkIdentity Identity { get { return _identity; } }
+    public ObjectData Data { get { return _data; } }
+    public float Distance { get { return _distance; } set { _distance = value; } }
+
+    public TargetData(ObjectData target)
+    {
+        _data = target;
+        Entity e = _data.ObjectTransform.GetComponent&lt;Entity&gt;();
+
+        _identity = e.Identity;
+
+        //switch (_identity.EntityType) {
+        //    case EntityType.Player:
+        //        _status = _data.ObjectTransform.GetComponent&lt;PlayerEntity&gt;().Status;
+        //        break;
+        //    case EntityType.User:
+        //        _status = _data.ObjectTransform.GetComponent&lt;UserEntity&gt;().Status;
+        //        break;
+        //    case EntityType.NPC:
+        //        _status = _data.ObjectTransform.GetComponent&lt;NpcEntity&gt;().Status;
+        //        break;
+        //    case EntityType.Monster:
+        //        _status = _data.ObjectTransform.GetComponent&lt;MonsterEntity&gt;().Status;
+        //        break;
+        //}
+        _status = e.Status;
+        _stats = e.Stats;
+    }
+}
+</pre>
+            
+</body>
+</html>

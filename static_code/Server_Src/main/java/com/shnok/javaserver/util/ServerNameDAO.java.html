@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/util/ServerNameDAO.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/util/ServerNameDAO.java</h1>
+            <pre>package com.shnok.javaserver.util;
+
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class ServerNameDAO {
+    private static final Map&lt;Integer, String&gt; SERVERS = new HashMap&lt;&gt;();
+
+    static {
+        SERVERS.put(Integer.valueOf(1), &quot;Bartz&quot;);
+        SERVERS.put(Integer.valueOf(2), &quot;Sieghardt&quot;);
+        SERVERS.put(Integer.valueOf(3), &quot;Kain&quot;);
+        SERVERS.put(Integer.valueOf(4), &quot;Lionna&quot;);
+        SERVERS.put(Integer.valueOf(5), &quot;Erica&quot;);
+        SERVERS.put(Integer.valueOf(6), &quot;Gustin&quot;);
+        SERVERS.put(Integer.valueOf(7), &quot;Devianne&quot;);
+        SERVERS.put(Integer.valueOf(8), &quot;Hindemith&quot;);
+        SERVERS.put(Integer.valueOf(9), &quot;Teon (EURO)&quot;);
+        SERVERS.put(Integer.valueOf(10), &quot;Franz (EURO)&quot;);
+        SERVERS.put(Integer.valueOf(11), &quot;Luna (EURO)&quot;);
+        SERVERS.put(Integer.valueOf(12), &quot;Sayha&quot;);
+        SERVERS.put(Integer.valueOf(13), &quot;Aria&quot;);
+        SERVERS.put(Integer.valueOf(14), &quot;Phoenix&quot;);
+        SERVERS.put(Integer.valueOf(15), &quot;Chronos&quot;);
+        SERVERS.put(Integer.valueOf(16), &quot;Naia (EURO)&quot;);
+        SERVERS.put(Integer.valueOf(17), &quot;Elhwynna&quot;);
+        SERVERS.put(Integer.valueOf(18), &quot;Ellikia&quot;);
+        SERVERS.put(Integer.valueOf(19), &quot;Shikken&quot;);
+        SERVERS.put(Integer.valueOf(20), &quot;Scryde&quot;);
+        SERVERS.put(Integer.valueOf(21), &quot;Frikios&quot;);
+        SERVERS.put(Integer.valueOf(22), &quot;Ophylia&quot;);
+        SERVERS.put(Integer.valueOf(23), &quot;Shakdun&quot;);
+        SERVERS.put(Integer.valueOf(24), &quot;Tarziph&quot;);
+        SERVERS.put(Integer.valueOf(25), &quot;Aria&quot;);
+        SERVERS.put(Integer.valueOf(26), &quot;Esenn&quot;);
+        SERVERS.put(Integer.valueOf(27), &quot;Elcardia&quot;);
+        SERVERS.put(Integer.valueOf(28), &quot;Yiana&quot;);
+        SERVERS.put(Integer.valueOf(29), &quot;Seresin&quot;);
+        SERVERS.put(Integer.valueOf(30), &quot;Tarkai&quot;);
+        SERVERS.put(Integer.valueOf(31), &quot;Khadia&quot;);
+        SERVERS.put(Integer.valueOf(32), &quot;Roien&quot;);
+        SERVERS.put(Integer.valueOf(33), &quot;Kallint (Non-PvP)&quot;);
+        SERVERS.put(Integer.valueOf(34), &quot;Baium&quot;);
+        SERVERS.put(Integer.valueOf(35), &quot;Kamael&quot;);
+        SERVERS.put(Integer.valueOf(36), &quot;Beleth&quot;);
+        SERVERS.put(Integer.valueOf(37), &quot;Anakim&quot;);
+        SERVERS.put(Integer.valueOf(38), &quot;Lilith&quot;);
+        SERVERS.put(Integer.valueOf(39), &quot;Thifiel&quot;);
+        SERVERS.put(Integer.valueOf(40), &quot;Lithra&quot;);
+        SERVERS.put(Integer.valueOf(41), &quot;Lockirin&quot;);
+        SERVERS.put(Integer.valueOf(42), &quot;Kakai&quot;);
+        SERVERS.put(Integer.valueOf(43), &quot;Cadmus&quot;);
+        SERVERS.put(Integer.valueOf(44), &quot;Athebaldt&quot;);
+        SERVERS.put(Integer.valueOf(45), &quot;Blackbird&quot;);
+        SERVERS.put(Integer.valueOf(46), &quot;Ramsheart&quot;);
+        SERVERS.put(Integer.valueOf(47), &quot;Esthus&quot;);
+        SERVERS.put(Integer.valueOf(48), &quot;Vasper&quot;);
+        SERVERS.put(Integer.valueOf(49), &quot;Lancer&quot;);
+        SERVERS.put(Integer.valueOf(50), &quot;Ashton&quot;);
+        SERVERS.put(Integer.valueOf(51), &quot;Waytrel&quot;);
+        SERVERS.put(Integer.valueOf(52), &quot;Waltner&quot;);
+        SERVERS.put(Integer.valueOf(53), &quot;Tahnford&quot;);
+        SERVERS.put(Integer.valueOf(54), &quot;Hunter&quot;);
+        SERVERS.put(Integer.valueOf(55), &quot;Dewell&quot;);
+        SERVERS.put(Integer.valueOf(56), &quot;Rodemaye&quot;);
+        SERVERS.put(Integer.valueOf(57), &quot;Ken Rauhel&quot;);
+        SERVERS.put(Integer.valueOf(58), &quot;Ken Abigail&quot;);
+        SERVERS.put(Integer.valueOf(59), &quot;Ken Orwen&quot;);
+        SERVERS.put(Integer.valueOf(60), &quot;Van Holter&quot;);
+        SERVERS.put(Integer.valueOf(61), &quot;Desperion&quot;);
+        SERVERS.put(Integer.valueOf(62), &quot;Einhovant&quot;);
+        SERVERS.put(Integer.valueOf(63), &quot;Shunaiman&quot;);
+        SERVERS.put(Integer.valueOf(64), &quot;Faris&quot;);
+        SERVERS.put(Integer.valueOf(65), &quot;Tor&quot;);
+        SERVERS.put(Integer.valueOf(66), &quot;Carneiar&quot;);
+        SERVERS.put(Integer.valueOf(67), &quot;Dwyllios&quot;);
+        SERVERS.put(Integer.valueOf(68), &quot;Baium&quot;);
+        SERVERS.put(Integer.valueOf(69), &quot;Hallate&quot;);
+        SERVERS.put(Integer.valueOf(70), &quot;Zaken&quot;);
+        SERVERS.put(Integer.valueOf(71), &quot;Core&quot;);
+    }
+
+    public static String getServer(int id) {
+        return SERVERS.getOrDefault(Integer.valueOf(id), &quot;Undefined&quot;);
+    }
+
+    public static Map&lt;Integer, String&gt; getServers() {
+        return SERVERS;
+    }
+}</pre>
+            
+</body>
+</html>

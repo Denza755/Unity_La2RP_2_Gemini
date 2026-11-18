@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/ClanHallManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/ClanHallManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.manager;
+
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.enums.SpawnType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.Auction;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHall;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHallFunction;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHallSiege;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.SiegableHall;
+import com.shnok.javaserver.gameserver.model.zone.type.ClanHallZone;
+
+import org.w3c.dom.Document;
+
+/**
+ * Loads and store {@link ClanHall}s informations, along their associated {@link Auction}s (if existing), using database and XML informations.
+ */
+public class ClanHallManager implements IXmlReader
+{
+	private static final String LOAD_CLANHALLS = &quot;SELECT * FROM clanhall&quot;;
+	private static final String LOAD_FUNCTIONS = &quot;SELECT * FROM clanhall_functions WHERE hall_id = ?&quot;;
+	
+	private final Map&lt;Integer, ClanHall&gt; _clanHalls = new HashMap&lt;&gt;();
+	
+	protected ClanHallManager()
+	{
+		// Build ClanHalls objects with static data.
+		load();
+		
+		// Add dynamic data.
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(LOAD_CLANHALLS);
+			PreparedStatement ps2 = con.prepareStatement(LOAD_FUNCTIONS);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+			{
+				final int id = rs.getInt(&quot;id&quot;);
+				
+				final ClanHall ch = _clanHalls.get(id);
+				if (ch == null)
+					continue;
+				
+				// Find the related zone, and associate it with the Clan Hall.
+				final ClanHallZone zone = ZoneManager.getInstance().getAllZones(ClanHallZone.class).stream().filter(z -&gt; z.getResidenceId() == id).findFirst().orElse(null);
+				if (zone == null)
+					LOGGER.warn(&quot;No existing ClanHallZone for ClanHall {}.&quot;, id);
+				
+				// A default bid exists, it means it&#x27;s a regular Clan Hall. Generate an Auction.
+				if (ch.getAuctionMin() &gt; 0)
+					ch.setAuction(new Auction(ch, rs.getInt(&quot;sellerBid&quot;), rs.getString(&quot;sellerName&quot;), rs.getString(&quot;sellerClanName&quot;), rs.getLong(&quot;endDate&quot;)));
+				// No default bid ; it&#x27;s actually a Siegable Hall.
+				else
+				{
+					// Test siege date, registered as end date.
+					long nextSiege = rs.getLong(&quot;endDate&quot;);
+					if (nextSiege - System.currentTimeMillis() &lt; 0)
+						((SiegableHall) ch).updateNextSiege();
+					else
+					{
+						final Calendar cal = Calendar.getInstance();
+						cal.setTimeInMillis(nextSiege);
+						
+						((SiegableHall) ch).setNextSiegeDate(cal);
+					}
+				}
+				
+				// Feed the zone.
+				ch.setZone(zone);
+				
+				final int ownerId = rs.getInt(&quot;ownerId&quot;);
+				if (ownerId &gt; 0)
+				{
+					final Clan clan = ClanTable.getInstance().getClan(ownerId);
+					if (clan == null)
+					{
+						ch.free();
+						continue;
+					}
+					
+					// Set Clan variable.
+					clan.setClanHallId(id);
+					
+					// Set ClanHall variables.
+					ch.setOwnerId(ownerId);
+					ch.setPaidUntil(rs.getLong(&quot;paidUntil&quot;));
+					ch.setPaid(rs.getBoolean(&quot;paid&quot;));
+					
+					// Initialize the fee task.
+					ch.initializeFeeTask();
+					
+					// Load related ClanHallFunctions.
+					ps2.setInt(1, id);
+					
+					try (ResultSet rs2 = ps2.executeQuery())
+					{
+						while (rs2.next())
+							ch.getFunctions().put(rs2.getInt(&quot;type&quot;), new ClanHallFunction(ch, rs2.getInt(&quot;type&quot;), rs2.getInt(&quot;lvl&quot;), rs2.getInt(&quot;lease&quot;), rs2.getLong(&quot;rate&quot;), rs2.getLong(&quot;endTime&quot;)));
+					}
+					ps2.clearParameters();
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load clan hall data.&quot;, e);
+		}
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/clanHalls.xml&quot;);
+		LOGGER.info(&quot;Loaded {} clan halls and {} siegable clan halls.&quot;, _clanHalls.size(), getSiegableHalls().size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;clanHall&quot;, chNode -&gt;
+		{
+			final StatSet set = parseAttributes(chNode);
+			forEach(chNode, &quot;agit&quot;, agitNode -&gt; addAttributes(set, agitNode.getAttributes()));
+			forEach(chNode, &quot;tax&quot;, taxNode -&gt; addAttributes(set, taxNode.getAttributes()));
+			
+			final ClanHall ch = (set.containsKey(&quot;siegeLength&quot;)) ? new SiegableHall(set) : new ClanHall(set);
+			
+			forEach(chNode, &quot;gates&quot;, gatesNode -&gt; ch.setDoors(parseString(gatesNode.getAttributes(), &quot;val&quot;)));
+			forEach(chNode, &quot;npcs&quot;, npcsNode -&gt; ch.setNpcs(parseString(npcsNode.getAttributes(), &quot;val&quot;)));
+			forEach(chNode, &quot;spawns&quot;, spawnsNode -&gt; forEach(spawnsNode, &quot;spawn&quot;, spawnNode -&gt; ch.addSpawn(parseEnum(spawnNode.getAttributes(), SpawnType.class, &quot;type&quot;), parseLocation(spawnNode))));
+			
+			_clanHalls.put(set.getInteger(&quot;id&quot;), ch);
+		}));
+	}
+	
+	/**
+	 * @param id : The ClanHall id to retrieve.
+	 * @return a {@link ClanHall} by its id.
+	 */
+	public final ClanHall getClanHall(int id)
+	{
+		return _clanHalls.get(id);
+	}
+	
+	/**
+	 * @param id : The ClanHall id to retrieve.
+	 * @return a {@link SiegableHall} by its id.
+	 */
+	public SiegableHall getSiegableHall(int id)
+	{
+		final ClanHall ch = _clanHalls.get(id);
+		return (ch instanceof SiegableHall sh) ? sh : null;
+	}
+	
+	/**
+	 * @return a {@link Map} with all {@link ClanHall}s.
+	 */
+	public final Map&lt;Integer, ClanHall&gt; getClanHalls()
+	{
+		return _clanHalls;
+	}
+	
+	/**
+	 * @return a {@link List} with all {@link SiegableHall}s.
+	 */
+	public List&lt;SiegableHall&gt; getSiegableHalls()
+	{
+		return _clanHalls.values().stream().filter(SiegableHall.class::isInstance).map(SiegableHall.class::cast).toList();
+	}
+	
+	/**
+	 * @return a {@link List} with all auctionable {@link ClanHall}s.
+	 */
+	public final List&lt;ClanHall&gt; getAuctionableClanHalls()
+	{
+		final List&lt;ClanHall&gt; list = new ArrayList&lt;&gt;();
+		for (ClanHall ch : _clanHalls.values())
+		{
+			// No Auction has been registered for this ClanHall - continue.
+			final Auction auction = ch.getAuction();
+			if (auction == null)
+				continue;
+			
+			// ClanHall is owned, but no Auction has been registered by the owner - continue.
+			if (ch.getOwnerId() &gt; 0 &amp;&amp; auction.getSeller() == null)
+				continue;
+			
+			list.add(ch);
+		}
+		return list;
+	}
+	
+	/**
+	 * @param location : The location name used as parameter.
+	 * @return a {@link List} with all {@link ClanHall}s which are in a given location.
+	 */
+	public final List&lt;ClanHall&gt; getClanHallsByLocation(String location)
+	{
+		return _clanHalls.values().stream().filter(ch -&gt; ch.getTownName().equalsIgnoreCase(location)).toList();
+	}
+	
+	/**
+	 * @param clan : The {@link Clan} to check.
+	 * @return the {@link ClanHall} owned by the Clan, or null otherwise.
+	 */
+	public final ClanHall getClanHallByOwner(Clan clan)
+	{
+		return _clanHalls.values().stream().filter(ch -&gt; ch.getOwnerId() == clan.getClanId()).findFirst().orElse(null);
+	}
+	
+	/**
+	 * @param id : The ClanHall id used as reference.
+	 * @return the {@link Auction} associated to a {@link ClanHall}, or null if not existing.
+	 */
+	public final Auction getAuction(int id)
+	{
+		final ClanHall ch = _clanHalls.get(id);
+		return (ch == null) ? null : ch.getAuction();
+	}
+	
+	public final ClanHallSiege getActiveSiege(Creature creature)
+	{
+		for (ClanHall ch : _clanHalls.values())
+		{
+			if (!(ch instanceof SiegableHall sh))
+				continue;
+			
+			if (sh.getSiegeZone().isActive() &amp;&amp; sh.getSiegeZone().isInsideZone(creature))
+				return sh.getSiege();
+		}
+		return null;
+	}
+	
+	public final boolean isClanParticipating(Clan clan)
+	{
+		for (SiegableHall hall : getSiegableHalls())
+		{
+			if (hall.getSiege() != null &amp;&amp; hall.getSiege().getAttackerClans().contains(clan))
+				return true;
+		}
+		return false;
+	}
+	
+	public final void save()
+	{
+		for (SiegableHall hall : getSiegableHalls())
+		{
+			// Rainbow springs has his own attackers table
+			if (hall.getId() == 62 || hall.getSiege() == null)
+				continue;
+			
+			hall.getSiege().saveAttackers();
+		}
+	}
+	
+	public static ClanHallManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final ClanHallManager INSTANCE = new ClanHallManager();
+	}
+}</pre>
+            
+</body>
+</html>

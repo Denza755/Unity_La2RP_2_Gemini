@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/StatusWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/StatusWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class StatusWindow : L2Window
+{
+    private Label _nameLabel;
+    private Label _levelLabel;
+    private Label _HPTextLabel;
+    private Label _MPTextLabel;
+    private Label _CPTextLabel;
+    private Label _expTextLabel;
+    private VisualElement _CPBar;
+    private VisualElement _CPBarBG;
+    private VisualElement _HPBar;
+    private VisualElement _HPBarBG;
+    private VisualElement _MPBar;
+    private VisualElement _MPBarBG;
+    private VisualElement _expBar;
+    private VisualElement _expBarBG;
+    private float _lastUpdateTime;
+
+    [SerializeField] private float _statusWindowMinWidth = 175.0f;
+    [SerializeField] private float _statusWindowMaxWidth = 400.0f;
+
+    private static StatusWindow _instance;
+    public static StatusWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/StatusWindow/StatusWindow&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        var statusWindowDragArea = GetElementByClass(&quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(statusWindowDragArea, _windowEle, this);
+        statusWindowDragArea.AddManipulator(drag);
+
+        var horizontalResizeHandle = GetElementById(&quot;SizeControl&quot;);
+        HorizontalResizeManipulator horizontalResize = new HorizontalResizeManipulator(
+            horizontalResizeHandle, _windowEle, _statusWindowMinWidth, _statusWindowMaxWidth);
+        horizontalResizeHandle.AddManipulator(horizontalResize);
+
+        _windowEle.RegisterCallback&lt;GeometryChangedEvent&gt;((evt) =&gt;
+        {
+            UpdateStatusValues();
+        });
+
+        _nameLabel = (Label)GetElementById(&quot;PlayerNameText&quot;);
+        if (_nameLabel == null)
+        {
+            Debug.LogError(&quot;Status window PlayerNameText is null.&quot;);
+        }
+
+        _levelLabel = (Label)GetElementById(&quot;LevelText&quot;);
+        if (_levelLabel == null)
+        {
+            Debug.LogError(&quot;Status window LevelText is null.&quot;);
+        }
+
+        VisualElement HPBarContainer = GetElementById(&quot;HPBar&quot;);
+        VisualElement MPBarContainer = GetElementById(&quot;MPBar&quot;);
+        VisualElement CPBarContainer = _windowEle.Q&lt;VisualElement&gt;(&quot;CPBar&quot;);
+        VisualElement EXPBarContainer = GetElementById(&quot;EXPBar&quot;);
+
+        if (CPBarContainer != null)
+        {
+            _CPTextLabel = CPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+            if (_CPTextLabel == null)
+            {
+                Debug.LogError(&quot;Status window CPText is null.&quot;);
+            }
+
+            _CPBarBG = CPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+            if (_CPBarBG == null)
+            {
+                Debug.LogError(&quot;Status window CPBarBG is null&quot;);
+            }
+
+            _CPBar = CPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+            if (_CPBar == null)
+            {
+                Debug.LogError(&quot;Status window CPBar is null&quot;);
+            }
+        }
+
+        _HPTextLabel = HPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        if (_HPTextLabel == null)
+        {
+            Debug.LogError(&quot;Status window Hp text is null.&quot;);
+        }
+
+        _MPTextLabel = MPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        if (_MPTextLabel == null)
+        {
+            Debug.LogError(&quot;Status window MPText is null.&quot;);
+        }
+
+        _expTextLabel = EXPBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        if (_expTextLabel == null)
+        {
+            Debug.LogError(&quot;Status window XPText is null.&quot;);
+        }
+
+        _HPBar = HPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        if (_HPBar == null)
+        {
+            Debug.LogError(&quot;Status window HPBar is null&quot;);
+        }
+
+        _HPBarBG = HPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        if (_HPBarBG == null)
+        {
+            Debug.LogError(&quot;Status window HPBarBG is null&quot;);
+        }
+
+        _MPBarBG = MPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        if (_MPBarBG == null)
+        {
+            Debug.LogError(&quot;Status window MPBarBG is null&quot;);
+        }
+
+        _MPBar = MPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        if (_MPBar == null)
+        {
+            Debug.LogError(&quot;Status windowar MPBar is null&quot;);
+        }
+
+        _expBarBG = EXPBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+        if (_expBarBG == null)
+        {
+            Debug.LogError(&quot;Status window XPBarBG is null&quot;);
+        }
+
+        _expBar = EXPBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        if (_expBarBG == null)
+        {
+            Debug.LogError(&quot;Status windowar XPBar is null&quot;);
+        }
+
+        VisualElement bgContainer = GetElementById(&quot;CenterContainer&quot;);
+        bgContainer.RegisterCallback&lt;MouseDownEvent&gt;((evt) =&gt;
+        {
+            OnClickSelf();
+        }, TrickleDown.TrickleDown);
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    void FixedUpdate()
+    {
+        if (Time.time - _lastUpdateTime &lt; 0.5f)
+        {
+            return;
+        }
+        else
+        {
+            _lastUpdateTime = Time.time;
+        }
+
+        UpdateStatusValues();
+    }
+
+    private void UpdateStatusValues()
+    {
+        if (PlayerEntity.Instance == null)
+        {
+            return;
+        }
+
+        if (!(PlayerEntity.Instance.Status is PlayerStatus))
+        {
+            Debug.LogWarning(&quot;Player status is not of type playerstatus&quot;);
+            return;
+        }
+
+        PlayerStatus status = (PlayerStatus)PlayerEntity.Instance.Status;
+        PlayerStats stats = (PlayerStats)PlayerEntity.Instance.Stats;
+
+        if (_levelLabel != null)
+        {
+            _levelLabel.text = stats.Level.ToString();
+        }
+
+        if (_nameLabel != null)
+        {
+            _nameLabel.text = PlayerEntity.Instance.Identity.Name;
+        }
+
+        if (_CPTextLabel != null)
+        {
+            _CPTextLabel.text = status.Cp + &quot;/&quot; + stats.MaxCp;
+        }
+
+        if (_HPTextLabel != null)
+        {
+            _HPTextLabel.text = status.Hp + &quot;/&quot; + stats.MaxHp;
+        }
+
+        if (_MPTextLabel != null)
+        {
+            _MPTextLabel.text = status.Mp + &quot;/&quot; + stats.MaxMp;
+        }
+
+        if (_expTextLabel != null &amp;&amp; stats.ExpPercent &gt; 0)
+        {
+            _expTextLabel.text = $&quot;{(stats.ExpPercent * 100f).ToString(&quot;0.00&quot;)}%&quot;;
+        }
+        else
+        {
+            _expTextLabel.text = $&quot;00.00%&quot;;
+        }
+
+        if (_CPBarBG != null &amp;&amp; _CPBar != null &amp;&amp; stats.MaxCp &gt; 0)
+        {
+            float cpRatio = Mathf.Min(1, (float)status.Cp / stats.MaxCp);
+            float bgWidth = _CPBarBG.resolvedStyle.width;
+            float barWidth = bgWidth * cpRatio;
+            _CPBar.style.width = barWidth;
+        }
+
+        if (_HPBarBG != null &amp;&amp; _HPBar != null)
+        {
+            float hpRatio = Mathf.Min(1, (float)status.Hp / stats.MaxHp);
+            float bgWidth = _HPBarBG.resolvedStyle.width;
+            float barWidth = bgWidth * hpRatio;
+            _HPBar.style.width = barWidth;
+        }
+
+        if (_MPBarBG != null &amp;&amp; _MPBar != null)
+        {
+            float mpRatio = Mathf.Min(1, (float)status.Mp / stats.MaxMp);
+            float bgWidth = _MPBarBG.resolvedStyle.width;
+            float barWidth = bgWidth * mpRatio;
+            _MPBar.style.width = barWidth;
+        }
+
+        if (_expBarBG != null &amp;&amp; _expBar != null)
+        {
+            float bgWidth = _expBarBG.resolvedStyle.width;
+            float expRatio = Mathf.Min(1, stats.ExpPercent);
+            float barWidth = bgWidth * expRatio;
+            _expBar.style.width = barWidth;
+        }
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+        AudioManager.Instance.PlayUISound(&quot;window_open&quot;);
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        base.HideWindow(silent);
+
+        AudioManager.Instance.PlayUISound(&quot;window_close&quot;);
+    }
+
+    public override void OnClick()
+    {
+        OnClickSelf();
+    }
+
+    private void OnClickSelf()
+    {
+        ObjectData data = new ObjectData(PlayerEntity.Instance.transform.gameObject);
+        TargetManager.Instance.SetTarget(data);
+    }
+}
+</pre>
+            
+</body>
+</html>

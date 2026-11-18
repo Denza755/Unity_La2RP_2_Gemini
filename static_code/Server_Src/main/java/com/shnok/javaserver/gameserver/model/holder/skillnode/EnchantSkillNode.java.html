@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/holder/skillnode/EnchantSkillNode.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/holder/skillnode/EnchantSkillNode.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.holder.skillnode;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+
+/**
+ * A datatype used by enchant skill types. It extends {@link IntIntHolder}.
+ */
+public class EnchantSkillNode extends IntIntHolder
+{
+	private final int _exp;
+	private final int _sp;
+	
+	private final int[] _enchantRates = new int[5];
+	
+	private IntIntHolder _item;
+	
+	public EnchantSkillNode(StatSet set)
+	{
+		super(set.getInteger(&quot;id&quot;), set.getInteger(&quot;lvl&quot;));
+		
+		_exp = set.getInteger(&quot;exp&quot;);
+		_sp = set.getInteger(&quot;sp&quot;);
+		
+		_enchantRates[0] = set.getInteger(&quot;rate76&quot;);
+		_enchantRates[1] = set.getInteger(&quot;rate77&quot;);
+		_enchantRates[2] = set.getInteger(&quot;rate78&quot;);
+		_enchantRates[3] = set.getInteger(&quot;rate79&quot;);
+		_enchantRates[4] = set.getInteger(&quot;rate80&quot;);
+		
+		if (set.containsKey(&quot;itemNeeded&quot;))
+			_item = set.getIntIntHolder(&quot;itemNeeded&quot;);
+	}
+	
+	public int getExp()
+	{
+		return _exp;
+	}
+	
+	public int getSp()
+	{
+		return _sp;
+	}
+	
+	public int getEnchantRate(int level)
+	{
+		return _enchantRates[level - 76];
+	}
+	
+	public IntIntHolder getItem()
+	{
+		return _item;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/usercommandhandlers/Escape.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/usercommandhandlers/Escape.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.usercommandhandlers;
+
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.handler.IUserCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.PlaySound;
+
+public class Escape implements IUserCommandHandler
+{
+	private static final int[] COMMAND_IDS =
+	{
+		52
+	};
+	
+	@Override
+	public void useUserCommand(int id, Player player)
+	{
+		if (player.isInOlympiadMode() || player.isInObserverMode() || player.isFestivalParticipant() || player.isInJail() || player.isInsideZone(ZoneId.BOSS))
+		{
+			player.sendPacket(SystemMessageId.NO_UNSTUCK_PLEASE_SEND_PETITION);
+			return;
+		}
+		
+		// Official timer 5 minutes, for GM 1 second
+		if (player.isGM())
+			player.getAI().tryToCast(player, 2100, 1);
+		else
+		{
+			player.sendPacket(new PlaySound(&quot;systemmsg_e.809&quot;));
+			player.sendPacket(SystemMessageId.STUCK_TRANSPORT_IN_FIVE_MINUTES);
+			
+			player.getAI().tryToCast(player, 2099, 1);
+		}
+	}
+	
+	@Override
+	public int[] getUserCommandList()
+	{
+		return COMMAND_IDS;
+	}
+}</pre>
+            
+</body>
+</html>

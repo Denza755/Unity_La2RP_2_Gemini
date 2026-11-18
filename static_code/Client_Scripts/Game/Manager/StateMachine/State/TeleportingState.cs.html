@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/StateMachine/State/TeleportingState.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/StateMachine/State/TeleportingState.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using static CharSelectedPacket;
+
+public class TeleportingState : GameStateBase
+{
+    public TeleportingState(GameManager stateMachine) : base(stateMachine) { }
+
+    bool teleportEnded;
+    float teleportStarTime;
+    float teleportEndTime;
+
+    public override void Enter(object arg0)
+    {
+        teleportEnded = false;
+        teleportStarTime = Time.time;
+
+        //TODO: Black screen here!
+        GameManager.Instance.StartLoading();
+
+        World.Instance.DestroyWorld();
+
+        NameplatesManagerGame.Instance.ClearNameplates();
+
+        CameraController.Instance.enabled = false;
+        PlayerStateMachine.Instance.enabled = false;
+
+        NpcHtmlWindow.Instance.HideWindow(false);
+
+        //TODO: Check if need to reload world map here!
+
+        PlayerInfo playerInfo = GameClient.Instance.PlayerInfo;
+
+        // Ensure target sector under destination is loaded before spawning player!
+        SceneLoader.Instance.EnsureSectorsLoaded(playerInfo.Identity.Position, () =&gt;
+        {
+            // Only spawn player once we loaded the world
+            WorldSpawner.Instance.OnReceivePlayerInfo(playerInfo.Identity, playerInfo.Status, playerInfo.Stats, playerInfo.Appearance, playerInfo.EntityActionInfo);
+
+            if (PlayerEntity.Instance != null)
+            {
+                CameraController.Instance.SetTarget(PlayerEntity.Instance.gameObject);
+                CameraController.Instance.enabled = true;
+            }
+
+            PlayerStateMachine.Instance.enabled = true;
+
+            teleportEnded = true;
+            teleportEndTime = Time.time;
+
+            Debug.Log($&quot;Teleport duration: {teleportEndTime - teleportStarTime}.&quot;);
+
+            _stateMachine.ChangeState(GameState.IN_GAME, true);
+        });
+    }
+
+    public override void Update()
+    {
+        if (teleportEnded &amp;&amp; Time.time - teleportEndTime &gt; 1f)
+        {
+            teleportEnded = false;
+            GameManager.Instance.StopLoading();
+        }
+    }
+
+    public override void HandleEvent(GameEvent evt, object arg0)
+    {
+        switch (evt)
+        {
+            default:
+                Debug.LogWarning($&quot;[GameStateMachine] Unhandled event {evt} for state {_stateMachine.State}&quot;);
+                break;
+        }
+    }
+}</pre>
+            
+</body>
+</html>

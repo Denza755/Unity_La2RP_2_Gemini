@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Map/MapWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Map/MapWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class MapWindow : L2PopupWindow
+{
+    private static MapWindow _instance;
+    public static MapWindow Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindFirstObjectByType&lt;MapWindow&gt;();
+                if (_instance == null &amp;&amp; L2GameUI.Instance != null)
+                {
+                    _instance = L2GameUI.Instance.gameObject.AddComponent&lt;MapWindow&gt;();
+                }
+            }
+            return _instance;
+        }
+    }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+            _isWindowHidden = true;
+            if (_windowTemplate == null)
+            {
+                LoadAssets();
+            }
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/MapWindow/MapWindow&quot;);
+    }
+
+    protected override void InitWindow(VisualElement root)
+    {
+        base.InitWindow(root);
+
+        var dragArea = GetElementByClass(&quot;drag-area&quot;);
+        if (dragArea != null)
+        {
+            DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+            dragArea.AddManipulator(drag);
+        }
+
+        RegisterCloseWindowEvent(&quot;btn-close-frame&quot;);
+        RegisterClickWindowEvent(_windowEle, dragArea);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        _windowEle.style.left = new Length(50, LengthUnit.Percent);
+        _windowEle.style.top = new Length(50, LengthUnit.Percent);
+        _windowEle.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent)));
+
+        Label windowName = (Label)GetElementById(&quot;windows-name-label&quot;);
+        if (windowName != null)
+        {
+            windowName.text = &quot;World Map&quot;;
+        }
+
+        Image mapImg = _windowEle.Q&lt;Image&gt;(&quot;WorldMapImage&quot;);
+        if (mapImg != null)
+        {
+            Texture2D mapTex = Resources.Load&lt;Texture2D&gt;(&quot;Data/UI/Map/world_map&quot;);
+            if (mapTex != null)
+            {
+                mapImg.image = mapTex;
+            }
+        }
+
+        HideWindow(true);
+
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowLoadComplete();
+        }
+    }
+
+    public override void ShowWindow()
+    {
+        // ShowWindow is called by the server response (ShowMiniMap packet).
+        // Do NOT send RequestShowMiniMap here — use RequestShowMap() for that.
+        base.ShowWindow();
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayUISound(&quot;system_open_01&quot;);
+        }
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowOpened(this);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Sends RequestShowMiniMap to the server if window is hidden,
+    /// or closes the window locally if it&#x27;s already open.
+    /// &lt;/summary&gt;
+    public void RequestToggleMap()
+    {
+        // If window is currently open (and visible), close it locally
+        if (!_isWindowHidden &amp;&amp; _windowEle != null &amp;&amp; _windowEle.style.display == DisplayStyle.Flex)
+        {
+            HideWindow(false);
+            return;
+        }
+
+        // Otherwise send request to the server to open/show the map
+        if (GameClient.Instance != null &amp;&amp; GameClient.Instance.ClientPacketHandler != null)
+        {
+            GameClient.Instance.ClientPacketHandler.SendRequestShowMiniMap();
+        }
+        else
+        {
+            // Offline/fallback: toggle locally if no network
+            ShowWindow();
+        }
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        base.HideWindow(silent);
+        if (!silent &amp;&amp; L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowClosed(this);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/LV3Monster/LV3WizardPrivate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/LV3Monster/LV3WizardPrivate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.LV3Monster;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class LV3WizardPrivate extends LV3PartyPrivateMonster
+{
+	public LV3WizardPrivate()
+	{
+		super(&quot;ai/individual/Monster/LV3Monster&quot;);
+	}
+	
+	public LV3WizardPrivate(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		27253
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._c_ai0 = (Creature) World.getInstance().getObject(npc._param1);
+		if (npc._c_ai0 != null)
+		{
+			if (npc.distance2D(npc._c_ai0) &lt; 100 &amp;&amp; npc.getAI().getLifeTime() &gt; 3)
+				npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC1), 1000000);
+			else
+				npc.getAI().addAttackDesire(npc._c_ai0, 300);
+		}
+		
+		npc.getMaster().sendScriptEvent(1000, npc.getObjectId(), 0);
+		
+		startQuestTimerAtFixedRate(&quot;4000&quot;, npc, null, 1000, 1000);
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;4000&quot;))
+		{
+			if (npc._c_ai0 != null)
+			{
+				if (npc.distance2D(npc._c_ai0) &lt; 100)
+					npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC1), 1000000);
+				
+				npc.getAI().addAttackDesire(npc._c_ai0, 50);
+			}
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (skill == getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC1))
+		{
+			if (npc._c_ai0 != null)
+			{
+				if (Rnd.get(100) &lt; 50 &amp;&amp; npc.distance2D(npc._c_ai0) &lt; 200)
+					npc.getAI().addCastDesire(npc._c_ai0, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC2), 3000);
+				else
+					npc.getAI().addCastDesire(npc._c_ai0, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_DD_MAGIC3), 3000);
+			}
+			npc.removeAllAttackDesire();
+		}
+		else
+		{
+			npc.doDie(npc);
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

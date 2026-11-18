@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/SummonItemData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/SummonItemData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores summon items.&lt;br&gt;
+ * TODO Delete it and move it back wherever it belongs.
+ */
+public class SummonItemData implements IXmlReader
+{
+	private final Map&lt;Integer, IntIntHolder&gt; _items = new HashMap&lt;&gt;();
+	
+	protected SummonItemData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/summonItems.xml&quot;);
+		LOGGER.info(&quot;Loaded {} summon items.&quot;, _items.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;item&quot;, itemNode -&gt;
+		{
+			final NamedNodeMap attrs = itemNode.getAttributes();
+			final int itemId = parseInteger(attrs, &quot;id&quot;);
+			final int npcId = parseInteger(attrs, &quot;npcId&quot;);
+			final int summonType = parseInteger(attrs, &quot;summonType&quot;);
+			_items.put(itemId, new IntIntHolder(npcId, summonType));
+		}));
+	}
+	
+	public IntIntHolder getSummonItem(int itemId)
+	{
+		return _items.get(itemId);
+	}
+	
+	public static SummonItemData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final SummonItemData INSTANCE = new SummonItemData();
+	}
+}</pre>
+            
+</body>
+</html>

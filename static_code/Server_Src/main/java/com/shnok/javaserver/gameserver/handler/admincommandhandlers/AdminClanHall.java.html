@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminClanHall.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminClanHall.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.text.SimpleDateFormat;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.ClanHallManager;
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.enums.SpawnType;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.Auction;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHall;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.SiegableHall;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class AdminClanHall implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_ch&quot;
+	};
+	
+	private static final String[] LOCS =
+	{
+		&quot;Aden&quot;,
+		&quot;Dion&quot;,
+		&quot;Giran&quot;,
+		&quot;Gludin&quot;,
+		&quot;Gludio&quot;,
+		&quot;Goddard&quot;,
+		&quot;Oren&quot;,
+		&quot;Rune&quot;,
+		&quot;Schuttgart&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		try
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+			st.nextToken();
+			
+			String param = null;
+			String param2 = null;
+			
+			ClanHall ch = null;
+			
+			final int paramCount = st.countTokens();
+			if (paramCount == 1)
+				ch = ClanHallManager.getInstance().getClanHall(Integer.parseInt(st.nextToken()));
+			else if (paramCount == 2)
+			{
+				param = st.nextToken();
+				ch = ClanHallManager.getInstance().getClanHall(Integer.parseInt(st.nextToken()));
+			}
+			else if (paramCount == 3)
+			{
+				param = st.nextToken();
+				param2 = st.nextToken();
+				ch = ClanHallManager.getInstance().getClanHall(Integer.parseInt(st.nextToken()));
+			}
+			
+			// Hold ClanHall reference, if not existing or chId is set to 0, we return the whole list of existing ClanHalls.
+			if (ch == null)
+			{
+				showClanHallSelectPage(player);
+				return;
+			}
+			
+			// No command token, we show the individual ClanHall informations.
+			if (param == null)
+			{
+				showClanHallSelectPage(player, ch);
+				return;
+			}
+			
+			switch (param)
+			{
+				case &quot;set&quot;:
+					final Player targetPlayer = getTargetPlayer(player, false);
+					if (targetPlayer == null || targetPlayer.getClan() == null)
+						player.sendPacket(SystemMessageId.TARGET_IS_INCORRECT);
+					else if (!ch.isFree())
+						player.sendMessage(&quot;This ClanHall isn&#x27;t free.&quot;);
+					else if (targetPlayer.getClan().hasClanHall())
+						player.sendMessage(&quot;Your target already owns a ClanHall.&quot;);
+					else
+						ch.setOwner(targetPlayer.getClan());
+					break;
+				
+				case &quot;remove&quot;:
+					if (ch.isFree())
+						player.sendMessage(&quot;This ClanHall is already free.&quot;);
+					else
+						ch.free();
+					break;
+				
+				case &quot;open&quot;:
+					ch.openDoors();
+					break;
+				
+				case &quot;close&quot;:
+					ch.closeDoors();
+					break;
+				
+				case &quot;teleportto&quot;:
+					player.teleportTo(ch.getRndSpawn(SpawnType.OWNER), 0);
+					break;
+				
+				case &quot;end&quot;:
+					final Auction auction = ch.getAuction();
+					if (auction == null)
+						player.sendMessage(&quot;This ClanHall doesn&#x27;t hold an auction.&quot;);
+					else
+						auction.endAuction();
+					break;
+				
+				case &quot;siege&quot;:
+					if (param2 == null || StringUtil.isDigit(param2))
+						player.sendMessage(&quot;Usage: //ch siege start|end chId.&quot;);
+					else if (!(ch instanceof SiegableHall sh))
+						player.sendMessage(&quot;This ClanHall isn&#x27;t siegable.&quot;);
+					else
+					{
+						switch (param2)
+						{
+							case &quot;start&quot;:
+								if (sh.isInSiege())
+									player.sendMessage(&quot;This ClanHall is already besieged.&quot;);
+								else
+									sh.getSiege().instantSiege();
+								break;
+							
+							case &quot;end&quot;:
+								if (!sh.isInSiege())
+									player.sendMessage(&quot;This ClanHall isn&#x27;t currently besieged.&quot;);
+								else
+									sh.getSiege().endSiege();
+								break;
+						}
+					}
+					break;
+			}
+			showClanHallSelectPage(player, ch);
+		}
+		catch (Exception e)
+		{
+			player.sendMessage(&quot;Usage: //ch [set|remove|open|close|teleportto|end|siege chId].&quot;);
+		}
+	}
+	
+	/**
+	 * Show detailed informations of a {@link ClanHall} to a {@link Player}.
+	 * @param player : The {@link Player} who requested the action.
+	 * @param ch : The {@link ClanHall} to show informations.
+	 */
+	private static void showClanHallSelectPage(Player player, ClanHall ch)
+	{
+		String clanName = &quot;None&quot;;
+		if (!ch.isFree())
+		{
+			final Clan clan = ClanTable.getInstance().getClan(ch.getOwnerId());
+			if (clan != null)
+				clanName = clan.getName();
+		}
+		
+		final SimpleDateFormat sdf = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);
+		final StringBuilder sb = new StringBuilder();
+		
+		final Auction auction = ch.getAuction();
+		if (auction == null)
+			sb.append(&quot;&lt;tr&gt;&lt;td&gt;This clanhall doesn&#x27;t have Auction.&lt;/td&gt;&lt;/tr&gt;&quot;);
+		else if (auction.getHighestBidder() == null)
+			StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td width=150&gt;Bid: 0&lt;/td&gt;&lt;td width=120&gt;Bidders: &quot;, auction.getBidders().size(), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;End date: &quot;, sdf.format(auction.getEndDate()), &quot;&lt;/td&gt;&lt;td&gt;Winner: none&lt;/td&gt;&lt;/tr&gt;&quot;);
+		else
+			StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td width=150&gt;Bid: &quot;, StringUtil.formatNumber(auction.getHighestBidder().getBid()), &quot;&lt;/td&gt;&lt;td width=120&gt;Bidders: &quot;, auction.getBidders().size(), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;End date: &quot;, sdf.format(auction.getEndDate()), &quot;&lt;/td&gt;&lt;td&gt;Winner: &quot;, auction.getHighestBidder().getName(), &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/clanhall.htm&quot;);
+		html.replace(&quot;%name%&quot;, ch.getName());
+		html.replace(&quot;%id%&quot;, ch.getId());
+		html.replace(&quot;%size%&quot;, ch.getSize());
+		html.replace(&quot;%grade%&quot;, ch.getGrade());
+		html.replace(&quot;%lease%&quot;, StringUtil.formatNumber(ch.getLease()));
+		html.replace(&quot;%loc%&quot;, ch.getTownName());
+		html.replace(&quot;%desc%&quot;, ch.getDesc());
+		html.replace(&quot;%defaultbid%&quot;, StringUtil.formatNumber(ch.getAuctionMin()));
+		html.replace(&quot;%owner%&quot;, clanName);
+		html.replace(&quot;%paid%&quot;, ch.getPaid());
+		html.replace(&quot;%paiduntil%&quot;, sdf.format(ch.getPaidUntil()));
+		html.replace(&quot;%auction&quot;, sb.toString());
+		player.sendPacket(html);
+	}
+	
+	/**
+	 * Show the complete list of {@link ClanHall}s (listed, unlisted, owned, siegable or auctionable).
+	 * @param player : The {@link Player} who requested the action.
+	 */
+	private static void showClanHallSelectPage(Player player)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/clanhalls.htm&quot;);
+		
+		final SimpleDateFormat sdf = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);
+		final StringBuilder sb = new StringBuilder();
+		
+		for (String loc : LOCS)
+		{
+			StringUtil.append(sb, &quot;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, loc, &quot;&lt;/font&gt;&lt;br&gt;&lt;table width=270&gt;&lt;tr&gt;&lt;td width=130&gt;Clan Hall Name&lt;/td&gt;&lt;td width=70&gt;End Date&lt;/td&gt;&lt;td width=70&gt;Min Bid&lt;/td&gt;&lt;/tr&gt;&quot;);
+			
+			for (ClanHall ch : ClanHallManager.getInstance().getClanHallsByLocation(loc))
+			{
+				final Auction auction = ch.getAuction();
+				if (auction == null)
+					StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;&lt;a action=\&quot;bypass -h admin_ch &quot;, ch.getId(), &quot;\&quot;&gt;&quot;, ch.getName(), ((ch.isFree()) ? &quot;&quot; : &quot;*&quot;), &quot;&lt;/a&gt;&lt;/td&gt;&lt;td&gt;-&lt;/td&gt;&lt;td&gt;-&lt;/td&gt;&lt;/tr&gt;&quot;);
+				else
+					StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;&lt;a action=\&quot;bypass -h admin_ch &quot;, ch.getId(), &quot;\&quot;&gt;&quot;, ch.getName(), ((ch.isFree()) ? &quot;&quot; : &quot;*&quot;), &quot; [&quot;, auction.getBidders().size(), &quot;]&lt;/a&gt;&lt;/td&gt;&lt;td&gt;&quot;, sdf.format(auction.getEndDate()), &quot;&lt;/td&gt;&lt;td&gt;&quot;, auction.getMinimumBid(), &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			}
+			
+			sb.append(&quot;&lt;/table&gt;&quot;);
+		}
+		
+		html.replace(&quot;%AGIT_LIST%&quot;, sb.toString());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

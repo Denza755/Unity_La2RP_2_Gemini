@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/task/RecommendationUpdate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/task/RecommendationUpdate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.task;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.UserInfo;
+import com.shnok.javaserver.gameserver.scripting.ScheduledQuest;
+
+public final class RecommendationUpdate extends ScheduledQuest
+{
+	private static final String TRUNCATE_RECOMMENDS = &quot;TRUNCATE character_recommends&quot;;
+	private static final String SELECT_RECOMMENDS = &quot;SELECT obj_Id, level, rec_have FROM characters&quot;;
+	private static final String UPDATE_RECOMMENDS = &quot;UPDATE characters SET rec_left=?, rec_have=? WHERE obj_Id=?&quot;;
+	
+	public RecommendationUpdate()
+	{
+		super(-1, &quot;task&quot;);
+	}
+	
+	@Override
+	public final void onStart()
+	{
+		// Refresh online characters stats.
+		for (Player player : World.getInstance().getPlayers())
+		{
+			player.getRecomChars().clear();
+			
+			final int level = player.getStatus().getLevel();
+			if (level &lt; 20)
+			{
+				player.setRecomLeft(3);
+				player.editRecomHave(-1);
+			}
+			else if (level &lt; 40)
+			{
+				player.setRecomLeft(6);
+				player.editRecomHave(-2);
+			}
+			else
+			{
+				player.setRecomLeft(9);
+				player.editRecomHave(-3);
+			}
+			
+			player.sendPacket(new UserInfo(player));
+		}
+		
+		// Refresh database side.
+		try (Connection con = ConnectionPool.getConnection())
+		{
+			// Delete all characters listed on character_recommends table.
+			try (PreparedStatement ps = con.prepareStatement(TRUNCATE_RECOMMENDS))
+			{
+				ps.execute();
+			}
+			
+			// Initialize the update statement.
+			try (PreparedStatement ps2 = con.prepareStatement(UPDATE_RECOMMENDS))
+			{
+				// Select needed informations of all characters.
+				try (PreparedStatement ps = con.prepareStatement(SELECT_RECOMMENDS))
+				{
+					try (ResultSet rs = ps.executeQuery())
+					{
+						while (rs.next())
+						{
+							final int level = rs.getInt(&quot;level&quot;);
+							if (level &lt; 20)
+							{
+								ps2.setInt(1, 3);
+								ps2.setInt(2, Math.max(0, rs.getInt(&quot;rec_have&quot;) - 1));
+							}
+							else if (level &lt; 40)
+							{
+								ps2.setInt(1, 6);
+								ps2.setInt(2, Math.max(0, rs.getInt(&quot;rec_have&quot;) - 2));
+							}
+							else
+							{
+								ps2.setInt(1, 9);
+								ps2.setInt(2, Math.max(0, rs.getInt(&quot;rec_have&quot;) - 3));
+							}
+							ps2.setInt(3, rs.getInt(&quot;obj_Id&quot;));
+							ps2.addBatch();
+						}
+					}
+				}
+				ps2.executeBatch();
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t clear players recommendations.&quot;, e);
+		}
+	}
+	
+	@Override
+	public final void onEnd()
+	{
+		// Do nothing.
+	}
+}</pre>
+            
+</body>
+</html>

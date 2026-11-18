@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/StateMachine/State/InGameState.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/StateMachine/State/InGameState.cs</h1>
+            <pre>using UnityEngine;
+
+public class InGameState : GameStateBase
+{
+    public InGameState(GameManager stateMachine) : base(stateMachine) { }
+
+    public override void Enter(object arg0)
+    {
+        if (arg0 != null &amp;&amp; (bool)arg0 == true)
+        {
+            GameClient.Instance.ClientPacketHandler.NotifyAppearing();
+        }
+        else
+        {
+            GameClient.Instance.ClientPacketHandler.SendLoadWorld();
+        }
+    }
+
+    public override void Update()
+    {
+
+    }
+
+    public override void HandleEvent(GameEvent evt, object arg0)
+    {
+        switch (evt)
+        {
+            case GameEvent.RESTART_ALLOWED:
+                _stateMachine.ChangeState(GameState.RESTARTING);
+                break;
+            case GameEvent.CHAR_LOADED:
+                _stateMachine.StopLoading();
+                break;
+            case GameEvent.GAME_DISCONNECTED:
+                _stateMachine.ChangeState(GameState.DISONNECTING);
+                break;
+            case GameEvent.TELEPORTING:
+                _stateMachine.ChangeState(GameState.TELEPORTING);
+                break;
+            default:
+                Debug.LogWarning($&quot;[GameStateMachine] Unhandled event {evt} for state {_stateMachine.State}&quot;);
+                break;
+        }
+    }
+}</pre>
+            
+</body>
+</html>

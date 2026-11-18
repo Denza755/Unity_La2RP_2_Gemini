@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Model/Hit.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Model/Hit.cs</h1>
+            <pre>using System.Collections.Generic;
+
+public class Hit
+{
+    private static int HITFLAG_USESS = 0x10;
+    private static int HITFLAG_CRIT = 0x20;
+    private static int HITFLAG_SHLD = 0x40;
+    private static int HITFLAG_MISS = 0x80;
+
+    private int _targetId;
+    private int _damage;
+    private int _flags = 0;
+
+    public int TargetId { get { return _targetId; } }
+    public int Damage { get { return _damage; } }
+    public Entity Attacker { get; set; }
+    public Entity Target { get; set; }
+    public float HitTime { get; set; }
+
+    public Hit(int targetId, int damage, int flags)
+    {
+        this._targetId = targetId;
+        this._damage = damage;
+        this._flags = flags;
+    }
+
+    public bool isCrit()
+    {
+        return (_flags &amp; HITFLAG_CRIT) != 0;
+    }
+
+    public bool isMiss()
+    {
+        return (_flags &amp; HITFLAG_MISS) != 0;
+    }
+
+    public bool hasSoulshot()
+    {
+        return (_flags &amp; HITFLAG_USESS) != 0;
+    }
+
+    public bool isShielded()
+    {
+        return (_flags &amp; HITFLAG_SHLD) != 0;
+    }
+
+    public int getSsGrade()
+    {
+        return _flags &amp; 0x0F;
+    }
+
+    public override string ToString()
+    {
+        var flagDescriptions = new List&lt;string&gt;();
+        if (isCrit()) flagDescriptions.Add(&quot;Critical&quot;);
+        if (isMiss()) flagDescriptions.Add(&quot;Missed&quot;);
+        if (hasSoulshot()) flagDescriptions.Add($&quot;Soulshot Grade: {getSsGrade()}&quot;);
+        if (isShielded()) flagDescriptions.Add(&quot;Shielded&quot;);
+
+        var flagsSummary = flagDescriptions.Count &gt; 0
+            ? string.Join(&quot;, &quot;, flagDescriptions)
+            : &quot;No flags&quot;;
+
+        return $&quot;TargetId: {_targetId}, Damage: {_damage}, Flags: [{flagsSummary}]&quot;;
+    }
+}
+</pre>
+            
+</body>
+</html>

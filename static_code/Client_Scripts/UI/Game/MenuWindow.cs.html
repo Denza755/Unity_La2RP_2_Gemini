@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/MenuWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/MenuWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class MenuWindow : L2Window
+{
+    private static MenuWindow _instance;
+    public static MenuWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/MenuWindow/MenuWindow&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        var charBtn = _windowEle.Q&lt;Button&gt;(&quot;CharacterButton&quot;);
+        charBtn.AddManipulator(new ButtonClickSoundManipulator(charBtn));
+        charBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; CharacterInfoWindow.Instance.ToggleHideWindow());
+
+        var inventoryBtn = _windowEle.Q&lt;Button&gt;(&quot;InventoryButton&quot;);
+        inventoryBtn.AddManipulator(new ButtonClickSoundManipulator(inventoryBtn));
+        inventoryBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; InventoryWindow.Instance.ToggleHideWindow());
+
+        var actionBtn = _windowEle.Q&lt;Button&gt;(&quot;ActionButton&quot;);
+        actionBtn.AddManipulator(new ButtonClickSoundManipulator(actionBtn));
+        actionBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; ActionWindow.Instance.ToggleHideWindow());
+
+        var skillBtn = _windowEle.Q&lt;Button&gt;(&quot;SkillButton&quot;);
+        skillBtn.AddManipulator(new ButtonClickSoundManipulator(skillBtn));
+        skillBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; SkillWindow.Instance.ToggleHideWindow());
+
+        var questBtn = _windowEle.Q&lt;Button&gt;(&quot;QuestButton&quot;);
+        questBtn.AddManipulator(new ButtonClickSoundManipulator(questBtn));
+        // questBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; QuestWindow.Instance.ToggleHideWindow());
+
+        var clanBtn = _windowEle.Q&lt;Button&gt;(&quot;ClanButton&quot;);
+        clanBtn.AddManipulator(new ButtonClickSoundManipulator(clanBtn));
+
+        var mapBtn = _windowEle.Q&lt;Button&gt;(&quot;MapButton&quot;);
+        mapBtn.AddManipulator(new ButtonClickSoundManipulator(mapBtn));
+        mapBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; MapWindow.Instance?.RequestToggleMap());
+
+        var sysBtn = _windowEle.Q&lt;Button&gt;(&quot;SystemMenuButton&quot;);
+        sysBtn.AddManipulator(new ButtonClickSoundManipulator(sysBtn));
+        sysBtn.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; SystemMenuWindow.Instance.ToggleHideWindow());
+
+        yield return new WaitForEndOfFrame();
+
+        var dragAreaEle = _windowEle.Q&lt;VisualElement&gt;(null, &quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(dragAreaEle, _windowEle, this);
+        dragAreaEle.AddManipulator(drag);
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    public Vector2 GetWindowPosition()
+    {
+        return _windowEle.worldBound.position;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/MakerSpawnTime.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/MakerSpawnTime.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums;
+
+public enum MakerSpawnTime
+{
+	AGIT_BR_START(&quot;agit_battle_royal_start&quot;),
+	AGIT_FINAL_START(&quot;agit_final_start&quot;),
+	AGIT_DEF_START(&quot;agit_defend_warfare_start&quot;),
+	AGIT_ATK_START(&quot;agit_attack_warfare_start&quot;),
+	SIEGE_START(&quot;siege_warfare_start&quot;),
+	PC_SIEGE_START(&quot;pc_siege_warfare_start&quot;),
+	DOOR_OPEN(&quot;door_open&quot;);
+	
+	private final String _name;
+	
+	private MakerSpawnTime(String name)
+	{
+		_name = name;
+	}
+	
+	public String getName()
+	{
+		return _name;
+	}
+	
+	public static final MakerSpawnTime[] VALUES = values();
+	
+	public static MakerSpawnTime getEnumByName(String name)
+	{
+		for (MakerSpawnTime mst : VALUES)
+		{
+			if (mst.getName().equalsIgnoreCase(name))
+				return mst;
+		}
+		return null;
+	}
+}</pre>
+            
+</body>
+</html>

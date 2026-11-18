@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/MailBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/MailBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.communitybbs.model.Mail;
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.data.manager.RelationManager;
+import com.shnok.javaserver.gameserver.data.sql.PlayerInfoTable;
+import com.shnok.javaserver.gameserver.enums.MailType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExMailArrived;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.PlaySound;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+
+public class MailBBSManager extends BaseBBSManager
+{
+	private static final String SELECT_MAILS = &quot;SELECT * FROM bbs_mail ORDER BY id ASC&quot;;
+	private static final String INSERT_MAIL = &quot;INSERT INTO bbs_mail (id,receiver_id,sender_id,location,recipients,subject,message,sent_date,is_unread) VALUES (?,?,?,?,?,?,?,?,?)&quot;;
+	private static final String DELETE_MAIL = &quot;DELETE FROM bbs_mail WHERE id=?&quot;;
+	private static final String UPDATE_MAIL_AS_READ = &quot;UPDATE bbs_mail SET is_unread=0 WHERE id=?&quot;;
+	private static final String UPDATE_MAIL_LOCATION = &quot;UPDATE bbs_mail SET location=? WHERE id=?&quot;;
+	
+	private final Map&lt;Integer, Set&lt;Mail&gt;&gt; _mails = new ConcurrentHashMap&lt;&gt;();
+	
+	private int _lastMailId = 0;
+	
+	protected MailBBSManager()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(SELECT_MAILS);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+			{
+				final Set&lt;Mail&gt; mails = _mails.computeIfAbsent(rs.getInt(&quot;receiver_id&quot;), m -&gt; ConcurrentHashMap.newKeySet());
+				mails.add(new Mail(rs));
+				
+				// Calculate last used Mail id.
+				final int mailId = rs.getInt(&quot;id&quot;);
+				if (mailId &gt; _lastMailId)
+					_lastMailId = mailId;
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load mails.&quot;, e);
+		}
+	}
+	
+	@Override
+	public void parseCmd(String command, Player player)
+	{
+		if (command.equals(&quot;_bbsmail&quot;) || command.equals(&quot;_maillist_0_1_0_&quot;))
+			showMailList(player, 1, MailType.INBOX);
+		else if (command.startsWith(&quot;_bbsmail&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			
+			final String action = st.nextToken();
+			
+			if (action.equals(&quot;inbox&quot;) || action.equals(&quot;sentbox&quot;) || action.equals(&quot;archive&quot;) || action.equals(&quot;temparchive&quot;))
+			{
+				final int page = (st.hasMoreTokens()) ? Integer.parseInt(st.nextToken()) : 1;
+				final String sType = (st.hasMoreTokens()) ? st.nextToken() : &quot;&quot;;
+				final String search = (st.hasMoreTokens()) ? st.nextToken() : &quot;&quot;;
+				
+				showMailList(player, page, Enum.valueOf(MailType.class, action.toUpperCase()), sType, search);
+			}
+			else if (action.equals(&quot;crea&quot;))
+				showWriteView(player);
+			else
+			{
+				// Retrieve the mail based on its id (written as part of the command). If invalid, return to last known forum.
+				final Mail mail = getMail(player, (st.hasMoreTokens()) ? Integer.parseInt(st.nextToken()) : -1);
+				if (mail == null)
+				{
+					showLastForum(player);
+					return;
+				}
+				
+				if (action.equals(&quot;view&quot;))
+				{
+					showMailView(player, mail);
+					if (mail.isUnread())
+						setMailAsRead(player, mail.getId());
+				}
+				else if (action.equals(&quot;reply&quot;))
+					showWriteView(player, mail);
+				else if (action.equals(&quot;del&quot;))
+				{
+					deleteMail(player, mail.getId());
+					showLastForum(player);
+				}
+				else if (action.equals(&quot;store&quot;))
+				{
+					setMailLocation(player, mail.getId(), MailType.ARCHIVE);
+					showMailList(player, 1, MailType.ARCHIVE);
+				}
+			}
+		}
+		else
+			super.parseCmd(command, player);
+	}
+	
+	@Override
+	public void parseWrite(String ar1, String ar2, String ar3, String ar4, String ar5, Player player)
+	{
+		if (ar1.equals(&quot;Send&quot;))
+		{
+			sendMail(ar3, ar4, ar5, player);
+			showMailList(player, 1, MailType.SENTBOX);
+		}
+		else if (ar1.startsWith(&quot;Search&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(ar1, &quot;;&quot;);
+			st.nextToken();
+			
+			showMailList(player, 1, Enum.valueOf(MailType.class, st.nextToken().toUpperCase()), ar4, ar5);
+		}
+		else
+			super.parseWrite(ar1, ar2, ar3, ar4, ar5, player);
+	}
+	
+	private synchronized int getNewMailId()
+	{
+		return ++_lastMailId;
+	}
+	
+	private Set&lt;Mail&gt; getMails(int objectId)
+	{
+		return _mails.computeIfAbsent(objectId, m -&gt; ConcurrentHashMap.newKeySet());
+	}
+	
+	private Mail getMail(Player player, int mailId)
+	{
+		return getMails(player.getObjectId()).stream().filter(l -&gt; l.getId() == mailId).findFirst().orElse(null);
+	}
+	
+	public boolean checkIfUnreadMail(Player player)
+	{
+		return getMails(player.getObjectId()).stream().anyMatch(Mail::isUnread);
+	}
+	
+	private void showMailList(Player player, int page, MailType type)
+	{
+		showMailList(player, page, type, &quot;&quot;, &quot;&quot;);
+	}
+	
+	private void showMailList(Player player, int page, MailType type, String sType, String search)
+	{
+		Set&lt;Mail&gt; mails;
+		if (!sType.equals(&quot;&quot;) &amp;&amp; !search.equals(&quot;&quot;))
+		{
+			mails = ConcurrentHashMap.newKeySet();
+			
+			boolean byTitle = sType.equalsIgnoreCase(&quot;title&quot;);
+			
+			for (Mail mail : getMails(player.getObjectId()))
+			{
+				if (byTitle &amp;&amp; mail.getSubject().toLowerCase().contains(search.toLowerCase()))
+					mails.add(mail);
+				else if (!byTitle)
+				{
+					String writer = getPlayerName(mail.getSenderId());
+					if (writer.toLowerCase().contains(search.toLowerCase()))
+						mails.add(mail);
+				}
+			}
+		}
+		else
+			mails = getMails(player.getObjectId());
+		
+		final int countMails = getMailCount(player.getObjectId(), type, sType, search);
+		final int maxpage = getPagesCount(countMails);
+		
+		if (page &gt; maxpage)
+			page = maxpage;
+		if (page &lt; 1)
+			page = 1;
+		
+		player.setMailPosition(page);
+		
+		int index = 0;
+		int minIndex = 0;
+		int maxIndex = 0;
+		
+		maxIndex = (page == 1 ? page * 9 : (page * 10) - 1);
+		minIndex = maxIndex - 9;
+		
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;mail/mail.htm&quot;);
+		content = content.replace(&quot;%inbox%&quot;, Integer.toString(getMailCount(player.getObjectId(), MailType.INBOX, &quot;&quot;, &quot;&quot;)));
+		content = content.replace(&quot;%sentbox%&quot;, Integer.toString(getMailCount(player.getObjectId(), MailType.SENTBOX, &quot;&quot;, &quot;&quot;)));
+		content = content.replace(&quot;%archive%&quot;, Integer.toString(getMailCount(player.getObjectId(), MailType.ARCHIVE, &quot;&quot;, &quot;&quot;)));
+		content = content.replace(&quot;%temparchive%&quot;, Integer.toString(getMailCount(player.getObjectId(), MailType.TEMPARCHIVE, &quot;&quot;, &quot;&quot;)));
+		content = content.replace(&quot;%type%&quot;, type.getDescription());
+		content = content.replace(&quot;%htype%&quot;, type.toString().toLowerCase());
+		
+		final StringBuilder sb = new StringBuilder();
+		for (Mail mail : mails)
+		{
+			if (mail.getMailType().equals(type))
+			{
+				if (index &lt; minIndex)
+				{
+					index++;
+					continue;
+				}
+				
+				if (index &gt; maxIndex)
+					break;
+				
+				StringUtil.append(sb, &quot;&lt;table width=610&gt;&lt;tr&gt;&lt;td width=5&gt;&lt;/td&gt;&lt;td width=150&gt;&quot;, getPlayerName(mail.getSenderId()), &quot;&lt;/td&gt;&lt;td width=300&gt;&lt;a action=\&quot;bypass _bbsmail;view;&quot;, mail.getId(), &quot;\&quot;&gt;&quot;);
+				
+				if (mail.isUnread())
+					sb.append(&quot;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;);
+				
+				sb.append(StringUtil.trimAndDress(mail.getSubject(), 30));
+				
+				if (mail.isUnread())
+					sb.append(&quot;&lt;/font&gt;&quot;);
+				
+				StringUtil.append(sb, &quot;&lt;/a&gt;&lt;/td&gt;&lt;td width=150&gt;&quot;, mail.getFormattedSentDate(), &quot;&lt;/td&gt;&lt;td width=5&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.Squaregray\&quot; width=610 height=1&gt;&quot;);
+				index++;
+			}
+		}
+		content = content.replace(&quot;%maillist%&quot;, sb.toString());
+		
+		// CLeanup sb.
+		sb.setLength(0);
+		
+		final String fullSearch = (!sType.equals(&quot;&quot;) &amp;&amp; !search.equals(&quot;&quot;)) ? &quot;;&quot; + sType + &quot;;&quot; + search : &quot;&quot;;
+		
+		StringUtil.append(sb, &quot;&lt;td&gt;&lt;table&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, (page == 1 ? page : page - 1), fullSearch, &quot;\&quot; back=\&quot;l2ui_ch3.prev1_down\&quot; fore=\&quot;l2ui_ch3.prev1\&quot; width=16 height=16&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/td&gt;&quot;);
+		
+		int i = 0;
+		if (maxpage &gt; 21)
+		{
+			if (page &lt;= 11)
+			{
+				for (i = 1; i &lt;= (10 + page); i++)
+				{
+					if (i == page)
+						StringUtil.append(sb, &quot;&lt;td&gt; &quot;, i, &quot; &lt;/td&gt;&quot;);
+					else
+						StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, i, fullSearch, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+				}
+			}
+			else if (page &gt; 11 &amp;&amp; (maxpage - page) &gt; 10)
+			{
+				for (i = (page - 10); i &lt;= (page - 1); i++)
+				{
+					if (i == page)
+						continue;
+					
+					StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, i, fullSearch, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+				}
+				for (i = page; i &lt;= (page + 10); i++)
+				{
+					if (i == page)
+						StringUtil.append(sb, &quot;&lt;td&gt; &quot;, i, &quot; &lt;/td&gt;&quot;);
+					else
+						StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, i, fullSearch, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+				}
+			}
+			else if ((maxpage - page) &lt;= 10)
+			{
+				for (i = (page - 10); i &lt;= maxpage; i++)
+				{
+					if (i == page)
+						StringUtil.append(sb, &quot;&lt;td&gt; &quot;, i, &quot; &lt;/td&gt;&quot;);
+					else
+						StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, i, fullSearch, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+				}
+			}
+		}
+		else
+		{
+			for (i = 1; i &lt;= maxpage; i++)
+			{
+				if (i == page)
+					StringUtil.append(sb, &quot;&lt;td&gt; &quot;, i, &quot; &lt;/td&gt;&quot;);
+				else
+					StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, i, fullSearch, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+			}
+		}
+		StringUtil.append(sb, &quot;&lt;td&gt;&lt;table&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button action=\&quot;bypass _bbsmail;&quot;, type, &quot;;&quot;, (page == maxpage ? page : page + 1), fullSearch, &quot;\&quot; back=\&quot;l2ui_ch3.next1_down\&quot; fore=\&quot;l2ui_ch3.next1\&quot; width=16 height=16 &gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/td&gt;&quot;);
+		
+		content = content.replace(&quot;%maillistlength%&quot;, sb.toString());
+		
+		separateAndSend(content, player);
+	}
+	
+	private void showMailView(Player player, Mail mail)
+	{
+		if (mail == null)
+		{
+			showMailList(player, 1, MailType.INBOX);
+			return;
+		}
+		
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;mail/mail-show.htm&quot;);
+		
+		String link = mail.getMailType().getBypass() + &quot;&amp;nbsp;&amp;gt;&amp;nbsp;&quot; + mail.getSubject();
+		content = content.replace(&quot;%maillink%&quot;, link);
+		
+		content = content.replace(&quot;%writer%&quot;, getPlayerName(mail.getSenderId()));
+		content = content.replace(&quot;%sentDate%&quot;, mail.getFormattedSentDate());
+		content = content.replace(&quot;%receiver%&quot;, mail.getRecipients());
+		content = content.replace(&quot;%delDate%&quot;, &quot;Unknown&quot;);
+		content = content.replace(&quot;%title%&quot;, mail.getSubject().replaceAll(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replaceAll(&quot;&gt;&quot;, &quot;&amp;gt;&quot;).replaceAll(&quot;\&quot;&quot;, &quot;&amp;quot;&quot;));
+		content = content.replace(&quot;%mes%&quot;, mail.getMessage().replaceAll(&quot;\r\n&quot;, &quot;&lt;br&gt;&quot;).replaceAll(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replaceAll(&quot;&gt;&quot;, &quot;&amp;gt;&quot;).replaceAll(&quot;\&quot;&quot;, &quot;&amp;quot;&quot;));
+		content = content.replace(&quot;%mailId%&quot;, mail.getId() + &quot;&quot;);
+		
+		separateAndSend(content, player);
+	}
+	
+	private static void showWriteView(Player player)
+	{
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;mail/mail-write.htm&quot;);
+		separateAndSend(content, player);
+	}
+	
+	private static void showWriteView(Player player, Mail mail)
+	{
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;mail/mail-reply.htm&quot;);
+		
+		String link = mail.getMailType().getBypass() + &quot;&amp;nbsp;&amp;gt;&amp;nbsp;&lt;a action=\&quot;bypass _bbsmail;view;&quot; + mail.getId() + &quot;\&quot;&gt;&quot; + mail.getSubject() + &quot;&lt;/a&gt;&amp;nbsp;&amp;gt;&amp;nbsp;&quot;;
+		content = content.replace(&quot;%maillink%&quot;, link);
+		
+		content = content.replace(&quot;%recipients%&quot;, mail.getSenderId() == player.getObjectId() ? mail.getRecipients() : getPlayerName(mail.getSenderId()));
+		content = content.replace(&quot;%mailId%&quot;, mail.getId() + &quot;&quot;);
+		send1001(content, player);
+		send1002(player, &quot; &quot;, &quot;Re: &quot; + mail.getSubject(), &quot;0&quot;);
+	}
+	
+	public void sendMail(String recipients, String subject, String message, Player player)
+	{
+		// Current time.
+		final long currentDate = Calendar.getInstance().getTimeInMillis();
+		
+		// Get the current time - 1 day under timestamp format.
+		final Timestamp ts = new Timestamp(currentDate - 86400000L);
+		
+		// Check sender mails based on previous timestamp. If more than 10 mails have been found for today, then cancel the use.
+		if (getMails(player.getObjectId()).stream().filter(l -&gt; l.getSentDate().after(ts) &amp;&amp; l.getMailType() == MailType.SENTBOX).count() &gt;= 10)
+		{
+			player.sendPacket(SystemMessageId.NO_MORE_MESSAGES_TODAY);
+			return;
+		}
+		
+		// Format recipient names. If more than 5 are found, cancel the mail.
+		final String[] recipientNames = recipients.trim().split(&quot;;&quot;);
+		if (recipientNames.length &gt; 5 &amp;&amp; !player.isGM())
+		{
+			player.sendPacket(SystemMessageId.ONLY_FIVE_RECIPIENTS);
+			return;
+		}
+		
+		// Edit subject.
+		subject = StringUtil.trim(subject, 128, &quot;(no subject)&quot;);
+		
+		// Edit message.
+		message = message.replaceAll(&quot;\n&quot;, &quot;&lt;br1&gt;&quot;);
+		
+		// Get the current time under timestamp format.
+		final Timestamp time = new Timestamp(currentDate);
+		final String formattedTime = new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm&quot;).format(time);
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(INSERT_MAIL))
+		{
+			ps.setInt(3, player.getObjectId());
+			ps.setString(4, &quot;inbox&quot;);
+			ps.setString(5, recipients);
+			ps.setString(6, subject);
+			ps.setString(7, message);
+			ps.setTimestamp(8, time);
+			ps.setInt(9, 1);
+			
+			for (String recipientName : recipientNames)
+			{
+				// Recipient is an invalid player, or is the sender.
+				final int recipientId = PlayerInfoTable.getInstance().getPlayerObjectId(recipientName);
+				if (recipientId &lt;= 0 || recipientId == player.getObjectId())
+				{
+					player.sendPacket(SystemMessageId.INVALID_TARGET);
+					continue;
+				}
+				
+				final Player recipientPlayer = World.getInstance().getPlayer(recipientId);
+				
+				if (!player.isGM())
+				{
+					// Sender is a regular player, while recipient is a GM.
+					if (PlayerInfoTable.getInstance().getPlayerAccessLevel(recipientId) &gt; 0)
+					{
+						player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.CANNOT_MAIL_GM_S1).addString(recipientName));
+						continue;
+					}
+					
+					// The recipient is on block mode.
+					if (recipientPlayer != null)
+					{
+						if (recipientPlayer.isBlockingAll())
+						{
+							player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_BLOCKED_EVERYTHING).addString(recipientName));
+							continue;
+						}
+						
+						if (RelationManager.getInstance().isInBlockList(recipientPlayer, player))
+						{
+							player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_BLOCKED_YOU_CANNOT_MAIL).addString(recipientName));
+							continue;
+						}
+					}
+					
+					// The recipient box is already full.
+					if (isInboxFull(recipientId))
+					{
+						player.sendPacket(SystemMessageId.MESSAGE_NOT_SENT);
+						if (recipientPlayer != null)
+							recipientPlayer.sendPacket(SystemMessageId.MAILBOX_FULL);
+						
+						continue;
+					}
+				}
+				
+				final int id = getNewMailId();
+				
+				ps.setInt(1, id);
+				ps.setInt(2, recipientId);
+				ps.addBatch();
+				
+				getMails(recipientId).add(new Mail(id, recipientId, player.getObjectId(), MailType.INBOX, recipients, subject, message, time, formattedTime, true));
+				
+				if (recipientPlayer != null)
+				{
+					recipientPlayer.sendPacket(SystemMessageId.NEW_MAIL);
+					recipientPlayer.sendPacket(new PlaySound(&quot;systemmsg_e.1233&quot;));
+					recipientPlayer.sendPacket(ExMailArrived.STATIC_PACKET);
+				}
+			}
+			
+			// Create a copy into player&#x27;s sent box, if at least one recipient has been reached.
+			final int[] result = ps.executeBatch();
+			if (result.length &gt; 0)
+			{
+				final int id = getNewMailId();
+				
+				ps.setInt(1, id);
+				ps.setInt(2, player.getObjectId());
+				ps.setInt(3, player.getObjectId());
+				ps.setString(4, &quot;sentbox&quot;);
+				ps.setString(5, recipients);
+				ps.setString(6, subject);
+				ps.setString(7, message);
+				ps.setTimestamp(8, time);
+				ps.setInt(9, 0);
+				ps.execute();
+				
+				getMails(player.getObjectId()).add(new Mail(id, player.getObjectId(), player.getObjectId(), MailType.SENTBOX, recipients, subject, message, time, formattedTime, false));
+				
+				player.sendPacket(SystemMessageId.SENT_MAIL);
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t send mail for {}.&quot;, e, player.getName());
+		}
+	}
+	
+	private int getMailCount(int objectId, MailType location, String type, String search)
+	{
+		int count = 0;
+		if (!type.equals(&quot;&quot;) &amp;&amp; !search.equals(&quot;&quot;))
+		{
+			boolean byTitle = type.equalsIgnoreCase(&quot;title&quot;);
+			for (Mail mail : getMails(objectId))
+			{
+				if (!mail.getMailType().equals(location))
+					continue;
+				
+				if (byTitle &amp;&amp; mail.getSubject().toLowerCase().contains(search.toLowerCase()))
+					count++;
+				else if (!byTitle)
+				{
+					String writer = getPlayerName(mail.getSenderId());
+					if (writer.toLowerCase().contains(search.toLowerCase()))
+						count++;
+				}
+			}
+		}
+		else
+		{
+			for (Mail mail : getMails(objectId))
+			{
+				if (mail.getMailType().equals(location))
+					count++;
+			}
+		}
+		return count;
+	}
+	
+	private void deleteMail(Player player, int mailId)
+	{
+		// Cleanup memory.
+		getMails(player.getObjectId()).removeIf(m -&gt; m.getId() == mailId);
+		
+		// Cleanup database.
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(DELETE_MAIL))
+		{
+			ps.setInt(1, mailId);
+			ps.execute();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t delete mail #{}.&quot;, e, mailId);
+		}
+	}
+	
+	private void setMailAsRead(Player player, int mailId)
+	{
+		final Mail mail = getMail(player, mailId);
+		if (mail != null)
+			mail.setAsRead();
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_MAIL_AS_READ))
+		{
+			ps.setInt(1, mailId);
+			ps.execute();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t set read status for mail #{}.&quot;, e, mailId);
+		}
+	}
+	
+	private void setMailLocation(Player player, int mailId, MailType location)
+	{
+		final Mail mail = getMail(player, mailId);
+		if (mail != null)
+			mail.setMailType(location);
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_MAIL_LOCATION))
+		{
+			ps.setString(1, location.toString().toLowerCase());
+			ps.setInt(2, mailId);
+			ps.execute();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t set mail #{} location.&quot;, e, mailId);
+		}
+	}
+	
+	private boolean isInboxFull(int objectId)
+	{
+		return getMailCount(objectId, MailType.INBOX, &quot;&quot;, &quot;&quot;) &gt;= 100;
+	}
+	
+	private void showLastForum(Player player)
+	{
+		final int page = player.getMailPosition() % 1000;
+		final int type = player.getMailPosition() / 1000;
+		
+		showMailList(player, page, MailType.VALUES[type]);
+	}
+	
+	private static String getPlayerName(int objectId)
+	{
+		final String name = PlayerInfoTable.getInstance().getPlayerName(objectId);
+		return (name == null) ? &quot;Unknown&quot; : name;
+	}
+	
+	private static int getPagesCount(int mailCount)
+	{
+		if (mailCount &lt; 1)
+			return 1;
+		
+		if (mailCount % 10 == 0)
+			return mailCount / 10;
+		
+		return (mailCount / 10) + 1;
+	}
+	
+	public static MailBBSManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final MailBBSManager INSTANCE = new MailBBSManager();
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/pool/ThreadPool.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/pool/ThreadPool.java</h1>
+            <pre>package com.shnok.javaserver.commons.pool;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+
+/**
+ * This class handles threads, using {@link Executors} backed by virtual threads :
+ * &lt;ul&gt;
+ * &lt;li&gt;Scheduled pool keeps a track about incoming, future events.&lt;/li&gt;
+ * &lt;li&gt;Instant pool handles short-life events.&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public final class ThreadPool
+{
+	private ThreadPool()
+	{
+		throw new IllegalStateException(&quot;Utility class&quot;);
+	}
+	
+	private static final CLogger LOGGER = new CLogger(ThreadPool.class.getName());
+	
+	private static ScheduledExecutorService _scheduledFactory;
+	
+	/**
+	 * Initialize the factories, based on available processors.
+	 */
+	public static void init()
+	{
+		_scheduledFactory = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), Thread.ofVirtual().name(&quot;scheduled-&quot;, 0).factory());
+		
+		LOGGER.info(&quot;Initializing ThreadPool.&quot;);
+	}
+	
+	/**
+	 * Schedule a one-shot action activating after a delay.
+	 * @param r : the {@link Runnable} to execute.
+	 * @param delay : the time from now to delay execution.
+	 * @return a {@link ScheduledFuture} representing pending completion of the task and whose get() method will return null upon completion.
+	 */
+	public static ScheduledFuture&lt;?&gt; schedule(Runnable r, long delay)
+	{
+		try
+		{
+			return _scheduledFactory.schedule(new TaskWrapper(r), delay, TimeUnit.MILLISECONDS);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;ThreadPool#schedule failed upon {}.&quot;, e, r.toString());
+			return null;
+		}
+	}
+	
+	/**
+	 * Schedule a periodic action activating after a delay.
+	 * @param r : the {@link Runnable} to execute.
+	 * @param delay : the time from now to delay execution.
+	 * @param period : the period between successive executions.
+	 * @return a {@link ScheduledFuture} representing pending completion of the task and whose get() method will throw an exception upon cancellation.
+	 */
+	public static ScheduledFuture&lt;?&gt; scheduleAtFixedRate(Runnable r, long delay, long period)
+	{
+		try
+		{
+			return _scheduledFactory.scheduleAtFixedRate(new TaskWrapper(r), delay, period, TimeUnit.MILLISECONDS);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;ThreadPool#scheduleAtFixedRate failed upon {}.&quot;, e, r.toString());
+			return null;
+		}
+	}
+	
+	/**
+	 * Execute the given task.
+	 * @param r : the {@link Runnable} to execute.
+	 */
+	public static void execute(Runnable r)
+	{
+		try
+		{
+			Thread.ofVirtual().start(new TaskWrapper(r));
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;ThreadPool#execute failed upon {}.&quot;, e, r.toString());
+		}
+	}
+	
+	/**
+	 * Shutdown factories instantly.
+	 */
+	public static void shutdown()
+	{
+		try
+		{
+			LOGGER.info(&quot;ThreadPool: Shutting down.&quot;);
+			
+			_scheduledFactory.shutdownNow();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Exception during shutdown.&quot;, e);
+		}
+	}
+	
+	private static final class TaskWrapper implements Runnable
+	{
+		private final Runnable _runnable;
+		
+		private TaskWrapper(Runnable runnable)
+		{
+			_runnable = runnable;
+		}
+		
+		@Override
+		public void run()
+		{
+			try
+			{
+				_runnable.run();
+			}
+			catch (RuntimeException e)
+			{
+				LOGGER.error(&quot;Exception in a ThreadPool task execution.&quot;, e);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

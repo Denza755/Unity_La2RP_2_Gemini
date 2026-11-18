@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/RoyalRushWarriorPhysicalSpecial2.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/RoyalRushWarriorPhysicalSpecial2.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class RoyalRushWarriorPhysicalSpecial2 extends Warrior
+{
+	public RoyalRushWarriorPhysicalSpecial2()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior&quot;);
+	}
+	
+	public RoyalRushWarriorPhysicalSpecial2(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		18135,
+		18146,
+		18168,
+		18189,
+		18224,
+		21419
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai0 = 0;
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		final int weaponID = getNpcIntAIParam(npc, &quot;WeaponID&quot;);
+		if (npc.getStatus().getHpRatio() &lt; 0.5 &amp;&amp; weaponID != 0)
+		{
+			npc.equipItem(weaponID, 0);
+			npc.setEnchantEffect(15);
+			npc._i_ai0 = 1;
+		}
+		if (attacker instanceof Playable)
+		{
+			final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+			if (topDesireTarget != null)
+			{
+				if (Rnd.get(100) &lt; 33 &amp;&amp; topDesireTarget == attacker &amp;&amp; npc.distance2D(attacker) &lt; 100 &amp;&amp; npc._i_ai0 == 0)
+					npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.PHYSICAL_SPECIAL2), 1000000);
+				
+				if (Rnd.get(100) &lt; 33 &amp;&amp; npc._i_ai0 == 1)
+					npc.rechargeShots(true, false);
+				
+				if (Rnd.get(100) &lt; 33 &amp;&amp; topDesireTarget == attacker &amp;&amp; npc.distance2D(attacker) &gt; 100)
+					npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.PHYSICAL_SPECIAL2), 1000000);
+			}
+		}
+		
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if ((called.getAI().getLifeTime() &gt; 7 &amp;&amp; (attacker instanceof Playable)) &amp;&amp; called.getAI().getCurrentIntention().getType() != IntentionType.ATTACK)
+		{
+			if (Rnd.get(100) &lt; 33 &amp;&amp; called.distance2D(attacker) &gt; 100)
+				called.getAI().addCastDesire(attacker, getNpcSkillByType(called, NpcSkillType.PHYSICAL_SPECIAL1), 1000000);
+			
+			if (Rnd.get(100) &lt; 33 &amp;&amp; called.distance2D(attacker) &lt; 100)
+			{
+				if (called._i_ai0 == 0)
+					called.getAI().addCastDesire(attacker, getNpcSkillByType(called, NpcSkillType.PHYSICAL_SPECIAL2), 1000000);
+				else
+					called.rechargeShots(true, false);
+			}
+		}
+		
+		super.onClanAttacked(caller, called, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (eventId == 1234)
+		{
+			final Creature c0 = (Creature) World.getInstance().getObject(arg1);
+			if (c0 != null)
+			{
+				if (Rnd.get(100) &lt; 80)
+				{
+					npc.getAI().addAttackDesire(c0, 300);
+				}
+				else
+				{
+					npc.removeAllAttackDesire();
+					npc.getAI().addAttackDesire(c0, 1000);
+				}
+			}
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

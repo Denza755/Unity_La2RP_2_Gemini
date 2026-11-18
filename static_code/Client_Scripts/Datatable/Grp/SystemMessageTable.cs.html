@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/SystemMessageTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/SystemMessageTable.cs</h1>
+            <pre>﻿using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+
+public class SystemMessageTable
+{
+    private static SystemMessageTable _instance;
+    public static SystemMessageTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new SystemMessageTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    private Dictionary&lt;int, SystemMessageDat&gt; _systemMessages;
+    public Dictionary&lt;int, SystemMessageDat&gt; SystemMessages { get { return _systemMessages; } }
+
+    public void Initialize()
+    {
+        ReadDatFile();
+    }
+
+    private void ReadDatFile()
+    {
+        _systemMessages = new Dictionary&lt;int, SystemMessageDat&gt;();
+        string dataPath = Path.Combine(Application.streamingAssetsPath, &quot;Data/Meta/SystemMsg_Classic-eu.txt&quot;);
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return;
+        }
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                SystemMessageDat systemMessage = new SystemMessageDat();
+
+                string[] keyvals = line.Split(&#x27;\t&#x27;);
+
+                for (int i = 0; i &lt; keyvals.Length; i++)
+                {
+                    if (!keyvals[i].Contains(&quot;=&quot;))
+                    {
+                        continue;
+                    }
+
+                    string[] keyval = keyvals[i].Split(&quot;=&quot;);
+                    string key = keyval[0];
+                    string value = keyval[1];
+
+                    switch (key)
+                    {
+                        case &quot;id&quot;:
+                            systemMessage.Id = int.Parse(value);
+                            break;
+                        case &quot;message&quot;:
+                            systemMessage.Message = value.Replace(&quot;[&quot;, &quot;&quot;).Replace(&quot;]&quot;, &quot;&quot;);
+                            break;
+                        case &quot;color&quot;:
+                            systemMessage.Color = value;
+                            string r = systemMessage.Color.Substring(0, 2);
+                            string g = systemMessage.Color.Substring(2, 2);
+                            string b = systemMessage.Color.Substring(4, 2);
+                            string a = systemMessage.Color.Substring(6, 2);
+                            systemMessage.Color = b + g + r + &quot;B0&quot;;
+                            break;
+                        case &quot;group&quot;:
+                            systemMessage.Group = int.Parse(value);
+                            break;
+                        case &quot;sound&quot;:
+                            if (value != &quot;[none]&quot;)
+                            {
+                                systemMessage.Sound = value.Replace(&quot;[&quot;, &quot;&quot;).Replace(&quot;]&quot;, &quot;&quot;);
+                            }
+                            break;
+                    }
+                }
+
+                _systemMessages.TryAdd(systemMessage.Id, systemMessage);
+            }
+
+            Debug.Log($&quot;Successfully imported {_systemMessages.Count} system message(s)&quot;);
+        }
+    }
+
+    public SystemMessageDat GetSystemMessage(int id)
+    {
+        SystemMessageDat message;
+        _systemMessages.TryGetValue(id, out message);
+        return message;
+    }
+}
+</pre>
+            
+</body>
+</html>

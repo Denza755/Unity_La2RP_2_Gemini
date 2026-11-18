@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/WalkerRouteData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/WalkerRouteData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.model.location.WalkerLocation;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores routes for walking NPCs, under a List of {@link WalkerLocation} ; the key being the npcId.
+ */
+public class WalkerRouteData implements IXmlReader
+{
+	private final Map&lt;String, Map&lt;String, List&lt;WalkerLocation&gt;&gt;&gt; _routes = new HashMap&lt;&gt;();
+	
+	protected WalkerRouteData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/walkerRoutes.xml&quot;);
+		LOGGER.info(&quot;Loaded {} walking routes.&quot;, _routes.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;route&quot;, routeNode -&gt;
+		{
+			final NamedNodeMap routeAttrs = routeNode.getAttributes();
+			final String routeName = parseString(routeAttrs, &quot;name&quot;);
+			final Map&lt;String, List&lt;WalkerLocation&gt;&gt; routeList = new HashMap&lt;&gt;();
+			
+			forEach(routeNode, &quot;npc&quot;, npcNode -&gt;
+			{
+				final NamedNodeMap npcAttrs = npcNode.getAttributes();
+				final String npcName = parseString(npcAttrs, &quot;name&quot;);
+				final List&lt;WalkerLocation&gt; nodeList = new ArrayList&lt;&gt;();
+				
+				forEach(npcNode, &quot;node&quot;, nodeNode -&gt; nodeList.add(new WalkerLocation(parseAttributes(nodeNode))));
+				routeList.put(npcName, nodeList);
+			});
+			_routes.put(routeName, routeList);
+		}));
+	}
+	
+	public void reload()
+	{
+		_routes.clear();
+		
+		load();
+	}
+	
+	public Map&lt;String, Map&lt;String, List&lt;WalkerLocation&gt;&gt;&gt; getWalkerRoutes()
+	{
+		return _routes;
+	}
+	
+	public List&lt;WalkerLocation&gt; getWalkerRoute(String routeName, String npcName)
+	{
+		final Map&lt;String, List&lt;WalkerLocation&gt;&gt; npcRoutes = _routes.get(routeName);
+		if (npcRoutes == null)
+			return Collections.emptyList();
+		
+		return npcRoutes.get(npcName);
+	}
+	
+	public static WalkerRouteData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final WalkerRouteData INSTANCE = new WalkerRouteData();
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Shortcut/ShortcutInitPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Shortcut/ShortcutInitPacket.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class ShortcutInitPacket : ServerPacket
+{
+    public List&lt;Shortcut&gt; Shortcuts { get; private set; }
+
+    public ShortcutInitPacket(byte[] d) : base(d)
+    {
+        Shortcuts = new List&lt;Shortcut&gt;();
+        Parse();
+    }
+
+    public override void Parse()
+    {
+        int count = ReadI();
+
+        for (int i = 0; i &lt; count; i++)
+        {
+            int type = ReadI();
+            int slot = ReadI();
+            int id = ReadI();
+            int level = -1;
+
+            switch (type)
+            {
+                case Shortcut.TYPE_ITEM:
+                    ReadI(); // CharacterType
+                    ReadI(); // SharedReuseGroup
+
+                    ReadI(); // Remaining
+                    ReadI(); // Reusedelay
+                    ReadI(); //Augment Id
+                    break;
+                case Shortcut.TYPE_SKILL:
+                    level = ReadI();
+                    ReadB();
+                    ReadI(); // Character type
+                    break;
+                default:
+                    ReadI(); // Character type
+                    break;
+            }
+
+
+            Shortcut shortcut = new Shortcut(slot % 12, slot / 12, type, id, level);
+            Shortcuts.Add(shortcut);
+        }
+
+        // Debug.LogWarning(ToString());
+    }
+
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(&quot;ShortcutInitPacket:&quot;);
+        sb.AppendLine($&quot;  Shortcut Count: {Shortcuts.Count}&quot;);
+
+        for (int i = 0; i &lt; Shortcuts.Count; i++)
+        {
+            var sc = Shortcuts[i];
+            sb.AppendLine($&quot;  [{i}] Slot: ({sc.Slot} Type: {sc.Type}, Id: {sc.Id}, Level: {sc.Level}&quot;);
+        }
+
+        return sb.ToString();
+    }
+}</pre>
+            
+</body>
+</html>

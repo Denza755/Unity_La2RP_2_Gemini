@@ -154,6 +154,8 @@ public class ParticleEffectTable
         { "m_u003_a", "Data/Effects/vampiric/m_u003_b/m_u003_b" },
         { "m_u003_b", "Data/Effects/vampiric/m_u003_b/m_u003_b" },
         { "m_u003_c", "Data/Effects/vampiric/m_u003_c/m_u003_c" },
+        { "e_u003_a", "Data/Particles/e_u003_a" },
+        { "p_u003_a", "Data/Particles/p_u003_a" },
         { "bl_berserker_spirit_ca", "Data/Effects/mo_war_cry_ca/mo_war_cry_ca" },
         { "sa_mass_frenzy_ca", "Data/Effects/mo_war_cry_ca/mo_war_cry_ca" },
         { "dw_spoil_ca", "Data/Effects/curse_weakness/curse_weakness_composite" },

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/RoyalRushNpc.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/RoyalRushNpc.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual;
+
+import java.util.Calendar;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.enums.SayType;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.network.serverpackets.NpcSay;
+
+public class RoyalRushNpc extends DefaultNpc
+{
+	public RoyalRushNpc()
+	{
+		super(&quot;ai/individual/RoyalRushNpc&quot;);
+	}
+	
+	public RoyalRushNpc(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		31921,
+		31922,
+		31923,
+		31924
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		startQuestTimerAtFixedRate(&quot;3000&quot;, npc, null, 1000, 1000);
+		npc._i_ai0 = 0;
+		npc._i_ai1 = 0;
+		
+		final int lock_npc_id1 = getNpcIntAIParam(npc, &quot;lock_npc_id1&quot;);
+		final int lock_npc_id2 = getNpcIntAIParam(npc, &quot;lock_npc_id2&quot;);
+		final int lock_npc_id3 = getNpcIntAIParam(npc, &quot;lock_npc_id3&quot;);
+		final int lock_npc_id4 = getNpcIntAIParam(npc, &quot;lock_npc_id4&quot;);
+		final int lock_npc_id5 = getNpcIntAIParam(npc, &quot;lock_npc_id5&quot;);
+		final int lock_x1 = getNpcIntAIParam(npc, &quot;lock_x1&quot;);
+		final int lock_y1 = getNpcIntAIParam(npc, &quot;lock_y1&quot;);
+		final int lock_z1 = getNpcIntAIParam(npc, &quot;lock_z1&quot;);
+		final int lock_d1 = getNpcIntAIParam(npc, &quot;lock_d1&quot;);
+		final int lock_x2 = getNpcIntAIParam(npc, &quot;lock_x2&quot;);
+		final int lock_y2 = getNpcIntAIParam(npc, &quot;lock_y2&quot;);
+		final int lock_z2 = getNpcIntAIParam(npc, &quot;lock_z2&quot;);
+		final int lock_d2 = getNpcIntAIParam(npc, &quot;lock_d2&quot;);
+		final int lock_x3 = getNpcIntAIParam(npc, &quot;lock_x3&quot;);
+		final int lock_y3 = getNpcIntAIParam(npc, &quot;lock_y3&quot;);
+		final int lock_z3 = getNpcIntAIParam(npc, &quot;lock_z3&quot;);
+		final int lock_d3 = getNpcIntAIParam(npc, &quot;lock_d3&quot;);
+		final int lock_x4 = getNpcIntAIParam(npc, &quot;lock_x4&quot;);
+		final int lock_y4 = getNpcIntAIParam(npc, &quot;lock_y4&quot;);
+		final int lock_z4 = getNpcIntAIParam(npc, &quot;lock_z4&quot;);
+		final int lock_d4 = getNpcIntAIParam(npc, &quot;lock_d4&quot;);
+		final int lock_x5 = getNpcIntAIParam(npc, &quot;lock_x5&quot;);
+		final int lock_y5 = getNpcIntAIParam(npc, &quot;lock_y5&quot;);
+		final int lock_z5 = getNpcIntAIParam(npc, &quot;lock_z5&quot;);
+		final int lock_d5 = getNpcIntAIParam(npc, &quot;lock_d5&quot;);
+		
+		if (lock_x1 != 0)
+		{
+			createOnePrivateEx(npc, lock_npc_id1, lock_x1, lock_y1, lock_z1, lock_d1, 0, false);
+			createOnePrivateEx(npc, lock_npc_id2, lock_x2, lock_y2, lock_z2, lock_d2, 0, false);
+			createOnePrivateEx(npc, lock_npc_id3, lock_x3, lock_y3, lock_z3, lock_d3, 0, false);
+			createOnePrivateEx(npc, lock_npc_id4, lock_x4, lock_y4, lock_z4, lock_d4, 0, false);
+			createOnePrivateEx(npc, lock_npc_id5, lock_x5, lock_y5, lock_z5, lock_d5, 0, false);
+		}
+		else
+		{
+			createOnePrivateEx(npc, lock_npc_id1, 182727, -85493, -7200, -32584, 0, false, 1, 0, 0);
+			createOnePrivateEx(npc, lock_npc_id2, 184547, -85479, -7200, -32584, 0, false, 2, 0, 0);
+			createOnePrivateEx(npc, lock_npc_id3, 186349, -85473, -7200, -32584, 0, false, 3, 0, 0);
+			createOnePrivateEx(npc, lock_npc_id4, 188154, -85463, -7200, -32584, 0, false, 4, 0, 0);
+			createOnePrivateEx(npc, lock_npc_id5, 189947, -85466, -7200, -32584, 0, false, 5, 0, 0);
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;3001&quot;))
+		{
+			if (npc._i_ai1 == 1)
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParam(npc, &quot;room_trigger_1&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				npc._i_ai1 = 0;
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;3000&quot;))
+		{
+			final int i0 = Calendar.getInstance().get(Calendar.MINUTE);
+			final int i1 = Calendar.getInstance().get(Calendar.SECOND);
+			final int shoutMsg = getNpcIntAIParam(npc, &quot;ShoutMsg&quot;);
+			if (i0 == 0 &amp;&amp; i1 &lt; 5)
+			{
+				if (npc._i_ai1 == 0)
+				{
+					final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParam(npc, &quot;room_trigger_1&quot;));
+					if (maker0 != null)
+						maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+					
+					npc._i_ai1 = 1;
+					startQuestTimer(&quot;3001&quot;, npc, null, 5000);
+				}
+			}
+			else if ((i0 == 5 || i0 == 10 || i0 == 15 || i0 == 20 || i0 == 25 || i0 == 30 || i0 == 35 || i0 == 40 || i0 == 45) &amp;&amp; i1 == 0)
+			{
+				if (shoutMsg == 1)
+					npc.broadcastPacketInRadius(new NpcSay(npc, SayType.SHOUT, NpcStringId.ID_1000455.getMessage() + i0 + NpcStringId.ID_1000456.getMessage()), 11500);
+			}
+			else if (i0 == 50 &amp;&amp; i1 == 0)
+			{
+				if (shoutMsg == 1)
+					npc.broadcastPacketInRadius(new NpcSay(npc, SayType.SHOUT, NpcStringId.ID_1000457.getMessage()), 11500);
+				
+				final int escapeTelPosX = getNpcIntAIParam(npc, &quot;EscapeTelPosX&quot;);
+				final int escapeTelPosY = getNpcIntAIParam(npc, &quot;EscapeTelPosY&quot;);
+				final int escapeTelPosZ = getNpcIntAIParam(npc, &quot;EscapeTelPosZ&quot;);
+				if (escapeTelPosX != 0 &amp;&amp; escapeTelPosY != 0 &amp;&amp; escapeTelPosZ != 0)
+					npc.getSpawn().instantTeleportInMyTerritory(escapeTelPosX, escapeTelPosY, escapeTelPosZ, 100);
+				
+			}
+			else if (i0 == 54 &amp;&amp; i1 &gt;= 0 &amp;&amp; i1 &lt;= 30)
+			{
+				npc._av_quest0.set(0);
+			}
+			else if (i0 == 55 &amp;&amp; i1 == 0)
+			{
+				npc.broadcastPacketInRadius(new NpcSay(npc, SayType.SHOUT, NpcStringId.ID_1000500.getMessage()), 11500);
+				npc.broadcastPacketInRadius(new NpcSay(npc, SayType.SHOUT, NpcStringId.ID_1000501.getMessage()), 11500);
+			}
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		switch (eventId)
+		{
+			case 1001:
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParam(npc, &quot;room_trigger_2&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				}
+				break;
+			}
+			case 1002:
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParam(npc, &quot;room_trigger_3&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				}
+				break;
+			}
+			case 1003:
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParam(npc, &quot;room_trigger_4&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				}
+				break;
+			}
+			case 1004:
+			{
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParam(npc, &quot;room_trigger_5&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				}
+				break;
+			}
+			case 1005:
+			{
+				final int i0 = Rnd.get(4) + 1;
+				final String s0 = getNpcStringAIParam(npc, &quot;room_trigger_boss&quot;) + &quot;_type&quot; + i0;
+				final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(s0);
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				}
+				break;
+			}
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

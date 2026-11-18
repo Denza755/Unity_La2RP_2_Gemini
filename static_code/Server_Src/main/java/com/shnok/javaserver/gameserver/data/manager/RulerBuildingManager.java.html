@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/RulerBuildingManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/RulerBuildingManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.manager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.ruler.RulerBuildingData;
+import com.shnok.javaserver.gameserver.network.serverpackets.ruler.RulerBuildingsPacket;
+
+public class RulerBuildingManager
+{
+	private static final CLogger LOGGER = new CLogger(RulerBuildingManager.class.getName());
+	
+	public static boolean ALLOW_ALL_PLAYERS_BUILD = true;
+	private static final int CHUNK_SIZE = 60;
+	
+	private final Map&lt;Integer, RulerBuildingData&gt; _buildings = new ConcurrentHashMap&lt;&gt;();
+	
+	private static final String CREATE_TABLE = &quot;CREATE TABLE IF NOT EXISTS ruler_buildings (&quot;
+		+ &quot;id INT AUTO_INCREMENT PRIMARY KEY, &quot;
+		+ &quot;prefab_name VARCHAR(64) NOT NULL, &quot;
+		+ &quot;pos_x DOUBLE NOT NULL, &quot;
+		+ &quot;pos_y DOUBLE NOT NULL, &quot;
+		+ &quot;pos_z DOUBLE NOT NULL, &quot;
+		+ &quot;rot_y FLOAT NOT NULL, &quot;
+		+ &quot;scale FLOAT NOT NULL, &quot;
+		+ &quot;owner_name VARCHAR(45), &quot;
+		+ &quot;created_at BIGINT&quot;
+		+ &quot;) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4&quot;;
+		
+	private static final String SELECT_BUILDINGS = &quot;SELECT id, prefab_name, pos_x, pos_y, pos_z, rot_y, scale, owner_name, created_at FROM ruler_buildings ORDER BY id ASC&quot;;
+	private static final String INSERT_BUILDING = &quot;INSERT INTO ruler_buildings (prefab_name, pos_x, pos_y, pos_z, rot_y, scale, owner_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)&quot;;
+	private static final String DELETE_BUILDING = &quot;DELETE FROM ruler_buildings WHERE id = ?&quot;;
+	
+	protected RulerBuildingManager()
+	{
+		initTable();
+		loadBuildings();
+	}
+	
+	private void initTable()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			Statement s = con.createStatement())
+		{
+			s.execute(CREATE_TABLE);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t initialize table ruler_buildings.&quot;, e);
+		}
+	}
+	
+	private void loadBuildings()
+	{
+		_buildings.clear();
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(SELECT_BUILDINGS);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+			{
+				final int id = rs.getInt(&quot;id&quot;);
+				final String prefab = rs.getString(&quot;prefab_name&quot;);
+				final double posX = rs.getDouble(&quot;pos_x&quot;);
+				final double posY = rs.getDouble(&quot;pos_y&quot;);
+				final double posZ = rs.getDouble(&quot;pos_z&quot;);
+				final float rotY = rs.getFloat(&quot;rot_y&quot;);
+				final float scale = rs.getFloat(&quot;scale&quot;);
+				final String owner = rs.getString(&quot;owner_name&quot;);
+				final long createdAt = rs.getLong(&quot;created_at&quot;);
+				
+				final RulerBuildingData building = new RulerBuildingData(id, prefab, posX, posY, posZ, rotY, scale, owner, createdAt);
+				_buildings.put(id, building);
+			}
+			LOGGER.info(&quot;Loaded {} ruler buildings from database.&quot;, _buildings.size());
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load ruler buildings.&quot;, e);
+		}
+	}
+	
+	public RulerBuildingData addBuilding(String prefabName, double posX, double posY, double posZ, float rotY, float scale, String ownerName)
+	{
+		final long createdAt = System.currentTimeMillis();
+		int generatedId = -1;
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(INSERT_BUILDING, Statement.RETURN_GENERATED_KEYS))
+		{
+			ps.setString(1, prefabName);
+			ps.setDouble(2, posX);
+			ps.setDouble(3, posY);
+			ps.setDouble(4, posZ);
+			ps.setFloat(5, rotY);
+			ps.setFloat(6, scale);
+			ps.setString(7, ownerName);
+			ps.setLong(8, createdAt);
+			ps.executeUpdate();
+			
+			try (ResultSet rs = ps.getGeneratedKeys())
+			{
+				if (rs.next())
+				{
+					generatedId = rs.getInt(1);
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t save ruler building to database.&quot;, e);
+			return null;
+		}
+		
+		if (generatedId &lt;= 0)
+		{
+			LOGGER.warn(&quot;Failed to get generated ID for ruler building: {}.&quot;, prefabName);
+			return null;
+		}
+		
+		final RulerBuildingData building = new RulerBuildingData(generatedId, prefabName, posX, posY, posZ, rotY, scale, ownerName, createdAt);
+		_buildings.put(generatedId, building);
+		
+		LOGGER.info(&quot;Player {} built &#x27;{}&#x27; (id={}) at ({}, {}, {}). Total buildings: {}&quot;,
+			ownerName, prefabName, generatedId, posX, posY, posZ, _buildings.size());
+			
+		// Broadcast to all online players
+		final RulerBuildingsPacket pkt = new RulerBuildingsPacket(building);
+		for (Player p : World.getInstance().getPlayers())
+		{
+			if (p != null)
+			{
+				p.sendPacket(pkt);
+			}
+		}
+		
+		return building;
+	}
+	
+	public boolean removeBuilding(int buildingId)
+	{
+		final RulerBuildingData removed = _buildings.remove(buildingId);
+		if (removed == null)
+		{
+			return false;
+		}
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(DELETE_BUILDING))
+		{
+			ps.setInt(1, buildingId);
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t delete ruler building with id {}.&quot;, buildingId, e);
+		}
+		
+		LOGGER.info(&quot;Demolished ruler building id={}. Remaining buildings: {}&quot;, buildingId, _buildings.size());
+		
+		// Broadcast removal to all online players
+		final RulerBuildingsPacket pkt = new RulerBuildingsPacket(buildingId);
+		for (Player p : World.getInstance().getPlayers())
+		{
+			if (p != null)
+			{
+				p.sendPacket(pkt);
+			}
+		}
+		
+		return true;
+	}
+	
+	public void sendBuildingList(Player player)
+	{
+		if (player == null || _buildings.isEmpty())
+		{
+			return;
+		}
+		
+		List&lt;RulerBuildingData&gt; chunk = new ArrayList&lt;&gt;(CHUNK_SIZE);
+		for (RulerBuildingData b : _buildings.values())
+		{
+			chunk.add(b);
+			if (chunk.size() &gt;= CHUNK_SIZE)
+			{
+				player.sendPacket(new RulerBuildingsPacket(chunk));
+				chunk = new ArrayList&lt;&gt;(CHUNK_SIZE);
+			}
+		}
+		
+		if (!chunk.isEmpty())
+		{
+			player.sendPacket(new RulerBuildingsPacket(chunk));
+		}
+	}
+	
+	public Map&lt;Integer, RulerBuildingData&gt; getBuildings()
+	{
+		return _buildings;
+	}
+	
+	public static RulerBuildingManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final RulerBuildingManager INSTANCE = new RulerBuildingManager();
+	}
+}
+</pre>
+            
+</body>
+</html>

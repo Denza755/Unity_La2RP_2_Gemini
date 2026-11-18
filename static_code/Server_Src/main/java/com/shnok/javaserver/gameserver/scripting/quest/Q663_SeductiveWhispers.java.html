@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q663_SeductiveWhispers.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q663_SeductiveWhispers.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q663_SeductiveWhispers extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q663_SeductiveWhispers&quot;;
+	
+	// NPC
+	private static final int WILBERT = 30846;
+	
+	// Quest item
+	private static final int SPIRIT_BEAD = 8766;
+	
+	// Rewards
+	private static final int ADENA = 57;
+	private static final int ENCHANT_WEAPON_A = 729;
+	private static final int ENCHANT_ARMOR_A = 730;
+	private static final int ENCHANT_WEAPON_B = 947;
+	private static final int ENCHANT_ARMOR_B = 948;
+	private static final int ENCHANT_WEAPON_C = 951;
+	private static final int ENCHANT_WEAPON_D = 955;
+	
+	private static final int[] RECIPES =
+	{
+		2353,
+		4963,
+		4967,
+		5000,
+		5001,
+		5002,
+		5004,
+		5005,
+		5006,
+		5007
+	};
+	
+	private static final int[] BLADES =
+	{
+		2115,
+		4104,
+		4108,
+		4114,
+		4115,
+		4116,
+		4118,
+		4119,
+		4120,
+		4121
+	};
+	
+	// Text of cards
+	private static final Map&lt;Integer, NpcStringId&gt; CARDS = new HashMap&lt;&gt;();
+	static
+	{
+		CARDS.put(0, NpcStringId.ID_66300);
+		CARDS.put(11, NpcStringId.ID_66311);
+		CARDS.put(12, NpcStringId.ID_66312);
+		CARDS.put(13, NpcStringId.ID_66313);
+		CARDS.put(14, NpcStringId.ID_66314);
+		CARDS.put(15, NpcStringId.ID_66315);
+		CARDS.put(21, NpcStringId.ID_66321);
+		CARDS.put(22, NpcStringId.ID_66322);
+		CARDS.put(23, NpcStringId.ID_66323);
+		CARDS.put(24, NpcStringId.ID_66324);
+		CARDS.put(25, NpcStringId.ID_66325);
+	}
+	
+	// Drop chances
+	private static final Map&lt;Integer, Integer&gt; CHANCES = new HashMap&lt;&gt;();
+	static
+	{
+		CHANCES.put(20674, 807000); // Doom Knight
+		CHANCES.put(20678, 372000); // Tortured Undead
+		CHANCES.put(20954, 460000); // Hungered Corpse
+		CHANCES.put(20955, 537000); // Ghost War
+		CHANCES.put(20956, 540000); // Past Knight
+		CHANCES.put(20957, 565000); // Nihil Invader
+		CHANCES.put(20958, 425000); // Death Agent
+		CHANCES.put(20959, 682000); // Dark Guard
+		CHANCES.put(20960, 372000); // Bloody Ghost
+		CHANCES.put(20961, 547000); // Bloody Knight
+		CHANCES.put(20962, 522000); // Bloody Priest
+		CHANCES.put(20963, 498000); // Bloody Lord
+		CHANCES.put(20974, 1000000); // Spiteful Soul Leader
+		CHANCES.put(20975, 975000); // Spiteful Soul Wizard
+		CHANCES.put(20976, 825000); // Spiteful Soul Fighter
+		CHANCES.put(20996, 385000); // Spiteful Ghost of Ruins
+		CHANCES.put(20997, 342000); // Soldier of Grief
+		CHANCES.put(20998, 377000); // Cruel Punisher
+		CHANCES.put(20999, 450000); // Roving Soul
+		CHANCES.put(21000, 395000); // Soul of Ruins
+		CHANCES.put(21001, 535000); // Wretched Archer
+		CHANCES.put(21002, 472000); // Doom Scout
+		CHANCES.put(21006, 502000); // Doom Servant
+		CHANCES.put(21007, 540000); // Doom Guard
+		CHANCES.put(21008, 692000); // Doom Archer
+		CHANCES.put(21009, 740000); // Doom Trooper
+		CHANCES.put(21010, 595000); // Doom Warrior
+	}
+	
+	public Q663_SeductiveWhispers()
+	{
+		super(663, &quot;Seductive Whispers&quot;);
+		
+		setItemsIds(SPIRIT_BEAD);
+		
+		addQuestStart(WILBERT);
+		addTalkId(WILBERT);
+		
+		for (int npcId : CHANCES.keySet())
+			addMyDying(npcId);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		final int state = st.getInteger(&quot;state&quot;);
+		
+		if (event.equalsIgnoreCase(&quot;30846-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			st.set(&quot;state&quot;, 1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-09.htm&quot;) &amp;&amp; (state % 10) &lt;= 4)
+		{
+			if ((state / 10) &lt; 1)
+			{
+				if (player.getInventory().getItemCount(SPIRIT_BEAD) &gt;= 50)
+				{
+					takeItems(player, SPIRIT_BEAD, 50);
+					st.set(&quot;state&quot;, 5);
+				}
+				else
+					htmltext = &quot;30846-10.htm&quot;;
+			}
+			else
+			{
+				st.set(&quot;state&quot;, (state / 10) * 10 + 5);
+				st.set(&quot;stateEx&quot;, 0);
+				htmltext = &quot;30846-09a.htm&quot;;
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-14.htm&quot;) &amp;&amp; (state % 10) == 5 &amp;&amp; (state / 1000) == 0)
+		{
+			int i0 = st.getInteger(&quot;stateEx&quot;);
+			
+			int i1 = i0 % 10;
+			int i2 = (i0 - i1) / 10;
+			
+			int param1 = Rnd.get(2) + 1;
+			int param2 = Rnd.get(5) + 1;
+			
+			int i5 = state / 10;
+			
+			int param3 = param1 * 10 + param2;
+			
+			if (param1 == i2)
+			{
+				int i3 = param2 + i1;
+				
+				if (i3 % 5 == 0 &amp;&amp; i3 != 10)
+				{
+					if ((state % 100) / 10 &gt;= 7)
+					{
+						st.set(&quot;state&quot;, 4);
+						rewardItems(player, ADENA, 2384000);
+						rewardItems(player, ENCHANT_WEAPON_A, 1);
+						rewardItems(player, ENCHANT_ARMOR_A, 1);
+						rewardItems(player, ENCHANT_ARMOR_A, 1);
+						htmltext = getHTML(&quot;30846-14.htm&quot;, i0, param3, player.getName());
+					}
+					else
+					{
+						st.set(&quot;state&quot;, (state / 10) * 10 + 7);
+						htmltext = getHTML(&quot;30846-13.htm&quot;, i0, param3, player.getName()).replace(&quot;%wincount%&quot;, String.valueOf(i5 + 1));
+					}
+				}
+				else
+				{
+					st.set(&quot;state&quot;, (state / 10) * 10 + 6);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-12.htm&quot;, i0, param3, player.getName());
+				}
+			}
+			else
+			{
+				if (param2 == 5 || i1 == 5)
+				{
+					if ((state % 100) / 10 &gt;= 7)
+					{
+						st.set(&quot;state&quot;, 4);
+						rewardItems(player, ADENA, 2384000);
+						rewardItems(player, ENCHANT_WEAPON_A, 1);
+						rewardItems(player, ENCHANT_ARMOR_A, 1);
+						rewardItems(player, ENCHANT_ARMOR_A, 1);
+						htmltext = getHTML(&quot;30846-14.htm&quot;, i0, param3, player.getName());
+					}
+					else
+					{
+						st.set(&quot;state&quot;, (state / 10) * 10 + 7);
+						htmltext = getHTML(&quot;30846-13.htm&quot;, i0, param3, player.getName()).replace(&quot;%wincount%&quot;, String.valueOf(i5 + 1));
+					}
+				}
+				else
+				{
+					st.set(&quot;state&quot;, (state / 10) * 10 + 6);
+					st.set(&quot;stateEx&quot;, param1 * 10 + param2);
+					htmltext = getHTML(&quot;30846-12.htm&quot;, i0, param3, player.getName());
+				}
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-19.htm&quot;) &amp;&amp; (state % 10) == 6 &amp;&amp; (state / 1000) == 0)
+		{
+			int i0 = st.getInteger(&quot;stateEx&quot;);
+			
+			int i1 = i0 % 10;
+			int i2 = (i0 - i1) / 10;
+			
+			int param1 = Rnd.get(2) + 1;
+			int param2 = Rnd.get(5) + 1;
+			int param3 = param1 * 10 + param2;
+			
+			if (param1 == i2)
+			{
+				int i3 = param1 + i1;
+				
+				if (i3 % 5 == 0 &amp;&amp; i3 != 10)
+				{
+					st.set(&quot;state&quot;, 1);
+					st.set(&quot;stateEx&quot;, 0);
+					htmltext = getHTML(&quot;30846-19.htm&quot;, i0, param3, player.getName());
+				}
+				else
+				{
+					st.set(&quot;state&quot;, (state / 10) * 10 + 5);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-18.htm&quot;, i0, param3, player.getName());
+				}
+			}
+			else
+			{
+				if (param2 == 5 || i1 == 5)
+				{
+					st.set(&quot;state&quot;, 1);
+					htmltext = getHTML(&quot;30846-19.htm&quot;, i0, param3, player.getName());
+				}
+				else
+				{
+					st.set(&quot;state&quot;, (state / 10) * 10 + 5);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-18.htm&quot;, i0, param3, player.getName());
+				}
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-20.htm&quot;) &amp;&amp; (state % 10) == 7 &amp;&amp; (state / 1000) == 0)
+		{
+			st.set(&quot;state&quot;, (state / 10 + 1) * 10 + 4);
+			st.set(&quot;stateEx&quot;, 0);
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-21.htm&quot;) &amp;&amp; (state % 10) == 7 &amp;&amp; (state / 1000) == 0)
+		{
+			int round = state / 10;
+			
+			if (round == 0)
+				rewardItems(player, ADENA, 40000);
+			else if (round == 1)
+				rewardItems(player, ADENA, 80000);
+			else if (round == 2)
+			{
+				rewardItems(player, ADENA, 110000);
+				rewardItems(player, ENCHANT_WEAPON_D, 1);
+			}
+			else if (round == 3)
+			{
+				rewardItems(player, ADENA, 199000);
+				rewardItems(player, ENCHANT_WEAPON_C, 1);
+			}
+			else if (round == 4)
+			{
+				rewardItems(player, ADENA, 388000);
+				rewardItems(player, Rnd.get(RECIPES), 1);
+			}
+			else if (round == 5)
+			{
+				rewardItems(player, ADENA, 675000);
+				rewardItems(player, Rnd.get(BLADES), 1);
+			}
+			else if (round == 6)
+			{
+				rewardItems(player, ADENA, 1284000);
+				rewardItems(player, ENCHANT_WEAPON_B, 1);
+				rewardItems(player, ENCHANT_ARMOR_B, 1);
+				rewardItems(player, ENCHANT_WEAPON_B, 1);
+				rewardItems(player, ENCHANT_ARMOR_B, 1);
+			}
+			
+			st.set(&quot;state&quot;, 1);
+			st.set(&quot;stateEx&quot;, 0);
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-22.htm&quot;) &amp;&amp; (state % 10) == 1)
+		{
+			if (player.getInventory().hasItem(SPIRIT_BEAD))
+			{
+				st.set(&quot;state&quot;, 1005);
+				takeItems(player, SPIRIT_BEAD, 1);
+			}
+			else
+				htmltext = &quot;30846-22a.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-25.htm&quot;) &amp;&amp; state == 1005)
+		{
+			int i0 = st.getInteger(&quot;stateEx&quot;);
+			
+			int i1 = i0 % 10;
+			int i2 = (i0 - i1) / 10;
+			
+			int param1 = Rnd.get(2) + 1;
+			int param2 = Rnd.get(5) + 1;
+			int param3 = param1 * 10 + param2;
+			
+			if (param1 == i2)
+			{
+				int i3 = param2 + i1;
+				
+				if (i3 % 5 == 0 &amp;&amp; i3 != 10)
+				{
+					st.set(&quot;state&quot;, 1);
+					st.set(&quot;stateEx&quot;, 0);
+					rewardItems(player, ADENA, 800);
+					htmltext = getHTML(&quot;30846-25.htm&quot;, i0, param3, player.getName()).replace(&quot;%card1%&quot;, String.valueOf(i1));
+				}
+				else
+				{
+					st.set(&quot;state&quot;, 1006);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-24.htm&quot;, i0, param3, player.getName());
+				}
+			}
+			else
+			{
+				if (param2 == 5 || i2 == 5)
+				{
+					st.set(&quot;state&quot;, 1);
+					st.set(&quot;stateEx&quot;, 0);
+					rewardItems(player, ADENA, 800);
+					htmltext = getHTML(&quot;30846-25.htm&quot;, i0, param3, player.getName()).replace(&quot;%card1%&quot;, String.valueOf(i1));
+				}
+				else
+				{
+					st.set(&quot;state&quot;, 1006);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-24.htm&quot;, i0, param3, player.getName());
+				}
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-29.htm&quot;) &amp;&amp; state == 1006)
+		{
+			int i0 = st.getInteger(&quot;stateEx&quot;);
+			
+			int i1 = i0 % 10;
+			int i2 = (i0 - i1) / 10;
+			
+			int param1 = Rnd.get(2) + 1;
+			int param2 = Rnd.get(5) + 1;
+			int param3 = param1 * 10 + param2;
+			
+			if (param1 == i2)
+			{
+				int i3 = param2 + i1;
+				
+				if (i3 % 5 == 0 &amp;&amp; i3 != 10)
+				{
+					st.set(&quot;state&quot;, 1);
+					st.set(&quot;stateEx&quot;, 0);
+					rewardItems(player, ADENA, 800);
+					htmltext = getHTML(&quot;30846-29.htm&quot;, i0, param3, player.getName()).replace(&quot;%card1%&quot;, String.valueOf(i1));
+				}
+				else
+				{
+					st.set(&quot;state&quot;, 1005);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-28.htm&quot;, i0, param3, player.getName());
+				}
+			}
+			else
+			{
+				if (param2 == 5 || i1 == 5)
+				{
+					st.set(&quot;state&quot;, 1);
+					st.set(&quot;stateEx&quot;, 0);
+					htmltext = getHTML(&quot;30846-29.htm&quot;, i0, param3, player.getName());
+				}
+				else
+				{
+					st.set(&quot;state&quot;, 1005);
+					st.set(&quot;stateEx&quot;, param3);
+					htmltext = getHTML(&quot;30846-28.htm&quot;, i0, param3, player.getName());
+				}
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;30846-30.htm&quot;))
+		{
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 50) ? &quot;30846-02.htm&quot; : &quot;30846-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				int state = st.getInteger(&quot;state&quot;);
+				
+				if (state &lt; 4)
+				{
+					if (player.getInventory().hasItem(SPIRIT_BEAD))
+						htmltext = &quot;30846-05.htm&quot;;
+					else
+						htmltext = &quot;30846-04.htm&quot;;
+				}
+				else if ((state % 10) == 4)
+					htmltext = &quot;30846-05a.htm&quot;;
+				else if ((state % 10) == 5)
+					htmltext = &quot;30846-11.htm&quot;;
+				else if ((state % 10) == 6)
+					htmltext = &quot;30846-15.htm&quot;;
+				else if ((state % 10) == 7)
+				{
+					int round = (state % 100) / 10;
+					
+					if (round &gt;= 7)
+					{
+						rewardItems(player, ADENA, 2384000);
+						rewardItems(player, ENCHANT_WEAPON_A, 1);
+						rewardItems(player, ENCHANT_ARMOR_A, 1);
+						rewardItems(player, ENCHANT_ARMOR_A, 1);
+						htmltext = &quot;30846-17.htm&quot;;
+					}
+					else
+						htmltext = getHtmlText(&quot;30846-16.htm&quot;).replace(&quot;%wincount%&quot;, String.valueOf((state / 10) + 1));
+				}
+				else if (state == 1005)
+					htmltext = &quot;30846-23.htm&quot;;
+				else if (state == 1006)
+					htmltext = &quot;30846-26.htm&quot;;
+				
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(st.getPlayer(), SPIRIT_BEAD, 1, 0, CHANCES.get(npc.getNpcId()));
+	}
+	
+	private String getHTML(String html, int index, int param3, String name)
+	{
+		return getHtmlText(html).replace(&quot;%card1pic%&quot;, CARDS.get(index).getMessage()).replace(&quot;%card2pic%&quot;, CARDS.get(param3).getMessage()).replace(&quot;%name%&quot;, name);
+	}
+}</pre>
+            
+</body>
+</html>

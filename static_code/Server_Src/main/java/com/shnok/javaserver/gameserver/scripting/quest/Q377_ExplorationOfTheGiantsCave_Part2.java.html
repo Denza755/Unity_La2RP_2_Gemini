@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q377_ExplorationOfTheGiantsCave_Part2.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q377_ExplorationOfTheGiantsCave_Part2.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q377_ExplorationOfTheGiantsCave_Part2 extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q377_ExplorationOfTheGiantsCave_Part2&quot;;
+	
+	// Items
+	private static final int ANCIENT_TITAN_BOOK = 5955;
+	private static final int ANCIENT_DICTIONARY_INTERMEDIATE_LEVEL = 5892;
+	
+	private static final int[][] BOOKS =
+	{
+		// science &amp; technology -&gt; majestic leather, leather armor of nightmare
+		{
+			5945,
+			5946,
+			5947,
+			5948,
+			5949
+		},
+		// culture -&gt; armor of nightmare, majestic plate
+		{
+			5950,
+			5951,
+			5952,
+			5953,
+			5954
+		}
+	};
+	
+	// Rewards
+	private static final int[][] RECIPES =
+	{
+		// science &amp; technology -&gt; majestic leather, leather armor of nightmare
+		{
+			5338,
+			5336
+		},
+		// culture -&gt; armor of nightmare, majestic plate
+		{
+			5420,
+			5422
+		}
+	};
+	
+	// Drop chances
+	private static final Map&lt;Integer, Integer&gt; CHANCES = new HashMap&lt;&gt;();
+	static
+	{
+		CHANCES.put(20654, 25000);
+		CHANCES.put(20656, 22000);
+		CHANCES.put(20657, 16000);
+		CHANCES.put(20658, 15000);
+	}
+	
+	public Q377_ExplorationOfTheGiantsCave_Part2()
+	{
+		super(377, &quot;Exploration of the Giants&#x27; Cave, Part 2&quot;);
+		
+		addQuestStart(31147); // Sobling
+		addTalkId(31147);
+		
+		for (int npcId : CHANCES.keySet())
+			addMyDying(npcId);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31147-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31147-04.htm&quot;))
+		{
+			htmltext = checkItems(player);
+		}
+		else if (event.equalsIgnoreCase(&quot;31147-07.htm&quot;))
+		{
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 57 || !player.getInventory().hasItem(ANCIENT_DICTIONARY_INTERMEDIATE_LEVEL)) ? &quot;31147-01.htm&quot; : &quot;31147-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				htmltext = checkItems(player);
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(st.getPlayer(), ANCIENT_TITAN_BOOK, 1, 0, CHANCES.get(npc.getNpcId()));
+	}
+	
+	private static String checkItems(Player player)
+	{
+		for (int type = 0; type &lt; BOOKS.length; type++)
+		{
+			boolean complete = true;
+			for (int book : BOOKS[type])
+			{
+				if (!player.getInventory().hasItem(book))
+					complete = false;
+			}
+			
+			if (complete)
+			{
+				for (int book : BOOKS[type])
+					takeItems(player, book, 1);
+				
+				giveItems(player, Rnd.get(RECIPES[type]), 1);
+				return &quot;31147-04.htm&quot;;
+			}
+		}
+		return &quot;31147-05.htm&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

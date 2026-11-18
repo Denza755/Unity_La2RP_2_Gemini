@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q504_CompetitionForTheBanditStronghold.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q504_CompetitionForTheBanditStronghold.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.data.manager.ClanHallManager;
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.SiegableHall;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q504_CompetitionForTheBanditStronghold extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q504_CompetitionForTheBanditStronghold&quot;;
+	
+	// Misc
+	private static final SiegableHall BANDIT_STRONGHOLD = ClanHallManager.getInstance().getSiegableHall(35);
+	
+	// NPC
+	private static final int MESSENGER = 35437;
+	
+	// Monsters
+	private static final Map&lt;Integer, Integer&gt; MONSTERS = HashMap.newHashMap(5);
+	
+	// Items
+	private static final int TARLK_AMULET = 4332;
+	private static final int CONTEST_CERTIFICATE = 4333;
+	private static final int TROPHY_OF_ALLIANCE = 5009;
+	
+	public Q504_CompetitionForTheBanditStronghold()
+	{
+		super(504, &quot;Competition for the Bandit Stronghold&quot;);
+		
+		MONSTERS.put(20570, 600000); // Tarlk Bugbear
+		MONSTERS.put(20571, 700000); // Tarlk Bugbear Warrior
+		MONSTERS.put(20572, 800000); // Tarlk Bugbear High Warrior
+		MONSTERS.put(20573, 900000); // Tarlk Basilisk
+		MONSTERS.put(20574, 700000); // Elder Tarlk Basilisk
+		
+		addQuestStart(MESSENGER);
+		addTalkId(MESSENGER);
+		
+		for (int mob : MONSTERS.keySet())
+			addMyDying(mob);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;35437-02.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+			giveItems(player, CONTEST_CERTIFICATE, 1);
+		}
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		final Clan clan = player.getClan();
+		
+		if (!BANDIT_STRONGHOLD.isWaitingBattle())
+			htmltext = getHtmlText(&quot;35437-09.htm&quot;).replace(&quot;%nextSiege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(BANDIT_STRONGHOLD.getSiegeDate().getTime()));
+		else if (clan == null || clan.getLevel() &lt; 4)
+			htmltext = &quot;35437-04.htm&quot;;
+		else if (!player.isClanLeader())
+			htmltext = &quot;35437-05.htm&quot;;
+		else if (clan.getClanHallId() &gt; 0)
+			htmltext = &quot;35437-10.htm&quot;;
+		else if (player.getInventory().hasAtLeastOneItem(TROPHY_OF_ALLIANCE))
+			htmltext = &quot;35437-07a.htm&quot;;
+		else
+		{
+			switch (st.getState())
+			{
+				case CREATED:
+					if (!BANDIT_STRONGHOLD.isWaitingBattle())
+						htmltext = getHtmlText(&quot;35437-03.htm&quot;).replace(&quot;%nextSiege%&quot;, new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(BANDIT_STRONGHOLD.getSiegeDate().getTime()));
+					else if (player.getInventory().hasAtLeastOneItem(CONTEST_CERTIFICATE))
+					{
+						takeItems(player, CONTEST_CERTIFICATE, -1);
+						takeItems(player, TARLK_AMULET, -1);
+						takeItems(player, TROPHY_OF_ALLIANCE, -1);
+						
+						htmltext = &quot;35437-06.htm&quot;;
+						playSound(player, SOUND_FINISH);
+						st.exitQuest(true);
+					}
+					else
+						htmltext = &quot;35437-01.htm&quot;;
+					break;
+				
+				case STARTED:
+					if (player.getInventory().getItemCount(TARLK_AMULET) &lt; 30)
+						htmltext = &quot;35437-07.htm&quot;;
+					else
+					{
+						htmltext = &quot;35437-08.htm&quot;;
+						takeItems(player, TARLK_AMULET, 30);
+						takeItems(player, CONTEST_CERTIFICATE, -1);
+						takeItems(player, TROPHY_OF_ALLIANCE, -1);
+						rewardItems(player, TROPHY_OF_ALLIANCE, 1);
+						playSound(player, SOUND_FINISH);
+						st.exitQuest(true);
+					}
+					break;
+				
+				case COMPLETED:
+					htmltext = &quot;35437-07a.htm&quot;;
+					break;
+			}
+		}
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(player, TARLK_AMULET, 1, 30, MONSTERS.get(npc.getNpcId()));
+	}
+}</pre>
+            
+</body>
+</html>

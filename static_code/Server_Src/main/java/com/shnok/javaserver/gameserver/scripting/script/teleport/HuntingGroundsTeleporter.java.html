@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/teleport/HuntingGroundsTeleporter.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/teleport/HuntingGroundsTeleporter.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.teleport;
+
+import com.shnok.javaserver.commons.util.ArraysUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.TeleportType;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class HuntingGroundsTeleporter extends Quest
+{
+	private static final int[] PRIESTS =
+	{
+		31078,
+		31079,
+		31080,
+		31081,
+		31082,
+		31083,
+		31084,
+		31085,
+		31086,
+		31087,
+		31088,
+		31089,
+		31090,
+		31091,
+		31168,
+		31169,
+		31692,
+		31693,
+		31694,
+		31695,
+		31997,
+		31998
+	};
+	
+	private static final int[] DAWN_NPCS =
+	{
+		31078,
+		31079,
+		31080,
+		31081,
+		31082,
+		31083,
+		31084,
+		31168,
+		31692,
+		31694,
+		31997
+	};
+	
+	public HuntingGroundsTeleporter()
+	{
+		super(-1, &quot;teleport&quot;);
+		
+		addTalkId(PRIESTS);
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		final CabalType playerCabal = SevenSignsManager.getInstance().getPlayerCabal(player.getObjectId());
+		if (playerCabal == CabalType.NORMAL)
+			return ArraysUtil.contains(DAWN_NPCS, npc.getNpcId()) ? &quot;dawn_tele-no.htm&quot; : &quot;dusk_tele-no.htm&quot;;
+		
+		npc.showTeleportWindow(player, TeleportType.STANDARD);
+		return null;
+	}
+}</pre>
+            
+</body>
+</html>

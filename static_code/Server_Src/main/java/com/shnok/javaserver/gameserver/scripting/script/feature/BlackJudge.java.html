@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/BlackJudge.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/BlackJudge.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.feature;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.enums.EventHandler;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class BlackJudge extends Quest
+{
+	private static final IntIntHolder[] DEATH_PENALTIES =
+	{
+		new IntIntHolder(76, 144000),
+		new IntIntHolder(61, 86400),
+		new IntIntHolder(52, 50400),
+		new IntIntHolder(40, 25200),
+		new IntIntHolder(20, 8640),
+		new IntIntHolder(1, 3600)
+	};
+	
+	public BlackJudge()
+	{
+		super(-1, &quot;feature&quot;);
+		
+		addEventIds(30981, EventHandler.FIRST_TALK, EventHandler.TALKED);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		if (event.equalsIgnoreCase(&quot;test_dp&quot;))
+		{
+			final int playerLevel = player.getStatus().getLevel();
+			if (playerLevel &gt;= 76)
+				event = &quot;black_judge007.htm&quot;;
+			else if (playerLevel &gt;= 61)
+				event = &quot;black_judge006.htm&quot;;
+			else if (playerLevel &gt;= 52)
+				event = &quot;black_judge005.htm&quot;;
+			else if (playerLevel &gt;= 40)
+				event = &quot;black_judge004.htm&quot;;
+			else if (playerLevel &gt;= 20)
+				event = &quot;black_judge003.htm&quot;;
+			else if (playerLevel &gt;= 1)
+				event = &quot;black_judge002.htm&quot;;
+		}
+		else if (event.startsWith(&quot;remove_dp&quot;))
+		{
+			if (player.getDeathPenaltyBuffLevel() &lt;= 0)
+				event = &quot;black_judge009.htm&quot;;
+			else
+			{
+				final String[] split = event.split(&quot; &quot;);
+				if (split.length &lt; 2 || !StringUtil.isDigit(split[1]))
+					return null;
+				
+				final IntIntHolder deathPenalty = DEATH_PENALTIES[Integer.parseInt(split[1])];
+				if (player.getStatus().getLevel() &lt; deathPenalty.getId())
+					return null;
+				
+				if (player.getInventory().getAdena() &lt; deathPenalty.getValue())
+					event = &quot;black_judge008.htm&quot;;
+				else
+				{
+					takeItems(player, 57, deathPenalty.getValue());
+					
+					player.reduceDeathPenaltyBuffLevel();
+					return null;
+				}
+			}
+		}
+		return event;
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		return &quot;black_judge001.htm&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

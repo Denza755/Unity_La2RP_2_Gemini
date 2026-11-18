@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestSetCrop.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestSetCrop.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.CastleManorManager;
+import com.shnok.javaserver.gameserver.enums.PrivilegeType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.manor.CropProcure;
+import com.shnok.javaserver.gameserver.model.manor.Seed;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+
+public class RequestSetCrop extends L2GameClientPacket
+{
+	private static final int BATCH_LENGTH = 13;
+	
+	private int _manorId;
+	private List&lt;CropProcure&gt; _items;
+	
+	@Override
+	protected void readImpl()
+	{
+		_manorId = readD();
+		final int count = readD();
+		if (count &lt;= 0 || count &gt; Config.MAX_ITEM_IN_PACKET || (count * BATCH_LENGTH) != _buf.remaining())
+			return;
+		
+		_items = new ArrayList&lt;&gt;(count);
+		for (int i = 0; i &lt; count; i++)
+		{
+			final int itemId = readD();
+			final int sales = readD();
+			final int price = readD();
+			final int type = readC();
+			
+			if (itemId &lt; 1 || sales &lt; 0 || price &lt; 0)
+			{
+				_items.clear();
+				return;
+			}
+			
+			if (sales &gt; 0)
+				_items.add(new CropProcure(itemId, sales, type, sales, price));
+		}
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		if (_items.isEmpty())
+			return;
+		
+		final CastleManorManager manor = CastleManorManager.getInstance();
+		if (!manor.isModifiablePeriod())
+		{
+			sendPacket(ActionFailed.STATIC_PACKET);
+			return;
+		}
+		
+		// Check player privileges
+		final Player player = getClient().getPlayer();
+		if (player == null || player.getClan() == null || player.getClan().getCastleId() != _manorId || !player.hasClanPrivileges(PrivilegeType.CP_MANOR_ADMINISTRATION) || !player.getAI().canDoInteract(player.getCurrentFolk()))
+		{
+			sendPacket(ActionFailed.STATIC_PACKET);
+			return;
+		}
+		
+		// Filter crops with start amount lower than 0 and incorrect price
+		final List&lt;CropProcure&gt; list = new ArrayList&lt;&gt;(_items.size());
+		for (CropProcure cp : _items)
+		{
+			final Seed s = manor.getSeedByCrop(cp.getId(), _manorId);
+			if (s != null &amp;&amp; cp.getStartAmount() &lt;= s.getCropsLimit() &amp;&amp; cp.getPrice() &gt;= s.getCropMinPrice() &amp;&amp; cp.getPrice() &lt;= s.getCropMaxPrice())
+				list.add(cp);
+		}
+		
+		// Save crop list
+		manor.setNextCropProcure(list, _manorId);
+	}
+}</pre>
+            
+</body>
+</html>

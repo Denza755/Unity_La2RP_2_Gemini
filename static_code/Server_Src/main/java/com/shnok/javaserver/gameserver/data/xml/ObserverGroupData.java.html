@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/ObserverGroupData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/ObserverGroupData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.location.ObserverLocation;
+import com.shnok.javaserver.gameserver.model.spawn.Spawn;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores {@link ObserverLocation}s, which are infos related to Broadcasting Towers.
+ */
+public class ObserverGroupData implements IXmlReader
+{
+	private final Map&lt;Integer, List&lt;ObserverLocation&gt;&gt; _groups = new HashMap&lt;&gt;();
+	private final List&lt;Spawn&gt; _spawns = new ArrayList&lt;&gt;();
+	
+	protected ObserverGroupData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/observerGroups.xml&quot;);
+		LOGGER.info(&quot;Loaded {} observer groups and {} spawns.&quot;, _groups.size(), _spawns.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt;
+		{
+			forEach(listNode, &quot;groups&quot;, groupsNode -&gt; forEach(groupsNode, &quot;group&quot;, groupNode -&gt;
+			{
+				final NamedNodeMap groupAttrs = groupNode.getAttributes();
+				final int id = Integer.parseInt(groupAttrs.getNamedItem(&quot;id&quot;).getNodeValue());
+				
+				// Generate new LinkedList if that id doesn&#x27;t exist yet.
+				final List&lt;ObserverLocation&gt; group = _groups.computeIfAbsent(id, k -&gt; new LinkedList&lt;&gt;());
+				
+				forEach(groupNode, &quot;entry&quot;, entryNode -&gt;
+				{
+					final StatSet set = parseAttributes(entryNode);
+					
+					group.add(new ObserverLocation(set));
+				});
+			}));
+			
+			forEach(listNode, &quot;spawns&quot;, spawnsNode -&gt; forEach(spawnsNode, &quot;spawn&quot;, spawnNode -&gt;
+			{
+				final NamedNodeMap spawnAttrs = spawnNode.getAttributes();
+				
+				final int npcId = parseInteger(spawnAttrs, &quot;id&quot;);
+				
+				final NpcTemplate template = NpcData.getInstance().getTemplate(npcId);
+				if (template == null)
+				{
+					LOGGER.warn(&quot;Template {} couldn&#x27;t be found.&quot;, npcId);
+					return;
+				}
+				
+				final int x = parseInteger(spawnAttrs, &quot;x&quot;);
+				final int y = parseInteger(spawnAttrs, &quot;y&quot;);
+				final int z = parseInteger(spawnAttrs, &quot;z&quot;);
+				
+				final List&lt;Integer&gt; groups = new LinkedList&lt;&gt;();
+				
+				for (String splittedString : parseString(spawnAttrs, &quot;groups&quot;).split(&quot;;&quot;))
+					groups.add(Integer.parseInt(splittedString));
+				
+				try
+				{
+					final Spawn spawn = new Spawn(template);
+					spawn.setLoc(x, y, z, -1);
+					spawn.setRespawnDelay(10);
+					
+					SpawnManager.getInstance().addSpawn(spawn);
+					
+					_spawns.add(spawn);
+					
+					final Npc npc = spawn.doSpawn(false);
+					npc.setObserverGroups(groups);
+				}
+				catch (Exception e)
+				{
+					LOGGER.error(&quot;Failed to initialize a spawn.&quot;, e);
+				}
+			}));
+		});
+	}
+	
+	public void reload()
+	{
+		_groups.clear();
+		
+		// Clear the Npc and Spawns references.
+		for (Spawn spawn : _spawns)
+		{
+			spawn.doDelete();
+			
+			SpawnManager.getInstance().deleteSpawn(spawn);
+		}
+		_spawns.clear();
+		
+		load();
+	}
+	
+	public final List&lt;ObserverLocation&gt; getObserverLocations(int groupId)
+	{
+		return _groups.get(groupId);
+	}
+	
+	public final ObserverLocation getObserverLocation(int id)
+	{
+		return _groups.values().stream().flatMap(List::stream).filter(ol -&gt; ol.getLocId() == id).findFirst().orElse(null);
+	}
+	
+	public static ObserverGroupData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final ObserverGroupData INSTANCE = new ObserverGroupData();
+	}
+}</pre>
+            
+</body>
+</html>

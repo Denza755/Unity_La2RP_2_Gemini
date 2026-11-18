@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/Loginserver/ServerPackets/ServerListPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/Loginserver/ServerPackets/ServerListPacket.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class ServerListPacket : LoginServerPacket
+{
+    private byte _serverCount;
+    private byte _lastServer;
+    private List&lt;ServerData&gt; _serverData;
+    private Dictionary&lt;int, int&gt; _charsOnServers;
+
+    public byte LastServer { get { return _lastServer; } }
+    public List&lt;ServerData&gt; ServersData { get { return _serverData; } }
+    public Dictionary&lt;int, int&gt; CharsOnServers { get { return _charsOnServers; } }
+
+    public class ServerData
+    {
+        public byte[] ip;
+        public int port;
+        public int currentPlayers;
+        public int maxPlayers;
+        public int status;
+        public int serverId;
+
+        public ServerData()
+        {
+            ip = new byte[4];
+        }
+    }
+
+    public ServerListPacket(byte[] d) : base(d)
+    {
+        _serverData = new List&lt;ServerData&gt;();
+        _charsOnServers = new Dictionary&lt;int, int&gt;();
+
+        Parse();
+    }
+
+    public override void Parse()
+    {
+        _serverCount = ReadB();
+        _lastServer = ReadB();
+
+        for (int i = 0; i &lt; _serverCount; i++)
+        {
+            ServerData serverData = new ServerData();
+            serverData.serverId = ReadB();
+            serverData.ip[0] = ReadB();
+            serverData.ip[1] = ReadB();
+            serverData.ip[2] = ReadB();
+            serverData.ip[3] = ReadB();
+
+            serverData.port = ReadI();
+            serverData.currentPlayers = ReadI();
+            serverData.maxPlayers = ReadI();
+            serverData.status = ReadB();
+
+            Debug.Log($&quot;Server data received: Id:{serverData.serverId} Ip:{StringUtils.ByteArrayToString(serverData.ip)} Port:{serverData.port} OnlineCount:{serverData.currentPlayers} MaxPlayers:{serverData.maxPlayers} Status:{serverData.status}&quot;);
+            _serverData.Add(serverData);
+        }
+
+        byte charsOnServerCount = ReadB();
+        if (charsOnServerCount &gt; 0)
+        {
+            for (int i = 0; i &lt; charsOnServerCount; i++)
+            {
+                byte serverId = ReadB();
+                byte charCount = ReadB();
+
+                Debug.Log($&quot;Account as {charCount} character(s) on server {serverId}&quot;);
+                _charsOnServers[serverId] = charCount;
+            }
+        }
+
+    }
+}
+</pre>
+            
+</body>
+</html>

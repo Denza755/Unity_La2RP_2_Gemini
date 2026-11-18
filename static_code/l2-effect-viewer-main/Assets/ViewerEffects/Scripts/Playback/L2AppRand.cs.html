@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Playback/L2AppRand.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Playback/L2AppRand.cs</h1>
+            <pre>using System;
+using UnityEngine;
+
+public static class L2AppRand
+{
+    public const uint Multiplier = 214013u;
+    public const uint Increment = 2531011u;
+    public const int MeshSpawnSlotToSlotDrawCount = 31;
+    public const int MeshSpawnDrawsBeforeStartSpin = 22;
+    public const int SpriteMotionSlotStride = 28;
+    public const int SpriteSpinDraws = 22;
+
+    public static uint Advance(uint state, int drawCount)
+    {
+        if (drawCount &lt;= 0)
+            return state;
+
+        uint mul = Multiplier;
+        uint add = Increment;
+        uint a = 1u;
+        uint c = 0u;
+        int n = drawCount;
+        while (n &gt; 0)
+        {
+            if ((n &amp; 1) != 0)
+            {
+                c = unchecked(mul * c + add);
+                a = unchecked(mul * a);
+            }
+
+            add = unchecked(mul * add + add);
+            mul = unchecked(mul * mul);
+            n &gt;&gt;= 1;
+        }
+
+        return unchecked(a * state + c);
+    }
+
+    public static float BitsToFloat(uint state)
+    {
+        return BitConverter.Int32BitsToSingle(unchecked((int)state));
+    }
+
+    public static void ResolveGpuInstanceRandBits(
+        bool hasMeshSpawn,
+        bool hasStartSpin,
+        uint meshEmitter3AppRandBaseState,
+        uint spriteEmitterAppRandBaseState,
+        int slotIndex,
+        out float meshSpawnRandBits,
+        out float startSpinRandBits,
+        out float spriteMotionRandBits,
+        out float spriteSpinRandBits)
+    {
+        meshSpawnRandBits = 0f;
+        startSpinRandBits = 0f;
+        uint spriteMotion = Advance(spriteEmitterAppRandBaseState, slotIndex * SpriteMotionSlotStride);
+        spriteMotionRandBits = BitsToFloat(spriteMotion);
+        spriteSpinRandBits = BitsToFloat(Advance(spriteMotion, SpriteSpinDraws));
+
+        if (hasMeshSpawn)
+        {
+            uint velocityState = Advance(
+                meshEmitter3AppRandBaseState,
+                slotIndex * MeshSpawnSlotToSlotDrawCount);
+            meshSpawnRandBits = BitsToFloat(velocityState);
+            startSpinRandBits = BitsToFloat(
+                Advance(velocityState, MeshSpawnDrawsBeforeStartSpin));
+            return;
+        }
+
+        if (hasStartSpin)
+        {
+            startSpinRandBits = BitsToFloat(
+                Advance(
+                    meshEmitter3AppRandBaseState,
+                    slotIndex * MeshSpawnSlotToSlotDrawCount));
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

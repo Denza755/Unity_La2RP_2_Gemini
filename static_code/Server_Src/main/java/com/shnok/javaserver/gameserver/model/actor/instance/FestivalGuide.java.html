@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/FestivalGuide.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/FestivalGuide.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.Calendar;
+import java.util.List;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.FestivalOfDarknessManager;
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.data.manager.ZoneManager;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.FestivalType;
+import com.shnok.javaserver.gameserver.enums.MessageType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.model.zone.type.PeaceZone;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+
+public final class FestivalGuide extends Folk
+{
+	protected FestivalType _festivalType;
+	protected CabalType _festivalOracle;
+	
+	protected int _blueStonesNeeded;
+	protected int _greenStonesNeeded;
+	protected int _redStonesNeeded;
+	
+	public FestivalGuide(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+		
+		switch (getNpcId())
+		{
+			case 31127, 31132:
+				_festivalType = FestivalType.MAX_31;
+				_festivalOracle = CabalType.DAWN;
+				_blueStonesNeeded = 900;
+				_greenStonesNeeded = 540;
+				_redStonesNeeded = 270;
+				break;
+			
+			case 31128, 31133:
+				_festivalType = FestivalType.MAX_42;
+				_festivalOracle = CabalType.DAWN;
+				_blueStonesNeeded = 1500;
+				_greenStonesNeeded = 900;
+				_redStonesNeeded = 450;
+				break;
+			
+			case 31129, 31134:
+				_festivalType = FestivalType.MAX_53;
+				_festivalOracle = CabalType.DAWN;
+				_blueStonesNeeded = 3000;
+				_greenStonesNeeded = 1800;
+				_redStonesNeeded = 900;
+				break;
+			
+			case 31130, 31135:
+				_festivalType = FestivalType.MAX_64;
+				_festivalOracle = CabalType.DAWN;
+				_blueStonesNeeded = 4500;
+				_greenStonesNeeded = 2700;
+				_redStonesNeeded = 1350;
+				break;
+			
+			case 31131, 31136:
+				_festivalType = FestivalType.MAX_NONE;
+				_festivalOracle = CabalType.DAWN;
+				_blueStonesNeeded = 6000;
+				_greenStonesNeeded = 3600;
+				_redStonesNeeded = 1800;
+				break;
+			
+			case 31137, 31142:
+				_festivalType = FestivalType.MAX_31;
+				_festivalOracle = CabalType.DUSK;
+				_blueStonesNeeded = 900;
+				_greenStonesNeeded = 540;
+				_redStonesNeeded = 270;
+				break;
+			
+			case 31138, 31143:
+				_festivalType = FestivalType.MAX_42;
+				_festivalOracle = CabalType.DUSK;
+				_blueStonesNeeded = 1500;
+				_greenStonesNeeded = 900;
+				_redStonesNeeded = 450;
+				break;
+			
+			case 31139, 31144:
+				_festivalType = FestivalType.MAX_53;
+				_festivalOracle = CabalType.DUSK;
+				_blueStonesNeeded = 3000;
+				_greenStonesNeeded = 1800;
+				_redStonesNeeded = 900;
+				break;
+			
+			case 31140, 31145:
+				_festivalType = FestivalType.MAX_64;
+				_festivalOracle = CabalType.DUSK;
+				_blueStonesNeeded = 4500;
+				_greenStonesNeeded = 2700;
+				_redStonesNeeded = 1350;
+				break;
+			
+			case 31141, 31146:
+				_festivalType = FestivalType.MAX_NONE;
+				_festivalOracle = CabalType.DUSK;
+				_blueStonesNeeded = 6000;
+				_greenStonesNeeded = 3600;
+				_redStonesNeeded = 1800;
+				break;
+		}
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;FestivalDesc&quot;))
+		{
+			int val = Integer.parseInt(command.substring(13));
+			
+			showChatWindow(player, val, null, true);
+		}
+		else if (command.startsWith(&quot;Festival&quot;))
+		{
+			final int festivalIndex = _festivalType.ordinal();
+			
+			Party playerParty = player.getParty();
+			int val = Integer.parseInt(command.substring(9, 10));
+			
+			switch (val)
+			{
+				case 1: // Become a Participant
+					// Check if the festival period is active, if not then don&#x27;t allow registration.
+					if (SevenSignsManager.getInstance().isSealValidationPeriod())
+					{
+						showChatWindow(player, 2, &quot;a&quot;, false);
+						return;
+					}
+					
+					// Check if a festival is in progress, then don&#x27;t allow registration yet.
+					if (FestivalOfDarknessManager.getInstance().isFestivalInitialized())
+					{
+						player.sendMessage(&quot;You cannot sign up while a festival is in progress.&quot;);
+						return;
+					}
+					
+					// Check if the player is in a formed party already.
+					if (playerParty == null)
+					{
+						showChatWindow(player, 2, &quot;b&quot;, false);
+						return;
+					}
+					
+					// Check if the player is the party leader.
+					if (!playerParty.isLeader(player))
+					{
+						showChatWindow(player, 2, &quot;c&quot;, false);
+						return;
+					}
+					
+					// Check to see if the party has at least 5 members.
+					if (playerParty.getMembersCount() &lt; Config.FESTIVAL_MIN_PLAYER)
+					{
+						showChatWindow(player, 2, &quot;b&quot;, false);
+						return;
+					}
+					
+					// Check if all the party members are in the required level range.
+					if (playerParty.getLevel() &gt; _festivalType.getMaxLevel())
+					{
+						showChatWindow(player, 2, &quot;d&quot;, false);
+						return;
+					}
+					
+					// Check to see if the player has already signed up, if they are then update the participant list providing all the required criteria has been met.
+					if (player.isFestivalParticipant())
+					{
+						FestivalOfDarknessManager.getInstance().setParticipants(_festivalOracle, festivalIndex, playerParty);
+						showChatWindow(player, 2, &quot;f&quot;, false);
+						return;
+					}
+					
+					showChatWindow(player, 1, null, false);
+					break;
+				case 2: // Festival 2 xxxx
+					int stoneType = Integer.parseInt(command.substring(11));
+					int stonesNeeded = 0;
+					
+					switch (stoneType)
+					{
+						case SevenSignsManager.SEAL_STONE_BLUE_ID:
+							stonesNeeded = _blueStonesNeeded;
+							break;
+						case SevenSignsManager.SEAL_STONE_GREEN_ID:
+							stonesNeeded = _greenStonesNeeded;
+							break;
+						case SevenSignsManager.SEAL_STONE_RED_ID:
+							stonesNeeded = _redStonesNeeded;
+							break;
+					}
+					
+					if (!player.destroyItemByItemId(stoneType, stonesNeeded, true))
+						return;
+					
+					FestivalOfDarknessManager.getInstance().setParticipants(_festivalOracle, festivalIndex, playerParty);
+					FestivalOfDarknessManager.getInstance().addAccumulatedBonus(festivalIndex, stoneType, stonesNeeded);
+					
+					showChatWindow(player, 2, &quot;e&quot;, false);
+					break;
+				case 3: // Score Registration
+					// Check if the festival period is active, if not then don&#x27;t register the score.
+					if (SevenSignsManager.getInstance().isSealValidationPeriod())
+					{
+						showChatWindow(player, 3, &quot;a&quot;, false);
+						return;
+					}
+					
+					// Check if a festival is in progress, if it is don&#x27;t register the score.
+					if (FestivalOfDarknessManager.getInstance().isFestivalInProgress())
+					{
+						player.sendMessage(&quot;You cannot register a score while a festival is in progress.&quot;);
+						return;
+					}
+					
+					// Check if the player is in a party.
+					if (playerParty == null)
+					{
+						showChatWindow(player, 3, &quot;b&quot;, false);
+						return;
+					}
+					
+					final List&lt;Integer&gt; prevParticipants = FestivalOfDarknessManager.getInstance().getPreviousParticipants(_festivalOracle, festivalIndex);
+					
+					// Check if there are any past participants.
+					if ((prevParticipants == null) || prevParticipants.isEmpty() || !prevParticipants.contains(player.getObjectId()))
+					{
+						showChatWindow(player, 3, &quot;b&quot;, false);
+						return;
+					}
+					
+					// Check if this player was the party leader in the festival.
+					if (player.getObjectId() != prevParticipants.get(0))
+					{
+						showChatWindow(player, 3, &quot;b&quot;, false);
+						return;
+					}
+					
+					final ItemInstance bloodOfferings = player.getInventory().getItemByItemId(FestivalOfDarknessManager.FESTIVAL_OFFERING_ID);
+					
+					// Check if the player collected any blood offerings during the festival.
+					if (bloodOfferings == null)
+					{
+						player.sendMessage(&quot;You do not have any blood offerings to contribute.&quot;);
+						return;
+					}
+					
+					final int offeringScore = bloodOfferings.getCount() * FestivalOfDarknessManager.FESTIVAL_OFFERING_VALUE;
+					if (!player.destroyItem(bloodOfferings, false))
+						return;
+					
+					final boolean isHighestScore = FestivalOfDarknessManager.getInstance().setFinalScore(player, _festivalOracle, _festivalType, offeringScore);
+					
+					// Send message that the contribution score has increased.
+					player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.CONTRIB_SCORE_INCREASED_S1).addNumber(offeringScore));
+					
+					if (isHighestScore)
+						showChatWindow(player, 3, &quot;c&quot;, false);
+					else
+						showChatWindow(player, 3, &quot;d&quot;, false);
+					break;
+				case 4: // Current High Scores
+					final StringBuilder sb = new StringBuilder(&quot;&lt;html&gt;&lt;body&gt;Festival Guide:&lt;br&gt;These are the top scores of the week, for the &quot;);
+					
+					final StatSet dawnData = FestivalOfDarknessManager.getInstance().getHighestScoreData(CabalType.DAWN, festivalIndex);
+					final StatSet duskData = FestivalOfDarknessManager.getInstance().getHighestScoreData(CabalType.DUSK, festivalIndex);
+					final StatSet overallData = FestivalOfDarknessManager.getInstance().getOverallHighestScoreData(festivalIndex);
+					
+					final int dawnScore = dawnData.getInteger(&quot;score&quot;);
+					final int duskScore = duskData.getInteger(&quot;score&quot;);
+					
+					sb.append(_festivalType.getName() + &quot; festival.&lt;br&gt;&quot;);
+					
+					if (dawnScore &gt; 0)
+						sb.append(&quot;Dawn: &quot; + calculateDate(dawnData.getString(&quot;date&quot;)) + &quot;. Score &quot; + dawnScore + &quot;&lt;br&gt;&quot; + dawnData.getString(&quot;members&quot;) + &quot;&lt;br&gt;&quot;);
+					else
+						sb.append(&quot;Dawn: No record exists. Score 0&lt;br&gt;&quot;);
+					
+					if (duskScore &gt; 0)
+						sb.append(&quot;Dusk: &quot; + calculateDate(duskData.getString(&quot;date&quot;)) + &quot;. Score &quot; + duskScore + &quot;&lt;br&gt;&quot; + duskData.getString(&quot;members&quot;) + &quot;&lt;br&gt;&quot;);
+					else
+						sb.append(&quot;Dusk: No record exists. Score 0&lt;br&gt;&quot;);
+					
+					// If no data is returned, assume there is no record, or all scores are 0.
+					if (overallData != null)
+					{
+						String cabalStr = &quot;Children of Dusk&quot;;
+						
+						if (overallData.getString(&quot;cabal&quot;).equals(&quot;dawn&quot;))
+							cabalStr = &quot;Children of Dawn&quot;;
+						
+						sb.append(&quot;Consecutive top scores: &quot; + calculateDate(overallData.getString(&quot;date&quot;)) + &quot;. Score &quot; + overallData.getInteger(&quot;score&quot;) + &quot;&lt;br&gt;Affilated side: &quot; + cabalStr + &quot;&lt;br&gt;&quot; + overallData.getString(&quot;members&quot;) + &quot;&lt;br&gt;&quot;);
+					}
+					else
+						sb.append(&quot;Consecutive top scores: No record exists. Score 0&lt;br&gt;&quot;);
+					
+					sb.append(&quot;&lt;a action=\&quot;bypass -h npc_&quot; + getObjectId() + &quot;_Chat 0\&quot;&gt;Go back.&lt;/a&gt;&lt;/body&gt;&lt;/html&gt;&quot;);
+					
+					final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+					html.setHtml(sb.toString());
+					player.sendPacket(html);
+					break;
+				case 8: // Increase the Festival Challenge
+					if (playerParty == null)
+						return;
+					
+					if (!FestivalOfDarknessManager.getInstance().isFestivalInProgress())
+						return;
+					
+					if (!playerParty.isLeader(player))
+					{
+						showChatWindow(player, 8, &quot;a&quot;, false);
+						break;
+					}
+					
+					if (FestivalOfDarknessManager.getInstance().increaseChallenge(_festivalOracle, festivalIndex))
+						showChatWindow(player, 8, &quot;b&quot;, false);
+					else
+						showChatWindow(player, 8, &quot;c&quot;, false);
+					break;
+				case 9: // Leave the Festival
+					if (playerParty == null)
+						return;
+					
+					/**
+					 * If the player is the party leader, remove all participants from the festival (i.e. set the party to null, when updating the participant list) otherwise just remove this player from the &quot;arena&quot;, and also remove them from the party.
+					 */
+					boolean isLeader = playerParty.isLeader(player);
+					
+					if (isLeader)
+					{
+						FestivalOfDarknessManager.getInstance().updateParticipants(player, null);
+					}
+					else
+					{
+						FestivalOfDarknessManager.getInstance().updateParticipants(player, playerParty);
+						playerParty.removePartyMember(player, MessageType.EXPELLED);
+					}
+					break;
+				case 0: // Distribute Accumulated Bonus
+					if (!SevenSignsManager.getInstance().isSealValidationPeriod())
+					{
+						player.sendMessage(&quot;Bonuses cannot be paid during the competition period.&quot;);
+						return;
+					}
+					
+					if (FestivalOfDarknessManager.getInstance().distribAccumulatedBonus(player) &gt; 0)
+						showChatWindow(player, 0, &quot;a&quot;, false);
+					else
+						showChatWindow(player, 0, &quot;b&quot;, false);
+					break;
+				default:
+					showChatWindow(player, val, null, false);
+			}
+		}
+		else
+		{
+			// this class dont know any other commands, let forward
+			// the command to the parent class
+			super.onBypassFeedback(player, command);
+		}
+	}
+	
+	@Override
+	public void showChatWindow(Player player, int val)
+	{
+		String filename = SevenSignsManager.SEVEN_SIGNS_HTML_PATH;
+		
+		switch (getTemplate().getNpcId())
+		{
+			case 31127, 31128, 31129, 31130, 31131: // Dawn Festival Guides
+				filename += &quot;festival/dawn_guide.htm&quot;;
+				break;
+			
+			case 31137, 31138, 31139, 31140, 31141: // Dusk Festival Guides
+				filename += &quot;festival/dusk_guide.htm&quot;;
+				break;
+			
+			case 31132, 31133, 31134, 31135, 31136, 31142, 31143, 31144, 31145, 31146: // Festival Witches
+				filename += &quot;festival/festival_witch.htm&quot;;
+				break;
+		}
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(filename);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		html.replace(&quot;%festivalMins%&quot;, FestivalOfDarknessManager.getInstance().getTimeToNextFestivalStr());
+		player.sendPacket(html);
+		
+		// Send ActionFailed to the player in order to avoid he stucks
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	private void showChatWindow(Player player, int val, String suffix, boolean isDescription)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(SevenSignsManager.SEVEN_SIGNS_HTML_PATH + &quot;festival/&quot; + ((isDescription) ? &quot;desc_&quot; : &quot;festival_&quot;) + ((suffix != null) ? val + suffix : val) + &quot;.htm&quot;);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		html.replace(&quot;%festivalType%&quot;, _festivalType.getName());
+		html.replace(&quot;%cycleMins%&quot;, FestivalOfDarknessManager.getInstance().getMinsToNextCycle());
+		if (!isDescription &amp;&amp; &quot;2b&quot;.equals(val + suffix))
+			html.replace(&quot;%minFestivalPartyMembers%&quot;, Config.FESTIVAL_MIN_PLAYER);
+		
+		// Festival&#x27;s fee
+		if (val == 1)
+		{
+			html.replace(&quot;%blueStoneNeeded%&quot;, _blueStonesNeeded);
+			html.replace(&quot;%greenStoneNeeded%&quot;, _greenStonesNeeded);
+			html.replace(&quot;%redStoneNeeded%&quot;, _redStonesNeeded);
+		}
+		// If the stats or bonus table is required, construct them.
+		else if (val == 5)
+			html.replace(&quot;%statsTable%&quot;, getStatsTable());
+		else if (val == 6)
+			html.replace(&quot;%bonusTable%&quot;, getBonusTable());
+		
+		player.sendPacket(html);
+		
+		// Send ActionFailed to the player in order to avoid he stucks
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	private static final String getStatsTable()
+	{
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i &lt; 5; i++)
+		{
+			final int dawnScore = FestivalOfDarknessManager.getInstance().getHighestScore(CabalType.DAWN, i);
+			final int duskScore = FestivalOfDarknessManager.getInstance().getHighestScore(CabalType.DUSK, i);
+			
+			String winningCabal = &quot;Children of Dusk&quot;;
+			if (dawnScore &gt; duskScore)
+				winningCabal = &quot;Children of Dawn&quot;;
+			else if (dawnScore == duskScore)
+				winningCabal = &quot;None&quot;;
+			
+			sb.append(&quot;&lt;tr&gt;&lt;td width=\&quot;100\&quot; align=\&quot;center\&quot;&gt;&quot; + FestivalType.VALUES[i].getName() + &quot;&lt;/td&gt;&lt;td align=\&quot;center\&quot; width=\&quot;35\&quot;&gt;&quot; + duskScore + &quot;&lt;/td&gt;&lt;td align=\&quot;center\&quot; width=\&quot;35\&quot;&gt;&quot; + dawnScore + &quot;&lt;/td&gt;&lt;td align=\&quot;center\&quot; width=\&quot;130\&quot;&gt;&quot; + winningCabal + &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+		}
+		
+		return sb.toString();
+	}
+	
+	private static final String getBonusTable()
+	{
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i &lt; 5; i++)
+			sb.append(&quot;&lt;tr&gt;&lt;td align=\&quot;center\&quot; width=\&quot;150\&quot;&gt;&quot; + FestivalType.VALUES[i].getName() + &quot;&lt;/td&gt;&lt;td align=\&quot;center\&quot; width=\&quot;150\&quot;&gt;&quot; + FestivalOfDarknessManager.getInstance().getAccumulatedBonus(i) + &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+		
+		return sb.toString();
+	}
+	
+	private static final String calculateDate(String milliFromEpoch)
+	{
+		long numMillis = Long.parseLong(milliFromEpoch);
+		Calendar calCalc = Calendar.getInstance();
+		
+		calCalc.setTimeInMillis(numMillis);
+		
+		return calCalc.get(Calendar.YEAR) + &quot;/&quot; + calCalc.get(Calendar.MONTH) + &quot;/&quot; + calCalc.get(Calendar.DAY_OF_MONTH);
+	}
+	
+	@Override
+	public void onSpawn()
+	{
+		super.onSpawn();
+		
+		PeaceZone zone = ZoneManager.getInstance().getZone(this, PeaceZone.class);
+		
+		// Festival Witches are spawned inside festival, out of peace zone -&gt; skip them
+		if (zone != null)
+			FestivalOfDarknessManager.getInstance().addPeaceZone(zone, _festivalOracle == CabalType.DAWN);
+	}
+}</pre>
+            
+</body>
+</html>

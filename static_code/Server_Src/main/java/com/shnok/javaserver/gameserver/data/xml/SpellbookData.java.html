@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/SpellbookData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/SpellbookData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * This class loads and stores spellbook / skillId relation.&lt;br&gt;
+ * TODO Could be possibly moved back on skillTrees.
+ */
+public class SpellbookData implements IXmlReader
+{
+	private final Map&lt;Integer, Integer&gt; _books = new HashMap&lt;&gt;();
+	
+	protected SpellbookData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/spellbooks.xml&quot;);
+		LOGGER.info(&quot;Loaded {} spellbooks.&quot;, _books.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;book&quot;, bookNode -&gt;
+		{
+			final NamedNodeMap attrs = bookNode.getAttributes();
+			_books.put(parseInteger(attrs, &quot;skillId&quot;), parseInteger(attrs, &quot;itemId&quot;));
+		}));
+	}
+	
+	public int getBookForSkill(int skillId, int level)
+	{
+		if (skillId == L2Skill.SKILL_DIVINE_INSPIRATION)
+		{
+			if (!Config.DIVINE_SP_BOOK_NEEDED)
+				return 0;
+			
+			switch (level)
+			{
+				case 1:
+					return 8618; // Ancient Book - Divine Inspiration (Modern Language Version)
+				case 2:
+					return 8619; // Ancient Book - Divine Inspiration (Original Language Version)
+				case 3:
+					return 8620; // Ancient Book - Divine Inspiration (Manuscript)
+				case 4:
+					return 8621; // Ancient Book - Divine Inspiration (Original Version)
+				default:
+					return 0;
+			}
+		}
+		
+		if (level != 1)
+			return 0;
+		
+		if (!Config.SP_BOOK_NEEDED)
+			return 0;
+		
+		if (!_books.containsKey(skillId))
+			return 0;
+		
+		return _books.get(skillId);
+	}
+	
+	public static SpellbookData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final SpellbookData INSTANCE = new SpellbookData();
+	}
+}</pre>
+            
+</body>
+</html>

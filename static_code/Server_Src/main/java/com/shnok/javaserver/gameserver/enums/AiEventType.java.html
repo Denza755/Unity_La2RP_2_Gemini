@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/AiEventType.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/AiEventType.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums;
+
+/**
+ * This class contains each possible event that can happen to an actor.
+ */
+public enum AiEventType
+{
+	/** An action is required, due to a previous step being completed/aborted. The actor must think on next action. */
+	THINK,
+	/** The actor was attacked. It may start attack in response, or ignore this event if it already attacks someone. */
+	ATTACKED,
+	/** Increase/decrease aggression towards a target, or reduce global aggression if target is null. */
+	AGGRESSION,
+	/** The actor evaded an hit. */
+	EVADED,
+	/** The actor completed an action and is now ready to act. */
+	FINISHED_ATTACK,
+	/** The actor arrived to assigned location, or didn&#x27;t need to move. */
+	ARRIVED,
+	/** The actor cannot move anymore due to obstacles. */
+	ARRIVED_BLOCKED,
+	/** Cancel the actor&#x27;s current action execution, without changing the intention. */
+	CANCEL,
+	/** The actor died. */
+	DEAD,
+	/** The actor has finished a skill cast. */
+	FINISHED_CASTING,
+	/** The actor has finished sitting down */
+	SAT_DOWN,
+	/** The actor has finished standing up */
+	STOOD_UP,
+	/** The actor has finished to attack with a bow */
+	FINISHED_ATTACK_BOW,
+	/** The actor attack bow reuse tim has now ended */
+	BOW_ATTACK_REUSED,
+	/** The actor&#x27;s owner is under attack */
+	OWNER_ATTACKED,
+	/** The actor has been teleported */
+	TELEPORTED
+}</pre>
+            
+</body>
+</html>

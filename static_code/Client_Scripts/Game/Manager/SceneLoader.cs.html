@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/SceneLoader.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/SceneLoader.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class SceneLoader : MonoBehaviour
+{
+    [SerializeField] private string _menuScene = &quot;Menu&quot;;
+    [SerializeField] private string _lobbyScene = &quot;l2_lobby&quot;;
+    [SerializeField] private string _gameScene = &quot;Game&quot;;
+    [SerializeField] private List&lt;SceneListObject&gt; _mapList = new List&lt;SceneListObject&gt;();
+    [SerializeField] private List&lt;string&gt; _mapsToLoad = new List&lt;string&gt;();
+
+    private readonly HashSet&lt;string&gt; _loadedTiles = new HashSet&lt;string&gt;();
+    private bool _worldStreaming = false;
+    private bool _streamingBusy = false;
+
+    public string GameScene =&gt; _gameScene;
+    public HashSet&lt;string&gt; LoadedTiles =&gt; _loadedTiles;
+
+    public static SceneLoader _instance;
+    public static SceneLoader Instance =&gt; _instance;
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+
+        FillMapsToLoadList();
+    }
+
+    private void FillMapsToLoadList()
+    {
+        _mapsToLoad = new List&lt;string&gt;();
+        for (int i = 0; i &lt; _mapList.Count; i++)
+        {
+            var map = _mapList[i];
+            if (map.enabled &amp;&amp; !string.IsNullOrEmpty(map.name))
+            {
+                _mapsToLoad.Add(map.name);
+            }
+        }
+
+        // Default Talking Island sectors fallback
+        if (_mapsToLoad.Count == 0)
+        {
+            _mapsToLoad.AddRange(new string[] { &quot;17_25&quot;, &quot;17_24&quot;, &quot;16_24&quot;, &quot;16_25&quot; });
+        }
+    }
+
+    public void LoadMenu()
+    {
+        _worldStreaming = false;
+        _streamingBusy = false;
+        _loadedTiles.Clear();
+
+        SwitchScene(_menuScene, (AsyncOperation o) =&gt;
+        {
+            GameManager.Instance.NotifyEvent(GameEvent.LOADING_STARTED);
+
+            StartCoroutine(LoadLobbyRoutine());
+        });
+    }
+
+    private IEnumerator LoadLobbyRoutine()
+    {
+        yield return LoadSceneAdditiveIfNeeded(_lobbyScene);
+        GameManager.Instance.NotifyEvent(GameEvent.WORLD_LOADED);
+    }
+
+    public void LoadGame()
+    {
+        _worldStreaming = false;
+        _streamingBusy = false;
+        _loadedTiles.Clear();
+
+        SwitchScene(_gameScene, (AsyncOperation o) =&gt;
+        {
+            GameManager.Instance.NotifyEvent(GameEvent.LOADING_STARTED);
+
+            Scene game = SceneManager.GetSceneByName(_gameScene);
+            if (game.IsValid() &amp;&amp; game.isLoaded)
+            {
+                SceneManager.SetActiveScene(game);
+            }
+
+            Vector3 startPos = Vector3.zero;
+            if (GameClient.Instance != null &amp;&amp; GameClient.Instance.PlayerInfo.Identity != null)
+            {
+                startPos = GameClient.Instance.PlayerInfo.Identity.Position;
+            }
+
+            List&lt;string&gt; initialSectors = ResolveInitialSectors(startPos);
+            StartCoroutine(LoadInitialSectorsRoutine(initialSectors));
+        });
+    }
+
+    private List&lt;string&gt; ResolveInitialSectors(Vector3 startPos)
+    {
+        List&lt;string&gt; result = new List&lt;string&gt;();
+
+        if (startPos != Vector3.zero)
+        {
+            string primary = VectorUtils.GetSwMapNameFromUnityPos(startPos);
+            result = GetSurroundingSectors(startPos, radius: 1);
+
+            if (Application.CanStreamedLevelBeLoaded(primary))
+            {
+                if (!result.Contains(primary)) result.Insert(0, primary);
+                else
+                {
+                    result.Remove(primary);
+                    result.Insert(0, primary);
+                }
+            }
+        }
+
+        // If list is empty or primary not in build, fallback to preconfigured maps
+        if (result.Count == 0)
+        {
+            for (int i = 0; i &lt; _mapsToLoad.Count; i++)
+            {
+                if (Application.CanStreamedLevelBeLoaded(_mapsToLoad[i]) &amp;&amp; !result.Contains(_mapsToLoad[i]))
+                {
+                    result.Add(_mapsToLoad[i]);
+                }
+            }
+        }
+
+        // Guarantee all available Talking Island sectors are included for seamless exploration
+        string[] talkingIsland = new string[] { &quot;17_25&quot;, &quot;17_24&quot;, &quot;16_24&quot;, &quot;16_25&quot; };
+        for (int i = 0; i &lt; talkingIsland.Length; i++)
+        {
+            if (Application.CanStreamedLevelBeLoaded(talkingIsland[i]) &amp;&amp; !result.Contains(talkingIsland[i]))
+            {
+                result.Add(talkingIsland[i]);
+            }
+        }
+
+        return result;
+    }
+
+    private IEnumerator LoadInitialSectorsRoutine(List&lt;string&gt; sectors)
+    {
+        Debug.Log($&quot;[SceneLoader] Loading {sectors.Count} initial sector(s): {string.Join(&quot;, &quot;, sectors)}&quot;);
+
+        for (int i = 0; i &lt; sectors.Count; i++)
+        {
+            string sector = sectors[i];
+            yield return LoadSceneAdditiveIfNeeded(sector);
+            _loadedTiles.Add(sector);
+            SanitizeLoadedScene(SceneManager.GetSceneByName(sector));
+        }
+
+        StartCoroutine(StartGame());
+    }
+
+    public void EnsureSectorsLoaded(Vector3 unityPosition, Action onComplete)
+    {
+        StartCoroutine(EnsureSectorsLoadedRoutine(unityPosition, onComplete));
+    }
+
+    private IEnumerator EnsureSectorsLoadedRoutine(Vector3 unityPosition, Action onComplete)
+    {
+        string primary = VectorUtils.GetSwMapNameFromUnityPos(unityPosition);
+        List&lt;string&gt; wanted = GetSurroundingSectors(unityPosition, radius: 1);
+
+        if (Application.CanStreamedLevelBeLoaded(primary))
+        {
+            if (!wanted.Contains(primary)) wanted.Insert(0, primary);
+            else
+            {
+                wanted.Remove(primary);
+                wanted.Insert(0, primary);
+            }
+        }
+
+        for (int i = 0; i &lt; wanted.Count; i++)
+        {
+            string tile = wanted[i];
+            if (!_loadedTiles.Contains(tile) || !SceneManager.GetSceneByName(tile).isLoaded)
+            {
+                yield return LoadSceneAdditiveIfNeeded(tile);
+                _loadedTiles.Add(tile);
+                SanitizeLoadedScene(SceneManager.GetSceneByName(tile));
+            }
+        }
+
+        onComplete?.Invoke();
+    }
+
+    private void Update()
+    {
+        if (!_worldStreaming || _streamingBusy || PlayerEntity.Instance == null)
+        {
+            return;
+        }
+
+        Vector3 playerPos = PlayerEntity.Instance.transform.position;
+        List&lt;string&gt; wanted = GetSurroundingSectors(playerPos, radius: 1);
+        if (wanted.Count == 0) return;
+
+        // 1. Stream in missing wanted sectors (one by one)
+        for (int i = 0; i &lt; wanted.Count; i++)
+        {
+            string tile = wanted[i];
+            if (!_loadedTiles.Contains(tile) &amp;&amp; Application.CanStreamedLevelBeLoaded(tile))
+            {
+                StartCoroutine(StreamInTileRoutine(tile));
+                return;
+            }
+        }
+
+        // 2. Stream out far away sectors (beyond radius 2)
+        List&lt;string&gt; broadArea = GetSurroundingSectors(playerPos, radius: 2);
+        foreach (string loaded in _loadedTiles)
+        {
+            // Do not unload if still in broad 5x5 area
+            if (broadArea.Contains(loaded))
+            {
+                continue;
+            }
+
+            StartCoroutine(StreamOutTileRoutine(loaded));
+            return;
+        }
+    }
+
+    private IEnumerator StreamInTileRoutine(string tile)
+    {
+        _streamingBusy = true;
+        Debug.Log($&quot;[SceneLoader] Streaming in sector &#x27;{tile}&#x27;&quot;);
+
+        yield return LoadSceneAdditiveIfNeeded(tile);
+        _loadedTiles.Add(tile);
+        SanitizeLoadedScene(SceneManager.GetSceneByName(tile));
+
+        _streamingBusy = false;
+    }
+
+    private IEnumerator StreamOutTileRoutine(string tile)
+    {
+        _streamingBusy = true;
+        Debug.Log($&quot;[SceneLoader] Streaming out sector &#x27;{tile}&#x27;&quot;);
+
+        UnloadScene(tile);
+        _loadedTiles.Remove(tile);
+
+        _streamingBusy = false;
+        yield break;
+    }
+
+    public static List&lt;string&gt; GetSurroundingSectors(Vector3 unityPos, int radius = 1)
+    {
+        Vector3 l2Pos = VectorUtils.ConvertPosUnityToL2j(unityPos);
+        int tileX, tileY;
+        VectorUtils.GetSwMapTile(l2Pos, out tileX, out tileY);
+        return GetSurroundingSectors(tileX, tileY, radius);
+    }
+
+    public static List&lt;string&gt; GetSurroundingSectors(int centerTileX, int centerTileY, int radius = 1)
+    {
+        List&lt;string&gt; sectors = new List&lt;string&gt;();
+        for (int dx = -radius; dx &lt;= radius; dx++)
+        {
+            for (int dy = -radius; dy &lt;= radius; dy++)
+            {
+                string name = VectorUtils.FormatSwMapName(centerTileX + dx, centerTileY + dy);
+                if (Application.CanStreamedLevelBeLoaded(name) &amp;&amp; !sectors.Contains(name))
+                {
+                    sectors.Add(name);
+                }
+            }
+        }
+        return sectors;
+    }
+
+    private IEnumerator LoadSceneAdditiveIfNeeded(string sceneName)
+    {
+        Scene existing = SceneManager.GetSceneByName(sceneName);
+        if (existing.IsValid() &amp;&amp; existing.isLoaded)
+        {
+            yield break;
+        }
+
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogWarning($&quot;[SceneLoader] Scene &#x27;{sceneName}&#x27; is not in Build Settings!&quot;);
+            yield break;
+        }
+
+        Debug.Log($&quot;[SceneLoader] Loading scene additively: {sceneName}&quot;);
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        if (asyncLoad == null)
+        {
+            Debug.LogError($&quot;[SceneLoader] Failed to start loading scene: {sceneName}&quot;);
+            yield break;
+        }
+
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+    }
+
+    public void SwitchScene(string sceneName, Action&lt;AsyncOperation&gt; p)
+    {
+        if (SceneManager.GetActiveScene().name != sceneName)
+        {
+            Debug.Log(&quot;[SceneLoader] Switching to scene &quot; + sceneName);
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+            asyncLoad.completed += p;
+        }
+        else
+        {
+            Debug.Log(&quot;[SceneLoader] Skipping scene switch &quot; + sceneName);
+            AsyncOperation dummyOperation = new AsyncOperation();
+            p.Invoke(dummyOperation);
+        }
+    }
+
+    private void UnloadScene(string sceneName)
+    {
+        if (!SceneManager.GetSceneByName(sceneName).IsValid())
+        {
+            return;
+        }
+
+        SceneManager.UnloadSceneAsync(sceneName);
+    }
+
+    private IEnumerator StartGame()
+    {
+        yield return new WaitForSeconds(0.2f);
+
+        Debug.Log(&quot;[SceneLoader] All initial sectors loaded, notifying LOADING_COMPLETE.&quot;);
+
+        if (World.Instance != null &amp;&amp; !World.Instance.OfflineMode)
+        {
+            GameManager.Instance.NotifyEvent(GameEvent.LOADING_COMPLETE);
+        }
+
+        _worldStreaming = true;
+    }
+
+    public static void SanitizeLoadedScene(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded) return;
+        if (scene.name == &quot;Game&quot; || scene.name == &quot;Menu&quot;) return;
+
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i &lt; roots.Length; i++)
+        {
+            if (roots[i] == null) continue;
+
+            // 1. AudioListeners
+            var listeners = roots[i].GetComponentsInChildren&lt;AudioListener&gt;(true);
+            for (int j = 0; j &lt; listeners.Length; j++)
+            {
+                if (listeners[j].enabled)
+                {
+                    Debug.Log($&quot;[SanitizeScene] Disabling duplicate AudioListener in {scene.name}: {listeners[j].gameObject.name}&quot;);
+                    listeners[j].enabled = false;
+                }
+            }
+
+            // 2. Cameras
+            var cameras = roots[i].GetComponentsInChildren&lt;Camera&gt;(true);
+            for (int j = 0; j &lt; cameras.Length; j++)
+            {
+                if (cameras[j].enabled)
+                {
+                    Debug.Log($&quot;[SanitizeScene] Disabling duplicate Camera in {scene.name}: {cameras[j].gameObject.name}&quot;);
+                    cameras[j].enabled = false;
+                }
+            }
+
+            // 3. EventSystems
+            var eventSystems = roots[i].GetComponentsInChildren&lt;UnityEngine.EventSystems.EventSystem&gt;(true);
+            for (int j = 0; j &lt; eventSystems.Length; j++)
+            {
+                if (eventSystems[j].enabled)
+                {
+                    Debug.Log($&quot;[SanitizeScene] Disabling duplicate EventSystem in {scene.name}: {eventSystems[j].gameObject.name}&quot;);
+                    eventSystems[j].enabled = false;
+                }
+            }
+
+            // 4. Directional Lights (to prevent 4x overexposure/whiteout)
+            var lights = roots[i].GetComponentsInChildren&lt;Light&gt;(true);
+            for (int j = 0; j &lt; lights.Length; j++)
+            {
+                if (lights[j].type == LightType.Directional &amp;&amp; lights[j].enabled)
+                {
+                    Debug.Log($&quot;[SanitizeScene] Disabling duplicate Directional Light in {scene.name}: {lights[j].gameObject.name}&quot;);
+                    lights[j].enabled = false;
+                }
+            }
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Builder/L2MaterialBuilder.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Builder/L2MaterialBuilder.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+public class L2MaterialBuilder
+{
+
+    [MenuItem(&quot;Shnok/02. [Material] Generate materials&quot;)]
+    static void SetupMaterials()
+    {
+
+        bool overwrite = false;
+        if (overwrite)
+        {
+            ClearMaterials();
+        }
+
+        ProcessProps(overwrite);
+
+        CreateBaseMaterials(overwrite);
+    }
+
+    static void ClearMaterials()
+    {
+        string[] materialGUIDs = AssetDatabase.FindAssets(&quot;t:Material&quot;, new string[] { &quot;Assets/Resources/Data/Textures&quot;, &quot;Assets/Resources/Data/SysTextures&quot; });
+        for (int i = 0; i &lt; materialGUIDs.Length; i++)
+        {
+            string materialPath = AssetDatabase.GUIDToAssetPath(materialGUIDs[i]);
+
+            string ignorePath = Path.Combine(Path.GetDirectoryName(materialPath), &quot;.ignore&quot;);
+            if (File.Exists(ignorePath))
+            {
+                Debug.Log(&quot;Ignoring folder&quot;);
+                continue;
+            }
+
+            AssetDatabase.DeleteAsset(materialPath);
+        }
+    }
+
+    static void ProcessProps(bool overwrite)
+    {
+        string[] propsTxtGUIDs = AssetDatabase.FindAssets(&quot;t:TextAsset&quot;, new string[] { &quot;Assets/Resources/Data/Textures&quot;, &quot;Assets/Resources/Data/SysTextures&quot; });
+        //Debug.Log(&quot;Found &quot; + propsTxtGUIDs.Length + &quot; props.&quot;);
+
+        for (int i = 0; i &lt; propsTxtGUIDs.Length; i++)
+        {
+            string propsPath = AssetDatabase.GUIDToAssetPath(propsTxtGUIDs[i]);
+            string materialPath = Path.Combine(
+                   Path.GetDirectoryName(propsPath),
+                   Path.GetFileNameWithoutExtension(propsPath)
+                       .Replace(&quot;.props&quot;, string.Empty)
+                       .Replace(&quot;_sh&quot;, string.Empty) + &quot;.mat&quot;);
+
+            if (File.Exists(materialPath))
+            {
+                if (!overwrite)
+                {
+                    continue;
+                }
+            }
+
+            bool isTransparent = false;
+            bool isSpecular = false;
+            bool isDoubleFace = false;
+            bool isUnlit = false;
+            string textureName = null;
+            string specularTextureName = null;
+
+            using (StreamReader reader = new StreamReader(propsPath))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string[] parts = line.Split(&quot;=&quot;);
+                    string key = parts[0].Trim();
+                    string value = parts[1].Trim();
+
+                    if (key.StartsWith(&quot;Diffuse&quot;) || key.StartsWith(&quot;Material&quot;))
+                    {
+                        if (value.StartsWith(&quot;Texture&quot;))
+                        {
+                            string texRef = value.Substring(8);
+                            texRef = texRef.Substring(0, texRef.Length - 1);
+                            string[] texRefEntries = texRef.Split(&#x27;.&#x27;);
+                            textureName = texRefEntries[texRefEntries.Length - 1];
+                            Debug.Log(&quot;Texture: &quot; + textureName);
+                        }
+                    }
+                    else if (key.StartsWith(&quot;SpecularityMask&quot;))
+                    {
+                        if (value.StartsWith(&quot;Texture&quot;))
+                        {
+                            string texRef = value.Substring(8);
+                            texRef = texRef.Substring(0, texRef.Length - 1);
+                            string[] texRefEntries = texRef.Split(&#x27;.&#x27;);
+                            specularTextureName = texRefEntries[texRefEntries.Length - 1];
+                            isSpecular = true;
+                            Debug.Log(&quot;Specular texture: &quot; + specularTextureName);
+                        }
+                    }
+                    else if (key.StartsWith(&quot;Opacity&quot;))
+                    {
+                        if (value.StartsWith(&quot;Texture&quot;))
+                        {
+                            Debug.LogWarning(&quot;Transparent: &quot; + textureName);
+                            isTransparent = true;
+                        }
+                    }
+                    else if (key.StartsWith(&quot;TwoSided&quot;))
+                    {
+                        isDoubleFace = (value == &quot;true&quot;);
+                    }
+                    else if (key.StartsWith(&quot;AlphaTest&quot;))
+                    {
+                        if (!isTransparent)
+                        {
+                            isTransparent = (value == &quot;true&quot;);
+                        }
+                        Debug.Log(&quot;AlphaTest:&quot; + value);
+                    }
+                    else if (key.StartsWith(&quot;OutputBlending&quot;))
+                    {
+                        Debug.Log(&quot;OutputBlending:&quot;);
+                        if (value.StartsWith(&quot;OB_Brighten&quot;))
+                        {
+                            isUnlit = true;
+                        }
+                        else if (value.StartsWith(&quot;OB_Masked&quot;))
+                        {
+                            isTransparent = true;
+                        }
+                    }
+                }
+            }
+
+            Texture2D texture = LoadTexture(materialPath, textureName);
+            Material material;
+
+            // Build Material
+            if (isTransparent)
+            {
+                material = BuildTransprentMaterial();
+            }
+            else if (isUnlit)
+            {
+                material = BuildUnlitMaterial(isDoubleFace);
+            }
+            else
+            {
+                Texture2D specularMap = null;
+                if (isSpecular)
+                {
+                    specularMap = LoadTexture(materialPath, specularTextureName);
+                }
+                material = BuildLitMaterial(specularMap, isDoubleFace);
+            }
+
+            material.mainTexture = texture;
+
+            if (File.Exists(materialPath))
+            {
+                if (!isTransparent &amp;&amp; !overwrite)
+                {
+                    continue;
+                }
+                Debug.LogWarning(&quot;Delete &quot; + texture);
+                AssetDatabase.DeleteAsset(materialPath);
+            }
+
+            if (!Directory.Exists(Path.GetDirectoryName(materialPath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(materialPath));
+            }
+
+            AssetDatabase.CreateAsset(material, materialPath);
+        }
+    }
+
+    static Texture2D LoadTexture(string materialPath, string textureName)
+    {
+        string materialDirectory = Path.GetDirectoryName(materialPath);
+        string parentFolder = Directory.GetParent(materialDirectory).FullName;
+        string texturePath = Path.Combine(parentFolder, textureName + &quot;.png&quot;);
+        texturePath = Path.Combine(&quot;Assets&quot;, Path.GetRelativePath(Application.dataPath, texturePath));
+
+        Texture2D texture = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(texturePath);
+        return texture;
+    }
+
+    // UNITY 2022.3f
+    static Material BuildTransprentMaterialLegacy()
+    {
+        Material material = new Material(Shader.Find(&quot;Universal Render Pipeline/Nature/SpeedTree8_PBRLit&quot;));
+        material.SetFloat(&quot;_AlphaClip&quot;, 0.5f);
+        material.SetInt(&quot;_WindQuality&quot;, 0);
+        material.SetInt(&quot;EFFECT_EXTRA_TEX&quot;, 0);
+        material.SetInt(&quot;_NormalMapKwToggle&quot;, 0);
+        material.SetInt(&quot;_HueVariationKwToggle&quot;, 0);
+        material.SetFloat(&quot;_AlphaClipThreshold&quot;, 0.5f);
+        material.SetFloat(&quot;_Glossiness&quot;, 0f);
+        Debug.Log($&quot;_AlphaClip: {material.GetFloat(&quot;_AlphaClip&quot;)}&quot;);
+        Debug.Log($&quot;_WindQuality: {material.GetInt(&quot;_WindQuality&quot;)}&quot;);
+        Debug.Log($&quot;EFFECT_EXTRA_TEX: {material.GetInt(&quot;EFFECT_EXTRA_TEX&quot;)}&quot;);
+        Debug.Log($&quot;_NormalMapKwToggle: {material.GetInt(&quot;_NormalMapKwToggle&quot;)}&quot;);
+        Debug.Log($&quot;_HueVariationKwToggle: {material.GetInt(&quot;_HueVariationKwToggle&quot;)}&quot;);
+        Debug.Log($&quot;_AlphaClipThreshold: {material.GetFloat(&quot;_AlphaClipThreshold&quot;)}&quot;);
+
+        return material;
+    }
+
+    static Material BuildTransprentMaterial()
+    {
+        Material material = new Material(Shader.Find(&quot;Universal Render Pipeline/Lit&quot;));
+        material.SetFloat(&quot;_Cull&quot;, 2f);
+        material.SetColor(&quot;_BaseColor&quot;, Color.white);
+        material.SetFloat(&quot;_Smoothness&quot;, 0);
+        material.SetFloat(&quot;_EnvironmentReflections&quot;, 0f);
+        material.SetFloat(&quot;_SpecularHighlights&quot;, 0f);
+        // Enable alpha clipping
+        material.SetFloat(&quot;_AlphaClip&quot;, 1); // or true, depending on the shader
+
+        // Set the alpha clip threshold
+        material.SetFloat(&quot;_Cutoff&quot;, 0.5f);
+
+        return material;
+    }
+
+    static Material BuildLitMaterial(Texture2D specularMap, bool isDoubleFace)
+    {
+        Material material = new Material(Shader.Find(&quot;Universal Render Pipeline/Lit&quot;));
+        float state = isDoubleFace ? 0f : 2f;
+        material.SetFloat(&quot;_Cull&quot;, state);
+        material.SetColor(&quot;_BaseColor&quot;, Color.white);
+        material.SetFloat(&quot;_Smoothness&quot;, 0);
+        material.SetFloat(&quot;_EnvironmentReflections&quot;, 0f);
+        material.SetFloat(&quot;_SpecularHighlights&quot;, 0f);
+
+        if (specularMap != null)
+        {
+            material.EnableKeyword(&quot;_METALLICSPECGLOSSMAP&quot;);
+            material.EnableKeyword(&quot;_SPECULAR_SETUP&quot;);
+            material.SetFloat(&quot;_WorkflowMode&quot;, 0);
+            material.SetFloat(&quot;_Smoothness&quot;, 1);
+            material.SetTexture(&quot;_SpecGlossMap&quot;, specularMap);
+            material.SetTexture(&quot;_METALLICSPECGLOSSMAP&quot;, specularMap);
+            material.SetTexture(&quot;_Specular&quot;, specularMap);
+        }
+
+        return material;
+    }
+
+    static Material BuildUnlitMaterial(bool isDoubleFace)
+    {
+        Material material = new Material(Shader.Find(&quot;Universal Render Pipeline/Particles/Unlit&quot;));
+        material.SetFloat(&quot;_Surface&quot;, 1f);
+        material.SetFloat(&quot;_Blend&quot;, 2f);
+        material.SetFloat(&quot;_BlendOp&quot;, 0f);
+        material.SetFloat(&quot;_ColorMode&quot;, 0f);
+        material.SetFloat(&quot;_DstBlend&quot;, 1f);
+        material.SetFloat(&quot;_DstBlendAlpha&quot;, 1f);
+        float state = isDoubleFace ? 0f : 2f;
+        material.SetFloat(&quot;_Cull&quot;, state);
+        //material.SetFloat(&quot;_AlphaClip&quot;, 1f);
+        return material;
+    }
+
+    static void CreateBaseMaterials(bool overwrite)
+    {
+        string[] textureGUIDs = AssetDatabase.FindAssets(&quot;t:Texture2D&quot;, new string[] { &quot;Assets/Resources/Data/Textures&quot;, &quot;Assets/Resources/Data/SysTextures&quot; });
+        for (int i = 0; i &lt; textureGUIDs.Length; i++)
+        {
+            string texturePath = AssetDatabase.GUIDToAssetPath(textureGUIDs[i]);
+            string materialDirectory = Path.Combine(Path.GetDirectoryName(texturePath), &quot;Materials&quot;);
+            string materialPath = Path.Combine(materialDirectory, Path.GetFileNameWithoutExtension(texturePath) + &quot;.mat&quot;);
+
+            string ignorePath = Path.Combine(Path.GetDirectoryName(texturePath), &quot;.ignore&quot;);
+            if (File.Exists(ignorePath))
+            {
+                Debug.Log(&quot;Ignoring folder&quot;);
+                continue;
+            }
+
+            if (materialPath.EndsWith(&quot;_ori.mat&quot;) || materialPath.EndsWith(&quot;_sp.mat&quot;))
+            {
+                Debug.Log(&quot;Skipping materials with props&quot;);
+                continue;
+            }
+
+            if (!overwrite &amp;&amp; File.Exists(materialPath))
+            {
+                continue;
+            }
+
+            if (!Directory.Exists(materialDirectory))
+            {
+                Directory.CreateDirectory(materialDirectory);
+            }
+
+            Material material;
+            if (materialPath.EndsWith(&quot;_h.mat&quot;) ||
+                materialPath.EndsWith(&quot;_ah.mat&quot;) ||
+                materialPath.EndsWith(&quot;_bh.mat&quot;) ||
+                materialPath.EndsWith(&quot;_ah_u00.mat&quot;) ||
+                materialPath.EndsWith(&quot;_bh_u00.mat&quot;))
+            {
+                material = BuildTransprentMaterial();
+            }
+            else
+            {
+                material = BuildLitMaterial(null, false);
+            }
+
+            Texture2D texture = AssetDatabase.LoadAssetAtPath&lt;Texture2D&gt;(texturePath);
+            material.mainTexture = texture;
+            AssetDatabase.CreateAsset(material, materialPath);
+        }
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

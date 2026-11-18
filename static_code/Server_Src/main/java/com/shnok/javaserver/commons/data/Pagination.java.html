@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/data/Pagination.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/data/Pagination.java</h1>
+            <pre>package com.shnok.javaserver.commons.data;
+
+import java.util.AbstractList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+public class Pagination&lt;A&gt; extends AbstractList&lt;A&gt;
+{
+	private static final String NORMAL_LINE_SIZE = &quot;&lt;img height=17&gt;&quot;;
+	
+	private final StringBuilder _content = new StringBuilder();
+	
+	private List&lt;A&gt; _list;
+	private int _page;
+	private int _limit;
+	private int _total;
+	private int _totalEntries;
+	
+	public Pagination(Stream&lt;A&gt; stream, int page, int limit)
+	{
+		this(stream, page, limit, null, null);
+	}
+	
+	public Pagination(Stream&lt;A&gt; stream, int page, int limit, Predicate&lt;A&gt; filter)
+	{
+		this(stream, page, limit, filter, null);
+	}
+	
+	public Pagination(Stream&lt;A&gt; stream, int page, int limit, Comparator&lt;A&gt; comparator)
+	{
+		this(stream, page, limit, null, comparator);
+	}
+	
+	public Pagination(Stream&lt;A&gt; stream, int page, int limit, Predicate&lt;A&gt; filter, Comparator&lt;A&gt; comparator)
+	{
+		_list = initList(stream, filter, comparator);
+		_totalEntries = _list.size();
+		_limit = Math.max(limit, 1);
+		_total = _list.size() / _limit + (_list.size() % _limit == 0 ? 0 : 1);
+		_page = Math.clamp(page, 1, Math.max(1, _total));
+		
+		if (_list.isEmpty())
+			return;
+		
+		_list = _list.subList((Math.min(page, _total) - 1) * limit, Math.min(Math.min(page, _total) * limit, _list.size()));
+	}
+	
+	private List&lt;A&gt; initList(Stream&lt;A&gt; stream, Predicate&lt;A&gt; filter, Comparator&lt;A&gt; comparator)
+	{
+		if (stream == null)
+			return Collections.emptyList();
+		
+		if (filter == null &amp;&amp; comparator == null)
+			return stream.toList();
+		
+		if (comparator == null)
+			return stream.filter(filter).toList();
+		
+		if (filter == null)
+			return stream.sorted(comparator).toList();
+		
+		return stream.filter(filter).sorted(comparator).toList();
+	}
+	
+	public void append(Object... content)
+	{
+		StringUtil.append(_content, content);
+	}
+	
+	public void generateSpace()
+	{
+		IntStream.range(size(), _limit).forEach(x -&gt; append(NORMAL_LINE_SIZE));
+	}
+	
+	public void generateSpace(int height)
+	{
+		IntStream.range(size(), _limit).forEach(x -&gt; append(&quot;&lt;img height=&quot;, height, &quot;&gt;&quot;));
+	}
+	
+	public void generatePages(String action)
+	{
+		append(&quot;&lt;table width=280 bgcolor=000000&gt;&lt;tr&gt;&lt;td FIXWIDTH=22 align=center&gt;&lt;img height=2&gt;&lt;button action=\&quot;&quot;, action.replace(&quot;%page%&quot;, String.valueOf(1)), &quot;\&quot; back=L2UI_CH3.prev1_down fore=L2UI_CH3.prev1 width=16 height=16&gt;&lt;/td&gt;&quot;);
+		
+		for (int index = _page - 5; index &lt; _page - 1; index++)
+			append(&quot;&lt;td FIXWIDTH=26 align=center&gt;&quot;, (index &lt; 0 ? &quot;&quot; : &quot;&lt;a action=\&quot;&quot; + action.replace(&quot;%page%&quot;, String.valueOf(index + 1)) + &quot;\&quot;&gt;&quot; + String.format(&quot;%02d&quot;, (index + 1)) + &quot;&lt;/a&gt;&quot;), &quot;&lt;/td&gt;&quot;);
+		
+		append(&quot;&lt;td FIXWIDTH=26 align=center&gt;&lt;font color=LEVEL&gt;&quot;, String.format(&quot;%02d&quot;, Math.max(_page, 1)), &quot;&lt;/font&gt;&lt;/td&gt;&quot;);
+		
+		for (int index = _page; index &lt; _page + 4; index++)
+			append(&quot;&lt;td FIXWIDTH=26 align=center&gt;&quot;, (index &lt; _total ? &quot;&lt;a action=\&quot;&quot; + action.replace(&quot;%page%&quot;, String.valueOf(index + 1)) + &quot;\&quot;&gt;&quot; + String.format(&quot;%02d&quot;, (index + 1)) + &quot;&lt;/a&gt;&quot; : &quot;&quot;), &quot;&lt;/td&gt;&quot;);
+		
+		append(&quot;&lt;td FIXWIDTH=22 align=center&gt;&lt;img height=2&gt;&lt;button action=\&quot;&quot;, action.replace(&quot;%page%&quot;, String.valueOf(_total)), &quot;\&quot; back=L2UI_CH3.next1_down fore=L2UI_CH3.next1 width=16 height=16&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;);
+		append(&quot;&lt;img src=\&quot;L2UI.SquareGray\&quot; width=280 height=1&gt;&quot;);
+	}
+	
+	public void generateSearch(String action, int height)
+	{
+		append(&quot;&lt;table width=280 height=&quot;, height, &quot;&gt;&lt;tr&gt;&quot;);
+		append(&quot;&lt;td width=70 align=center&gt;Search&lt;/td&gt;&quot;);
+		append(&quot;&lt;td width=140&gt;&lt;edit var=\&quot;search\&quot; width=130 height=15&gt;&lt;/td&gt;&quot;);
+		append(&quot;&lt;td width=70&gt;&lt;button value=\&quot;Find\&quot; action=\&quot;&quot;, action, &quot; 1 $search\&quot; width=65 height=19 back=\&quot;L2UI_ch3.smallbutton2_over\&quot; fore=\&quot;L2UI_ch3.smallbutton2\&quot;&gt;&lt;/td&gt;&quot;);
+		append(&quot;&lt;/tr&gt;&lt;tr&gt;&quot;);
+		append(&quot;&lt;td&gt;&lt;/td&gt;&quot;);
+		append(&quot;&lt;td align=center&gt;Found &quot;, _totalEntries, &quot; results&lt;/td&gt;&quot;);
+		append(&quot;&lt;td&gt;&lt;/td&gt;&quot;);
+		append(&quot;&lt;/tr&gt;&lt;/table&gt;&quot;);
+	}
+	
+	public String getContent()
+	{
+		return _content.toString();
+	}
+	
+	public void resetContent()
+	{
+		_content.setLength(0);
+	}
+	
+	@Override
+	public A get(int index)
+	{
+		return _list.get(index);
+	}
+	
+	@Override
+	public int size()
+	{
+		return _list.size();
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/idfactory/IdFactory.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/idfactory/IdFactory.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.idfactory;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.math.PrimeFinder;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+/**
+ * This class ensure data integrity and correct allocation of unique object ids towards objects.
+ */
+public class IdFactory
+{
+	private static final CLogger LOGGER = new CLogger(IdFactory.class.getName());
+	
+	public static final int FIRST_OID = 0x10000000;
+	public static final int LAST_OID = 0x7FFFFFFF;
+	public static final int FREE_OBJECT_ID_SIZE = LAST_OID - FIRST_OID;
+	
+	private BitSet _freeIds;
+	private AtomicInteger _freeIdCount;
+	private AtomicInteger _nextFreeId;
+	
+	protected IdFactory()
+	{
+		// Ensure data integrity, possibly cleaning objectIds.
+		setAllCharacterOffline();
+		cleanUpDB();
+		cleanUpTimeStamps();
+		
+		// Initialize the IdFactory.
+		initialize();
+		
+		// Run a 30sec task to see if the BitSet holding objectIds need to be raised.
+		ThreadPool.scheduleAtFixedRate(() -&gt;
+		{
+			if (reachingBitSetCapacity())
+				increaseBitSetCapacity();
+		}, 30000, 30000);
+	}
+	
+	/**
+	 * Initialize main parts of IdFactory.
+	 * &lt;ul&gt;
+	 * &lt;li&gt;Generate a new BitSet, and the associated counter.&lt;/li&gt;
+	 * &lt;li&gt;Allocate the used objectIds using database.&lt;/li&gt;
+	 * &lt;/ul&gt;
+	 */
+	private void initialize()
+	{
+		_freeIds = new BitSet(PrimeFinder.nextPrime(100000));
+		_freeIdCount = new AtomicInteger(FREE_OBJECT_ID_SIZE);
+		
+		// Get all used objectIds.
+		final List&lt;Integer&gt; usedObjectIds = new ArrayList&lt;&gt;();
+		
+		try (Connection con = ConnectionPool.getConnection())
+		{
+			try (Statement st = con.createStatement())
+			{
+				try (ResultSet rs = st.executeQuery(&quot;SELECT obj_Id FROM characters&quot;))
+				{
+					while (rs.next())
+						usedObjectIds.add(rs.getInt(1));
+				}
+				
+				try (ResultSet rs = st.executeQuery(&quot;SELECT object_id FROM items&quot;))
+				{
+					while (rs.next())
+						usedObjectIds.add(rs.getInt(1));
+				}
+				
+				try (ResultSet rs = st.executeQuery(&quot;SELECT clan_id FROM clan_data&quot;))
+				{
+					while (rs.next())
+						usedObjectIds.add(rs.getInt(1));
+				}
+				
+				try (ResultSet rs = st.executeQuery(&quot;SELECT object_id FROM items_on_ground&quot;))
+				{
+					while (rs.next())
+						usedObjectIds.add(rs.getInt(1));
+				}
+				
+				try (ResultSet rs = st.executeQuery(&quot;SELECT id FROM mods_wedding&quot;))
+				{
+					while (rs.next())
+						usedObjectIds.add(rs.getInt(1));
+				}
+				
+				try (ResultSet rs = st.executeQuery(&quot;SELECT oid FROM petition&quot;))
+				{
+					while (rs.next())
+						usedObjectIds.add(rs.getInt(1));
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t properly initialize objectIds.&quot;, e);
+		}
+		
+		// Register used objectIds.
+		for (int usedObjectId : usedObjectIds)
+		{
+			final int objectId = usedObjectId - FIRST_OID;
+			if (objectId &lt; 0)
+			{
+				LOGGER.warn(&quot;Found invalid objectId {}. It is less than minimum of {}.&quot;, usedObjectId, FIRST_OID);
+				continue;
+			}
+			
+			_freeIds.set(objectId);
+			_freeIdCount.decrementAndGet();
+		}
+		
+		_nextFreeId = new AtomicInteger(_freeIds.nextClearBit(0));
+		
+		LOGGER.info(&quot;Initializing {} objectIds pool, with {} used ids.&quot;, _freeIds.size(), usedObjectIds.size());
+	}
+	
+	/**
+	 * Release the given objectId, making it accessible and allocable.
+	 * @param objectID : The objectId to release.
+	 */
+	public synchronized void releaseId(int objectID)
+	{
+		if ((objectID - FIRST_OID) &gt; -1)
+		{
+			_freeIds.clear(objectID - FIRST_OID);
+			_freeIdCount.incrementAndGet();
+		}
+		else
+			LOGGER.warn(&quot;Release objectId {} failed (&lt; {}).&quot;, objectID, FIRST_OID);
+	}
+	
+	/**
+	 * @return the next available objectId. If there aren&#x27;t anymore available ids, increase {@link BitSet} capacity.
+	 */
+	public synchronized int getNextId()
+	{
+		int newId = _nextFreeId.get();
+		
+		_freeIds.set(newId);
+		_freeIdCount.decrementAndGet();
+		
+		int nextFree = _freeIds.nextClearBit(newId);
+		
+		if (nextFree &lt; 0)
+			nextFree = _freeIds.nextClearBit(0);
+		
+		if (nextFree &lt; 0)
+		{
+			if (_freeIds.size() &lt; FREE_OBJECT_ID_SIZE)
+				increaseBitSetCapacity();
+			else
+				throw new NullPointerException(&quot;Ran out of valid Id&#x27;s.&quot;);
+		}
+		
+		_nextFreeId.set(nextFree);
+		
+		return newId + FIRST_OID;
+	}
+	
+	/**
+	 * @return the amount of used ids.
+	 */
+	protected int usedIdCount()
+	{
+		return _freeIdCount.get() - FIRST_OID;
+	}
+	
+	/**
+	 * @return true if the {@link BitSet} is almost full.
+	 */
+	protected synchronized boolean reachingBitSetCapacity()
+	{
+		return PrimeFinder.nextPrime(usedIdCount() * 11 / 10) &gt; _freeIds.size();
+	}
+	
+	/**
+	 * Increase the {@link BitSet} capacity.
+	 */
+	protected synchronized void increaseBitSetCapacity()
+	{
+		BitSet newBitSet = new BitSet(PrimeFinder.nextPrime(usedIdCount() * 11 / 10));
+		newBitSet.or(_freeIds);
+		_freeIds = newBitSet;
+	}
+	
+	/**
+	 * Sets all Players offline.
+	 */
+	private static void setAllCharacterOffline()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(&quot;UPDATE characters SET online = 0&quot;))
+		{
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn(&quot;Couldn&#x27;t set characters offline.&quot;, e);
+		}
+		LOGGER.info(&quot;Updated characters online status.&quot;);
+	}
+	
+	/**
+	 * Cleanup Players related data. Used to ensure data integrity.
+	 */
+	private static void cleanUpDB()
+	{
+		int cleanCount = 0;
+		
+		try (Connection con = ConnectionPool.getConnection())
+		{
+			try (Statement stmt = con.createStatement())
+			{
+				// Character related
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM augmentations WHERE augmentations.item_oid NOT IN (SELECT object_id FROM items);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_hennas WHERE character_hennas.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_macroses WHERE character_macroses.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_memo WHERE character_memo.charId NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_quests WHERE character_quests.charId NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_raid_points WHERE character_raid_points.char_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_recipebook WHERE character_recipebook.charId NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_relations WHERE character_relations.char_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_relations WHERE character_relations.friend_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_shortcuts WHERE character_shortcuts.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_skills WHERE character_skills.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_skills_save WHERE character_skills_save.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM character_subclasses WHERE character_subclasses.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM cursed_weapons WHERE cursed_weapons.playerId NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM pets WHERE pets.item_obj_id NOT IN (SELECT object_id FROM items UNION SELECT object_id FROM items_on_ground);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM seven_signs WHERE seven_signs.char_obj_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				
+				// Olympiads &amp; Heroes
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM heroes WHERE heroes.char_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM olympiad_nobles WHERE olympiad_nobles.char_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM olympiad_nobles_eom WHERE olympiad_nobles_eom.char_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM olympiad_fights WHERE olympiad_fights.charOneId NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM olympiad_fights WHERE olympiad_fights.charTwoId NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM heroes_diary WHERE heroes_diary.char_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				
+				// Auction
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM auctions WHERE clanhall_id IN (SELECT id FROM clanhall WHERE ownerId &lt;&gt; 0 AND sellerClanName=&#x27;&#x27;);&quot;);
+				
+				// Clan related
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clan_data WHERE clan_data.leader_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM auctions WHERE auctions.clan_oid NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clanhall_functions WHERE clanhall_functions.hall_id NOT IN (SELECT id FROM clanhall WHERE ownerId &lt;&gt; 0);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clan_privs WHERE clan_privs.clan_id NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clan_skills WHERE clan_skills.clan_id NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clan_subpledges WHERE clan_subpledges.clan_id NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clan_wars WHERE clan_wars.clan1 NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM clan_wars WHERE clan_wars.clan2 NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM siege_clans WHERE siege_clans.clan_id NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				
+				// Items
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM items WHERE items.owner_id NOT IN (SELECT obj_Id FROM characters) AND items.owner_id NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				
+				// Forum related
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_forum WHERE bbs_forum.type=&#x27;CLAN&#x27; AND bbs_forum.owner_id NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_forum WHERE bbs_forum.type=&#x27;MEMO&#x27; AND bbs_forum.owner_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_topic WHERE bbs_topic.forum_id NOT IN (SELECT id FROM bbs_forum);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_post WHERE bbs_post.forum_id NOT IN (SELECT id FROM bbs_forum);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_post WHERE bbs_post.topic_id NOT IN (SELECT id FROM bbs_topic);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_favorite WHERE bbs_favorite.player_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM bbs_mail WHERE bbs_mail.receiver_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				
+				// Petition
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM petition WHERE petition.petitioner_oid NOT IN (SELECT obj_Id FROM characters);&quot;);
+				cleanCount += stmt.executeUpdate(&quot;DELETE FROM petition_message WHERE petition_message.petition_oid NOT IN (SELECT oid FROM petition);&quot;);
+				
+				stmt.executeUpdate(&quot;UPDATE clan_data SET auction_bid_at = 0 WHERE auction_bid_at NOT IN (SELECT clanhall_id FROM auctions);&quot;);
+				stmt.executeUpdate(&quot;UPDATE clan_data SET new_leader_id = 0 WHERE new_leader_id NOT IN (SELECT obj_Id FROM characters);&quot;);
+				stmt.executeUpdate(&quot;UPDATE clan_subpledges SET leader_id=0 WHERE clan_subpledges.leader_id NOT IN (SELECT obj_Id FROM characters) AND leader_id &gt; 0;&quot;);
+				stmt.executeUpdate(&quot;UPDATE castle SET currentTaxPercent=0, nextTaxPercent=0 WHERE castle.id NOT IN (SELECT hasCastle FROM clan_data);&quot;);
+				stmt.executeUpdate(&quot;UPDATE characters SET clanid=0 WHERE characters.clanid NOT IN (SELECT clan_id FROM clan_data);&quot;);
+				stmt.executeUpdate(&quot;UPDATE clanhall SET ownerId=0, paidUntil=0, paid=0 WHERE clanhall.ownerId NOT IN (SELECT clan_id FROM clan_data);&quot;);
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn(&quot;Couldn&#x27;t cleanup database.&quot;, e);
+		}
+		LOGGER.info(&quot;Cleaned {} elements from database.&quot;, cleanCount);
+	}
+	
+	/**
+	 * Cleanup Players skills timestamps. Used to ensure data integrity.
+	 */
+	private static void cleanUpTimeStamps()
+	{
+		int cleanCount = 0;
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(&quot;DELETE FROM character_skills_save WHERE restore_type = 1 AND systime &lt;= ?&quot;))
+		{
+			ps.setLong(1, System.currentTimeMillis());
+			
+			cleanCount += ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn(&quot;Couldn&#x27;t cleanup timestamps.&quot;, e);
+		}
+		LOGGER.info(&quot;Cleaned {} expired timestamps from database.&quot;, cleanCount);
+	}
+	
+	public static final IdFactory getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final IdFactory INSTANCE = new IdFactory();
+	}
+}</pre>
+            
+</body>
+</html>

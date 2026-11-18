@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminCursedWeapon.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminCursedWeapon.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.CursedWeaponManager;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.entity.CursedWeapon;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class AdminCursedWeapon implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_cw&quot;,
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command);
+		st.nextToken();
+		
+		if (!st.hasMoreTokens())
+		{
+			showCursedWeaponSelectPage(player);
+			return;
+		}
+		
+		try
+		{
+			final String type = st.nextToken();
+			
+			int id = 0;
+			
+			String parameter = st.nextToken();
+			if (StringUtil.isDigit(parameter))
+				id = Integer.parseInt(parameter);
+			else
+			{
+				parameter = parameter.replace(&#x27;_&#x27;, &#x27; &#x27;);
+				for (CursedWeapon cwp : CursedWeaponManager.getInstance().getCursedWeapons())
+				{
+					if (cwp.getName().toLowerCase().contains(parameter.toLowerCase()))
+					{
+						id = cwp.getItemId();
+						break;
+					}
+				}
+			}
+			
+			final CursedWeapon cw = CursedWeaponManager.getInstance().getCursedWeapon(id);
+			if (cw == null)
+			{
+				player.sendMessage(&quot;Unknown cursed weapon ID.&quot;);
+				return;
+			}
+			
+			switch (type)
+			{
+				case &quot;set&quot;:
+					if (cw.isActive())
+						player.sendMessage(&quot;This cursed weapon is already active.&quot;);
+					else
+					{
+						final Player targetPlayer = getTargetPlayer(player, true);
+						targetPlayer.addItem(id, 1, true);
+						
+						// Start task
+						cw.reActivate(true);
+					}
+					break;
+				
+				case &quot;remove&quot;:
+					cw.endOfLife();
+					break;
+				
+				case &quot;teleportto&quot;:
+					cw.teleportTo(player);
+					break;
+			}
+			showCursedWeaponSelectPage(player);
+		}
+		catch (Exception e)
+		{
+			player.sendMessage(&quot;Usage: //cw [set|remove|teleportto itemid|name]&quot;);
+		}
+	}
+	
+	/**
+	 * Show the complete list of {@link CursedWeapon}s.
+	 * @param player : The {@link Player} who requested the action.
+	 */
+	private static void showCursedWeaponSelectPage(Player player)
+	{
+		final StringBuilder sb = new StringBuilder(2000);
+		for (CursedWeapon cursedWeapon : CursedWeaponManager.getInstance().getCursedWeapons())
+		{
+			StringUtil.append(sb, &quot;&lt;table width=280&gt;&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;&quot;, cursedWeapon.getName(), &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			
+			if (cursedWeapon.isActive())
+			{
+				long milliToStart = cursedWeapon.getTimeLeft();
+				double numSecs = (milliToStart / 1000) % 60;
+				double countDown = ((milliToStart / 1000d) - numSecs) / 60;
+				int numMins = (int) Math.floor(countDown % 60);
+				countDown = (countDown - numMins) / 60;
+				int numHours = (int) Math.floor(countDown % 24);
+				int numDays = (int) Math.floor((countDown - numHours) / 24);
+				
+				if (cursedWeapon.isActivated())
+				{
+					final Player cursedPlayer = cursedWeapon.getPlayer();
+					StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;Owner:&lt;/td&gt;&lt;td&gt;&quot;, ((cursedPlayer == null) ? &quot;null&quot; : cursedPlayer.getName()), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Stored values:&lt;/td&gt;&lt;td&gt;Karma=&quot;, cursedWeapon.getPlayerKarma(), &quot; PKs=&quot;, cursedWeapon.getPlayerPkKills(), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Current stage:&lt;/td&gt;&lt;td&gt;&quot;, cursedWeapon.getCurrentStage(), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Overall time:&lt;/td&gt;&lt;td&gt;&quot;, numDays, &quot;d. &quot;, numHours, &quot;h. &quot;, numMins, &quot;m.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Hungry time:&lt;/td&gt;&lt;td&gt;&quot;, cursedWeapon.getHungryTime(), &quot;m.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Current kills:&lt;/td&gt;&lt;td&gt;&quot;, cursedWeapon.getNbKills(), &quot; / &quot;, cursedWeapon.getNumberBeforeNextStage(), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=\&quot;Remove CW\&quot; action=\&quot;bypass -h admin_cw remove &quot;, cursedWeapon.getItemId(), &quot;\&quot; width=75 height=21 back=\&quot;L2UI_ch3.Btn1_normalOn\&quot; fore=\&quot;L2UI_ch3.Btn1_normal\&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=\&quot;Teleport To\&quot; action=\&quot;bypass -h admin_cw teleportto &quot;, cursedWeapon.getItemId(), &quot;\&quot; width=75 height=21 back=\&quot;L2UI_ch3.Btn1_normalOn\&quot; fore=\&quot;L2UI_ch3.Btn1_normal\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&quot;);
+				}
+				else if (cursedWeapon.isDropped())
+					StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;Position:&lt;/td&gt;&lt;td&gt;Lying on the ground&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Overall time:&lt;/td&gt;&lt;td&gt;&quot;, numDays, &quot;d. &quot;, numHours, &quot;h. &quot;, numMins, &quot;m.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=\&quot;Remove\&quot; action=\&quot;bypass -h admin_cw remove &quot;, cursedWeapon.getItemId(), &quot;\&quot; width=75 height=21 back=\&quot;L2UI_ch3.Btn1_normalOn\&quot; fore=\&quot;L2UI_ch3.Btn1_normal\&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=\&quot;Go\&quot; action=\&quot;bypass -h admin_cw teleportto &quot;, cursedWeapon.getItemId(), &quot;\&quot; width=75 height=21 back=\&quot;L2UI_ch3.Btn1_normalOn\&quot; fore=\&quot;L2UI_ch3.Btn1_normal\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			}
+			else
+				StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;Position:&lt;/td&gt;&lt;td&gt;Doesn&#x27;t exist.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=\&quot;Set CW\&quot; action=\&quot;bypass -h admin_cw set &quot;, cursedWeapon.getItemId(), &quot;\&quot; width=75 height=21 back=\&quot;L2UI_ch3.Btn1_normalOn\&quot; fore=\&quot;L2UI_ch3.Btn1_normal\&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			
+			sb.append(&quot;&lt;/table&gt;&quot;);
+		}
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/cwinfo.htm&quot;);
+		html.replace(&quot;%cwinfo%&quot;, sb.toString());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

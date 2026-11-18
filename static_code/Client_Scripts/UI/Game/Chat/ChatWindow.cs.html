@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Chat/ChatWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Chat/ChatWindow.cs</h1>
+            <pre>using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class ChatWindow : L2Window
+{
+    public static int MAXIMUM_INPUT_HISTORY = 25;
+    public static int MAXIMUM_MESSAGE_COUNT = 100;
+
+    private VisualTreeAsset _tabTemplate;
+    private VisualTreeAsset _tabHeaderTemplate;
+    private TextField _chatInput;
+    private VisualElement _chatInputContainer;
+    private L2TabView _l2TabView;
+    private List&lt;string&gt; _history;
+
+    private int _historyIndex = 0;
+
+    [SerializeField] private float _chatWindowMinWidth = 225.0f;
+    [SerializeField] private float _chatWindowMaxWidth = 500.0f;
+    [SerializeField] private float _chatWindowMinHeight = 175.0f;
+    [SerializeField] private float _chatWindowMaxHeight = 600.0f;
+    [SerializeField] public ChatTab[] _tabs;
+    [SerializeField] private bool _chatOpened = false;
+    [SerializeField] private int _chatInputCharacterLimit = 100;
+
+    public bool ChatOpened { get { return _chatOpened; } }
+
+    private static ChatWindow _instance;
+    public static ChatWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+
+        _history = new List&lt;string&gt;();
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/ChatWindow/ChatWindow&quot;);
+        _tabTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/ChatWindow/ChatTab&quot;);
+        _tabHeaderTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/ChatWindow/ChatTabHeader&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        var diagonalResizeHandle = GetElementByClass(&quot;resize-diag&quot;);
+
+        DiagonalResizeManipulator diagonalResizeManipulator = new DiagonalResizeManipulator(
+            diagonalResizeHandle,
+            _windowEle,
+            _chatWindowMinWidth,
+            _chatWindowMaxWidth,
+            _chatWindowMinHeight,
+            _chatWindowMaxHeight,
+            14.5f,
+            2f);
+
+        diagonalResizeHandle.AddManipulator(diagonalResizeManipulator);
+
+        _chatInput = (TextField)GetElementById(&quot;ChatInputField&quot;);
+        _chatInput.RegisterCallback&lt;FocusEvent&gt;(OnChatInputFocus);
+        _chatInput.RegisterCallback&lt;BlurEvent&gt;(OnChatInputBlur);
+        _chatInput.maxLength = _chatInputCharacterLimit;
+
+        var enlargeTextBtn = (Button)GetElementById(&quot;EnlargeTextBtn&quot;);
+        enlargeTextBtn.AddManipulator(new ButtonClickSoundManipulator(enlargeTextBtn));
+
+        var chatOptionsBtn = (Button)GetElementById(&quot;ChatOptionsBtn&quot;);
+        chatOptionsBtn.AddManipulator(new ButtonClickSoundManipulator(chatOptionsBtn));
+
+        _chatInput.AddManipulator(new BlinkingCursorManipulator(_chatInput));
+
+        _chatInputContainer = GetElementById(&quot;InnerBar&quot;);
+
+        CreateTabs();
+
+        yield return new WaitForEndOfFrame();
+        diagonalResizeManipulator.SnapSize();
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+
+    private void CreateTabs()
+    {
+        VisualElement chatTabView = GetElementById(&quot;ChatTabView&quot;);
+
+        _l2TabView = new L2TabView();
+        _l2TabView.Initialize(chatTabView, _tabs, _tabTemplate, _tabHeaderTemplate, false);
+    }
+
+    void Update()
+    {
+        if (InputManager.Instance.Validate)
+        {
+            if (_chatOpened)
+            {
+                CloseChat(true);
+            }
+            else
+            {
+                _historyIndex = _history.Count;
+                StartCoroutine(OpenChat());
+            }
+        }
+
+        if (InputManager.Instance.ArrowDown)
+        {
+            if (_chatOpened &amp;&amp; _history.Count &gt; 0)
+            {
+                _historyIndex = Mathf.Min(_historyIndex + 1, _history.Count);
+
+                _chatInput.value = _historyIndex &lt; _history.Count ? _history[_historyIndex] : &quot;&quot;;
+                _chatInput.cursorIndex = _chatInput.value.Length;
+            }
+        }
+
+        if (InputManager.Instance.ArrowUp)
+        {
+            if (_chatOpened &amp;&amp; _history.Count &gt; 0)
+            {
+                _historyIndex = Mathf.Max(_historyIndex - 1, 0);
+
+                _chatInput.value = _history[_historyIndex];
+                _chatInput.cursorIndex = _chatInput.value.Length;
+            }
+        }
+    }
+
+    IEnumerator OpenChat()
+    {
+        _chatOpened = true;
+        L2GameUI.Instance.BlurFocus();
+        yield return new WaitForEndOfFrame();
+        _chatInput.Focus();
+    }
+
+    public void CloseChat(bool sendMessage)
+    {
+        _chatOpened = false;
+
+        L2GameUI.Instance.BlurFocus();
+
+        if (sendMessage)
+        {
+            if (_chatInput.text.Length &gt; 0)
+            {
+                SendChatMessage(_chatInput.text);
+
+                _history.Add(_chatInput.text);
+
+                // Limit history to 25 messages
+                if (_history.Count &gt; MAXIMUM_INPUT_HISTORY)
+                {
+                    _history.RemoveAt(0);  // Remove oldest entry
+                }
+
+                _historyIndex = _history.Count; // Set to end of history
+
+                _chatInput.value = &quot;&quot;;
+            }
+        }
+    }
+
+    private void OnChatInputFocus(FocusEvent evt)
+    {
+        if (!_chatInputContainer.ClassListContains(&quot;highlighted&quot;))
+        {
+            _chatInputContainer.AddToClassList(&quot;highlighted&quot;);
+        }
+
+        if (!_chatOpened)
+        {
+            _chatOpened = true;
+        }
+    }
+
+    private void OnChatInputBlur(BlurEvent evt)
+    {
+        if (_chatInputContainer.ClassListContains(&quot;highlighted&quot;))
+        {
+            _chatInputContainer.RemoveFromClassList(&quot;highlighted&quot;);
+        }
+
+        if (_chatOpened)
+        {
+            _chatOpened = false;
+        }
+    }
+
+    public void ClearChat()
+    {
+        for (int i = 0; i &lt; _tabs.Length; i++)
+        {
+            ClearTab(i);
+        }
+    }
+
+    public void ClearTab(int tabIndex)
+    {
+        if (tabIndex &lt;= _tabs.Length - 1)
+        {
+            _tabs[tabIndex].Content.text = &quot;&quot;;
+        }
+    }
+
+
+    public void SendChatMessage(string text)
+    {
+        if (World.Instance.OfflineMode)
+        {
+            ChatMessage message = new ChatMessage(PlayerEntity.Instance.Identity.Name, text);
+            ReceiveChatMessage(message);
+        }
+        else
+        {
+            if (text.StartsWith(&quot;//&quot;))
+            {
+                GameClient.Instance.ClientPacketHandler.SendGMCommand(text.Replace(&quot;//&quot;, &quot;&quot;));
+            }
+            else if (text.Length &gt; 0)
+            {
+                L2MessageType messageType = L2MessageType.ALL;
+                string target = null;
+
+                switch (text[0])
+                {
+                    case &#x27;+&#x27;:
+                        messageType = L2MessageType.TRADE;
+                        break;
+                    case &#x27;!&#x27;:
+                        messageType = L2MessageType.SHOUT;
+                        break;
+                    case &#x27;#&#x27;:
+                        messageType = L2MessageType.PARTY;
+                        break;
+                    case &#x27;@&#x27;:
+                        messageType = L2MessageType.CLAN;
+                        break;
+                    case &#x27;$&#x27;:
+                        messageType = L2MessageType.ALLIANCE;
+                        break;
+                    case &#x27;%&#x27;:
+                        messageType = L2MessageType.HERO_VOICE;
+                        break;
+                    case &#x27;&quot;&#x27;:
+                        string[] s = text[1..].Split(&quot; &quot;);
+                        target = (s.Length &gt; 0) ? s[0] : &quot;&quot;;
+                        messageType = L2MessageType.TELL;
+                        break;
+                    default:
+                        break;
+                }
+
+                if (messageType != L2MessageType.ALL)
+                {
+                    text = text[1..];
+                }
+
+                GameClient.Instance.ClientPacketHandler.SendMessage(text, messageType, target);
+            }
+        }
+    }
+
+    public void ReceiveChatMessage(ChatMessage message)
+    {
+        if (message == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i &lt; _tabs.Length; i++)
+        {
+            if (_tabs[i].FilteredMessages.Count &gt; 0)
+            {
+                if (_tabs[i].FilteredMessages.Contains(message.MessageType))
+                {
+                    _tabs[i].AddMessage(message.ToString());
+                }
+            }
+        }
+    }
+
+    public void ReceiveSystemMessage(SystemMessage message)
+    {
+        if (message == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i &lt; _tabs.Length; i++)
+        {
+            if (_tabs[i].FilteredMessages.Contains(L2MessageType.SYSTEM_MESSAGE))
+            {
+                _tabs[i].AddMessage(message.ToString());
+            }
+        }
+    }
+
+    public void ScrollDown(Scroller scroller)
+    {
+        StartCoroutine(ScrollDownWithDelay(scroller));
+    }
+
+    IEnumerator ScrollDownWithDelay(Scroller scroller)
+    {
+        yield return new WaitForEndOfFrame();
+        scroller.value = scroller.highValue &gt; 0 ? scroller.highValue : 0;
+    }
+}</pre>
+            
+</body>
+</html>

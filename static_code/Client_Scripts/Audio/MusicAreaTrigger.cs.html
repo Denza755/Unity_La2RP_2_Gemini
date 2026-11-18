@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Audio/MusicAreaTrigger.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Audio/MusicAreaTrigger.cs</h1>
+            <pre>using FMOD.Studio;
+using FMODUnity;
+using System.Collections;
+using UnityEngine;
+
+public class MusicAreaTrigger : MonoBehaviour
+{
+    [SerializeField] private int _areaPrority;
+    [SerializeField] private EventReference _enterEvent;
+    [SerializeField] private float _musicLengthSeconds = 0;
+    [SerializeField] private float _loopDelaySeconds = 5;
+
+    private EventDescription _eventDescription;
+    private Coroutine _loopCoroutine;
+
+    private void Awake()
+    {
+        if (!_eventDescription.isValid())
+        {
+            Lookup();
+        }
+
+        int lengthMs = 0;
+        _eventDescription.getLength(out lengthMs);
+        _musicLengthSeconds = lengthMs / 1000f;
+    }
+
+    private void Lookup()
+    {
+        _eventDescription = RuntimeManager.GetEventDescription(_enterEvent);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Debug.Log(&quot;Enter area:&quot; + transform.name);
+        PlayMusic();
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        Debug.Log(&quot;Exit area:&quot; + transform.name);
+        if (MusicManager.Instance == null)
+        {
+            Debug.LogWarning(&quot;MusicManager is not initialized.&quot;);
+            return;
+        }
+
+        MusicManager.Instance.ResetPriority();
+        MusicManager.Instance.StopMusic(_enterEvent);
+        if (_loopCoroutine != null)
+        {
+            StopCoroutine(_loopCoroutine);
+        }
+    }
+
+    private void PlayMusic()
+    {
+        if (MusicManager.Instance == null)
+        {
+            Debug.LogWarning(&quot;MusicManager is not initialized.&quot;);
+            return;
+        }
+
+        MusicManager.Instance.PlayMusic(_enterEvent, _areaPrority);
+        if (_loopCoroutine != null)
+        {
+            StopCoroutine(_loopCoroutine);
+        }
+        _loopCoroutine = StartCoroutine(MusicLoop());
+    }
+
+    IEnumerator MusicLoop()
+    {
+        yield return new WaitForSeconds(_musicLengthSeconds);
+        yield return new WaitForSeconds(_loopDelaySeconds);
+
+        PlayMusic();
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (MusicManager.Instance == null)
+        {
+            Debug.LogWarning(&quot;MusicManager is not initialized.&quot;);
+            return;
+        }
+
+        if (MusicManager.Instance.CurrentEventPriority &gt; _areaPrority)
+        {
+            MusicManager.Instance.StopMusic(_enterEvent);
+        }
+        else if (MusicManager.Instance.CurrentMusicEvent.Guid != _enterEvent.Guid)
+        {
+            MusicManager.Instance.PlayMusic(_enterEvent, _areaPrority);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

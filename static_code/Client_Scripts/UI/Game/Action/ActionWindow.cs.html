@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Action/ActionWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Action/ActionWindow.cs</h1>
+            <pre>using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class ActionWindow : L2PopupWindow
+{
+    private const int SLOTS_PER_ROW = 8;
+    private VisualElement _basicContainer;
+    private VisualElement _partyContainer;
+    private VisualElement _tokenContainer;
+    private VisualElement _socialContainer;
+
+    private static ActionWindow _instance;
+    public static ActionWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/ActionWindow/ActionWindow&quot;);
+    }
+
+    protected override void InitWindow(VisualElement root)
+    {
+        base.InitWindow(root);
+
+        VisualElement dragArea = GetElementByClass(&quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+        dragArea.AddManipulator(drag);
+
+        RegisterCloseWindowEvent(&quot;btn-close-frame&quot;);
+        RegisterClickWindowEvent(_windowEle, dragArea);
+
+        Label _windowName = (Label)GetElementById(&quot;windows-name-label&quot;);
+        _windowName.text = &quot;Actions&quot;;
+
+        _basicContainer = GetElementById(&quot;BasicSlots&quot;);
+        _partyContainer = GetElementById(&quot;PartySlots&quot;);
+        _tokenContainer = GetElementById(&quot;TokenSlots&quot;);
+        _socialContainer = GetElementById(&quot;SocialSlots&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        // Center window
+        _windowEle.style.left = new Length(50, LengthUnit.Percent);
+        _windowEle.style.top = new Length(50, LengthUnit.Percent);
+        _windowEle.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent)));
+
+        L2SlotContainer basicSlotContainer = new L2SlotContainer();
+        basicSlotContainer.Initialize(_basicContainer, SLOTS_PER_ROW, 32);
+        basicSlotContainer.CreateSlots(32, L2Slot.SlotType.Action);
+
+        basicSlotContainer.AssignAction(0, ActionType.Sit);
+        basicSlotContainer.AssignAction(1, ActionType.WalkRun);
+        basicSlotContainer.AssignAction(2, ActionType.Attack);
+        basicSlotContainer.AssignAction(3, ActionType.NextTarget);
+        basicSlotContainer.AssignAction(4, ActionType.Pickup);
+        basicSlotContainer.AssignAction(5, ActionType.Assist);
+
+        L2SlotContainer partySlotContainer = new L2SlotContainer();
+        partySlotContainer.Initialize(_partyContainer, SLOTS_PER_ROW, 16);
+        partySlotContainer.CreateSlots(16, L2Slot.SlotType.Action);
+
+        L2SlotContainer tokenSlotContainer = new L2SlotContainer();
+        tokenSlotContainer.Initialize(_tokenContainer, SLOTS_PER_ROW, 16);
+        tokenSlotContainer.CreateSlots(16, L2Slot.SlotType.Action);
+
+        L2SlotContainer socialSlotContainer = new L2SlotContainer();
+        socialSlotContainer.Initialize(_socialContainer, SLOTS_PER_ROW, 16);
+        socialSlotContainer.CreateSlots(17, L2Slot.SlotType.Action); //-&gt; Will add a padding
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+        AudioManager.Instance.PlayUISound(&quot;window_open&quot;);
+        L2GameUI.Instance.WindowOpened(this);
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        base.HideWindow(silent);
+
+        if (!silent)
+            AudioManager.Instance.PlayUISound(&quot;window_close&quot;);
+
+        L2GameUI.Instance.WindowClosed(this);
+    }
+
+    /*
+//icon action001| id = 0 (Sit)
+        var sit = GetElementByClass(&quot;image0&quot;);
+        sit.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action001&quot;);
+        listForToolTips.Add(sit);
+        ActionNameTable.Instance.GetAciton(0).Icon = &quot;action001&quot;;
+        //icon action002| id = 1 (walk)
+        var walk = GetElementByClass(&quot;image1&quot;);
+        walk.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action002&quot;);
+        listForToolTips.Add(walk);
+        ActionNameTable.Instance.GetAciton(1).Icon = &quot;action002&quot;;
+
+        //icon action003| id = 2 (Attack)
+        var attack = GetElementByClass(&quot;image2&quot;);
+        attack.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action003&quot;);
+        listForToolTips.Add(attack);
+        ActionNameTable.Instance.GetAciton(2).Icon = &quot;action003&quot;;
+
+        //icon action005| id = 3 (trade)
+        var trade = GetElementByClass(&quot;image3&quot;);
+        trade.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action005&quot;);
+        listForToolTips.Add(trade);
+        ActionNameTable.Instance.GetAciton(3).Icon = &quot;action005&quot;;
+
+        //icon action007| id = 4 (next_target)
+        var next_target = GetElementByClass(&quot;image4&quot;);
+        next_target.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action007&quot;);
+        listForToolTips.Add(next_target);
+        ActionNameTable.Instance.GetAciton(4).Icon = &quot;action007&quot;;
+
+        //icon action008| id = 5 (pick_up)
+        var pick_up = GetElementByClass(&quot;image5&quot;);
+        pick_up.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action008&quot;);
+        listForToolTips.Add(pick_up);
+        ActionNameTable.Instance.GetAciton(5).Icon = &quot;action008&quot;;
+
+        //icon action010| id = 6 (assist)
+        var assist = GetElementByClass(&quot;image6&quot;);
+        assist.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action010&quot;);
+        listForToolTips.Add(assist);
+        ActionNameTable.Instance.GetAciton(6).Icon = &quot;action010&quot;;
+
+        //icon action018| id = 10 (private_store sell)
+        var private_store_sell = GetElementByClass(&quot;image10&quot;);
+        private_store_sell.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action018&quot;);
+        listForToolTips.Add(private_store_sell);
+        ActionNameTable.Instance.GetAciton(10).Icon = &quot;action018&quot;;
+
+        //icon action028| id = 28 (private_store buy)
+        var private_store_buy = GetElementByClass(&quot;image28&quot;);
+        private_store_buy.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action028&quot;);
+        listForToolTips.Add(private_store_buy);
+        ActionNameTable.Instance.GetAciton(28).Icon = &quot;action028&quot;;
+
+        //icon action040| id = 40 (recommend)
+        var recommend = GetElementByClass(&quot;image40&quot;);
+        recommend.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action040&quot;);
+        listForToolTips.Add(recommend);
+        ActionNameTable.Instance.GetAciton(40).Icon = &quot;action040&quot;;
+
+        //icon action044| id = 55 (recording)
+        var recording = GetElementByClass(&quot;image55&quot;);
+        recording.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action044&quot;);
+        listForToolTips.Add(recording);
+        ActionNameTable.Instance.GetAciton(55).Icon = &quot;action044&quot;;
+
+        //icon action046| id = 57 (find_store)
+        var find_store = GetElementByClass(&quot;image57&quot;);
+        find_store.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action046&quot;);
+        listForToolTips.Add(find_store);
+        ActionNameTable.Instance.GetAciton(57).Icon = &quot;action046&quot;;
+
+        //icon action047| id = 58 (duel)
+        var duel = GetElementByClass(&quot;image58&quot;);
+        duel.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action047&quot;);
+        listForToolTips.Add(duel);
+        ActionNameTable.Instance.GetAciton(58).Icon = &quot;action047&quot;;
+
+        //icon action048| id = 59 (duel_withdrawal)
+        var duel_withdrawal = GetElementByClass(&quot;image59&quot;);
+        duel_withdrawal.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action048&quot;);
+        listForToolTips.Add(duel_withdrawal);
+        ActionNameTable.Instance.GetAciton(59).Icon = &quot;action048&quot;;
+
+        //icon action050| id = 61 (package_sale)
+        var package_sale = GetElementByClass(&quot;image61&quot;);
+        package_sale.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action050&quot;);
+        listForToolTips.Add(package_sale);
+        ActionNameTable.Instance.GetAciton(61).Icon = &quot;action050&quot;;
+
+        //icon action053| id = 64 (my_teleports)
+        var my_teleports = GetElementByClass(&quot;image64&quot;);
+        my_teleports.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action053&quot;);
+        listForToolTips.Add(my_teleports);
+        ActionNameTable.Instance.GetAciton(64).Icon = &quot;action053&quot;;
+
+        //icon Action054| id = 65 (bot_report)
+        var bot_report = GetElementByClass(&quot;image65&quot;);
+        bot_report.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action054&quot;);
+        listForToolTips.Add(bot_report);
+        ActionNameTable.Instance.GetAciton(65).Icon = &quot;action054&quot;;
+
+        //icon action065| id = 76 (invite_friends)
+        var invite_friends = GetElementByClass(&quot;image76&quot;);
+        invite_friends.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action065&quot;);
+        listForToolTips.Add(invite_friends);
+        ActionNameTable.Instance.GetAciton(76).Icon = &quot;action065&quot;;
+
+        //invite_friends action066| id = 77 (start_end_recording)
+        var start_end_recording = GetElementByClass(&quot;image77&quot;);
+        start_end_recording.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action066&quot;);
+        listForToolTips.Add(start_end_recording);
+        ActionNameTable.Instance.GetAciton(77).Icon = &quot;action066&quot;;
+
+        //icon action080| id = 92 (previous_target)
+        var previous_target = GetElementByClass(&quot;image92&quot;);
+        previous_target.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action080&quot;);
+        listForToolTips.Add(previous_target);
+        ActionNameTable.Instance.GetAciton(92).Icon = &quot;action080&quot;;
+
+        //icon action011| id = 7 (rm_invite)
+        var rm_invite = GetElementByClass(&quot;image7&quot;);
+        rm_invite.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action011&quot;);
+        listForToolTips.Add(rm_invite);
+        ActionNameTable.Instance.GetAciton(7).Icon = &quot;action011&quot;;
+
+        //icon action012| id = 8 (leave_arty)
+        var leave_arty = GetElementByClass(&quot;image8&quot;);
+        leave_arty.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action012&quot;);
+        listForToolTips.Add(leave_arty);
+        ActionNameTable.Instance.GetAciton(8).Icon = &quot;action012&quot;;
+
+        //icon action013| id = 9 (dismiss_party_member)
+        var dismiss_party_member = GetElementByClass(&quot;image9&quot;);
+        dismiss_party_member.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action013&quot;);
+        listForToolTips.Add(dismiss_party_member);
+        ActionNameTable.Instance.GetAciton(9).Icon = &quot;action013&quot;;
+
+        //icon action019| id = 11 (party_matching)
+        var party_matching = GetElementByClass(&quot;image11&quot;);
+        party_matching.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action019&quot;);
+        listForToolTips.Add(party_matching);
+        ActionNameTable.Instance.GetAciton(11).Icon = &quot;action019&quot;;
+
+        //icon action041| id = 50 (change_party_leader)
+        var change_party_leader = GetElementByClass(&quot;image50&quot;);
+        change_party_leader.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action041&quot;);
+        listForToolTips.Add(change_party_leader);
+        ActionNameTable.Instance.GetAciton(50).Icon = &quot;action041&quot;;
+
+        //icon action045| id = 56 (command_channel_invite)
+        var command_channel_invite = GetElementByClass(&quot;image56&quot;);
+        command_channel_invite.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action045&quot;);
+        listForToolTips.Add(command_channel_invite);
+        ActionNameTable.Instance.GetAciton(56).Icon = &quot;action045&quot;;
+
+        //icon action067| id = 78 (use_of_token_1)
+        var use_of_token_1 = GetElementByClass(&quot;image78&quot;);
+        use_of_token_1.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action067&quot;);
+        listForToolTips.Add(use_of_token_1);
+        ActionNameTable.Instance.GetAciton(78).Icon = &quot;action067&quot;;
+
+        //icon action068| id = 79 (use_of_token_2)
+        var use_of_token_2 = GetElementByClass(&quot;image79&quot;);
+        use_of_token_2.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action068&quot;);
+        listForToolTips.Add(use_of_token_2);
+        ActionNameTable.Instance.GetAciton(79).Icon = &quot;action068&quot;;
+
+        //icon action069| id = 80 (use_of_token_3)
+        var use_of_token_3 = GetElementByClass(&quot;image80&quot;);
+        use_of_token_3.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action069&quot;);
+        listForToolTips.Add(use_of_token_3);
+        ActionNameTable.Instance.GetAciton(80).Icon = &quot;action069&quot;;
+
+        //icon action070| id = 81 (use_of_token_4)
+        var use_of_token_4 = GetElementByClass(&quot;image81&quot;);
+        use_of_token_4.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action070&quot;);
+        listForToolTips.Add(use_of_token_4);
+        ActionNameTable.Instance.GetAciton(81).Icon = &quot;action070&quot;;
+
+        //icon action071| id = 82 (target_by_token 1)
+        var target_by_token_1 = GetElementByClass(&quot;image82&quot;);
+        target_by_token_1.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action071&quot;);
+        listForToolTips.Add(target_by_token_1);
+        ActionNameTable.Instance.GetAciton(82).Icon = &quot;action071&quot;;
+
+        //icon action072| id = 83 (target_by_token 2)
+        var target_by_token_2 = GetElementByClass(&quot;image83&quot;);
+        target_by_token_2.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action072&quot;);
+        listForToolTips.Add(target_by_token_2);
+        ActionNameTable.Instance.GetAciton(83).Icon = &quot;action072&quot;;
+
+        //icon action073| id = 84 (target_by_token 3)
+        var target_by_token_3 = GetElementByClass(&quot;image84&quot;);
+        target_by_token_3.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action073&quot;);
+        listForToolTips.Add(target_by_token_3);
+        ActionNameTable.Instance.GetAciton(84).Icon = &quot;action073&quot;;
+
+        //icon action074| id = 85 (target_by_token 4)
+        var target_by_token_4 = GetElementByClass(&quot;image85&quot;);
+        target_by_token_4.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action074&quot;);
+        listForToolTips.Add(target_by_token_4);
+        ActionNameTable.Instance.GetAciton(85).Icon = &quot;action074&quot;;
+
+        //icon action015| id = 12 (announcements)
+        var announcements = GetElementByClass(&quot;image12&quot;);
+        announcements.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action015&quot;);
+        listForToolTips.Add(announcements);
+        ActionNameTable.Instance.GetAciton(12).Icon = &quot;action015&quot;;
+
+        //icon action016| id = 13 (victory)
+        var victory = GetElementByClass(&quot;image13&quot;);
+        victory.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action016&quot;);
+        listForToolTips.Add(victory);
+        ActionNameTable.Instance.GetAciton(13).Icon = &quot;action016&quot;;
+
+        //icon action017| id = 14 (advance)
+        var advance = GetElementByClass(&quot;image14&quot;);
+        advance.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action017&quot;);
+        listForToolTips.Add(advance);
+        ActionNameTable.Instance.GetAciton(14).Icon = &quot;action017&quot;;
+
+        //icon action020| id = 24(yes)
+        var yes = GetElementByClass(&quot;image24&quot;);
+        yes.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action020&quot;);
+        listForToolTips.Add(yes);
+        ActionNameTable.Instance.GetAciton(24).Icon = &quot;action020&quot;;
+
+        //icon action021| id = 25(no)
+        var no = GetElementByClass(&quot;image25&quot;);
+        no.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action021&quot;);
+        listForToolTips.Add(no);
+        ActionNameTable.Instance.GetAciton(25).Icon = &quot;action021&quot;;
+
+        //icon action022| id = 26(bow)
+        var bow = GetElementByClass(&quot;image26&quot;);
+        bow.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action022&quot;);
+        listForToolTips.Add(bow);
+        ActionNameTable.Instance.GetAciton(26).Icon = &quot;action022&quot;;
+
+        //icon action029| id = 29(unaware)
+        var unaware = GetElementByClass(&quot;image29&quot;);
+        unaware.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action029&quot;);
+        listForToolTips.Add(unaware);
+        ActionNameTable.Instance.GetAciton(29).Icon = &quot;action029&quot;;
+
+        //icon action030| id = 30(standby)
+        var standby = GetElementByClass(&quot;image30&quot;);
+        standby.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action030&quot;);
+        listForToolTips.Add(standby);
+        ActionNameTable.Instance.GetAciton(30).Icon = &quot;action030&quot;;
+
+        //icon action031| id = 31(laugh)
+        var laugh = GetElementByClass(&quot;image31&quot;);
+        laugh.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action031&quot;);
+        listForToolTips.Add(laugh);
+        ActionNameTable.Instance.GetAciton(31).Icon = &quot;action031&quot;;
+
+        //icon action032| id = 33(applaud)
+        var applaud = GetElementByClass(&quot;image33&quot;);
+        applaud.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action032&quot;);
+        listForToolTips.Add(applaud);
+        ActionNameTable.Instance.GetAciton(33).Icon = &quot;action032&quot;;
+
+        //icon action033| id = 34(dance)
+        var dance = GetElementByClass(&quot;image34&quot;);
+        dance.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action033&quot;);
+        listForToolTips.Add(dance);
+        ActionNameTable.Instance.GetAciton(34).Icon = &quot;action033&quot;;
+
+        //icon action034| id = 35(sorrow)
+        var sorrow = GetElementByClass(&quot;image35&quot;);
+        sorrow.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action034&quot;);
+        listForToolTips.Add(sorrow);
+        ActionNameTable.Instance.GetAciton(35).Icon = &quot;action034&quot;;
+
+        //icon action051| id = 62(charm)
+        var charm = GetElementByClass(&quot;image62&quot;);
+        charm.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action051&quot;);
+        listForToolTips.Add(charm);
+        ActionNameTable.Instance.GetAciton(62).Icon = &quot;action051&quot;;
+
+        //icon action055| id = 66(shyness)
+        var shyness = GetElementByClass(&quot;image66&quot;);
+        shyness.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action055&quot;);
+        listForToolTips.Add(shyness);
+        ActionNameTable.Instance.GetAciton(66).Icon = &quot;action055&quot;;
+
+        //icon action060| id = 71(exchange_bows)
+        var exchange_bows = GetElementByClass(&quot;image71&quot;);
+        exchange_bows.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action060&quot;);
+        listForToolTips.Add(exchange_bows);
+        ActionNameTable.Instance.GetAciton(61).Icon = &quot;action060&quot;;
+
+        //icon action061| id = 72(high_five)
+        var high_five = GetElementByClass(&quot;image72&quot;);
+        high_five.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action061&quot;);
+        listForToolTips.Add(high_five);
+        ActionNameTable.Instance.GetAciton(72).Icon = &quot;action061&quot;;
+
+        //icon action062| id = 73(couple_dance)
+        var couple_dance = GetElementByClass(&quot;image73&quot;);
+        couple_dance.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action062&quot;);
+        listForToolTips.Add(couple_dance);
+        ActionNameTable.Instance.GetAciton(73).Icon = &quot;action062&quot;;
+
+        //icon action077| id = 87(propose_emote)
+        var propose_emote = GetElementByClass(&quot;image87&quot;);
+        propose_emote.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action077&quot;);
+        listForToolTips.Add(propose_emote);
+        ActionNameTable.Instance.GetAciton(87).Icon = &quot;action077&quot;;
+
+        //icon action078| id = 88(provoke_emote)
+        var provoke_emote = GetElementByClass(&quot;image88&quot;);
+        provoke_emote.style.backgroundImage = IconManager.Instance.LoadTextureByName(&quot;action078&quot;);
+        listForToolTips.Add(provoke_emote);
+        ActionNameTable.Instance.GetAciton(88).Icon = &quot;action078&quot;;
+    */
+}</pre>
+            
+</body>
+</html>

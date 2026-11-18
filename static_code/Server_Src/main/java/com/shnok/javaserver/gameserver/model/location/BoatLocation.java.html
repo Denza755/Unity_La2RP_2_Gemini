@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/BoatLocation.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/BoatLocation.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.location;
+
+import java.util.stream.Stream;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.BoatSay;
+
+/**
+ * A datatype extending {@link Location} used for boats. It notably holds move speed and rotation speed.
+ */
+public class BoatLocation extends Location
+{
+	private int _moveSpeed;
+	private int _rotationSpeed;
+	
+	private BoatSay _busyMessage;
+	private BoatSay[] _arrivalMessages;
+	private BoatSay[] _departureMessages;
+	
+	private IntIntHolder[] _scheduledMessages;
+	
+	public BoatLocation(int x, int y, int z, int moveSpeed, int rotationSpeed)
+	{
+		super(x, y, z);
+		
+		_moveSpeed = moveSpeed;
+		_rotationSpeed = rotationSpeed;
+	}
+	
+	public BoatLocation(StatSet set)
+	{
+		super(set);
+		
+		_moveSpeed = set.getInteger(&quot;speed&quot;, 350);
+		_rotationSpeed = set.getInteger(&quot;rotation&quot;, 4000);
+		
+		final int busy = set.getInteger(&quot;busy&quot;, 0);
+		if (busy != 0)
+			_busyMessage = new BoatSay(SystemMessageId.getSystemMessageId(busy));
+		
+		_arrivalMessages = getBoatSayArray(set.getStringArray(&quot;arrival&quot;, null));
+		_departureMessages = getBoatSayArray(set.getStringArray(&quot;departure&quot;, null));
+		
+		_scheduledMessages = set.getIntIntHolderArray(&quot;scheduled&quot;, null);
+	}
+	
+	private static BoatSay[] getBoatSayArray(String[] messages)
+	{
+		if (messages == null)
+			return null;
+		
+		return Stream.of(messages).map(message -&gt; new BoatSay(SystemMessageId.getSystemMessageId(Integer.parseInt(message)))).toArray(BoatSay[]::new);
+	}
+	
+	public int getMoveSpeed()
+	{
+		return _moveSpeed;
+	}
+	
+	public int getRotationSpeed()
+	{
+		return _rotationSpeed;
+	}
+	
+	public BoatSay getBusyMessage()
+	{
+		return _busyMessage;
+	}
+	
+	public BoatSay[] getArrivalMessages()
+	{
+		return _arrivalMessages;
+	}
+	
+	public BoatSay[] getDepartureMessages()
+	{
+		return _departureMessages;
+	}
+	
+	public IntIntHolder[] getScheduledMessages()
+	{
+		return _scheduledMessages;
+	}
+}</pre>
+            
+</body>
+</html>

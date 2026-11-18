@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/SpawnManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/SpawnManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.manager;
+
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+import com.shnok.javaserver.commons.geometry.Triangle;
+import com.shnok.javaserver.commons.geometry.algorithm.Kong;
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.xml.NpcData;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.location.Point2D;
+import com.shnok.javaserver.gameserver.model.memo.SpawnMemo;
+import com.shnok.javaserver.gameserver.model.records.PrivateData;
+import com.shnok.javaserver.gameserver.model.spawn.ASpawn;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.model.spawn.Spawn;
+import com.shnok.javaserver.gameserver.model.spawn.SpawnData;
+import com.shnok.javaserver.gameserver.model.spawn.Territory;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * Loads spawn list based on {@link Territory}s and {@link NpcMaker}s.&lt;br&gt;
+ * Handles spawn/respawn/despawn of various {@link Npc} in the game using events.&lt;br&gt;
+ * Locally stores individual {@link Spawn}s (e.g. quests, temporary spawned {@link Npc}s).&lt;br&gt;
+ * Loads/stores {@link Npc}s&#x27; {@link SpawnData} to/from database.
+ */
+public class SpawnManager implements IXmlReader
+{
+	private static final String LOAD_SPAWN_DATAS = &quot;SELECT * FROM spawn_data ORDER BY name&quot;;
+	private static final String TRUNCATE_SPAWN_DATAS = &quot;TRUNCATE spawn_data&quot;;
+	private static final String SAVE_SPAWN_DATAS = &quot;INSERT INTO spawn_data (name, status, current_hp, current_mp, loc_x, loc_y, loc_z, heading, db_value, respawn_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)&quot;;
+	
+	private final Map&lt;String, SpawnData&gt; _spawnData = new ConcurrentHashMap&lt;&gt;();
+	
+	private final Set&lt;Territory&gt; _territories = ConcurrentHashMap.newKeySet();
+	private final Set&lt;NpcMaker&gt; _makers = ConcurrentHashMap.newKeySet();
+	private final Set&lt;Spawn&gt; _spawns = ConcurrentHashMap.newKeySet();
+	
+	private int _dynamicGroupId = 0;
+	
+	public SpawnManager()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		loadSpawnData();
+		LOGGER.info(&quot;Loaded {} spawn data.&quot;, _spawnData.size());
+		
+		parseFile(&quot;data/xml/spawnlist/&quot;);
+		LOGGER.info(&quot;Loaded {} territories.&quot;, _territories.size());
+		LOGGER.info(&quot;Loaded {} NPC makers.&quot;, _makers.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		final List&lt;Point2D&gt; coords = new ArrayList&lt;&gt;();
+		forEach(doc, &quot;list&quot;, listNode -&gt;
+		{
+			forEach(listNode, &quot;territory&quot;, territoryNode -&gt;
+			{
+				final NamedNodeMap terr = territoryNode.getAttributes();
+				
+				// Get Territory name and Z limits.
+				final String name = parseString(terr, &quot;name&quot;);
+				int minZ = parseInteger(terr, &quot;minZ&quot;);
+				int maxZ = parseInteger(terr, &quot;maxZ&quot;);
+				
+				// Get Territory coordinates.
+				forEach(territoryNode, &quot;node&quot;, locationNode -&gt;
+				{
+					// load X, Y, min Z, max Z and add them to coordinate and limits to lists
+					final NamedNodeMap loc = locationNode.getAttributes();
+					coords.add(new Point2D(parseInteger(loc, &quot;x&quot;), parseInteger(loc, &quot;y&quot;)));
+				});
+				
+				// Create Territory and store it in the List.
+				try
+				{
+					_territories.add(new Territory(name, Kong.doTriangulation(coords), minZ, maxZ));
+				}
+				catch (Exception e)
+				{
+					LOGGER.warn(&quot;Cannot load territory \&quot;{}\&quot;, {}&quot;, name, e.getMessage());
+				}
+				
+				// Clear coordinates.
+				coords.clear();
+			});
+			
+			// Parse and feed NpcMakers.
+			forEach(listNode, &quot;npcmaker&quot;, npcmakerNode -&gt;
+			{
+				final StatSet set = parseAttributes(npcmakerNode);
+				
+				// Retrieve the Territory.
+				Territory territory = findTerritory(set.getString(&quot;territory&quot;));
+				if (territory != null)
+					set.put(&quot;t&quot;, territory);
+				
+				// Retrieve the banned Territory, if any.
+				final String banName = set.getString(&quot;ban&quot;, null);
+				if (banName != null)
+				{
+					territory = findTerritory(banName);
+					if (territory != null)
+						set.put(&quot;bt&quot;, territory);
+				}
+				
+				// Build the Maker AI parameters.
+				final Map&lt;String, String&gt; makerAIParams = new HashMap&lt;&gt;();
+				
+				forEach(npcmakerNode, &quot;ai&quot;, aiNode -&gt;
+				{
+					// Set this Maker type.
+					set.put(&quot;maker&quot;, parseString(aiNode.getAttributes(), &quot;type&quot;));
+					
+					forEach(aiNode, &quot;set&quot;, paramNode -&gt;
+					{
+						final NamedNodeMap paramAttrs = paramNode.getAttributes();
+						makerAIParams.put(parseString(paramAttrs, &quot;name&quot;), parseString(paramAttrs, &quot;val&quot;).replace(&quot;@&quot;, &quot;&quot;));
+					});
+				});
+				
+				set.put(&quot;aiParams&quot;, makerAIParams);
+				
+				final NpcMaker maker = new NpcMaker(set);
+				
+				// Feed MultiSpawn List.
+				final List&lt;MultiSpawn&gt; spawns = new ArrayList&lt;&gt;();
+				forEach(npcmakerNode, &quot;npc&quot;, npcNode -&gt;
+				{
+					final NamedNodeMap npc = npcNode.getAttributes();
+					
+					// Get related NpcTemplate.
+					final int npcId = parseInteger(npc, &quot;id&quot;);
+					final NpcTemplate template = NpcData.getInstance().getTemplate(npcId);
+					if (template == null)
+					{
+						LOGGER.warn(&quot;NpcTemplate was not found for NPC id {} in NpcMaker name {}.&quot;, npcId, maker.getName());
+						return;
+					}
+					
+					// Get the total amount of npcs.
+					final int total = parseInteger(npc, &quot;total&quot;);
+					
+					// Get the respawn data.
+					final int respawnDelay = StringUtil.getTimeStamp(parseString(npc, &quot;respawn&quot;, null));
+					final int respawnRandom = StringUtil.getTimeStamp(parseString(npc, &quot;respawnRand&quot;, null));
+					
+					// Build NpcMaker privates.
+					final List&lt;PrivateData&gt; privateData = new ArrayList&lt;&gt;();
+					forEach(npcNode, &quot;privates&quot;, privatesNode -&gt; forEach(privatesNode, &quot;private&quot;, privateNode -&gt; privateData.add(new PrivateData(parseAttributes(privateNode)))));
+					
+					// Build SpawnMemo.
+					final SpawnMemo spawnMemo = new SpawnMemo();
+					forEach(npcNode, &quot;ai&quot;, aiNode -&gt; forEach(aiNode, &quot;set&quot;, paramNode -&gt;
+					{
+						final NamedNodeMap paramAttrs = paramNode.getAttributes();
+						spawnMemo.put(parseString(paramAttrs, &quot;name&quot;), parseString(paramAttrs, &quot;val&quot;));
+					}));
+					
+					// Get the position coordinates.
+					int[][] coords2 = null;
+					final String pos = parseString(npc, &quot;pos&quot;, null);
+					if (pos != null)
+					{
+						String[] loc = pos.split(&quot;;&quot;);
+						if (loc.length &lt; 5)
+						{
+							// Fixed position (X, Y, Z, heading).
+							coords2 = new int[1][4];
+							coords2[0][0] = Integer.parseInt(loc[0]);
+							coords2[0][1] = Integer.parseInt(loc[1]);
+							coords2[0][2] = Integer.parseInt(loc[2]);
+							coords2[0][3] = Integer.parseInt(loc[3]);
+						}
+						else
+						{
+							// Random position with chance (N x [X, Y, Z, heading, chance]).
+							coords2 = new int[loc.length / 5][5];
+							for (int i = 0; i &lt; loc.length / 5; i++)
+							{
+								coords2[i][0] = Integer.parseInt(loc[i * 5]);
+								coords2[i][1] = Integer.parseInt(loc[i * 5 + 1]);
+								coords2[i][2] = Integer.parseInt(loc[i * 5 + 2]);
+								coords2[i][3] = Integer.parseInt(loc[i * 5 + 3]);
+								coords2[i][4] = Integer.parseInt(loc[i * 5 + 4].split(&quot;%&quot;)[0]);
+							}
+						}
+					}
+					
+					// Get the SpawnData name.
+					final String dbName = parseString(npc, &quot;dbName&quot;, null);
+					
+					// Get the SpawnData or create a new one, if it doesn&#x27;t exist.
+					SpawnData spawnData = null;
+					if (dbName != null)
+						spawnData = _spawnData.computeIfAbsent(dbName, sd -&gt; new SpawnData(dbName));
+					
+					// Create a new MultiSpawn and add it to the List.
+					try
+					{
+						spawns.add(new MultiSpawn(maker, template, total, respawnDelay, respawnRandom, privateData, spawnMemo, coords2, spawnData));
+					}
+					catch (Exception e)
+					{
+						LOGGER.error(&quot;Can&#x27;t create MultiSpawn for maker {}, npc id {}&quot;, e, maker.getName(), npcId);
+					}
+				});
+				
+				// Set spawns on the NpcMaker.
+				maker.setSpawns(spawns);
+				
+				// Create a new NpcMaker and add it to the List.
+				_makers.add(maker);
+			});
+		});
+	}
+	
+	public SpawnData getSpawnData(String name)
+	{
+		return _spawnData.get(name);
+	}
+	
+	/**
+	 * Reload {@link Territory}s and {@link NpcMaker}s and spawn NPCs.
+	 */
+	public void reload()
+	{
+		// Save dynamic data.
+		save();
+		
+		// Clear entries.
+		_spawnData.clear();
+		_territories.clear();
+		_makers.clear();
+		_spawns.clear();
+		
+		// Load and spawn.
+		load();
+		spawn();
+	}
+	
+	/**
+	 * Save NPC data.
+	 */
+	public void save()
+	{
+		// Update NPCs&#x27; spawn data.
+		_makers.stream().map(NpcMaker::getSpawns).flatMap(List::stream).forEach(MultiSpawn::updateSpawnData);
+		_spawns.forEach(Spawn::updateSpawnData);
+		
+		// Save spawn data.
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement delete = con.prepareStatement(TRUNCATE_SPAWN_DATAS);
+			PreparedStatement ps = con.prepareStatement(SAVE_SPAWN_DATAS))
+		{
+			// Delete all previous entries.
+			delete.execute();
+			
+			// Save SpawnDatas.
+			for (SpawnData data : _spawnData.values())
+			{
+				// Skip spawn data, which NPC did not spawn at all.
+				byte status = data.getStatus();
+				if (status &lt; 0)
+					continue;
+				
+				try
+				{
+					ps.setString(1, data.getName());
+					ps.setInt(2, status);
+					ps.setInt(3, data.getCurrentHp());
+					ps.setInt(4, data.getCurrentMp());
+					ps.setInt(5, data.getX());
+					ps.setInt(6, data.getY());
+					ps.setInt(7, data.getZ());
+					ps.setInt(8, data.getHeading());
+					ps.setInt(9, data.getDBValue());
+					ps.setLong(10, data.getRespawnTime());
+					ps.addBatch();
+				}
+				catch (Exception e)
+				{
+					LOGGER.warn(&quot;Couldn&#x27;t save spawn data for name \&quot;{}\&quot;.&quot;, e, data.getName());
+				}
+			}
+			
+			ps.executeBatch();
+			
+			LOGGER.info(&quot;Spawn data has been saved.&quot;);
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn(&quot;Couldn&#x27;t save spawn data.&quot;, e);
+		}
+	}
+	
+	/**
+	 * Load all {@link SpawnData}s from database.
+	 */
+	private final void loadSpawnData()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(LOAD_SPAWN_DATAS);
+			ResultSet rs = ps.executeQuery();)
+		{
+			while (rs.next())
+			{
+				final String name = rs.getString(&quot;name&quot;);
+				_spawnData.put(name, new SpawnData(name, rs));
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn(&quot;Couldn&#x27;t load spawn data.&quot;, e);
+		}
+	}
+	
+	/**
+	 * Spawn all possible {@link Npc} to the world at server start.&lt;br&gt;
+	 * Native, day/night, events allowed on start, Seven Signs, etc.
+	 */
+	public void spawn()
+	{
+		if (Config.NO_SPAWNS)
+			return;
+			
+		// Spawn native NPCs (where on-start condition is met):
+		// 1) without &quot;event&quot;
+		// 2) with &quot;event&quot; + &quot;onStart=true&quot;
+		long total = _makers.stream().filter(NpcMaker::isOnStart).mapToInt(NpcMaker::spawnAll).sum();
+		LOGGER.info(&quot;Spawned {} NPCs.&quot;, total);
+
+		if(Config.SPAWN_EVENTS.length &gt; 0) {
+			// Spawn event NPCs.
+			for (String event : Config.SPAWN_EVENTS)
+				spawnEventNpcs(event, true);
+
+			if(Config.SEVEN_SIGNS_ENABLED) {
+				// Spawn Seven Signs NPCs.
+				notifySevenSignsChange();
+			}
+		}
+	}
+	
+	/**
+	 * Spawn Seven Signs NPCs depending on period and status.
+	 */
+	public void notifySevenSignsChange()
+	{
+		// Despawn all SevenSigns NPCs.
+		
+		// Seal of Avarice NPCs.
+		despawnEventNpcs(&quot;ssq_seal1_none&quot;, false);
+		despawnEventNpcs(&quot;ssq_seal1_dawn&quot;, false);
+		despawnEventNpcs(&quot;ssq_seal1_twilight&quot;, false);
+		
+		// Seal of Gnosis NPCs.
+		despawnEventNpcs(&quot;ssq_seal2_none&quot;, false);
+		despawnEventNpcs(&quot;ssq_seal2_dawn&quot;, false);
+		despawnEventNpcs(&quot;ssq_seal2_twilight&quot;, false);
+		
+		// Event NPCs.
+		despawnEventNpcs(&quot;ssq_event&quot;, false);
+		
+		// Spawn required Seven Signs NPCs.
+		switch (SevenSignsManager.getInstance().getCurrentPeriod())
+		{
+			case RECRUITING, COMPETITION:
+				// Spawn Seven Signs event NPCs.
+				long spawn = spawnEventNpcs(&quot;ssq_event&quot;, false);
+				LOGGER.info(&quot;Spawned {} Seven Signs - Event NPCs.&quot;, spawn);
+				break;
+			
+			case RESULTS, SEAL_VALIDATION:
+				// Get this period Seven Signs winner.
+				final CabalType cabalWon = SevenSignsManager.getInstance().getWinningCabal();
+				
+				// Check Seal of Avarice winner.
+				switch (SevenSignsManager.getInstance().getSealOwner(SealType.AVARICE))
+				{
+					case NORMAL:
+						spawn = spawnEventNpcs(&quot;ssq_seal1_none&quot;, false);
+						LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Avarice NPCs, winning cabal none.&quot;, spawn);
+						break;
+					
+					case DUSK:
+						if (cabalWon == CabalType.DUSK)
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal1_twilight&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Avarice NPCs, winning cabal Dusk.&quot;, spawn);
+						}
+						else
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal1_none&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Avarice NPCs, winning cabal Dawn, seal cabal Dusk.&quot;, spawn);
+						}
+						break;
+					
+					case DAWN:
+						if (cabalWon == CabalType.DAWN)
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal1_dawn&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Avarice NPCs, winning cabal Dawn.&quot;, spawn);
+						}
+						else
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal1_none&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Avarice NPCs, winning cabal Dusk, seal cabal Dawn.&quot;, spawn);
+						}
+						break;
+				}
+				
+				// Check Seal of Gnosis winner.
+				switch (SevenSignsManager.getInstance().getSealOwner(SealType.GNOSIS))
+				{
+					case NORMAL:
+						spawn = spawnEventNpcs(&quot;ssq_seal2_none&quot;, false);
+						LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Gnosis NPCs, winning cabal none.&quot;, spawn);
+						break;
+					
+					case DUSK:
+						if (cabalWon == CabalType.DUSK)
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal2_twilight&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Gnosis NPCs, winning cabal Dusk.&quot;, spawn);
+						}
+						else
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal2_none&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Gnosis NPCs, winning cabal Dawn, seal cabal Dusk.&quot;, spawn);
+						}
+						break;
+					
+					case DAWN:
+						if (cabalWon == CabalType.DAWN)
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal2_dawn&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Gnosis NPCs, winning cabal Dawn.&quot;, spawn);
+						}
+						else
+						{
+							spawn = spawnEventNpcs(&quot;ssq_seal2_none&quot;, false);
+							LOGGER.info(&quot;Spawned {} Seven Signs - Seal of Gnosis NPCs, winning cabal Dusk, seal cabal Dawn.&quot;, spawn);
+						}
+						break;
+				}
+				break;
+		}
+	}
+	
+	/**
+	 * Despawn all NPCs from {@link NpcMaker} and individual spawns.
+	 */
+	public final void despawn()
+	{
+		// Despawn all NPCs from NpcMakers.
+		long total = _makers.stream().mapToInt(NpcMaker::deleteAll).sum();
+		LOGGER.info(&quot;Despawned {} NPCs.&quot;, total);
+		
+		// Despawn all NPCs from individual spawns.
+		_spawns.forEach(Spawn::doDelete);
+	}
+	
+	/**
+	 * @param name : The name.
+	 * @return the {@link Territory} of given ID, null when none.
+	 */
+	public final Territory getTerritory(String name)
+	{
+		return _territories.stream().filter(t -&gt; t.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+	}
+	
+	/**
+	 * @param names : The name(s) of the {@link Territory}(s).
+	 * @return the {@link Territory} of given name(s).
+	 */
+	private final Territory findTerritory(String names)
+	{
+		final String[] list = names.split(&quot;;&quot;);
+		if (list.length == 0)
+			return null;
+		
+		// A single territory is defined.
+		if (list.length == 1)
+			return getTerritory(list[0]);
+		
+		// Collect territories informations.
+		final String groupedName = &quot;grouped_&quot; + String.format(&quot;%03d&quot;, _dynamicGroupId++);
+		final List&lt;Triangle&gt; shapes = new ArrayList&lt;&gt;();
+		
+		int minZ = Integer.MAX_VALUE;
+		int maxZ = Integer.MIN_VALUE;
+		
+		for (String name : list)
+		{
+			final Territory territory = getTerritory(name);
+			if (territory == null)
+			{
+				LOGGER.warn(&quot;Territory {} does not exist.&quot;, name);
+				return null;
+			}
+			
+			minZ = Math.min(minZ, territory.getMinZ());
+			maxZ = Math.max(maxZ, territory.getMaxZ());
+			
+			shapes.addAll(territory.getShapes());
+		}
+		
+		// Create a new Territory.
+		final Territory t = new Territory(groupedName, shapes, minZ, maxZ);
+		
+		_territories.add(t);
+		return t;
+	}
+	
+	/**
+	 * @param loc : The {@link Location} to test.
+	 * @return the {@link List} of all {@link NpcMaker}s at a given {@link Location}.
+	 */
+	public final List&lt;NpcMaker&gt; getNpcMakers(Location loc)
+	{
+		return _makers.stream().filter(m -&gt; m.getTerritory().isInside(loc)).toList();
+	}
+	
+	/**
+	 * @param name : The {@link String} used as name.
+	 * @return the {@link NpcMaker} of given name, null when none.
+	 */
+	public final NpcMaker getNpcMaker(String name)
+	{
+		return _makers.stream().filter(nm -&gt; nm.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+	}
+	
+	/**
+	 * Add {@link Quest} to {@link NpcMaker} of given name, to handle all NPCs being dead event.
+	 * @param name : The name.
+	 * @param quest : The {@link Quest} to be added.
+	 */
+	public final void addQuestEventByName(String name, Quest quest)
+	{
+		_makers.stream().filter(nm -&gt; nm.getName().equalsIgnoreCase(name)).forEach(nm -&gt; nm.addQuestEvent(quest));
+	}
+	
+	/**
+	 * Add {@link Quest} to {@link NpcMaker} of given event name, to handle all NPCs being dead event.
+	 * @param event : The event name.
+	 * @param quest : The {@link Quest} to be added.
+	 */
+	public final void addQuestEventByEvent(String event, Quest quest)
+	{
+		_makers.stream().filter(nm -&gt; event.equals(nm.getEvent())).forEach(nm -&gt; nm.addQuestEvent(quest));
+	}
+	
+	/**
+	 * Spawn NPCs with given event name.
+	 * @param event : Type of spawn.
+	 * @param message : When true, display LOGGER message about spawn.
+	 * @return the amount of spawned NPCs.
+	 */
+	public final long spawnEventNpcs(String event, boolean message)
+	{
+		if (event == null || event.length() == 0)
+			return 0;
+		
+		long total = _makers.stream().filter(nm -&gt; event.equals(nm.getEvent())).mapToInt(NpcMaker::spawnAll).sum();
+		
+		if (message)
+			LOGGER.info(&quot;Spawned {} \&quot;{}\&quot; NPCs.&quot;, total, event);
+		
+		return total;
+	}
+	
+	/**
+	 * Immediately respawn all dead NPCs in {@link NpcMaker}s with given event name.&lt;br&gt;
+	 * Currently running respawn tasks are canceled.
+	 * @param event : Type of spawn.
+	 * @param message : When true, display LOGGER message about spawn.
+	 * @return the amount of spawned NPCs.
+	 */
+	public final long respawnEventNpcs(String event, boolean message)
+	{
+		if (event == null || event.length() == 0)
+			return 0;
+		
+		long total = _makers.stream().filter(nm -&gt; event.equals(nm.getEvent())).mapToInt(NpcMaker::respawnAll).sum();
+		
+		if (message)
+			LOGGER.info(&quot;Respawned {} \&quot;{}\&quot; NPCs.&quot;, total, event);
+		
+		return total;
+	}
+	
+	/**
+	 * Despawn NPCs in {@link NpcMaker}s with given event name.
+	 * @param event : Type of spawn.
+	 * @param message : When true, display LOGGER message about despawn.
+	 * @return the mount of despawned NPCs.
+	 */
+	public final long despawnEventNpcs(String event, boolean message)
+	{
+		if (event == null || event.length() == 0)
+			return 0;
+		
+		long total = _makers.stream().filter(nm -&gt; event.equals(nm.getEvent())).mapToInt(NpcMaker::deleteAll).sum();
+		
+		if (message)
+			LOGGER.info(&quot;Despawned {} \&quot;{}\&quot; NPCs.&quot;, total, event);
+		
+		return total;
+	}
+	
+	/**
+	 * Spawn NPCs with given event name.
+	 * @param time : time to spawn.
+	 * @param param1 : time to spawn parameter 1.
+	 * @param param2 : time to spawn parameter 2.
+	 * @param param3 : time to spawn parameter 3.
+	 * @param message : When true, display LOGGER message about spawn.
+	 * @return the amount of spawned NPCs.
+	 */
+	public final long startSpawnTime(String time, String param1, String param2, String param3, boolean message)
+	{
+		if (time == null || time.isEmpty())
+			return 0;
+		
+		long total = _makers.stream().filter(nm -&gt;
+		{
+			if (nm.getMakerSpawnTime() == null)
+				return false;
+			
+			if (!time.equalsIgnoreCase(nm.getMakerSpawnTime().getName()))
+				return false;
+			
+			final String[] spawnTimeParams = nm.getMakerSpawnTimeParams();
+			if (spawnTimeParams == null)
+				return false;
+			
+			if (spawnTimeParams.length &gt; 0)
+			{
+				if (param1 == null)
+					return false;
+				
+				if (!param1.equalsIgnoreCase(spawnTimeParams[0]))
+					return false;
+				
+				if (spawnTimeParams.length &gt; 1)
+				{
+					if (param2 == null)
+						return false;
+					
+					if (!param2.equalsIgnoreCase(spawnTimeParams[1]))
+						return false;
+				}
+				
+				if (spawnTimeParams.length &gt; 2)
+				{
+					if (param3 == null)
+						return false;
+					
+					if (!param3.equalsIgnoreCase(spawnTimeParams[2]))
+						return false;
+				}
+			}
+			
+			return true;
+		}).mapToInt(NpcMaker::spawnAll).sum();
+		
+		if (message)
+			LOGGER.info(&quot;Spawned {} \&quot;{}\&quot; NPCs.&quot;, total, time);
+		
+		return total;
+	}
+	
+	/**
+	 * Despawn NPCs in {@link NpcMaker}s with given event name.
+	 * @param time : time to despawn.
+	 * @param param1 : time to despawn parameter 1.
+	 * @param param2 : time to despawn parameter 2.
+	 * @param param3 : time to despawn parameter 3.
+	 * @param message : When true, display LOGGER message about despawn.
+	 * @return the mount of despawned NPCs.
+	 */
+	public final long stopSpawnTime(String time, String param1, String param2, String param3, boolean message)
+	{
+		if (time == null || time.isEmpty())
+			return 0;
+		
+		long total = _makers.stream().filter(nm -&gt;
+		{
+			if (nm.getMakerSpawnTime() == null)
+				return false;
+			
+			if (!time.equalsIgnoreCase(nm.getMakerSpawnTime().getName()))
+				return false;
+			
+			final String[] spawnTimeParams = nm.getMakerSpawnTimeParams();
+			if (spawnTimeParams == null)
+				return false;
+			
+			if (spawnTimeParams.length &gt; 0)
+			{
+				if (param1 == null)
+					return false;
+				
+				if (!param1.equalsIgnoreCase(spawnTimeParams[0]))
+					return false;
+				
+				if (spawnTimeParams.length &gt; 1)
+				{
+					if (param2 == null)
+						return false;
+					
+					if (!param2.equalsIgnoreCase(spawnTimeParams[1]))
+						return false;
+				}
+				
+				if (spawnTimeParams.length &gt; 2)
+				{
+					if (param3 == null)
+						return false;
+					
+					if (!param3.equalsIgnoreCase(spawnTimeParams[2]))
+						return false;
+				}
+			}
+			
+			return true;
+		}).mapToInt(NpcMaker::deleteAll).sum();
+		
+		if (message)
+			LOGGER.info(&quot;Despawned {} \&quot;{}\&quot; NPCs.&quot;, total, time);
+		
+		return total;
+	}
+	
+	/**
+	 * Add an individual {@link Spawn}.
+	 * @param spawn : {@link Spawn} to be added.
+	 */
+	public void addSpawn(Spawn spawn)
+	{
+		_spawns.add(spawn);
+	}
+	
+	/**
+	 * Remove an individual {@link Spawn}.
+	 * @param spawn : {@link Spawn} to be removed.
+	 */
+	public void deleteSpawn(Spawn spawn)
+	{
+		_spawns.remove(spawn);
+	}
+	
+	/**
+	 * @param npcId : The {@link Npc} ID.
+	 * @return The first found {@link ASpawn} of given {@link Npc}.
+	 */
+	public final ASpawn getSpawn(int npcId)
+	{
+		ASpawn result = _makers.stream().flatMap(nm -&gt; nm.getSpawns().stream()).filter(ms -&gt; ms.getNpcId() == npcId).findFirst().orElse(null);
+		if (result == null)
+			result = _spawns.stream().filter(s -&gt; s.getNpcId() == npcId).findFirst().orElse(null);
+		
+		return result;
+	}
+	
+	/**
+	 * @param npcAlias : The {@link Npc} ID.
+	 * @return The first found {@link ASpawn} of given {@link Npc}.
+	 */
+	public final ASpawn getSpawn(String npcAlias)
+	{
+		ASpawn result = _makers.stream().flatMap(nm -&gt; nm.getSpawns().stream()).filter(ms -&gt; ms.getTemplate().getAlias().equalsIgnoreCase(npcAlias)).findFirst().orElse(null);
+		if (result == null)
+			result = _spawns.stream().filter(s -&gt; s.getTemplate().getAlias().equalsIgnoreCase(npcAlias)).findFirst().orElse(null);
+		
+		return result;
+	}
+	
+	/**
+	 * @param npcId : The {@link Npc} ID.
+	 * @return The first found {@link Npc} of given npcId.
+	 */
+	public final Npc getNpc(int npcId)
+	{
+		final ASpawn spawn = getSpawn(npcId);
+		if (spawn == null)
+			return null;
+		
+		return spawn.getNpc();
+	}
+	
+	public static final SpawnManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final SpawnManager INSTANCE = new SpawnManager();
+	}
+}</pre>
+            
+</body>
+</html>

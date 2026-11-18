@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/SailrenMaker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/SailrenMaker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.maker;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.model.spawn.SpawnData;
+
+public class SailrenMaker extends DefaultUseDBMaker
+{
+	public SailrenMaker(String name)
+	{
+		super(name);
+	}
+	
+	@Override
+	public void onMakerScriptEvent(String name, NpcMaker maker, int int1, int int2)
+	{
+		if (name.equalsIgnoreCase(&quot;11042&quot;))
+		{
+			final MultiSpawn def0 = maker.getSpawns().get(0);
+			if (def0 != null)
+				def0.sendScriptEvent(11042, 1, 0);
+		}
+		super.onMakerScriptEvent(name, maker, int1, int2);
+	}
+	
+	@Override
+	public void onNpcDBInfo(MultiSpawn ms, SpawnData spawnData, NpcMaker maker)
+	{
+		if (ms.getSpawnData() != null &amp;&amp; !ms.getSpawnData().checkDead())
+		{
+			if (maker.getMaximumNpc() &gt; maker.getNpcsAlive())
+			{
+				if (ms.getSpawnData().getX() != -113091)
+				{
+					NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;rune16_npc2017_01m1&quot;);
+					if (maker0 != null)
+						maker0.getMaker().onMakerScriptEvent(&quot;11047&quot;, maker0, 0, 0);
+					
+					maker0 = SpawnManager.getInstance().getNpcMaker(&quot;rune16_npc2017_13m1&quot;);
+					if (maker0 != null)
+						maker0.getMaker().onMakerScriptEvent(&quot;11047&quot;, maker0, 0, 0);
+				}
+				ms.doSpawn(false);
+			}
+		}
+		else
+			ms.doSpawn(false);
+	}
+	
+	@Override
+	public void onNpcDeleted(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;rune16_npc2017_01m1&quot;);
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;11045&quot;, maker0, 0, 0);
+		
+		if (maker.getMaximumNpc() &gt; maker.getNpcsAlive())
+			npc.scheduleRespawn(ms.calculateRespawnDelay() * 1000);
+	}
+}</pre>
+            
+</body>
+</html>

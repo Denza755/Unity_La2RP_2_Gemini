@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/conditions/ConditionElementSeed.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/conditions/ConditionElementSeed.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills.conditions;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.item.kind.Item;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.skills.effects.EffectSeed;
+
+public class ConditionElementSeed extends Condition
+{
+	private static final int[] SEED_SKILLS =
+	{
+		1285,
+		1286,
+		1287
+	};
+	
+	private final int[] _requiredSeeds;
+	
+	public ConditionElementSeed(int[] seeds)
+	{
+		_requiredSeeds = seeds;
+	}
+	
+	@Override
+	public boolean testImpl(Creature effector, Creature effected, L2Skill skill, Item item)
+	{
+		int[] seeds = new int[3];
+		for (int i = 0; i &lt; seeds.length; i++)
+		{
+			seeds[i] = (effector.getFirstEffect(SEED_SKILLS[i]) instanceof EffectSeed effect) ? effect.getPower() : 0;
+			if (seeds[i] &gt;= _requiredSeeds[i])
+				seeds[i] -= _requiredSeeds[i];
+			else
+				return false;
+		}
+		
+		if (_requiredSeeds[3] &gt; 0)
+		{
+			int count = 0;
+			for (int i = 0; i &lt; seeds.length &amp;&amp; count &lt; _requiredSeeds[3]; i++)
+			{
+				if (seeds[i] &gt; 0)
+				{
+					seeds[i]--;
+					count++;
+				}
+			}
+			if (count &lt; _requiredSeeds[3])
+				return false;
+		}
+		
+		if (_requiredSeeds[4] &gt; 0)
+		{
+			int count = 0;
+			for (int i = 0; i &lt; seeds.length &amp;&amp; count &lt; _requiredSeeds[4]; i++)
+			{
+				count += seeds[i];
+			}
+			if (count &lt; _requiredSeeds[4])
+				return false;
+		}
+		
+		return true;
+	}
+}</pre>
+            
+</body>
+</html>

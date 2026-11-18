@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/util/PriorityQueueSet.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/util/PriorityQueueSet.java</h1>
+            <pre>package com.shnok.javaserver.commons.util;
+
+import java.util.HashSet;
+import java.util.PriorityQueue;
+
+public class PriorityQueueSet&lt;T&gt; extends PriorityQueue&lt;T&gt;
+{
+	private static final long serialVersionUID = 1L;
+	
+	private final HashSet&lt;T&gt; _set;
+	
+	public PriorityQueueSet()
+	{
+		_set = new HashSet&lt;&gt;();
+	}
+	
+	@Override
+	public boolean add(T element)
+	{
+		if (_set.add(element))
+			return super.add(element);
+		
+		return false;
+	}
+	
+	@Override
+	public boolean remove(Object element)
+	{
+		if (_set.remove(element))
+			return super.remove(element);
+		
+		return false;
+	}
+	
+	@Override
+	public boolean contains(Object element)
+	{
+		return _set.contains(element);
+	}
+}</pre>
+            
+</body>
+</html>

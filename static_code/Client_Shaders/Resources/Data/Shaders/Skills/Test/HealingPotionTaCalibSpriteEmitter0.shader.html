@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Test/HealingPotionTaCalibSpriteEmitter0.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Test/HealingPotionTaCalibSpriteEmitter0.shader</h1>
+            <pre>// it_healing_potion_ta / m_u004_b SpriteEmitter0 - calib shader (L2FxCoreGeometryTest.hlsl).
+Shader &quot;L2/Effects/Calib/HealingPotionTaSpriteEmitter0&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture&quot;, 2D) = &quot;white&quot; {}
+
+        _L2FxWorldCalibration (&quot;World Calibration K&quot;, Float) = 1.1
+        _SizeRange (&quot;Start Size UU Min Max&quot;, Vector) = (3, 6, 0, 0)
+        _StartLocationOffsetUU (&quot;StartLocationOffset UE X Y Z&quot;, Vector) = (0, 0, 7, 0)
+        _PolarThetaRangeUc (&quot;Polar Theta Min Max&quot;, Vector) = (0, 360, 0, 0)
+        _PolarPhiRangeUc (&quot;Polar Phi Min Max&quot;, Vector) = (10, 105, 0, 0)
+        _PolarRadiusRangeUc (&quot;Polar Radius Min Max&quot;, Vector) = (2.4, 2.4, 0, 0)
+        _StartVelocityRangeXUc (&quot;StartVelocity X Min Max&quot;, Vector) = (60, 60, 0, 0)
+        _StartVelocityRangeYUc (&quot;StartVelocity Y Min Max&quot;, Vector) = (60, 60, 0, 0)
+        _StartVelocityRangeZUc (&quot;StartVelocity Z Min Max&quot;, Vector) = (-18, 1, 0, 0)
+        _AccelerationUc (&quot;Acceleration UE X Y Z&quot;, Vector) = (0, 0, -40, 0)
+        _SpriteMotionRandStateBits (&quot;appRand State Before Spawn&quot;, Float) = 0
+        _SpawnDeltaTime (&quot;Spawn Delta Time&quot;, Float) = 0.012
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        _LifetimeRange (&quot;Lifetime Min Max&quot;, Vector) = (1, 1.8, 0, 0)
+        _InitialDelayRange (&quot;Initial Delay Min Max&quot;, Vector) = (0, 0.1, 0, 0)
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 1
+        _FadeInEndTime (&quot;Fade In End&quot;, Float) = 0.09
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 1
+        _FadeoutStartTime (&quot;Fade Out Start&quot;, Float) = 0.954
+        _ColorScaleCount (&quot;Color Scale Keys&quot;, Float) = 3
+        _ColorScaleParam (&quot;Color Scale Repeats&quot;, Float) = 9
+        _ColorKey0 (&quot;Color Scale 0&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey1Time (&quot;Color Scale 1 Time&quot;, Float) = 0.5
+        _ColorKey1 (&quot;Color Scale 1&quot;, Color) = (0.62745, 0.62745, 0.62745, 1)
+        _ColorKey2Time (&quot;Color Scale 2 Time&quot;, Float) = 1
+        _ColorKey2 (&quot;Color Scale 2&quot;, Color) = (1, 1, 1, 1)
+        _SpriteSpinStartRangeUc (&quot;Start Spin Min Max&quot;, Vector) = (0, 360, 0, 0)
+        _SpriteSpinSpsRangeUc (&quot;Spin Per Sec Min Max&quot;, Vector) = (0, 0.1, 0, 0)
+        _SpriteSpinCcwOrCw (&quot;Spin CCW/CW&quot;, Vector) = (0, 0, 0, 0)
+        _SpriteSpinRandStateBits (&quot;appRand State Before Spin&quot;, Float) = 0
+
+        _TestSizeScaleAge (&quot;SizeScale Age 0-1&quot;, Range(0, 1)) = 0.5
+        _SizeScaleRepeats (&quot;SizeScale Repeats&quot;, Float) = 6
+        _SizeKey0 (&quot;Size Key 0 Time Size&quot;, Vector) = (0.17, 1, 0, 0)
+        _SizeKey1 (&quot;Size Key 1 Time Size&quot;, Vector) = (0.75, 0.8, 0, 0)
+        _SizeKey2 (&quot;Size Key 2 Time Size&quot;, Vector) = (1, 1, 0, 0)
+        _SizeKey3 (&quot;Size Key 3 Time Size&quot;, Vector) = (1, 1, 0, 0)
+        _SizeKey4 (&quot;Size Key 4 Time Size&quot;, Vector) = (1, 1, 0, 0)
+
+        _TextureUSubdivisions (&quot;Atlas U Cells&quot;, Float) = 4
+        _TextureVSubdivisions (&quot;Atlas V Cells&quot;, Float) = 4
+        _ManualFrameIndex (&quot;Manual Frame Index&quot;, Float) = 6
+        _SubdivisionStart (&quot;Subdivision Start&quot;, Float) = 6
+        _SubdivisionEnd (&quot;Subdivision End&quot;, Float) = 8
+
+        _RgbBoost (&quot;RGB Boost&quot;, Range(0, 16)) = 0.7
+        _PlasmaRgbScale (&quot;Plasma RGB Scale (low luma only)&quot;, Range(0, 2)) = 1.032
+        _PlasmaLumaMax (&quot;Plasma Luma Max&quot;, Range(0.01, 1)) = 0.215
+        [Toggle] _L2MotionReplayEnabled (&quot;Debug: Replay captured L2 SE0 slot 0&quot;, Float) = 0
+        _AlphaBoost (&quot;Alpha Boost&quot;, Range(0, 16)) = 1
+        _Opacity (&quot;Opacity&quot;, Range(0, 2)) = 1
+        [Toggle] _IgnoreMainTexAlpha (&quot;Ignore texture alpha&quot;, Float) = 1
+        [Toggle] _AlphaFromLuma (&quot;Alpha from luma&quot;, Float) = 1
+        _LumaAlphaFloor (&quot;Luma alpha trim&quot;, Range(0, 0.25)) = 0
+        [Toggle] _UseSoftLumaAlpha (&quot;Soft luma alpha (preserve dim plasma)&quot;, Float) = 1
+        _LumaAlphaPower (&quot;Luma alpha power (&lt;1 keeps dim fill)&quot;, Range(0.2, 2)) = 1
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot;
+            &quot;Queue&quot; = &quot;Transparent&quot;
+            &quot;RenderType&quot; = &quot;Transparent&quot;
+                    &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+
+        Blend One OneMinusSrcColor
+        Cull Off
+        ZWrite Off
+        ZTest LEqual
+
+        Pass
+        {
+            Name &quot;HealingPotionTaCalibSE0&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 4.5
+
+            #include &quot;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&quot;
+            #include &quot;../Common/L2FxEmitterSpawn.hlsl&quot;
+            #include &quot;../Common/L2FxCoreGeometryTest.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxAppRand.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpritePolar.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxPTVD_StartPositionAndOwner.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpriteMotion.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpriteSpin.hlsl&quot;
+            #include &quot;../Common/Decompile_Common/L2FxSpriteColorFade.hlsl&quot;
+            #include &quot;../Common/L2FxSpriteEmitterVertex.hlsl&quot;
+            #include &quot;../Common/L2FxFlipbook.hlsl&quot;
+            #include &quot;../Common/L2FxMeshFragment.hlsl&quot;
+            #include &quot;../Common/L2FxPlasmaParticleBlend.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _L2FxWorldCalibration;
+                float4 _SizeRange;
+                float4 _StartLocationOffsetUU;
+                float4 _PolarThetaRangeUc;
+                float4 _PolarPhiRangeUc;
+                float4 _PolarRadiusRangeUc;
+                float4 _StartVelocityRangeXUc;
+                float4 _StartVelocityRangeYUc;
+                float4 _StartVelocityRangeZUc;
+                float4 _AccelerationUc;
+                float _SpriteMotionRandStateBits;
+                float _SpawnDeltaTime;
+                float _StartTime;
+                float4 _LifetimeRange;
+                float4 _InitialDelayRange;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _Fadeout;
+                float _FadeoutStartTime;
+                float _ColorScaleCount;
+                float _ColorScaleParam;
+                float4 _ColorKey0;
+                float _ColorKey1Time;
+                float4 _ColorKey1;
+                float _ColorKey2Time;
+                float4 _ColorKey2;
+                float4 _SpriteSpinStartRangeUc;
+                float4 _SpriteSpinSpsRangeUc;
+                float4 _SpriteSpinCcwOrCw;
+                float _SpriteSpinRandStateBits;
+                float _TestSizeScaleAge;
+                float _SizeScaleRepeats;
+                float4 _SizeKey0;
+                float4 _SizeKey1;
+                float4 _SizeKey2;
+                float4 _SizeKey3;
+                float4 _SizeKey4;
+                float _TextureUSubdivisions;
+                float _TextureVSubdivisions;
+                float _ManualFrameIndex;
+                float _SubdivisionStart;
+                float _SubdivisionEnd;
+                float _RgbBoost;
+                float _PlasmaRgbScale;
+                float _PlasmaLumaMax;
+                float _AlphaBoost;
+                float _Opacity;
+                float _IgnoreMainTexAlpha;
+                float _AlphaFromLuma;
+                float _LumaAlphaFloor;
+                float _UseSoftLumaAlpha;
+                float _LumaAlphaPower;
+            CBUFFER_END
+
+            #include &quot;../Common/L2FxInstancing.hlsl&quot;
+
+            float EvaluateDynamicSizeScale(float progress)
+            {
+                float phase = frac(progress * _SizeScaleRepeats);
+
+                float4 keys[5] = { _SizeKey0, _SizeKey1, _SizeKey2, _SizeKey3, _SizeKey4 };
+
+                if (keys[0].x &gt; 0.0 &amp;&amp; phase &lt; keys[0].x)
+                {
+                    return lerp(1.0, keys[0].y, phase / max(keys[0].x, 1e-6));
+                }
+
+                int idx = 0;
+                while (idx &lt; 4 &amp;&amp; phase &gt; keys[idx + 1].x)
+                {
+                    idx++;
+                }
+
+                float t0 = keys[idx].x;
+                float s0 = keys[idx].y;
+                float t1 = keys[idx + 1].x;
+                float s1 = keys[idx + 1].y;
+
+                if (abs(t1 - t0) &lt; 1e-6)
+                {
+                    return s0;
+                }
+
+                float u = (phase - t0) / (t1 - t0);
+                return lerp(s0, s1, saturate(u));
+            }
+
+            float ResolveStartSizeUU()
+            {
+                float minUU = _SizeRange.x;
+                float maxUU = _SizeRange.y;
+                if (maxUU &lt; minUU)
+                {
+                    float t = minUU;
+                    minUU = maxUU;
+                    maxUU = t;
+                }
+                return (minUU + maxUU) * 0.5;
+            }
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uvAtlas : TEXCOORD0;
+            };
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+
+                uint spawnState = asuint(_SpriteMotionRandStateBits);
+                float3 rawVelocityUe = L2Fx_FRangeVector_GetRandYawPitchRoll(
+                    _StartVelocityRangeXUc.xy,
+                    _StartVelocityRangeYUc.xy,
+                    _StartVelocityRangeZUc.xy,
+                    spawnState);
+                float3 polarUe = L2Fx_SpritePolar_GetRandUe(
+                    _PolarThetaRangeUc.xy,
+                    _PolarPhiRangeUc.xy,
+                    _PolarRadiusRangeUc.xy,
+                    spawnState);
+                // Captured SE0 stream: draws 6..15 are presently unnamed; preserve
+                // their LCG positions before consuming Lifetime (16) and StartSize (19).
+                [unroll] for (int rngSkip = 0; rngSkip &lt; 10; ++rngSkip)
+                {
+                    L2Fx_AppRand(spawnState);
+                }
+                float lifetimeSeconds = L2Fx_FRange_GetRand(_LifetimeRange.xy, spawnState);
+                L2Fx_AppRand(spawnState);
+                L2Fx_AppRand(spawnState);
+                float spawnSizeUU = L2Fx_FRange_GetRand(_SizeRange.xy, spawnState);
+                L2Fx_AppRand(spawnState);
+                L2Fx_AppRand(spawnState);
+                float3 spawnPositionUe = _StartLocationOffsetUU.xyz + polarUe;
+                float3 velocityBeforePtvdUe = rawVelocityUe + _AccelerationUc.xyz * _SpawnDeltaTime;
+                float3 velocityUe = L2FxPTVD_StartPositionAndOwner(
+                    velocityBeforePtvdUe,
+                    spawnPositionUe,
+                    float3(0.0, 0.0, 0.0));
+                float ageSeconds = max(0.0, _Time.y - _StartTime);
+                float ageNorm = saturate(ageSeconds / max(lifetimeSeconds, 1e-4));
+                float sizeUU = spawnSizeUU * EvaluateDynamicSizeScale(ageNorm);
+                float sizeM = L2Fx_GetFinalVertexSizeMeters(sizeUU, _L2FxWorldCalibration);
+                // L2 advances velocity and position in discrete emitter ticks.
+                // This shader intentionally uses continuous ballistic displacement instead:
+                // p = v0*t + 0.5*a*t². It is visually stable and avoids per-slot CPU
+                // updates, but its vertical speed can differ from L2 by roughly
+                // acceleration * SpawnDeltaTime immediately after spawn.
+                float3 spawnOffsetOS = L2Fx_UcPositionToUnityMeters(
+                    spawnPositionUe, _L2FxWorldCalibration);
+                float3 motionOffsetOS = L2Fx_SpriteMotion_DisplacementUnityCalibrated(
+                    velocityUe, _AccelerationUc.xyz, ageSeconds, 1.0, _L2FxWorldCalibration);
+                float startSpin;
+                float spinsPerSecond;
+                L2Fx_SpriteSpin_SpawnSlotFloatsFromAppRandState(
+                    _SpriteSpinStartRangeUc.xy, _SpriteSpinSpsRangeUc.xy,
+                    _SpriteSpinCcwOrCw.xyz, asuint(_SpriteSpinRandStateBits),
+                    startSpin, spinsPerSecond);
+                float2 rotatedQuad = L2Fx_SpriteSpin_RotateBillboardOffset(
+                    IN.positionOS.xy * sizeM,
+                    L2Fx_SpriteSpin_EvaluateRadians(startSpin, spinsPerSecond, ageSeconds));
+                float3 positionWS = L2Fx_CameraBillboardPositionWS(
+                    TransformObjectToWorld(spawnOffsetOS + motionOffsetOS),
+                    float3(rotatedQuad, IN.positionOS.z * sizeM), 0.0, 0.0);
+                OUT.positionHCS = TransformWorldToHClip(positionWS);
+
+                int uSub = max(1, (int)_TextureUSubdivisions);
+                int vSub = max(1, (int)_TextureVSubdivisions);
+                int s0 = (int)_SubdivisionStart;
+                int s1 = (int)_SubdivisionEnd;
+                int lo = min(s0, s1);
+                int hi = max(s0, s1);
+                int frame = L2Fx_FlipbookSubDivisionRandomFrame(
+                    _SpriteMotionRandStateBits, _StartTime, lo, hi, 19.0);
+                OUT.uvAtlas = L2Fx_FlipbookAtlasUV(IN.uv, frame, uSub, vSub);
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvAtlas);
+                float mask = L2Fx_MeshFrag_SampleTextureAlphaSoft(
+                    tex,
+                    _AlphaFromLuma,
+                    _LumaAlphaFloor,
+                    _LumaAlphaPower,
+                    _UseSoftLumaAlpha,
+                    _IgnoreMainTexAlpha);
+                float ageSeconds = max(0.0, _Time.y - _StartTime);
+                float4 colorFade = L2Fx_SpriteColorFade_FullKeys(
+                    (uint)_ColorScaleCount, _ColorScaleParam, 1.0,
+                    _ColorKey0, _ColorKey1Time, _ColorKey1,
+                    _ColorKey2Time, _ColorKey2, 1.0, _ColorKey2,
+                    float3(1.0, 1.0, 1.0), float3(1.0, 1.0, 1.0),
+                    ageSeconds, _LifetimeRange.y, 1.0,
+                    _FadeIn, _FadeInEndTime, _Fadeout, _FadeoutStartTime,
+                    1.0, 1.0, _SpriteMotionRandStateBits, _StartTime);
+                half3 rgb = tex.rgb * (half3)colorFade.rgb * (half)_RgbBoost;
+                rgb = L2Fx_PlasmaParticle_ApplyLowLumaRgbScale(
+                    rgb, tex.rgb, _PlasmaRgbScale, _PlasmaLumaMax);
+                half alpha = (half)saturate(mask * _AlphaBoost * colorFade.a * _Opacity);
+                return half4(saturate(rgb), alpha);
+            }
+            ENDHLSL
+        }
+    }
+
+    FallBack Off
+}
+</pre>
+            
+</body>
+</html>

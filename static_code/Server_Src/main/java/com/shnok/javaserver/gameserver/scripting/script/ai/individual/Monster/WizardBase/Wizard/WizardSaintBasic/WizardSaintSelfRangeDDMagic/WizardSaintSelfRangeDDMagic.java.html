@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WizardBase/Wizard/WizardSaintBasic/WizardSaintSelfRangeDDMagic/WizardSaintSelfRangeDDMagic.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WizardBase/Wizard/WizardSaintBasic/WizardSaintSelfRangeDDMagic/WizardSaintSelfRangeDDMagic.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WizardBase.Wizard.WizardSaintBasic.WizardSaintSelfRangeDDMagic;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WizardBase.Wizard.WizardSaintBasic.WizardSaintBasic;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WizardSaintSelfRangeDDMagic extends WizardSaintBasic
+{
+	public WizardSaintSelfRangeDDMagic()
+	{
+		super(&quot;ai/individual/Monster/WizardBase/Wizard/WizardSaintBasic/WizardSaintSelfRangeDDMagic&quot;);
+	}
+	
+	public WizardSaintSelfRangeDDMagic(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21650
+	};
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		final Party party0 = attacker.getParty();
+		final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+		
+		if ((party0 != null || attacker != topDesireTarget) &amp;&amp; npc.distance2D(attacker) &lt; 40 &amp;&amp; Rnd.get(100) &lt; 33)
+		{
+			final L2Skill wSelfRangeDDMagic = getNpcSkillByType(npc, NpcSkillType.W_SELF_RANGE_DD_MAGIC);
+			if (npc.getCast().meetsHpMpConditions(npc, wSelfRangeDDMagic))
+				npc.getAI().addCastDesire(npc, wSelfRangeDDMagic, 1000000, false);
+			else
+			{
+				npc._i_ai0 = 1;
+				
+				npc.getAI().addAttackDesire(attacker, 1000);
+			}
+		}
+		
+		super.onAttacked(npc, attacker, damage, skill);
+		
+		if (attacker instanceof Playable)
+		{
+			if (npc._i_ai0 == 0)
+			{
+				if (npc.distance2D(attacker) &gt; 100 &amp;&amp; Rnd.get(100) &lt; 80 &amp;&amp; (!npc.getAI().getHateList().isEmpty() || Rnd.get(100) &lt; 2))
+				{
+					final L2Skill wMiddleRangeDDMagic = getNpcSkillByType(npc, NpcSkillType.W_MIDDLE_RANGE_DD_MAGIC);
+					if (npc.getCast().meetsHpMpConditions(attacker, wMiddleRangeDDMagic))
+						npc.getAI().addCastDesire(attacker, wMiddleRangeDDMagic, 1000000, false);
+					else
+					{
+						npc._i_ai0 = 1;
+						
+						npc.getAI().addAttackDesire(attacker, 1000);
+					}
+				}
+			}
+			else
+			{
+				double f0 = getHateRatio(npc, attacker);
+				f0 = (((1.0 * damage) / (npc.getStatus().getLevel() + 7)) + ((f0 / 100) * ((1.0 * damage) / (npc.getStatus().getLevel() + 7))));
+				npc.getAI().addAttackDesire(attacker, f0 * 100);
+			}
+		}
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onMoveToFinished(Npc npc, int x, int y, int z)
+	{
+		final Creature mostHatedHI = npc.getAI().getHateList().getMostHatedCreature();
+		if (mostHatedHI != null)
+		{
+			final L2Skill debuff = getNpcSkillByType(npc, NpcSkillType.DEBUFF);
+			if (Rnd.get(100) &lt; 33 &amp;&amp; getAbnormalLevel(mostHatedHI, debuff) &lt;= 0)
+			{
+				if (npc.getCast().meetsHpMpConditions(mostHatedHI, debuff))
+					npc.getAI().addCastDesire(mostHatedHI, debuff, 1000000);
+				else
+				{
+					npc._i_ai0 = 1;
+					
+					npc.getAI().addAttackDesire(mostHatedHI, 1000);
+				}
+			}
+			
+			if (Rnd.get(100) &lt; 33 &amp;&amp; npc.distance2D(mostHatedHI) &lt; 40)
+			{
+				final L2Skill wShortRangeDDMagic = getNpcSkillByType(npc, NpcSkillType.W_SHORT_RANGE_DD_MAGIC);
+				if (npc.getCast().meetsHpMpConditions(mostHatedHI, wShortRangeDDMagic))
+					npc.getAI().addCastDesire(mostHatedHI, wShortRangeDDMagic, 1000000);
+				else
+				{
+					npc._i_ai0 = 1;
+					
+					npc.getAI().addAttackDesire(mostHatedHI, 1000);
+				}
+			}
+			else
+			{
+				final L2Skill wMiddleRangeDDMagic = getNpcSkillByType(npc, NpcSkillType.W_MIDDLE_RANGE_DD_MAGIC);
+				if (npc.getCast().meetsHpMpConditions(mostHatedHI, wMiddleRangeDDMagic))
+					npc.getAI().addCastDesire(mostHatedHI, wMiddleRangeDDMagic, 1000000, false);
+				else
+				{
+					npc._i_ai0 = 1;
+					
+					npc.getAI().addAttackDesire(mostHatedHI, 1000);
+				}
+			}
+		}
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		final Creature mostHatedHI = npc.getAI().getHateList().getMostHatedCreature();
+		if (mostHatedHI != null)
+		{
+			if (npc._i_ai0 == 0)
+			{
+				final L2Skill debuff = getNpcSkillByType(npc, NpcSkillType.DEBUFF);
+				
+				if (npc.distance2D(mostHatedHI) &lt; 100)
+					npc.getAI().addFleeDesire(mostHatedHI, Config.MAX_DRIFT_RANGE, 1000000);
+				else if (Rnd.get(100) &lt; 33 &amp;&amp; getAbnormalLevel(mostHatedHI, debuff) &lt;= 0)
+				{
+					if (npc.getCast().meetsHpMpConditions(mostHatedHI, debuff))
+						npc.getAI().addCastDesire(mostHatedHI, debuff, 1000000);
+					else
+					{
+						npc._i_ai0 = 1;
+						
+						npc.getAI().addAttackDesire(mostHatedHI, 1000);
+					}
+				}
+				
+				if (Rnd.get(100) &lt; 33 &amp;&amp; npc.distance2D(mostHatedHI) &lt; 40)
+				{
+					final L2Skill wShortRangeDDMagic = getNpcSkillByType(npc, NpcSkillType.W_SHORT_RANGE_DD_MAGIC);
+					if (npc.getCast().meetsHpMpConditions(mostHatedHI, wShortRangeDDMagic))
+						npc.getAI().addCastDesire(mostHatedHI, wShortRangeDDMagic, 1000000, false);
+					else
+					{
+						npc._i_ai0 = 1;
+						
+						npc.getAI().addAttackDesire(mostHatedHI, 1000);
+					}
+				}
+				else
+				{
+					final L2Skill wMiddleRangeDDMagic = getNpcSkillByType(npc, NpcSkillType.W_MIDDLE_RANGE_DD_MAGIC);
+					if (npc.getCast().meetsHpMpConditions(mostHatedHI, wMiddleRangeDDMagic))
+						npc.getAI().addCastDesire(mostHatedHI, wMiddleRangeDDMagic, 1000000, false);
+					else
+					{
+						npc._i_ai0 = 1;
+						
+						npc.getAI().addAttackDesire(mostHatedHI, 1000);
+					}
+				}
+			}
+			else
+				npc.getAI().addAttackDesire(mostHatedHI, 1000);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/teleport/GatekeeperSpirit.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/teleport/GatekeeperSpirit.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.teleport;
+
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+/**
+ * Spawn Gatekeepers at Lilith/Anakim deaths (after a 10sec delay).&lt;BR&gt;
+ * Despawn them after 15 minutes.
+ */
+public class GatekeeperSpirit extends Quest
+{
+	// NPCs
+	private static final int ENTER_GK = 31111;
+	private static final int EXIT_GK = 31112;
+	
+	// Raid Bosses
+	private static final int LILITH = 25283;
+	private static final int ANAKIM = 25286;
+	
+	public GatekeeperSpirit()
+	{
+		super(-1, &quot;teleport&quot;);
+		
+		addFirstTalkId(ENTER_GK);
+		addTalkId(ENTER_GK);
+		
+		addMyDying(LILITH, ANAKIM);
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		final CabalType playerCabal = SevenSignsManager.getInstance().getPlayerCabal(player.getObjectId());
+		final CabalType sealAvariceOwner = SevenSignsManager.getInstance().getSealOwner(SealType.AVARICE);
+		final CabalType winningCabal = SevenSignsManager.getInstance().getWinningCabal();
+		
+		if (playerCabal == sealAvariceOwner &amp;&amp; playerCabal == winningCabal)
+		{
+			switch (sealAvariceOwner)
+			{
+				case DAWN:
+					return &quot;dawn.htm&quot;;
+				
+				case DUSK:
+					return &quot;dusk.htm&quot;;
+			}
+		}
+		
+		npc.showChatWindow(player);
+		return null;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;lilith_exit&quot;))
+			addSpawn(EXIT_GK, 184446, -10112, -5488, 0, false, 900000, false);
+		else if (name.equalsIgnoreCase(&quot;anakim_exit&quot;))
+			addSpawn(EXIT_GK, 184466, -13106, -5488, 0, false, 900000, false);
+		
+		return null;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		switch (npc.getNpcId())
+		{
+			case LILITH:
+				startQuestTimer(&quot;lilith_exit&quot;, null, null, 10000);
+				break;
+			
+			case ANAKIM:
+				startQuestTimer(&quot;anakim_exit&quot;, null, null, 10000);
+				break;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

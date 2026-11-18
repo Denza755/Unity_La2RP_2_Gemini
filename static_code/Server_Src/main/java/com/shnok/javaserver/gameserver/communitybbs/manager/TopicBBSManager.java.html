@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/TopicBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/TopicBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.communitybbs.CommunityBoard;
+import com.shnok.javaserver.gameserver.communitybbs.model.Forum;
+import com.shnok.javaserver.gameserver.communitybbs.model.Topic;
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.enums.bbs.ForumType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+public class TopicBBSManager extends BaseBBSManager
+{
+	protected TopicBBSManager()
+	{
+	}
+	
+	@Override
+	public void parseWrite(String ar1, String ar2, String ar3, String ar4, String ar5, Player player)
+	{
+		if (ar1.equals(&quot;crea&quot;))
+		{
+			final Forum forum = CommunityBoard.getInstance().getForumByID(Integer.parseInt(ar2));
+			if (forum == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum named &#x27;&quot; + ar2 + &quot;&#x27; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			forum.addTopic(new Topic(forum, ar5, player.getName(), player.getObjectId(), ar4));
+			
+			parseCmd(&quot;_bbsmemo&quot;, player);
+		}
+		else if (ar1.equals(&quot;del&quot;))
+		{
+			final Forum forum = CommunityBoard.getInstance().getForumByID(Integer.parseInt(ar2));
+			if (forum == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum named &#x27;&quot; + ar2 + &quot;&#x27; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			final Topic topic = forum.getTopic(Integer.parseInt(ar3));
+			if (topic == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The topic named &#x27;&quot; + ar3 + &quot;&#x27; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			topic.deleteMe(forum);
+			
+			parseCmd(&quot;_bbsmemo&quot;, player);
+		}
+		else
+			super.parseWrite(ar1, ar2, ar3, ar4, ar5, player);
+	}
+	
+	@Override
+	public void parseCmd(String command, Player player)
+	{
+		if (command.equals(&quot;_bbsmemo&quot;))
+		{
+			final Forum forum = player.getMemo();
+			if (forum != null)
+				showTopics(forum, player, 1, forum.getId());
+		}
+		else if (command.startsWith(&quot;_bbstopics;read&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			st.nextToken();
+			
+			final int forumId = Integer.parseInt(st.nextToken());
+			final String index = (st.hasMoreTokens()) ? st.nextToken() : null;
+			final int ind = (index == null) ? 1 : Integer.parseInt(index);
+			
+			showTopics(CommunityBoard.getInstance().getForumByID(forumId), player, ind, forumId);
+		}
+		else if (command.startsWith(&quot;_bbstopics;crea&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			st.nextToken();
+			
+			final int forumId = Integer.parseInt(st.nextToken());
+			
+			showNewTopic(CommunityBoard.getInstance().getForumByID(forumId), player, forumId);
+		}
+		else if (command.startsWith(&quot;_bbstopics;del&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			st.nextToken();
+			
+			final int forumId = Integer.parseInt(st.nextToken());
+			final int topicId = Integer.parseInt(st.nextToken());
+			
+			final Forum forum = CommunityBoard.getInstance().getForumByID(forumId);
+			if (forum == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum #&quot; + forumId + &quot; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			final Topic topic = forum.getTopic(topicId);
+			if (topic == null)
+			{
+				separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The topic #&quot; + topicId + &quot; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+				return;
+			}
+			
+			topic.deleteMe(forum);
+			
+			parseCmd(&quot;_bbsmemo&quot;, player);
+		}
+		else
+			super.parseCmd(command, player);
+	}
+	
+	private static void showNewTopic(Forum forum, Player player, int forumId)
+	{
+		if (forum == null)
+		{
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum #&quot; + forumId + &quot; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+			return;
+		}
+		
+		if (forum.getType() == ForumType.MEMO)
+			showMemoNewTopics(forum, player);
+		else
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum #&quot; + forumId + &quot; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+	}
+	
+	private static void showMemoNewTopics(Forum forum, Player player)
+	{
+		final String html = &quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;table border=0 width=610&gt;&lt;tr&gt;&lt;td width=10&gt;&lt;/td&gt;&lt;td width=600 align=left&gt;&lt;a action=\&quot;bypass _bbshome\&quot;&gt;HOME&lt;/a&gt;&amp;nbsp;&gt;&amp;nbsp;&lt;a action=\&quot;bypass _bbsmemo\&quot;&gt;Memo Form&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.squareblank\&quot; width=\&quot;1\&quot; height=\&quot;10\&quot;&gt;&lt;center&gt;&lt;table border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td width=610&gt;&lt;img src=\&quot;sek.cbui355\&quot; width=\&quot;610\&quot; height=\&quot;1\&quot;&gt;&lt;br1&gt;&lt;img src=\&quot;sek.cbui355\&quot; width=\&quot;610\&quot; height=\&quot;1\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table fixwidth=610 border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=20&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=60 height=29&gt;&amp;$413;&lt;/td&gt;&lt;td FIXWIDTH=540&gt;&lt;edit var = \&quot;Title\&quot; width=540 height=13&gt;&lt;/td&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table fixwidth=610 border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=60 height=29 valign=top&gt;&amp;$427;&lt;/td&gt;&lt;td align=center FIXWIDTH=540&gt;&lt;MultiEdit var =\&quot;Content\&quot; width=535 height=313&gt;&lt;/td&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table fixwidth=610 border=0 cellspacing=0 cellpadding=0&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=60 height=29&gt;&amp;nbsp;&lt;/td&gt;&lt;td align=center FIXWIDTH=70&gt;&lt;button value=\&quot;&amp;$140;\&quot; action=\&quot;Write Topic crea &quot; + forum.getId() + &quot; Title Content Title\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot; &gt;&lt;/td&gt;&lt;td align=center FIXWIDTH=70&gt;&lt;button value = \&quot;&amp;$141;\&quot; action=\&quot;bypass _bbsmemo\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt; &lt;/td&gt;&lt;td align=center FIXWIDTH=400&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=1&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;;
+		send1001(html, player);
+		send1002(player);
+	}
+	
+	private static void showTopics(Forum forum, Player player, int index, int forumId)
+	{
+		if (forum == null)
+		{
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum #&quot; + forumId + &quot; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+			return;
+		}
+		
+		if (forum.getType() == ForumType.MEMO)
+			showMemoTopics(forum, player, index);
+		else
+			separateAndSend(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;center&gt;The forum #&quot; + forumId + &quot; doesn&#x27;t exist.&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;, player);
+	}
+	
+	private static void showMemoTopics(Forum forum, Player player, int index)
+	{
+		final StringBuilder sb = new StringBuilder(&quot;&lt;html&gt;&lt;body&gt;&lt;br&gt;&lt;br&gt;&lt;table border=0 width=610&gt;&lt;tr&gt;&lt;td width=10&gt;&lt;/td&gt;&lt;td width=600 align=left&gt;&lt;a action=\&quot;bypass _bbshome\&quot;&gt;HOME&lt;/a&gt;&amp;nbsp;&gt;&amp;nbsp;&lt;a action=\&quot;bypass _bbsmemo\&quot;&gt;Memo Form&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.squareblank\&quot; width=\&quot;1\&quot; height=\&quot;10\&quot;&gt;&lt;center&gt;&lt;table border=0 cellspacing=0 cellpadding=2 bgcolor=888888 width=610&gt;&lt;tr&gt;&lt;td FIXWIDTH=5&gt;&lt;/td&gt;&lt;td FIXWIDTH=415 align=center&gt;&amp;$413;&lt;/td&gt;&lt;td FIXWIDTH=120 align=center&gt;&lt;/td&gt;&lt;td FIXWIDTH=70 align=center&gt;&amp;$418;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;);
+		
+		final DateFormat dateFormat = DateFormat.getInstance();
+		for (int i = 0, j = forum.getCurrentTopicId() + 1; i &lt; 12 * index; j--)
+		{
+			if (j &lt; 0)
+				break;
+			
+			final Topic topic = forum.getTopic(j);
+			if (topic != null)
+			{
+				if (i++ &gt;= 12 * (index - 1))
+					StringUtil.append(sb, &quot;&lt;table border=0 cellspacing=0 cellpadding=5 WIDTH=610&gt;&lt;tr&gt;&lt;td FIXWIDTH=5&gt;&lt;/td&gt;&lt;td FIXWIDTH=415&gt;&lt;a action=\&quot;bypass _bbsposts;read;&quot;, forum.getId(), &quot;;&quot;, topic.getId(), &quot;\&quot;&gt;&quot;, topic.getName(), &quot;&lt;/a&gt;&lt;/td&gt;&lt;td FIXWIDTH=120 align=center&gt;&lt;/td&gt;&lt;td FIXWIDTH=70 align=center&gt;&quot;, dateFormat.format(new Date(topic.getDate())), &quot;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.Squaregray\&quot; width=\&quot;610\&quot; height=\&quot;1\&quot;&gt;&quot;);
+			}
+		}
+		
+		sb.append(&quot;&lt;br&gt;&lt;table width=610 cellspace=0 cellpadding=0&gt;&lt;tr&gt;&lt;td width=50&gt;&lt;button value=\&quot;&amp;$422;\&quot; action=\&quot;bypass _bbsmemo\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt;&lt;/td&gt;&lt;td width=510 align=center&gt;&lt;table border=0&gt;&lt;tr&gt;&quot;);
+		
+		if (index == 1)
+			sb.append(&quot;&lt;td&gt;&lt;button action=\&quot;\&quot; back=\&quot;l2ui_ch3.prev1_down\&quot; fore=\&quot;l2ui_ch3.prev1\&quot; width=16 height=16 &gt;&lt;/td&gt;&quot;);
+		else
+			StringUtil.append(sb, &quot;&lt;td&gt;&lt;button action=\&quot;bypass _bbstopics;read;&quot;, forum.getId(), &quot;;&quot;, index - 1, &quot;\&quot; back=\&quot;l2ui_ch3.prev1_down\&quot; fore=\&quot;l2ui_ch3.prev1\&quot; width=16 height=16 &gt;&lt;/td&gt;&quot;);
+		
+		int pageNumber;
+		pageNumber = forum.getTopicSize() / 8;
+		if (pageNumber * 8 != ClanTable.getInstance().getClans().size())
+			pageNumber++;
+		
+		for (int i = 1; i &lt;= pageNumber; i++)
+		{
+			if (i == index)
+				StringUtil.append(sb, &quot;&lt;td&gt; &quot;, i, &quot; &lt;/td&gt;&quot;);
+			else
+				StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbstopics;read;&quot;, forum.getId(), &quot;;&quot;, i, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+		}
+		
+		if (index == pageNumber)
+			sb.append(&quot;&lt;td&gt;&lt;button action=\&quot;\&quot; back=\&quot;l2ui_ch3.next1_down\&quot; fore=\&quot;l2ui_ch3.next1\&quot; width=16 height=16 &gt;&lt;/td&gt;&quot;);
+		else
+			StringUtil.append(sb, &quot;&lt;td&gt;&lt;button action=\&quot;bypass _bbstopics;read;&quot;, forum.getId(), &quot;;&quot;, index + 1, &quot;\&quot; back=\&quot;l2ui_ch3.next1_down\&quot; fore=\&quot;l2ui_ch3.next1\&quot; width=16 height=16 &gt;&lt;/td&gt;&quot;);
+		
+		StringUtil.append(sb, &quot;&lt;/tr&gt;&lt;/table&gt;&lt;/td&gt;&lt;td align=right&gt;&lt;button value = \&quot;&amp;$421;\&quot; action=\&quot;bypass _bbstopics;crea;&quot;, forum.getId(), &quot;\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot; &gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;img src=\&quot;l2ui.mini_logo\&quot; width=5 height=10&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td align=center&gt;&lt;table border=0&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;edit var = \&quot;Search\&quot; width=130 height=11&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=\&quot;&amp;$420;\&quot; action=\&quot;Write 5 -2 0 Search _ _\&quot; back=\&quot;l2ui_ch3.smallbutton2_down\&quot; width=65 height=20 fore=\&quot;l2ui_ch3.smallbutton2\&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;/center&gt;&lt;/body&gt;&lt;/html&gt;&quot;);
+		separateAndSend(sb.toString(), player);
+	}
+	
+	public static TopicBBSManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final TopicBBSManager INSTANCE = new TopicBBSManager();
+	}
+}</pre>
+            
+</body>
+</html>

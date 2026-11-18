@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/geometry/Rectangle.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/geometry/Rectangle.java</h1>
+            <pre>package com.shnok.javaserver.commons.geometry;
+
+import java.awt.Color;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.location.Point2D;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExServerPrimitive;
+
+public class Rectangle extends AShape
+{
+	// rectangle origin coordinates
+	protected final int _x;
+	protected final int _y;
+	
+	// rectangle width and height
+	protected final int _w;
+	protected final int _h;
+	
+	/**
+	 * Rectangle constructor.
+	 * @param x : Bottom left X coordinate.
+	 * @param y : Bottom left Y coordinate.
+	 * @param w : Rectangle width.
+	 * @param h : Rectangle height.
+	 */
+	public Rectangle(int x, int y, int w, int h)
+	{
+		_x = x;
+		_y = y;
+		
+		_w = w;
+		_h = h;
+		
+		_center = new Point2D(x + (w / 2), y + (h / 2));
+	}
+	
+	@Override
+	public final long getSize()
+	{
+		return (long) _w * _h;
+	}
+	
+	@Override
+	public double getArea()
+	{
+		return _w * _h;
+	}
+	
+	@Override
+	public double getVolume()
+	{
+		return 0;
+	}
+	
+	@Override
+	public boolean isInside(int x, int y)
+	{
+		int d = x - _x;
+		if (d &lt; 0 || d &gt; _w)
+			return false;
+		
+		d = y - _y;
+		if (d &lt; 0 || d &gt; _h)
+			return false;
+		
+		return true;
+	}
+	
+	@Override
+	public boolean isInside(int x, int y, int z)
+	{
+		int d = x - _x;
+		if (d &lt; 0 || d &gt; _w)
+			return false;
+		
+		d = y - _y;
+		if (d &lt; 0 || d &gt; _h)
+			return false;
+		
+		return true;
+	}
+	
+	@Override
+	public Location getRandomLocation()
+	{
+		// calculate coordinates and return
+		return new Location(_x + Rnd.get(_w), _y + Rnd.get(_h), 0);
+	}
+	
+	@Override
+	public void visualize(String info, ExServerPrimitive debug, int z)
+	{
+		final int x2 = _x + _w;
+		final int y2 = _y + _h;
+		z -= 32;
+		
+		debug.addLine(info, Color.YELLOW, true, _x, _y, z, _x, y2, z);
+		debug.addLine(info, Color.YELLOW, true, _x, y2, z, x2, y2, z);
+		debug.addLine(info, Color.YELLOW, true, x2, y2, z, x2, _y, z);
+		debug.addLine(info, Color.YELLOW, true, x2, _y, z, _x, _y, z);
+	}
+}</pre>
+            
+</body>
+</html>

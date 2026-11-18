@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/benom/Benom.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/benom/Benom.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.benom;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.RaidBoss.RaidBossStandard;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class Benom extends RaidBossStandard
+{
+	// Important : the heading is used as offset.
+	private static final SpawnLocation[] TARGET_TELEPORTS =
+	{
+		new SpawnLocation(12860, -49158, -976, 650),
+		new SpawnLocation(14878, -51339, 1024, 100),
+		new SpawnLocation(15674, -49970, 864, 100),
+		new SpawnLocation(15696, -48326, 864, 100),
+		new SpawnLocation(14873, -46956, 1024, 100),
+		new SpawnLocation(12157, -49135, -1088, 650),
+		new SpawnLocation(12875, -46392, -288, 200),
+		new SpawnLocation(14087, -46706, -288, 200),
+		new SpawnLocation(14086, -51593, -288, 200),
+		new SpawnLocation(12864, -51898, -288, 200),
+		new SpawnLocation(15538, -49153, -1056, 200),
+		new SpawnLocation(17001, -49149, -1064, 650)
+	};
+	
+	private final List&lt;Creature&gt; _targets = new ArrayList&lt;&gt;();
+	
+	public Benom()
+	{
+		super(&quot;ai/boss/benom&quot;);
+	}
+	
+	public Benom(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		29054 // benom
+	};
+	
+	@Override
+	public void onNoDesire(Npc npc)
+	{
+		// Do nothing
+	}
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc.broadcastNpcShout(NpcStringId.ID_1010623);
+		
+		_targets.clear();
+		
+		npc._i_quest0 = 0;
+		npc._i_quest1 = 0;
+		
+		npc._i_ai0 = 0;
+		npc._i_ai1 = npc.getX();
+		npc._i_ai2 = npc.getY();
+		npc._i_ai3 = npc.getZ();
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;1001&quot;))
+		{
+			npc._i_ai1 = npc.getX();
+			npc._i_ai2 = npc.getY();
+			npc._i_ai3 = npc.getZ();
+		}
+		else if (name.equalsIgnoreCase(&quot;1002&quot;))
+		{
+			if (!npc.isInMyTerritory() &amp;&amp; Rnd.get(2) &lt; 1 &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK)
+			{
+				npc.getAI().getAggroList().cleanAllHate();
+				npc.teleportTo(11563, -49152, -537, 0);
+				npc.getAI().addMoveToDesire(new Location(11563, -49152, -537), 1000000);
+			}
+			
+			if (Rnd.get(5) &lt; 1)
+				npc.getAI().getAggroList().randomizeAttack();
+			
+			startQuestTimer(&quot;1002&quot;, npc, null, 120000);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (attacker instanceof Playable)
+			npc.getAI().addAttackDesire(attacker, (((((double) damage) / npc.getStatus().getMaxHp()) / 0.05) * 2000));
+		
+		if (npc._i_ai0 == 1)
+		{
+			if (Rnd.get((25 * 25)) &lt; 1)
+				npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_CANCEL_A1), 1000000, false);
+			
+			if (npc.getStatus().getHpRatio() &lt; 0.333 &amp;&amp; Rnd.get((25 * 25)) &lt; 1)
+				npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_CANCEL_A2), 1000000, false);
+		}
+		
+		if (npc.distance2D(attacker) &gt; 300 &amp;&amp; Rnd.get((25 * 10)) &lt; 1)
+			npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+		
+		if (Rnd.get((25 * 10)) &lt; 1)
+			npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.PHYSICAL_SPECIAL), 1000000);
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (!(creature instanceof Playable))
+			return;
+		
+		if (npc._i_quest1 == 1)
+			npc.getAI().addAttackDesire(creature, 200);
+		
+		if (creature instanceof Player &amp;&amp; npc._i_ai0 == 1 &amp;&amp; npc._i_quest0 &lt; 10 &amp;&amp; Rnd.get(3) &lt; 1 &amp;&amp; !_targets.contains(creature))
+		{
+			_targets.add(creature);
+			
+			npc._i_quest0++;
+		}
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (skill.getId() == 4222 &amp;&amp; npc._i_ai0 == 1)
+		{
+			npc.teleportTo(npc._i_ai1, npc._i_ai2, npc._i_ai3, 0);
+			npc.getAI().getAggroList().cleanAllHate();
+		}
+		else if (skill == getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_CANCEL_A1))
+		{
+			final SpawnLocation loc = Rnd.get(TARGET_TELEPORTS);
+			creature.teleportTo(loc, loc.getHeading());
+			
+			npc.getAI().getAggroList().stopHate(creature);
+		}
+		else if (skill == getNpcSkillByType(npc, NpcSkillType.SELF_RANGE_CANCEL_A2))
+		{
+			SpawnLocation loc = Rnd.get(TARGET_TELEPORTS);
+			creature.teleportTo(loc, loc.getHeading());
+			
+			npc.getAI().getAggroList().stopHate(creature);
+			
+			if (npc._i_quest0 &gt; 0)
+			{
+				for (Creature c : _targets)
+				{
+					if (c != creature &amp;&amp; creature.isIn3DRadius(c, 250))
+					{
+						loc = Rnd.get(TARGET_TELEPORTS);
+						creature.teleportTo(loc, loc.getHeading());
+						
+						npc.getAI().getAggroList().stopHate(c);
+					}
+				}
+			}
+			
+			npc._i_quest0 = 0;
+			
+			_targets.clear();
+			
+			npc.lookNeighbor();
+		}
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (eventId == 10100)
+		{
+			npc.teleportTo(11563, -49152, -537, 0);
+			
+			npc._i_ai0 = arg1;
+			npc._i_quest1 = 1;
+			
+			startQuestTimer(&quot;1002&quot;, npc, null, 120000);
+			startQuestTimer(&quot;1001&quot;, npc, null, 5000);
+		}
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		_targets.clear();
+		
+		npc.broadcastNpcShout(NpcStringId.ID_1010626);
+		
+		if (npc._i_ai0 == 0)
+			createOnePrivateEx(npc, 29055, 12589, -49044, -3008, 0, 0, true);
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/SkillgrpTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/SkillgrpTable.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Runtime.CompilerServices;
+using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
+
+public class SkillgrpTable
+{
+    private static SkillgrpTable _instance;
+
+    public static SkillgrpTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new SkillgrpTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    private Dictionary&lt;int, Dictionary&lt;int, Skillgrp&gt;&gt; _skills;
+
+    public void Initialize()
+    {
+        _skills = new Dictionary&lt;int, Dictionary&lt;int, Skillgrp&gt;&gt;();
+        ReadActions();
+    }
+
+    public void ClearTable()
+    {
+        _skills.Clear();
+        _skills = null;
+        _instance = null;
+    }
+
+    public Skillgrp GetSkill(int id, int level)
+    {
+        _skills.TryGetValue(id, out Dictionary&lt;int, Skillgrp&gt; skillLevel);
+
+        if (skillLevel == null) return null;
+
+        skillLevel.TryGetValue(level, out Skillgrp skillgrp);
+
+        return skillgrp;
+    }
+
+    public Dictionary&lt;int, Skillgrp&gt; GetSkillgrp(int id)
+    {
+        _skills.TryGetValue(id, out Dictionary&lt;int, Skillgrp&gt; skillLevel);
+
+        return skillLevel;
+    }
+
+    public Dictionary&lt;int, Dictionary&lt;int, Skillgrp&gt;&gt; Skills { get { return _skills; } }
+
+    private void ReadActions()
+    {
+
+        string dataPath = Path.Combine(Application.streamingAssetsPath, &quot;Data/Meta/Skillgrp_Classic.txt&quot;);
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return;
+        }
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                Skillgrp skillGrp = new Skillgrp();
+
+                string[] keyvals = line.Split(&#x27;\t&#x27;);
+
+                for (int i = 0; i &lt; keyvals.Length; i++)
+                {
+                    if (!keyvals[i].Contains(&quot;=&quot;))
+                    {
+                        continue;
+                    }
+
+                    string[] keyval = keyvals[i].Split(&quot;=&quot;);
+                    string key = keyval[0];
+                    string value = keyval[1];
+
+                    switch (key)
+                    {
+                        case &quot;skill_id&quot;:
+                            skillGrp.Id = ParseIntSafe(value);
+                            break;
+                        case &quot;skill_level&quot;:
+                            skillGrp.Level = ParseIntSafe(value);
+                            break;
+                        case &quot;skill_sublevel&quot;:
+                            skillGrp.SubLevel = ParseIntSafe(value);
+                            break;
+                        case &quot;icon_type&quot;:
+                            skillGrp.IconType = Enum.TryParse&lt;SkillType&gt;(value, true, out var it) ? it : SkillType.Physical;
+                            break;
+                        case &quot;MagicType&quot;:
+                            skillGrp.MagicType = ParseIntSafe(value);
+                            break;
+                        case &quot;operate_type&quot;:
+                            skillGrp.OperateType = (SkillOperateType)ParseIntSafe(value);
+                            break;
+                        case &quot;mp_consume&quot;:
+                            skillGrp.MpConsume = ParseIntSafe(value);
+                            break;
+                        case &quot;cast_range&quot;:
+                            skillGrp.CastRange = ParseIntSafe(value);
+                            break;
+                        case &quot;cast_style&quot;:
+                            skillGrp.CastStyle = ParseIntSafe(value);
+                            break;
+                        case &quot;hit_time&quot;:
+                            skillGrp.HitTime = float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var ht) ? ht : 0f;
+                            break;
+                        case &quot;cool_time&quot;:
+                            skillGrp.CoolTime = float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var ct) ? ct : 0f;
+                            break;
+                        case &quot;reuse_delay&quot;:
+                            skillGrp.ReuseDelay = float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var rd) ? rd : 0f;
+                            break;
+                        case &quot;effect_point&quot;:
+                            skillGrp.EffectPoint = ParseIntSafe(value);
+                            break;
+                        case &quot;is_magic&quot;:
+                            skillGrp.IsMagic = Enum.TryParse&lt;SkillMagicType&gt;(value, true, out var im) ? im : SkillMagicType.None;
+                            break;
+                        case &quot;origin_skill&quot;:
+                            skillGrp.IsDouble = ParseIntSafe(value);
+                            break;
+                        case &quot;animation&quot;:
+                            string val = DatUtils.CleanupString(value).Replace(&quot;}&quot;, &quot;&quot;).Replace(&quot;{&quot;, &quot;&quot;);
+                            switch (val.ToUpper())
+                            {
+                                case &quot;A&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastShort;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicNoTarget;
+                                    break;
+                                case &quot;B&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastShort;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicShot;
+                                    break;
+                                case &quot;C&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastShort;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicThrow;
+                                    break;
+                                case &quot;D&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastMid;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicNoTarget;
+                                    break;
+                                case &quot;E&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastMid;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicShot;
+                                    break;
+                                case &quot;F&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastMid;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicThrow;
+                                    break;
+                                case &quot;G&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastLong;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicNoTarget;
+                                    break;
+                                case &quot;K&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastLong;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicShot;
+                                    break;
+                                case &quot;L&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastLong;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicThrow;
+                                    break;
+                                case &quot;I&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.NoCast;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicShot;
+                                    break;
+                                case &quot;J&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.NoCast;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicNoTarget;
+                                    break;
+                                case &quot;S&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.SpAtk01;
+                                    break;
+                                case &quot;T&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.SpAtk02;
+                                    break;
+                                case &quot;U&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.Spatk03;
+                                    break;
+                                case &quot;V&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.SpAtk04;
+                                    break;
+                                case &quot;W&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.Spatk03;
+                                    break;
+                                case &quot;Y&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.SpAtk02;
+                                    break;
+                                case &quot;X&quot;:
+                                    skillGrp.CastAnimation = SkillCastAnimation.WarriorBuff01;
+                                    break;
+                                default:
+                                    if (val.StartsWith(&quot;MIX&quot;, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        skillGrp.CastAnimation = SkillCastAnimation.SpAtk01;
+                                    }
+                                    else
+                                    {
+                                        skillGrp.CastAnimation = SkillCastAnimation.None;
+                                    }
+                                    break;
+                            }
+                            break;
+                        case &quot;skill_visual_effect&quot;:
+                            string visualEffect = DatUtils.CleanupString(value); ;
+                            if (int.TryParse(visualEffect, out int effectId))
+                            {
+                                skillGrp.SkillVisualEffect = effectId;
+                            }
+                            else
+                            {
+                                skillGrp.SkillVisualEffect = -1;
+                            }
+                            break;
+                        case &quot;icon&quot;:
+                            skillGrp.Icon = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;icon_panel&quot;:
+                            skillGrp.IconPanel = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;debuff&quot;:
+                            skillGrp.Debuff = ParseIntSafe(value);
+                            break;
+                        case &quot;resist_cast&quot;:
+                            skillGrp.ResistCast = ParseIntSafe(value);
+                            break;
+                        case &quot;enchant_skill_level&quot;:
+                            skillGrp.EnchantSkillLevel = ParseIntSafe(value);
+                            break;
+                        case &quot;enchant_icon&quot;:
+                            skillGrp.EnchantIcon = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;hp_consume&quot;:
+                            skillGrp.HpConsume = ParseIntSafe(value);
+                            break;
+                        case &quot;rumble_self&quot;:
+                            skillGrp.RumbleSelf = ParseIntSafe(value);
+                            break;
+                        case &quot;rumble_target&quot;:
+                            skillGrp.RumbleTarget = ParseIntSafe(value);
+                            break;
+                    }
+                }
+
+                if (!SkillTable.Instance.ShouldLoadSkill(skillGrp.Id))
+                {
+                    continue;
+                }
+
+                TryAdd(skillGrp);
+            }
+
+            Debug.Log($&quot;Successfully imported {_skills.Count} skills(s)&quot;);
+        }
+
+    }
+
+    private void TryAdd(Skillgrp skillGrp)
+    {
+        if (_skills.ContainsKey(skillGrp.Id))
+        {
+            Dictionary&lt;int, Skillgrp&gt; dataGrp = _skills[skillGrp.Id];
+            dataGrp.TryAdd(skillGrp.Level, skillGrp);
+        }
+        else
+        {
+            Dictionary&lt;int, Skillgrp&gt; dataGrp = CreateDict();
+            AddDict(dataGrp, skillGrp);
+            _skills.TryAdd(skillGrp.Id, dataGrp);
+        }
+    }
+
+    private Dictionary&lt;int, Skillgrp&gt; CreateDict()
+    {
+        return new Dictionary&lt;int, Skillgrp&gt;();
+    }
+
+    private void AddDict(Dictionary&lt;int, Skillgrp&gt; dataGrp, Skillgrp skillGrp)
+    {
+        dataGrp.TryAdd(skillGrp.Level, skillGrp);
+    }
+
+    private static int ParseIntSafe(string value)
+    {
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intVal))
+            return intVal;
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float floatVal))
+            return (int)Math.Round(floatVal);
+        return 0;
+    }
+}
+</pre>
+            
+</body>
+</html>

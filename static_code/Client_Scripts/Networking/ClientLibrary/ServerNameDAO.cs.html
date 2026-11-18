@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/ServerNameDAO.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/ServerNameDAO.cs</h1>
+            <pre>using System.Collections.Generic;
+
+public class ServerNameDAO
+{
+    private static Dictionary&lt;int, string&gt; SERVERS = new Dictionary&lt;int, string&gt;();
+
+    public static void InitServerList() {
+        SERVERS[1] = &quot;Bartz&quot;;
+        SERVERS[2] = &quot;Sieghardt&quot;;
+        SERVERS[3] = &quot;Kain&quot;;
+        SERVERS[4] = &quot;Lionna&quot;;
+        SERVERS[5] = &quot;Erica&quot;;
+        SERVERS[6] = &quot;Gustin&quot;;
+        SERVERS[7] = &quot;Devianne&quot;;
+        SERVERS[8] = &quot;Hindemith&quot;;
+        SERVERS[9] = &quot;Teon (EURO)&quot;;
+        SERVERS[10] = &quot;Franz (EURO)&quot;;
+        SERVERS[11] = &quot;Luna (EURO)&quot;;
+        SERVERS[12] = &quot;Sayha&quot;;
+        SERVERS[13] = &quot;Aria&quot;;
+        SERVERS[14] = &quot;Phoenix&quot;;
+        SERVERS[15] = &quot;Chronos&quot;;
+        SERVERS[16] = &quot;Naia (EURO)&quot;;
+        SERVERS[17] = &quot;Elhwynna&quot;;
+        SERVERS[18] = &quot;Ellikia&quot;;
+        SERVERS[19] = &quot;Shikken&quot;;
+        SERVERS[20] = &quot;Scryde&quot;;
+        SERVERS[21] = &quot;Frikios&quot;;
+        SERVERS[22] = &quot;Ophylia&quot;;
+        SERVERS[23] = &quot;Shakdun&quot;;
+        SERVERS[24] = &quot;Tarziph&quot;;
+        SERVERS[25] = &quot;Aria&quot;;
+        SERVERS[26] = &quot;Esenn&quot;;
+        SERVERS[27] = &quot;Elcardia&quot;;
+        SERVERS[28] = &quot;Yiana&quot;;
+        SERVERS[29] = &quot;Seresin&quot;;
+        SERVERS[30] = &quot;Tarkai&quot;;
+        SERVERS[31] = &quot;Khadia&quot;;
+        SERVERS[32] = &quot;Roien&quot;;
+        SERVERS[33] = &quot;Kallint (Non-PvP)&quot;;
+        SERVERS[34] = &quot;Baium&quot;;
+        SERVERS[35] = &quot;Kamael&quot;;
+        SERVERS[36] = &quot;Beleth&quot;;
+        SERVERS[37] = &quot;Anakim&quot;;
+        SERVERS[38] = &quot;Lilith&quot;;
+        SERVERS[39] = &quot;Thifiel&quot;;
+        SERVERS[40] = &quot;Lithra&quot;;
+        SERVERS[41] = &quot;Lockirin&quot;;
+        SERVERS[42] = &quot;Kakai&quot;;
+        SERVERS[43] = &quot;Cadmus&quot;;
+        SERVERS[44] = &quot;Athebaldt&quot;;
+        SERVERS[45] = &quot;Blackbird&quot;;
+        SERVERS[46] = &quot;Ramsheart&quot;;
+        SERVERS[47] = &quot;Esthus&quot;;
+        SERVERS[48] = &quot;Vasper&quot;;
+        SERVERS[49] = &quot;Lancer&quot;;
+        SERVERS[50] = &quot;Ashton&quot;;
+        SERVERS[51] = &quot;Waytrel&quot;;
+        SERVERS[52] = &quot;Waltner&quot;;
+        SERVERS[53] = &quot;Tahnford&quot;;
+        SERVERS[54] = &quot;Hunter&quot;;
+        SERVERS[55] = &quot;Dewell&quot;;
+        SERVERS[56] = &quot;Rodemaye&quot;;
+        SERVERS[57] = &quot;Ken Rauhel&quot;;
+        SERVERS[58] = &quot;Ken Abigail&quot;;
+        SERVERS[59] = &quot;Ken Orwen&quot;;
+        SERVERS[60] = &quot;Van Holter&quot;;
+        SERVERS[61] = &quot;Desperion&quot;;
+        SERVERS[62] = &quot;Einhovant&quot;;
+        SERVERS[63] = &quot;Shunaiman&quot;;
+        SERVERS[64] = &quot;Faris&quot;;
+        SERVERS[65] = &quot;Tor&quot;;
+        SERVERS[66] = &quot;Carneiar&quot;;
+        SERVERS[67] = &quot;Dwyllios&quot;;
+        SERVERS[68] = &quot;Baium&quot;;
+        SERVERS[69] = &quot;Hallate&quot;;
+        SERVERS[70] = &quot;Zaken&quot;;
+        SERVERS[71] = &quot;Core&quot;;
+    }
+      
+
+    public static string GetServer(int id) {
+        if (SERVERS == null || SERVERS.Count == 0) {
+            InitServerList();
+        }
+
+        if(SERVERS.TryGetValue(id, out string value)) {
+            return value;
+        }
+
+        return &quot;Undefined&quot;;
+    }
+}
+</pre>
+            
+</body>
+</html>

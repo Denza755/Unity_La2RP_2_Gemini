@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Camera/LoginCameraManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Camera/LoginCameraManager.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class LoginCameraManager : MonoBehaviour
+{
+    private bool _initialized = false;
+    private Dictionary&lt;string, Camera&gt; cameras = new Dictionary&lt;string, Camera&gt;();
+
+    private Camera _activeCamera;
+
+    private static LoginCameraManager _instance;
+    public static LoginCameraManager Instance { get { return _instance; } }
+
+    void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+
+        if (!_initialized)
+        {
+            Initialize();
+        }
+    }
+
+    private void Initialize()
+    {
+        _initialized = true;
+
+        cameras.Add(&quot;Login&quot;, GameObject.Find(&quot;Login&quot;).GetComponent&lt;Camera&gt;());
+        cameras.Add(&quot;CharSelect&quot;, GameObject.Find(&quot;CharSelect&quot;).GetComponent&lt;Camera&gt;());
+        cameras.Add(SysStringTable.Instance.GetSysString(172).Name, GameObject.Find(&quot;DarkElf&quot;).GetComponent&lt;Camera&gt;());
+        cameras.Add(SysStringTable.Instance.GetSysString(173).Name, GameObject.Find(&quot;Orc&quot;).GetComponent&lt;Camera&gt;());
+        cameras.Add(SysStringTable.Instance.GetSysString(174).Name, GameObject.Find(&quot;Dwarf&quot;).GetComponent&lt;Camera&gt;());
+        cameras.Add(SysStringTable.Instance.GetSysString(171).Name, GameObject.Find(&quot;Elf&quot;).GetComponent&lt;Camera&gt;());
+        cameras.Add(SysStringTable.Instance.GetSysString(170).Name, GameObject.Find(&quot;Human&quot;).GetComponent&lt;Camera&gt;());
+
+        DisableCameras();
+
+        // GameManager.Instance.OnLoginCamerasInitialized();
+
+        // GameManager.Instance.NotifyEvent(GameEvent.LOADING_COMPLETE);
+    }
+
+    public Camera SelectClassCamera(string race, int charClass)
+    {
+        if (cameras.TryGetValue(race, out Camera camera))
+        {
+            if (charClass == 0)
+            {
+                return camera.transform.GetChild(0).GetComponent&lt;Camera&gt;();
+            }
+
+            return camera.transform.GetChild(1).GetComponent&lt;Camera&gt;();
+        }
+
+
+        return null;
+    }
+
+    public Camera SelectGenderCamera(string race, int charClass, int gender)
+    {
+        Camera classCamera = SelectClassCamera(race, charClass);
+        if (classCamera != null)
+        {
+            if (gender == 0)
+            {
+                return classCamera.transform.GetChild(0).GetComponent&lt;Camera&gt;();
+            }
+
+            return classCamera.transform.GetChild(1).GetComponent&lt;Camera&gt;();
+        }
+
+        return null;
+    }
+
+    public Camera SelectHeadCamera(string race, int charClass, int gender)
+    {
+        Camera genderCamera = SelectGenderCamera(race, charClass, gender);
+        if (genderCamera != null)
+        {
+            return genderCamera.transform.GetChild(0).GetComponent&lt;Camera&gt;();
+        }
+
+        return null;
+    }
+
+    public void SwitchCamera(Camera camera)
+    {
+        if (!_initialized)
+        {
+            Initialize();
+        }
+
+        DisableMainCamera();
+
+        camera.enabled = true;
+        _activeCamera = camera;
+
+        UpdateListenerPosition();
+    }
+
+    public void SwitchCamera(string camera)
+    {
+        if (!_initialized)
+        {
+            Initialize();
+        }
+
+        Debug.Log(&quot;Switch Camera: &quot; + camera);
+        DisableMainCamera();
+
+        if (cameras.TryGetValue(camera, out Camera obj))
+        {
+            Debug.Log(camera + &quot; camera enabled.&quot;);
+            obj.enabled = true;
+            _activeCamera = obj;
+
+            if (camera == &quot;CharSelect&quot;)
+            {
+                NameplatesManagerLobby.Instance.SetActiveCamera(obj);
+                CharacterSelector.Instance.Camera = obj;
+            }
+            else
+            {
+                NameplatesManagerLobby.Instance.SetActiveCamera(null);
+                CharacterSelector.Instance.Camera = null;
+            }
+
+            UpdateListenerPosition();
+        }
+    }
+
+    public void DisableCameras()
+    {
+        if (!_initialized)
+        {
+            Initialize();
+        }
+
+        foreach (var cam in cameras.Values)
+        {
+            cam.enabled = false;
+        }
+    }
+
+    public void DisableMainCamera()
+    {
+        if (!_initialized)
+        {
+            Initialize();
+        }
+
+        if (Camera.main != null)
+        {
+            // Debug.Log(&quot;Disabling camera &quot; + Camera.main.transform);
+            Camera.main.enabled = false;
+        }
+        else if (_activeCamera != null)
+        {
+            _activeCamera.enabled = false;
+        }
+    }
+
+    private void UpdateListenerPosition()
+    {
+        ThirdPersonListener.Instance.transform.position = _activeCamera.transform.position;
+        ThirdPersonListener.Instance.Cam = _activeCamera.gameObject;
+    }
+
+    public void ZoomIn()
+    {
+        SwitchCamera(_activeCamera.transform.GetChild(0).GetComponent&lt;Camera&gt;());
+    }
+
+    public void ZoomOut()
+    {
+        SwitchCamera(_activeCamera.transform.parent.GetComponent&lt;Camera&gt;());
+    }
+}
+</pre>
+            
+</body>
+</html>

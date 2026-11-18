@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Manipulators/Input/ArrowInputManipulator.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Manipulators/Input/ArrowInputManipulator.cs</h1>
+            <pre>using System;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class ArrowInputManipulator : PointerManipulator
+{
+    private string _labelValue;
+    private Label _label;
+    private string[] _values;
+    private TextField _textField;
+    private Button _leftArrow;
+    private Button _rightArrow;
+    private Action&lt;int, string&gt; _onArrowClick;
+    private int _index;
+    private int _defaultIndex;
+
+    public String Value { get { return _textField.value; } }
+    public int Index { get { return _index; } }
+
+    public ArrowInputManipulator(VisualElement target, string label, string[] values, int defaultIndex, Action&lt;int, string&gt; onArrowClick)
+    {
+        _labelValue = label;
+        this.target = target;
+        if (_labelValue != null &amp;&amp; _labelValue.Length &gt; 0)
+        {
+            _label.text = label;
+        }
+
+        _values = values;
+        _index = defaultIndex;
+
+        if (defaultIndex != -1)
+        {
+            _textField.value = values[defaultIndex];
+        }
+
+        _onArrowClick = onArrowClick;
+    }
+
+    public void UpdateValues(string[] newVals)
+    {
+        _values = newVals;
+        _index = -1;
+        _textField.value = &quot;&quot;;
+    }
+
+    private void LoadElements()
+    {
+        if (_labelValue != null &amp;&amp; _labelValue.Length &gt; 0)
+        {
+            _label = target.Q&lt;Label&gt;(null, &quot;unity-label&quot;);
+        }
+        _textField = target.Q&lt;TextField&gt;(&quot;L2Input&quot;);
+        _leftArrow = target.Q&lt;Button&gt;(&quot;LeftArrow&quot;);
+        _rightArrow = target.Q&lt;Button&gt;(&quot;RightArrow&quot;);
+    }
+
+    protected override void RegisterCallbacksOnTarget()
+    {
+        LoadElements();
+        _leftArrow.RegisterCallback&lt;ClickEvent&gt;(OnLeftArrowClick);
+        _rightArrow.RegisterCallback&lt;ClickEvent&gt;(OnRightArrowClick);
+        _leftArrow.AddManipulator(new ButtonClickSoundManipulator(_leftArrow));
+        _rightArrow.AddManipulator(new ButtonClickSoundManipulator(_rightArrow));
+    }
+
+    protected override void UnregisterCallbacksFromTarget()
+    {
+        _leftArrow.UnregisterCallback&lt;ClickEvent&gt;(OnLeftArrowClick);
+        _rightArrow.UnregisterCallback&lt;ClickEvent&gt;(OnRightArrowClick);
+    }
+
+    private void OnLeftArrowClick(ClickEvent e)
+    {
+        if (_values == null || _values.Length == 0) return;
+
+        if (--_index &lt; 0)
+        {
+            _index = _values.Length - 1;
+        }
+
+        _textField.value = _values[_index];
+
+        _onArrowClick(_index, _textField.value);
+    }
+
+    private void OnRightArrowClick(ClickEvent e)
+    {
+        if (_values == null || _values.Length == 0) return;
+
+        if (++_index &gt; _values.Length - 1)
+        {
+            _index = 0;
+        }
+
+        _textField.value = _values[_index];
+
+        _onArrowClick(_index, _textField.value);
+    }
+
+    public void SelectIndex(int index)
+    {
+        if (index &lt; 0 || index &gt;= _values.Length)
+        {
+            Debug.LogWarning($&quot;Trying to select wrong index [{index}] for arrow manipulator.&quot;);
+            return;
+        }
+
+        _index = index;
+        _textField.value = _values[_index];
+    }
+
+    public void ClearInput()
+    {
+        _index = -1;
+        _textField.value = &quot;&quot;;
+    }
+
+    public void ResetInput()
+    {
+        _index = 0;
+        _textField.value = _values[_index];
+    }
+}</pre>
+            
+</body>
+</html>

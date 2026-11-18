@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/lang/StringReplacer.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/lang/StringReplacer.java</h1>
+            <pre>package com.shnok.javaserver.commons.lang;
+
+/**
+ * This class is used as a counter to replaceAll. It avoids to generate Strings and is roughly 50% faster than string method format().
+ * @author xblx
+ */
+public final class StringReplacer
+{
+	private static final String DELIM_STR = &quot;{}&quot;;
+	
+	private final StringBuilder _sb;
+	
+	public StringReplacer(String source)
+	{
+		_sb = new StringBuilder(source);
+	}
+	
+	/**
+	 * Replace all occurences of a String for another String.
+	 * @param pattern : The String to replace.
+	 * @param replacement : The new String.
+	 */
+	public final void replaceAll(String pattern, String replacement)
+	{
+		int point;
+		while ((point = _sb.indexOf(pattern)) != -1)
+			_sb.replace(point, point + pattern.length(), replacement);
+	}
+	
+	/**
+	 * Replace all delimiters &#x27;{}&#x27; by the String representation of any objects. Important things to note:
+	 * &lt;ul&gt;
+	 * &lt;li&gt;If there isn&#x27;t enough parameters, then the leftover isn&#x27;t processed.&lt;/li&gt;
+	 * &lt;li&gt;If there is too much parameters, the loop breaks when it doesn&#x27;t find anything to replace.&lt;/li&gt;
+	 * &lt;li&gt;If the object is null, then it sends &quot;null&quot;.
+	 * &lt;/ul&gt;
+	 * @param args : The objects to pass.
+	 */
+	public final void replaceAll(Object... args)
+	{
+		int index;
+		int newIndex = 0;
+		
+		for (Object obj : args)
+		{
+			index = _sb.indexOf(DELIM_STR, newIndex);
+			if (index == -1)
+				break;
+			
+			newIndex = index + 2;
+			_sb.replace(index, newIndex, (obj == null) ? null : obj.toString());
+		}
+	}
+	
+	/**
+	 * Replace the first occurence of a String for another String.
+	 * @param pattern : The String to replace.
+	 * @param replacement : The new String.
+	 */
+	public final void replaceFirst(String pattern, String replacement)
+	{
+		final int point = _sb.indexOf(pattern);
+		_sb.replace(point, point + pattern.length(), replacement);
+	}
+	
+	/**
+	 * Replace the last occurence of a String for another String.
+	 * @param pattern : The String to replace.
+	 * @param replacement : The new String.
+	 */
+	public final void replaceLast(String pattern, String replacement)
+	{
+		final int point = _sb.lastIndexOf(pattern);
+		_sb.replace(point, point + pattern.length(), replacement);
+	}
+	
+	@Override
+	public String toString()
+	{
+		return _sb.toString();
+	}
+}</pre>
+            
+</body>
+</html>

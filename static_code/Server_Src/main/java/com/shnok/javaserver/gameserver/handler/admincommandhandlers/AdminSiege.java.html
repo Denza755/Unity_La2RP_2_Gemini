@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminSiege.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminSiege.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.CastleManager;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.model.location.TowerSpawnLocation;
+import com.shnok.javaserver.gameserver.model.residence.castle.Castle;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SiegeInfo;
+
+public class AdminSiege implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_castle&quot;,
+		&quot;admin_siege&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		command = st.nextToken();
+		
+		String param = null;
+		Castle castle = null;
+		
+		final int paramCount = st.countTokens();
+		if (paramCount == 1)
+			castle = CastleManager.getInstance().getCastleByAlias(st.nextToken());
+		else if (paramCount == 2)
+		{
+			param = st.nextToken();
+			castle = CastleManager.getInstance().getCastleByAlias(st.nextToken());
+		}
+		
+		if (castle == null)
+		{
+			showCastleSelectPage(player);
+			return;
+		}
+		
+		if (param == null)
+		{
+			showCastleSelectPage(player, castle);
+			return;
+		}
+		
+		if (command.startsWith(&quot;admin_castle&quot;))
+		{
+			switch (param)
+			{
+				case &quot;set&quot;:
+					final Player targetPlayer = getTargetPlayer(player, false);
+					if (targetPlayer == null || targetPlayer.getClan() == null)
+						player.sendPacket(SystemMessageId.TARGET_IS_INCORRECT);
+					else if (targetPlayer.getClan().hasCastle())
+						player.sendMessage(targetPlayer.getName() + &quot;&#x27;s clan already owns a castle.&quot;);
+					else
+						castle.setOwner(targetPlayer.getClan());
+					break;
+				
+				case &quot;remove&quot;:
+					if (castle.getOwnerId() &gt; 0)
+						castle.removeOwner();
+					else
+						player.sendMessage(&quot;This castle does not have an owner.&quot;);
+					break;
+				
+				case &quot;certificates&quot;:
+					castle.setLeftCertificates(300, true);
+					player.sendMessage(castle.getName() + &quot;&#x27;s castle certificates are reset.&quot;);
+					break;
+				
+				case &quot;tax&quot;:
+					castle.updateTaxes();
+					player.sendMessage(castle.getName() + &quot;&#x27;s taxes have been updated.&quot;);
+					break;
+				
+				default:
+					player.sendMessage(&quot;Usage: //castle [set|remove|certificates|tax castleName].&quot;);
+					break;
+			}
+		}
+		else if (command.startsWith(&quot;admin_siege&quot;))
+		{
+			switch (param)
+			{
+				case &quot;attack&quot;:
+					Player targetPlayer = getTargetPlayer(player, false);
+					if (targetPlayer == null)
+						player.sendPacket(SystemMessageId.TARGET_IS_INCORRECT);
+					else
+						castle.getSiege().registerAttacker(targetPlayer);
+					break;
+				
+				case &quot;clear&quot;:
+					castle.getSiege().clearAllClans();
+					break;
+				
+				case &quot;defend&quot;:
+					targetPlayer = getTargetPlayer(player, false);
+					if (targetPlayer == null)
+						player.sendPacket(SystemMessageId.TARGET_IS_INCORRECT);
+					else
+						castle.getSiege().registerDefender(targetPlayer);
+					break;
+				
+				case &quot;end&quot;:
+					castle.getSiege().endSiege();
+					break;
+				
+				case &quot;list&quot;:
+					player.sendPacket(new SiegeInfo(castle));
+					return;
+				
+				case &quot;start&quot;:
+					castle.getSiege().startSiege();
+					break;
+				
+				default:
+					player.sendMessage(&quot;Usage: //siege [attack|clear|defend|end|list|start castleName].&quot;);
+					break;
+			}
+		}
+		showCastleSelectPage(player, castle);
+	}
+	
+	/**
+	 * Show detailed informations of a {@link Castle} to a {@link Player}.
+	 * @param player : The {@link Player} who requested the action.
+	 * @param castle : The {@link Castle} to show informations.
+	 */
+	private static void showCastleSelectPage(Player player, Castle castle)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/castle.htm&quot;);
+		html.replace(&quot;%castleName%&quot;, castle.getName());
+		html.replace(&quot;%castleAlias%&quot;, castle.getAlias());
+		html.replace(&quot;%circletId%&quot;, castle.getCircletId());
+		html.replace(&quot;%artifactId%&quot;, castle.getArtifacts().toString());
+		html.replace(&quot;%ticketsNumber%&quot;, castle.getTickets().size());
+		html.replace(&quot;%droppedTicketsNumber%&quot;, castle.getDroppedTickets().size());
+		html.replace(&quot;%npcsNumber%&quot;, castle.getNpcs().size());
+		html.replace(&quot;%certificates%&quot;, castle.getLeftCertificates());
+		html.replace(&quot;%parent%&quot;, castle.getParentId());
+		html.replace(&quot;%aliveLifeTowers%&quot;, castle.getAliveLifeTowerCount());
+		
+		html.replace(&quot;%defaultTax%&quot;, castle.getDefaultTaxRate());
+		html.replace(&quot;%currentTax%&quot;, castle.getCurrentTaxPercent());
+		html.replace(&quot;%nextTax%&quot;, castle.getNextTaxPercent());
+		html.replace(&quot;%taxSysgetRate%&quot;, castle.getTaxSysgetRate());
+		html.replace(&quot;%taxRevenue%&quot;, StringUtil.formatNumber(castle.getTaxRevenue()));
+		html.replace(&quot;%tributeRate%&quot;, StringUtil.formatNumber(castle.getTributeRate()));
+		html.replace(&quot;%seedIncome%&quot;, StringUtil.formatNumber(castle.getSeedIncome()));
+		html.replace(&quot;%treasury%&quot;, StringUtil.formatNumber(castle.getTreasury()));
+		
+		final StringBuilder sb = new StringBuilder();
+		int index = 1;
+		
+		// Feed artifacts infos.
+		for (SpawnLocation spawn : castle.getArtifacts())
+		{
+			StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass -h admin_teleport &quot;, spawn.toString().replace(&quot;,&quot;, &quot;&quot;), &quot;\&quot;&gt;[&quot;, index, &quot;]&lt;/a&gt;&amp;nbsp;&amp;nbsp;&quot;);
+			index++;
+		}
+		
+		html.replace(&quot;%artifacts%&quot;, sb.toString());
+		
+		// Cleanup the sb and the index to reuse it.
+		sb.setLength(0);
+		index = 1;
+		
+		// Feed Control Tower infos.
+		for (TowerSpawnLocation spawn : castle.getControlTowers())
+		{
+			StringUtil.append(sb, &quot;&lt;a action=\&quot;bypass -h admin_teleport &quot;, spawn.toString().replace(&quot;,&quot;, &quot;&quot;), &quot;\&quot;&gt;[&quot;, index, &quot;]&lt;/a&gt;&amp;nbsp;&amp;nbsp;&quot;);
+			index++;
+		}
+		
+		html.replace(&quot;%ct%&quot;, sb.toString());
+		
+		player.sendPacket(html);
+	}
+	
+	/**
+	 * Show the complete list of {@link Castle}s.
+	 * @param player : The {@link Player} who requested the action.
+	 */
+	private static void showCastleSelectPage(Player player)
+	{
+		int row = 0;
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/castles.htm&quot;);
+		
+		final StringBuilder sb = new StringBuilder();
+		for (Castle castle : CastleManager.getInstance().getCastles())
+		{
+			sb.append(((row % 2) == 0 ? &quot;&lt;table width=270 bgcolor=000000&gt;&lt;tr&gt;&quot; : &quot;&lt;table width=270&gt;&lt;tr&gt;&quot;));
+			
+			StringUtil.append(sb, &quot;&lt;td width=100&gt;&lt;a action=\&quot;bypass -h admin_siege &quot;, castle.getAlias(), &quot;\&quot;&gt;&quot;, castle.getName(), &quot;&lt;/a&gt;&lt;/td&gt;&lt;td width=130&gt;&quot;, castle.getSiege().getStatus(), &quot;&lt;/td&gt;&lt;td width=40 align=right&gt;&lt;a action=\&quot;bypass admin_siege list &quot;, castle.getAlias(), &quot;\&quot;&gt;View&lt;/a&gt;&lt;/td&gt;&quot;);
+			
+			sb.append(&quot;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.SquareGray\&quot; width=270 height=1&gt;&quot;);
+			row++;
+		}
+		html.replace(&quot;%castles%&quot;, sb.toString());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

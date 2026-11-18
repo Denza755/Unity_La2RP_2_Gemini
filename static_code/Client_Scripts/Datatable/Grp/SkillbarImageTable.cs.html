@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/SkillbarImageTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/SkillbarImageTable.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class SkillbarImageTable
+{
+    private string _skillbarFolder = &quot;Data\\UI\\Assets\\SkillBar&quot;;
+    private Dictionary&lt;string, Texture2D&gt; _keyImages = new Dictionary&lt;string, Texture2D&gt;();
+    private Texture2D[] _cooltimeTextures = new Texture2D[360];
+    private Texture2D[] _cooltimeEndTextures = new Texture2D[9];
+    private Texture2D[] _toggleTextures = new Texture2D[13];
+
+    public Texture2D[] CooltimeTextures { get =&gt; _cooltimeTextures; }
+    public Texture2D[] CooltimeEndTextures { get =&gt; _cooltimeEndTextures; }
+    public Texture2D[] ToggleTextures { get =&gt; _toggleTextures; }
+
+    private static SkillbarImageTable _instance;
+    public static SkillbarImageTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new SkillbarImageTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    public void Initialize()
+    {
+        _keyImages = new Dictionary&lt;string, Texture2D&gt;();
+
+
+        LoadCooltimeTextures();
+        LoadCooltimeEndTextures();
+        LoadToggleTextures();
+    }
+
+    private void LoadCooltimeTextures()
+    {
+        for (int i = 0; i &lt; _cooltimeTextures.Length; i++)
+        {
+            string image = $&quot;{_skillbarFolder}\\Effects\\Cooltime\\cooltime{i}&quot;;
+            Texture2D texture = Resources.Load&lt;Texture2D&gt;(image);
+            if (texture != null)
+            {
+                _cooltimeTextures[i] = texture;
+            }
+            else
+            {
+                Debug.LogWarning($&quot;Missing cooltime icon: {i}.&quot;);
+            }
+        }
+    }
+
+    private void LoadCooltimeEndTextures()
+    {
+        for (int i = 1; i &lt;= _cooltimeEndTextures.Length; i++)
+        {
+            string image = $&quot;{_skillbarFolder}\\Effects\\CooltimeEnd\\CoolTimeEnd{i:D3}&quot;;
+            Texture2D texture = Resources.Load&lt;Texture2D&gt;(image);
+            if (texture != null)
+            {
+                _cooltimeEndTextures[i - 1] = texture;
+            }
+            else
+            {
+                Debug.LogWarning($&quot;Missing cooltimeEnd icon: {i}.&quot;);
+            }
+        }
+    }
+
+    private void LoadToggleTextures()
+    {
+        for (int i = 1; i &lt;= _toggleTextures.Length; i++)
+        {
+            string image = $&quot;{_skillbarFolder}\\Effects\\Toggle\\ToggleEffect{i:D3}&quot;;
+            Texture2D texture = Resources.Load&lt;Texture2D&gt;(image);
+            if (texture != null)
+            {
+                _toggleTextures[i - 1] = texture;
+            }
+            else
+            {
+                Debug.LogWarning($&quot;Missing toggle icon: {i}.&quot;);
+            }
+        }
+    }
+
+    public Texture2D LoadTextureByKey(string name)
+    {
+        if (name.Length == 0)
+        {
+            return null;
+        }
+
+        if (_keyImages.TryGetValue(name, out Texture2D result))
+        {
+            return result;
+        }
+
+        string icon = _skillbarFolder + &quot;\\Shortcuts\\ShortcutWnd_DF_Key_&quot; + name;
+        result = Resources.Load&lt;Texture2D&gt;(icon);
+
+        if (result != null)
+        {
+            _keyImages.Add(name, result);
+            return result;
+        }
+
+        Debug.LogWarning($&quot;Missing skillbar icon: {name}&quot;);
+
+        return null;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/L2InputAmountWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/L2InputAmountWindow.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class L2InputAmountWindow : L2PopupWindow
+{
+    private Action&lt;int&gt; _confirmAction;
+    private Action _cancelAction;
+    private Label _contentLabel;
+    private VisualElement _cancelButton;
+    private TextField _inputField;
+    private bool _inputFocused = false;
+
+    private int _maxAmount = 10;
+    private int _currentAmount = 0;
+
+    private static L2InputAmountWindow _instance;
+    public static L2InputAmountWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        _instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        // _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Components/L2InputAmountWindow/L2InputAmountWindow&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        VisualElement dragArea = GetElementByClass(&quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+        dragArea.AddManipulator(drag);
+
+        _cancelButton = GetElementById(&quot;CancelButton&quot;);
+
+        Button button = _cancelButton.Q&lt;Button&gt;(&quot;L2Button&quot;);
+        button.AddManipulator(new ButtonClickSoundManipulator(button));
+        button.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt;
+        {
+            HideWindow(false);
+            if (_cancelAction != null)
+            {
+                _cancelAction();
+            }
+        });
+
+        Button okButton = GetElementById(&quot;OkButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        okButton.AddManipulator(new ButtonClickSoundManipulator(okButton));
+        okButton.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt;
+        {
+            HideWindow(false);
+            if (_confirmAction != null)
+            {
+                if (_currentAmount == 0)
+                {
+                    _currentAmount = 1;
+                }
+
+                _confirmAction(_currentAmount);
+            }
+        });
+
+        _inputField = (TextField)GetElementById(&quot;L2Input&quot;);
+        _inputField.RegisterValueChangedCallback(evt =&gt; ValidateNewInput(evt));
+        _inputField.RegisterCallback&lt;FocusEvent&gt;(evt =&gt;
+        {
+            _inputFocused = true;
+            L2GameUI.Instance.IsTyping = true;
+        });
+
+        _inputField.RegisterCallback&lt;BlurEvent&gt;(evt =&gt;
+        {
+            _inputFocused = false;
+            L2GameUI.Instance.IsTyping = false;
+        });
+
+        RegisterDigitButton(&quot;Number1&quot;, &quot;1&quot;);
+        RegisterDigitButton(&quot;Number2&quot;, &quot;2&quot;);
+        RegisterDigitButton(&quot;Number3&quot;, &quot;3&quot;);
+        RegisterDigitButton(&quot;Number4&quot;, &quot;4&quot;);
+        RegisterDigitButton(&quot;Number5&quot;, &quot;5&quot;);
+        RegisterDigitButton(&quot;Number6&quot;, &quot;6&quot;);
+        RegisterDigitButton(&quot;Number7&quot;, &quot;7&quot;);
+        RegisterDigitButton(&quot;Number8&quot;, &quot;8&quot;);
+        RegisterDigitButton(&quot;Number9&quot;, &quot;9&quot;);
+        RegisterDigitButton(&quot;Number0&quot;, &quot;0&quot;);
+
+        Button buttonAll = GetElementById(&quot;NumberAll&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        buttonAll.AddManipulator(new ButtonClickSoundManipulator(buttonAll));
+        buttonAll.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt; _inputField.value = _maxAmount &gt; 0 ? _maxAmount.ToString() : &quot;&quot;);
+        Button buttonC = GetElementById(&quot;NumberC&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        buttonC.AddManipulator(new ButtonClickSoundManipulator(buttonC));
+        buttonC.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt; _inputField.value = &quot;&quot;);
+        Button buttonBS = GetElementById(&quot;NumberBS&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        buttonBS.AddManipulator(new ButtonClickSoundManipulator(buttonBS));
+        buttonBS.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt; _inputField.value = _inputField.value.Length &gt; 0 ? _inputField.value.Substring(0, _inputField.value.Length - 1) : &quot;&quot;);
+
+        _contentLabel = GetLabelById(&quot;Content&quot;);
+
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowLoadComplete();
+        }
+        else
+        {
+            L2LoginUI.Instance.WindowLoadComplete();
+        }
+
+        CenterWindow();
+
+        HideWindow(true);
+    }
+
+    private void RegisterDigitButton(string id, string digit)
+    {
+        Button button = GetElementById(id).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        button.AddManipulator(new ButtonClickSoundManipulator(button));
+        button.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt;
+        {
+            string raw = _inputField.value.Replace(&quot;,&quot;, &quot;&quot;) + digit;
+            if (long.TryParse(raw, out long val))
+            {
+                _inputField.value = val.ToString(&quot;N0&quot;, CultureInfo.InvariantCulture);
+            }
+        });
+    }
+
+    private void ValidateNewInput(ChangeEvent&lt;string&gt; evt)
+    {
+        var rawValue = evt.newValue.Replace(&quot;,&quot;, &quot;&quot;);
+        var regex = new Regex(@&quot;^\d*$&quot;);
+        if (!regex.IsMatch(rawValue))
+        {
+            _inputField.value = evt.previousValue;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(rawValue))
+            return;
+
+        long amount = long.Parse(rawValue);
+
+        if (_maxAmount &gt; 0 &amp;&amp; amount &gt; _maxAmount)
+        {
+            amount = _maxAmount;
+        }
+        else if (_maxAmount == 0 &amp;&amp; amount &gt; int.MaxValue)
+        {
+            amount = int.MaxValue;
+        }
+
+        _inputField.value = amount.ToString(&quot;N0&quot;, CultureInfo.InvariantCulture);
+
+        _currentAmount = (int)amount;
+    }
+
+    public void ShowWindow(int systemMessageId, int count, Action&lt;int&gt; confirmAction, Action cancelAction)
+    {
+        string content = SystemMessageTable.Instance.GetSystemMessage(systemMessageId).Message;
+
+        if (content == null)
+        {
+            content = &quot;Unkown SystemMessageId.&quot;;
+        }
+
+        ShowWindow(content, count, confirmAction, cancelAction);
+    }
+
+    public void ShowWindow(SystemMessage systemMessage, int count, Action&lt;int&gt; confirmAction, Action cancelAction)
+    {
+        ShowWindow(systemMessage.PrintMessage(false), count, confirmAction, cancelAction);
+    }
+
+    private void ShowWindow(string content, int count, Action&lt;int&gt; confirmAction, Action cancelAction)
+    {
+        _inputFocused = false;
+        _maxAmount = count;
+        _inputField.value = &quot;&quot;;
+        _currentAmount = 0;
+
+        if (cancelAction == null)
+        {
+            _cancelButton.style.display = DisplayStyle.None;
+        }
+
+        _contentLabel.text = content;
+        _confirmAction = confirmAction;
+        _cancelAction = cancelAction;
+
+        base.ShowWindow();
+
+        AudioManager.Instance.PlayUISound(&quot;window_open&quot;);
+
+        if (L2GameUI.Instance != null)
+            L2GameUI.Instance.WindowOpened(this);
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        if (_inputFocused)
+        {
+            L2GameUI.Instance.IsTyping = false;
+        }
+
+        _inputFocused = false;
+
+        if (_cancelButton != null)
+        {
+            _cancelButton.style.display = DisplayStyle.Flex;
+        }
+
+        if (!silent &amp;&amp; !_isWindowHidden)
+            AudioManager.Instance.PlayUISound(&quot;window_close&quot;);
+
+        base.HideWindow(silent);
+
+        if (L2GameUI.Instance != null)
+            L2GameUI.Instance.WindowClosed(this);
+    }
+}
+</pre>
+            
+</body>
+</html>

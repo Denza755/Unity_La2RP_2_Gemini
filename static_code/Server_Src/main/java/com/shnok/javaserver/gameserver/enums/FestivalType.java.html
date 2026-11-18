@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/FestivalType.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/FestivalType.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums;
+
+public enum FestivalType
+{
+	MAX_31(60, &quot;Level 31 or lower&quot;, 31),
+	MAX_42(70, &quot;Level 42 or lower&quot;, 42),
+	MAX_53(100, &quot;Level 53 or lower&quot;, 53),
+	MAX_64(120, &quot;Level 64 or lower&quot;, 64),
+	MAX_NONE(150, &quot;No Level Limit&quot;, 80);
+	
+	private final int _maxScore;
+	private final String _name;
+	private final int _maxLevel;
+	
+	private FestivalType(int maxScore, String name, int maxLevel)
+	{
+		_maxScore = maxScore;
+		_name = name;
+		_maxLevel = maxLevel;
+	}
+	
+	public int getMaxScore()
+	{
+		return _maxScore;
+	}
+	
+	public String getName()
+	{
+		return _name;
+	}
+	
+	public int getMaxLevel()
+	{
+		return _maxLevel;
+	}
+	
+	public static final FestivalType[] VALUES = values();
+}</pre>
+            
+</body>
+</html>

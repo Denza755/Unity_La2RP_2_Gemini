@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Controller/StateMachine/Intention/IdleIntention.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Controller/StateMachine/Intention/IdleIntention.cs</h1>
+            <pre>using UnityEngine;
+
+public class IdleIntention : IntentionBase
+{
+    public IdleIntention(PlayerStateMachine stateMachine) : base(stateMachine) { }
+
+    public override void Enter(object arg0)
+    {
+        // if (_stateMachine.State != PlayerState.ATTACKING)
+        // {
+        // IdleIntention is not triggerable by player, no need to ask server for permission
+        _stateMachine.ChangeState(PlayerState.IDLE, arg0);
+        // }
+    }
+
+    public override void Exit() { }
+    public override void Update()
+    {
+        // if (_stateMachine.State == PlayerState.ATTACKING)
+        // {
+        //     if (Time.time &gt;= PlayerCombat.Instance.AttackEndTime)
+        //         _stateMachine.ChangeState(PlayerState.IDLE);
+        // }
+    }
+}</pre>
+            
+</body>
+</html>

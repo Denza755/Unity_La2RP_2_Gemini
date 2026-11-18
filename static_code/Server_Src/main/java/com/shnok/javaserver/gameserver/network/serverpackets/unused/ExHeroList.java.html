@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/ExHeroList.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/ExHeroList.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.Collection;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.data.manager.HeroManager;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class ExHeroList extends L2GameServerPacket
+{
+	private final Collection&lt;StatSet&gt; _sets;
+	
+	public ExHeroList()
+	{
+		_sets = HeroManager.getInstance().getHeroes().values();
+	}
+	
+	@Override
+	protected void writeImpl()
+	{
+		writeC(0xfe);
+		writeH(0x23);
+		writeD(_sets.size());
+		
+		for (StatSet set : _sets)
+		{
+			writeS(set.getString(HeroManager.CHAR_NAME));
+			writeD(set.getInteger(HeroManager.CLASS_ID));
+			writeS(set.getString(HeroManager.CLAN_NAME, &quot;&quot;));
+			writeD(set.getInteger(HeroManager.CLAN_CREST, 0));
+			writeS(set.getString(HeroManager.ALLY_NAME, &quot;&quot;));
+			writeD(set.getInteger(HeroManager.ALLY_CREST, 0));
+			writeD(set.getInteger(HeroManager.COUNT));
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Audio/Animation/MonsterAudioHandler.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Audio/Animation/MonsterAudioHandler.cs</h1>
+            <pre>using System;
+using System.Collections;
+using FMODUnity;
+using UnityEngine;
+
+public class MonsterAudioHandler : BaseAnimationAudioHandler
+{
+    // [SerializeField] private string _monsterName;
+    [SerializeField] protected Npcgrp _npcgrp;
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+
+        // if (string.IsNullOrEmpty(_monsterName))
+        // {
+        //     Debug.LogWarning($&quot;[{transform.name}] Monster name was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+        // }
+
+        // string npcClassName = GetComponent&lt;Entity&gt;().Identity.NpcClass;
+        // if (!string.IsNullOrEmpty(npcClassName))
+        // {
+        //     string[] parts = npcClassName.Split(&#x27;.&#x27;);
+        //     if (parts.Length &gt; 1)
+        //     {
+        //         _monsterName = parts[1].ToLower();
+        //     }
+        // }
+
+        // if (string.IsNullOrEmpty(_monsterName))
+        // {
+        //     Debug.LogWarning(&quot;AnimationAudioHandler could not load monster name name&quot;);
+        //     this.enabled = false;
+        // }
+
+        _npcgrp = NpcgrpTable.Instance.Npcgrps[_entityReferenceHolder.Entity.Identity.NpcId];
+    }
+
+    public override void PlaySound(EntitySoundEvent soundEvent)
+    {
+        AudioManager.Instance.PlayMonsterSound(soundEvent, _npcgrp.ClassName, transform.position);
+    }
+
+    public void PlayAtkSound()
+    {
+        PlaySound(EntitySoundEvent.Atk);
+    }
+
+    public override void PlaySwishSound()
+    {
+        PlaySound(EntitySoundEvent.Swish);
+    }
+
+    public override void PlayDamageSound()
+    {
+        PlaySound(EntitySoundEvent.Dmg);
+    }
+
+    public override void PlayDefenseSound()
+    {
+        EventReference soundEvent = GetRandomEvent(_npcgrp.DefenseSoundsEvents);
+        if (!soundEvent.IsNull)
+        {
+            AudioManager.Instance.PlaySound(soundEvent, transform.position);
+        }
+    }
+
+    public void PlayWaitSound()
+    {
+        if (RandomUtils.ShouldEventHappen(WaitSoundChance))
+        {
+            PlaySound(EntitySoundEvent.Breathe);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

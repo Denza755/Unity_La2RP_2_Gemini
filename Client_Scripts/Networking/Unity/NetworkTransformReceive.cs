@@ -15,7 +15,7 @@ public class NetworkTransformReceive : MonoBehaviour
     [SerializeField] private bool _positionSyncPaused = false;
     private float _lerpDuration = 0.35f;
     [SerializeField] private float _positionDelta;
-    private float _finalLerpDelta = 0.05f;
+    private float _finalLerpDelta = 0.02f;
     [SerializeField] private long _lastDesyncTime = 0;
     [SerializeField] private long _lastDesyncDuration = 0;
     private long _maximumAllowedDesyncTimeMs = 0;
@@ -128,21 +128,45 @@ public class NetworkTransformReceive : MonoBehaviour
                 return;
             }
 
-            if (_posLerpValue >= 1f)
+            // Доводка линейным MoveTowards со штатной скоростью персонажа
+            float moveSpeed = 4.0f;
+            Entity entity = GetComponent<Entity>();
+            if (entity != null && entity.Stats != null)
+            {
+                float runSpd = entity.Stats.ScaledRunSpeed > 0 ? entity.Stats.ScaledRunSpeed : 4.0f;
+                float walkSpd = entity.Stats.ScaledWalkSpeed > 0 ? entity.Stats.ScaledWalkSpeed : 2.0f;
+                moveSpeed = entity.Running ? runSpd : walkSpd;
+            }
+
+            Vector3 targetPosition = _serverPosition;
+            targetPosition.y = transform.position.y;
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.fixedDeltaTime);
+
+            if (VectorUtils.Distance2D(transform.position, _serverPosition) <= _finalLerpDelta)
             {
                 Vector3 finalPosition = _serverPosition;
                 finalPosition.y = transform.position.y;
                 transform.position = finalPosition;
                 _positionSynced = true;
-                return;
+
+                NetworkCharacterControllerReceive netCC = GetComponent<NetworkCharacterControllerReceive>();
+                if (netCC == null || !netCC.IsMoving())
+                {
+                    if (entity != null && entity.AnimationController != null && !(this is PlayerTransformReceive))
+                    {
+                        entity.AnimationController.Wait();
+                    }
+                }
             }
-
-            Vector3 newPosition = Vector3.Lerp(_lastPos, _serverPosition, _posLerpValue);
-            _posLerpValue += (1f / _lerpDuration) * Time.deltaTime;
-            newPosition.y = transform.position.y; // Keep the current y position
-            transform.position = newPosition;
+            else
+            {
+                // Пока модель фактически перемещается по земле - анимация движения остается активной
+                if (entity != null && entity.AnimationController != null && !(this is PlayerTransformReceive))
+                {
+                    entity.AnimationController.Move();
+                }
+            }
         }
-
     }
 
     /* Ajust rotation */

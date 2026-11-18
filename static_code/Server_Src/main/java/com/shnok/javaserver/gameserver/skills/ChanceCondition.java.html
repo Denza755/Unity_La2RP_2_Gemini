@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/ChanceCondition.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/ChanceCondition.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills;
+
+import java.util.Set;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.skills.TriggerType;
+
+public final class ChanceCondition
+{
+	private final TriggerType _triggerType;
+	private final int _chance;
+	
+	private ChanceCondition(TriggerType trigger, int chance)
+	{
+		_triggerType = trigger;
+		_chance = chance;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;ChanceCondition[&quot; + _chance + &quot;;&quot; + _triggerType + &quot;]&quot;;
+	}
+	
+	public static ChanceCondition parse(StatSet set)
+	{
+		final TriggerType trigger = set.getEnum(&quot;chanceType&quot;, TriggerType.class, null);
+		if (trigger == null)
+			return null;
+		
+		final int chance = set.getInteger(&quot;activationChance&quot;, -1);
+		
+		return new ChanceCondition(trigger, chance);
+	}
+	
+	public static ChanceCondition parse(String chanceType, int chance)
+	{
+		if (chanceType == null)
+			return null;
+		
+		final TriggerType trigger = Enum.valueOf(TriggerType.class, chanceType);
+		if (trigger == null)
+			return null;
+		
+		return new ChanceCondition(trigger, chance);
+	}
+	
+	public boolean trigger(Set&lt;TriggerType&gt; triggers)
+	{
+		return triggers.contains(_triggerType) &amp;&amp; (_chance &lt; 0 || Rnd.get(100) &lt; _chance);
+	}
+}</pre>
+            
+</body>
+</html>

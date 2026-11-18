@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/NpcData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/NpcData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.enums.DropType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcRace;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.actor.template.PetTemplate;
+import com.shnok.javaserver.gameserver.model.item.DropCategory;
+import com.shnok.javaserver.gameserver.model.item.DropData;
+import com.shnok.javaserver.gameserver.model.memo.NpcMemo;
+import com.shnok.javaserver.gameserver.model.records.PetDataEntry;
+import com.shnok.javaserver.gameserver.model.records.PrivateData;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * Loads and stores {@link NpcTemplate}s.
+ */
+public class NpcData implements IXmlReader
+{
+	private final Map&lt;Integer, NpcTemplate&gt; _npcs = new HashMap&lt;&gt;();
+	
+	protected NpcData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/npcs&quot;);
+		LOGGER.info(&quot;Loaded {} NPC templates.&quot;, _npcs.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;npc&quot;, npcNode -&gt;
+		{
+			final NamedNodeMap attrs = npcNode.getAttributes();
+			final int npcId = parseInteger(attrs, &quot;id&quot;);
+			final int templateId = attrs.getNamedItem(&quot;idTemplate&quot;) == null ? npcId : parseInteger(attrs, &quot;idTemplate&quot;);
+			final StatSet set = new StatSet();
+			set.set(&quot;id&quot;, npcId);
+			set.set(&quot;idTemplate&quot;, templateId);
+			set.set(&quot;name&quot;, parseString(attrs, &quot;name&quot;));
+			set.set(&quot;title&quot;, parseString(attrs, &quot;title&quot;));
+			set.set(&quot;alias&quot;, parseString(attrs, &quot;alias&quot;));
+			
+			forEach(npcNode, &quot;set&quot;, setNode -&gt;
+			{
+				final NamedNodeMap setAttrs = setNode.getAttributes();
+				set.set(parseString(setAttrs, &quot;name&quot;), parseString(setAttrs, &quot;val&quot;));
+			});
+			forEach(npcNode, &quot;ai&quot;, aiNode -&gt;
+			{
+				final NpcMemo aiParams = new NpcMemo();
+				forEach(aiNode, &quot;set&quot;, setNode -&gt;
+				{
+					final NamedNodeMap setAttrs = setNode.getAttributes();
+					aiParams.set(parseString(setAttrs, &quot;name&quot;), parseString(setAttrs, &quot;val&quot;));
+				});
+				set.set(&quot;aiParams&quot;, aiParams);
+			});
+			forEach(npcNode, &quot;drops&quot;, dropsNode -&gt;
+			{
+				final List&lt;DropCategory&gt; drops = new ArrayList&lt;&gt;();
+				forEach(dropsNode, &quot;category&quot;, categoryNode -&gt;
+				{
+					final NamedNodeMap categoryAttrs = categoryNode.getAttributes();
+					final DropCategory category = new DropCategory(parseEnum(categoryAttrs, DropType.class, &quot;type&quot;), parseDouble(categoryAttrs, &quot;chance&quot;, 100.0));
+					forEach(categoryNode, &quot;drop&quot;, dropNode -&gt;
+					{
+						final NamedNodeMap dropAttrs = dropNode.getAttributes();
+						final DropData data = new DropData(parseInteger(dropAttrs, &quot;itemid&quot;), parseInteger(dropAttrs, &quot;min&quot;), parseInteger(dropAttrs, &quot;max&quot;), parseDouble(dropAttrs, &quot;chance&quot;));
+						
+						if (ItemData.getInstance().getTemplate(data.itemId()) == null)
+						{
+							LOGGER.warn(&quot;Droplist data for undefined itemId: {}.&quot;, data.itemId());
+							return;
+						}
+						category.add(data);
+					});
+					drops.add(category);
+				});
+				set.set(&quot;drops&quot;, drops);
+			});
+			forEach(npcNode, &quot;privates&quot;, privatesNode -&gt;
+			{
+				final List&lt;PrivateData&gt; privateData = new ArrayList&lt;&gt;();
+				forEach(privatesNode, &quot;private&quot;, privateNode -&gt; privateData.add(new PrivateData(parseAttributes(privateNode))));
+				set.set(&quot;privates&quot;, privateData);
+			});
+			forEach(npcNode, &quot;petdata&quot;, petdataNode -&gt;
+			{
+				final NamedNodeMap petdataAttrs = petdataNode.getAttributes();
+				set.set(&quot;mustUsePetTemplate&quot;, true);
+				set.set(&quot;food1&quot;, parseInteger(petdataAttrs, &quot;food1&quot;));
+				set.set(&quot;food2&quot;, parseInteger(petdataAttrs, &quot;food2&quot;));
+				set.set(&quot;autoFeedLimit&quot;, parseDouble(petdataAttrs, &quot;autoFeedLimit&quot;));
+				set.set(&quot;hungryLimit&quot;, parseDouble(petdataAttrs, &quot;hungryLimit&quot;));
+				set.set(&quot;unsummonLimit&quot;, parseDouble(petdataAttrs, &quot;unsummonLimit&quot;));
+				
+				final Map&lt;Integer, PetDataEntry&gt; entries = new HashMap&lt;&gt;();
+				forEach(petdataNode, &quot;stat&quot;, statNode -&gt;
+				{
+					final StatSet petSet = parseAttributes(statNode);
+					
+					final int mountBaseSpeed;
+					final int mountWaterSpeed;
+					final int mountFlySpeed;
+					
+					final String speed = petSet.getString(&quot;speedOnRide&quot;, null);
+					if (speed != null)
+					{
+						final String[] speeds = speed.split(&quot;;&quot;);
+						mountBaseSpeed = Integer.parseInt(speeds[0]);
+						mountWaterSpeed = Integer.parseInt(speeds[2]);
+						mountFlySpeed = Integer.parseInt(speeds[4]);
+					}
+					else
+					{
+						mountBaseSpeed = 0;
+						mountWaterSpeed = 0;
+						mountFlySpeed = 0;
+					}
+					
+					petSet.set(&quot;mountBaseSpeed&quot;, mountBaseSpeed);
+					petSet.set(&quot;mountWaterSpeed&quot;, mountWaterSpeed);
+					petSet.set(&quot;mountFlySpeed&quot;, mountFlySpeed);
+					
+					entries.put(petSet.getInteger(&quot;level&quot;), new PetDataEntry(petSet));
+				});
+				set.set(&quot;petData&quot;, entries);
+			});
+			forEach(npcNode, &quot;skills&quot;, skillsNode -&gt;
+			{
+				final List&lt;L2Skill&gt; passives = new ArrayList&lt;&gt;();
+				final Map&lt;NpcSkillType, L2Skill&gt; skills = new EnumMap&lt;&gt;(NpcSkillType.class);
+				
+				forEach(skillsNode, &quot;skill&quot;, skillNode -&gt;
+				{
+					final NamedNodeMap skillAttrs = skillNode.getAttributes();
+					final int skillId = parseInteger(skillAttrs, &quot;id&quot;);
+					final int level = parseInteger(skillAttrs, &quot;level&quot;);
+					
+					// Attempt to check secondary skill ids related to NpcRace. DUMMY means no valid NpcRace was found, continue to investigate.
+					final NpcRace nr = NpcRace.retrieveBySecondarySkillId(skillId);
+					if (nr != null &amp;&amp; nr != NpcRace.DUMMY)
+					{
+						set.set(&quot;race&quot;, nr);
+						return;
+					}
+					
+					// Test the primary NpcRace if not already set.
+					if (skillId == L2Skill.SKILL_NPC_RACE &amp;&amp; !set.containsKey(&quot;race&quot;))
+					{
+						set.set(&quot;race&quot;, NpcRace.VALUES[level]);
+						return;
+					}
+					
+					// Allow the split of multiple types.
+					for (String nstString : parseString(skillAttrs, &quot;type&quot;).split(&quot;;&quot;))
+					{
+						final L2Skill skill = SkillTable.getInstance().getInfo(skillId, level);
+						if (skill == null)
+						{
+							LOGGER.warn(&quot;Invalid skill data {}-{} for : {}.&quot;, skillId, level, npcId);
+							return;
+						}
+						
+						// Add the L2Skill to either passives or skills container.
+						final NpcSkillType nst = Enum.valueOf(NpcSkillType.class, nstString);
+						if (nst == NpcSkillType.PASSIVE)
+							passives.add(skill);
+						else
+							skills.put(nst, skill);
+					}
+				});
+				set.set(&quot;passives&quot;, passives);
+				set.set(&quot;skills&quot;, skills);
+			});
+			forEach(npcNode, &quot;teachTo&quot;, teachToNode -&gt; set.set(&quot;teachTo&quot;, parseString(teachToNode.getAttributes(), &quot;classes&quot;)));
+			
+			_npcs.put(npcId, set.getBool(&quot;mustUsePetTemplate&quot;, false) ? new PetTemplate(set) : new NpcTemplate(set));
+		}));
+	}
+	
+	public void reload()
+	{
+		_npcs.clear();
+		
+		load();
+	}
+	
+	public NpcTemplate getTemplate(int id)
+	{
+		return _npcs.get(id);
+	}
+	
+	/**
+	 * @param name : The name of the NPC to search.
+	 * @return the {@link NpcTemplate} for a given name.
+	 */
+	public NpcTemplate getTemplateByName(String name)
+	{
+		return _npcs.values().stream().filter(t -&gt; t.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+	}
+	
+	public Collection&lt;NpcTemplate&gt; getTemplates()
+	{
+		return _npcs.values();
+	}
+	
+	public static NpcData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final NpcData INSTANCE = new NpcData();
+	}
+}</pre>
+            
+</body>
+</html>

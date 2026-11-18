@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/WorldRegion.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/WorldRegion.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.zone.type.DerbyTrackZone;
+import com.shnok.javaserver.gameserver.model.zone.type.PeaceZone;
+import com.shnok.javaserver.gameserver.model.zone.type.TownZone;
+import com.shnok.javaserver.gameserver.model.zone.type.subtype.ZoneType;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public final class WorldRegion
+{
+	private final Map&lt;Integer, WorldObject&gt; _objects = new ConcurrentHashMap&lt;&gt;();
+	
+	private final List&lt;ZoneType&gt; _zones = new ArrayList&lt;&gt;();
+	
+	private final int _tileX;
+	private final int _tileY;
+	
+	private final AtomicBoolean _isActive = new AtomicBoolean();
+	private final AtomicInteger _playersCount = new AtomicInteger();
+	
+	public WorldRegion(int x, int y)
+	{
+		_tileX = x;
+		_tileY = y;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;WorldRegion &quot; + _tileX + &quot;_&quot; + _tileY + &quot;, _active=&quot; + _isActive.get() + &quot;, _playersCount=&quot; + _playersCount.get() + &quot;]&quot;;
+	}
+	
+	public Collection&lt;WorldObject&gt; getObjects()
+	{
+		return _objects.values();
+	}
+	
+	public &lt;A extends WorldObject&gt; void forEachType(Class&lt;A&gt; type, Consumer&lt;A&gt; action)
+	{
+		for (WorldObject obj : getObjects())
+		{
+			// Check instance type.
+			if (!type.isAssignableFrom(obj.getClass()))
+				continue;
+			
+			// Consume the action on the casted object.
+			action.accept(type.cast(obj));
+		}
+	}
+	
+	public &lt;A extends WorldObject&gt; void forEachType(Class&lt;A&gt; type, Predicate&lt;A&gt; filter, Consumer&lt;A&gt; action)
+	{
+		for (WorldObject obj : getObjects())
+		{
+			// Check instance type.
+			if (!type.isAssignableFrom(obj.getClass()))
+				continue;
+			
+			// Cast the object.
+			final A actor = type.cast(obj);
+			
+			// Check predicate.
+			if (!filter.test(actor))
+				continue;
+			
+			// Consume the action on the casted object.
+			action.accept(actor);
+		}
+	}
+	
+	public List&lt;WorldRegion&gt; getSurroundingRegions()
+	{
+		final List&lt;WorldRegion&gt; list = new ArrayList&lt;&gt;();
+		
+		for (int ix = -1; ix &lt;= 1; ix++)
+		{
+			for (int iy = -1; iy &lt;= 1; iy++)
+			{
+				final int x = _tileX + ix;
+				final int y = _tileY + iy;
+				
+				if (x &gt;= 0 &amp;&amp; x &lt; World.REGIONS_X &amp;&amp; y &gt;= 0 &amp;&amp; y &lt; World.REGIONS_Y)
+					list.add(World.getInstance().getWorldRegions()[x][y]);
+			}
+		}
+		return list;
+	}
+	
+	/**
+	 * Run a {@link Consumer} upon regions, and return no result.
+	 * @param action : The {@link Consumer} to use.
+	 */
+	public void forEachSurroundingRegion(Consumer&lt;WorldRegion&gt; action)
+	{
+		forEachRegion(1, action);
+	}
+	
+	/**
+	 * Run a {@link Consumer} upon regions surrounding this specific {@link WorldRegion}, and return no result.
+	 * @param depth : The depth of regions to retain.
+	 * @param action : The {@link Consumer} to use.
+	 */
+	public void forEachRegion(int depth, Consumer&lt;WorldRegion&gt; action)
+	{
+		for (int ix = -depth; ix &lt;= depth; ix++)
+		{
+			for (int iy = -depth; iy &lt;= depth; iy++)
+			{
+				final int x = _tileX + ix;
+				final int y = _tileY + iy;
+				
+				if (x &gt;= 0 &amp;&amp; x &lt; World.REGIONS_X &amp;&amp; y &gt;= 0 &amp;&amp; y &lt; World.REGIONS_Y)
+					action.accept(World.getInstance().getWorldRegions()[x][y]);
+			}
+		}
+	}
+	
+	public List&lt;ZoneType&gt; getZones()
+	{
+		return _zones;
+	}
+	
+	public void addZone(ZoneType zone)
+	{
+		_zones.add(zone);
+	}
+	
+	public void removeZone(ZoneType zone)
+	{
+		_zones.remove(zone);
+	}
+	
+	public void revalidateZones(Creature character)
+	{
+		// Do NOT update the world region while the character is still in the process of teleporting
+		if (character.isTeleporting())
+			return;
+		
+		_zones.forEach(z -&gt; z.revalidateInZone(character));
+	}
+	
+	public void removeFromZones(Creature character)
+	{
+		_zones.forEach(z -&gt; z.removeCreature(character));
+	}
+	
+	public boolean containsZone(int zoneId)
+	{
+		for (ZoneType z : _zones)
+		{
+			if (z.getId() == zoneId)
+				return true;
+		}
+		return false;
+	}
+	
+	public boolean checkEffectRangeInsidePeaceZone(L2Skill skill, Location loc)
+	{
+		final int range = skill.getEffectRange();
+		final int up = loc.getY() + range;
+		final int down = loc.getY() - range;
+		final int left = loc.getX() + range;
+		final int right = loc.getX() - range;
+		
+		for (ZoneType e : _zones)
+		{
+			if ((e instanceof TownZone tz &amp;&amp; tz.isPeaceZone()) || e instanceof DerbyTrackZone || e instanceof PeaceZone)
+			{
+				if (e.isInsideZone(loc.getX(), up, loc.getZ()))
+					return false;
+				
+				if (e.isInsideZone(loc.getX(), down, loc.getZ()))
+					return false;
+				
+				if (e.isInsideZone(left, loc.getY(), loc.getZ()))
+					return false;
+				
+				if (e.isInsideZone(right, loc.getY(), loc.getZ()))
+					return false;
+				
+				if (e.isInsideZone(loc.getX(), loc.getY(), loc.getZ()))
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean isActive()
+	{
+		return _isActive.get();
+	}
+	
+	public int getPlayersCount()
+	{
+		return _playersCount.get();
+	}
+	
+	/**
+	 * Check if neighbors (including self) aren&#x27;t inhabited.
+	 * @return true if the above condition is met.
+	 */
+	public boolean isEmptyNeighborhood()
+	{
+		for (int ix = -1; ix &lt;= 1; ix++)
+		{
+			for (int iy = -1; iy &lt;= 1; iy++)
+			{
+				final int x = _tileX + ix;
+				final int y = _tileY + iy;
+				
+				if (x &gt;= 0 &amp;&amp; x &lt; World.REGIONS_X &amp;&amp; y &gt;= 0 &amp;&amp; y &lt; World.REGIONS_Y)
+				{
+					final WorldRegion neighbor = World.getInstance().getWorldRegions()[x][y];
+					if (neighbor.getPlayersCount() != 0)
+						return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * This function turns this region&#x27;s AI on or off.
+	 * @param value : if true, activate hp/mp regen and random animation. If false, clean aggro/attack list, set objects on IDLE and drop their AI tasks.
+	 */
+	public void setActive(boolean value)
+	{
+		if (!_isActive.compareAndSet(!value, value))
+			return;
+		
+		for (WorldObject object : _objects.values())
+		{
+			if (value)
+				object.onActiveRegion();
+			else
+				object.onInactiveRegion();
+		}
+	}
+	
+	/**
+	 * Put the given object into WorldRegion objects map. If it&#x27;s a player, increment the counter (used for region activation/desactivation).
+	 * @param object : The object to register into this region.
+	 */
+	public void addVisibleObject(WorldObject object)
+	{
+		if (object == null)
+			return;
+		
+		_objects.put(object.getObjectId(), object);
+		
+		if (object instanceof Player)
+			_playersCount.incrementAndGet();
+	}
+	
+	/**
+	 * Remove the given object from WorldRegion objects map. If it&#x27;s a player, decrement the counter (used for region activation/desactivation).
+	 * @param object : The object to remove from this region.
+	 */
+	public void removeVisibleObject(WorldObject object)
+	{
+		if (object == null)
+			return;
+		
+		_objects.remove(object.getObjectId());
+		
+		if (object instanceof Player)
+			_playersCount.decrementAndGet();
+	}
+}</pre>
+            
+</body>
+</html>

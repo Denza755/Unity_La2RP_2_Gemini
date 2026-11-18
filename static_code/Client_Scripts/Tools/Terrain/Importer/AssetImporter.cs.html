@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Importer/AssetImporter.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Importer/AssetImporter.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+public abstract class AssetImporter {
+    protected static void ImportFiles(string inputFolder, List&lt;string&gt; files, bool overwrite) {
+        foreach(var filePath in files) {
+            string path = filePath;
+            if(!File.Exists(path)) {
+                string pathRectified = path.Replace(inputFolder, String.Empty);
+                string[] split = pathRectified.Split(&quot;\\&quot;);
+                path = Path.Combine(inputFolder, split[1], &quot;Texture&quot;, split[2]);
+
+                if(!File.Exists(path)) {
+                    Debug.LogError(&quot;File &quot; + path + &quot; doesn&#x27;t exist.&quot;);
+                    continue;
+                }
+            }
+
+            string relativePath = Path.GetRelativePath(inputFolder, path.Replace(&quot;\\Texture&quot;, string.Empty));
+            string destination = null;
+            if(Path.GetExtension(path).ToLower() == &quot;.fbx&quot;) {
+                destination = Path.Combine(&quot;Assets&quot;, &quot;Resources&quot;, &quot;Data&quot;, &quot;StaticMeshes&quot;, relativePath);
+                Debug.Log(destination);
+            } else if(Path.GetExtension(path).ToLower() == &quot;.png&quot;) {
+                destination = Path.Combine(&quot;Assets&quot;, &quot;Resources&quot;, &quot;Data&quot;, &quot;Textures&quot;, relativePath);
+                Debug.Log(destination);
+            } else if(Path.GetExtension(path).ToLower() == &quot;.txt&quot;) {
+                destination = Path.Combine(&quot;Assets&quot;, &quot;Resources&quot;, &quot;Data&quot;, &quot;Textures&quot;, relativePath);
+                Debug.Log(destination);
+            }
+
+            if(destination != null) {
+                if(!Directory.Exists(Path.GetDirectoryName(destination))) {
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                }
+
+                try {
+                    File.Copy(path, destination, overwrite);
+                } catch(IOException e) {
+                    Debug.LogWarning(destination + &quot; already exists or &quot; + e.Message);
+                }
+
+            }
+        }
+    }
+
+    protected static string FindInSubDirectories(string baseFolder, string fileName) {
+        try {
+            string[] files = Directory.GetFiles(baseFolder, fileName, SearchOption.AllDirectories);
+
+            if(files.Length &gt; 0) {
+                foreach(string file in files) {
+                    return file;
+                }
+            } else {
+                Debug.Log(&quot;File not found in the specified directory.&quot;);
+            }
+        } catch(DirectoryNotFoundException e) {
+            Debug.Log(&quot;Directory not found: &quot; + e.Message);
+        } catch(Exception ex) {
+            Debug.LogError(&quot;An error occurred: &quot; + ex.Message);
+        }
+
+        return null;
+    }
+
+    protected static string GetParentFolder(string path) {
+        string currentDirectory = path;
+        if(Path.GetExtension(path) != string.Empty) {
+            currentDirectory = Path.GetDirectoryName(path);
+        }
+
+        string parentFolderFullPath = Directory.GetParent(currentDirectory).FullName;
+        string parentFolderRelativePath = Path.Combine(&quot;Assets&quot;, Path.GetRelativePath(Application.dataPath, parentFolderFullPath));
+        return parentFolderRelativePath;
+    }
+
+    protected static string GetFolderName(string path) {
+        string folderName = Path.GetFileName(path);
+        return folderName;
+    }
+}
+#endif
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/ExitWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/ExitWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class ExitWindow : L2PopupWindow
+{
+    private Button _exitButton;
+    private Button _restartButton;
+    private Button _cancelButton;
+    private Label _windowName;
+    private Label _expAcquired;
+    private Label _adenaAcquired;
+    private Label _itemAcquired;
+
+    private static ExitWindow _instance;
+    public static ExitWindow Instance
+    {
+        get { return _instance; }
+    }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/ExitWindow/ExitWindow&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        _windowName = (Label)GetElementById(&quot;windows-name-label&quot;);
+        _expAcquired = (Label)GetElementById(&quot;CountExp&quot;);
+        _adenaAcquired = (Label)GetElementById(&quot;CountAdena&quot;);
+        _itemAcquired = (Label)GetElementById(&quot;CountItem&quot;);
+        _restartButton = GetElementById(&quot;RestartButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        _exitButton = GetElementById(&quot;ExitButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        _cancelButton = GetElementById(&quot;CancelButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        _restartButton.AddManipulator(new ButtonClickSoundManipulator(_restartButton));
+        _exitButton.AddManipulator(new ButtonClickSoundManipulator(_exitButton));
+        _cancelButton.AddManipulator(new ButtonClickSoundManipulator(_cancelButton));
+
+        Button initializeButton = GetElementById(&quot;InitializeButton&quot;).Q&lt;Button&gt;(&quot;L2Button&quot;);
+        initializeButton.AddManipulator(new ButtonClickSoundManipulator(initializeButton));
+
+        var _boxHeader = GetElementByClass(&quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(_boxHeader, _windowEle, this);
+        _boxHeader.AddManipulator(drag);
+
+        yield return new WaitForEndOfFrame();
+
+        CenterWindow();
+
+        HideWindow(true);
+
+        RegisterCloseWindowEvent(&quot;btn-close-frame&quot;);
+        RegisterClickWindowEvent(_windowEle, _boxHeader);
+
+        _restartButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; HandleRestartButtonClick());
+        _exitButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; HandleExitButtonClick());
+        _cancelButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; HandleCancelButtonClick());
+
+        L2GameUI.Instance.WindowLoadComplete();
+    }
+
+    public void OpenWindow(bool exit)
+    {
+        if (exit)
+        {
+            _windowName.text = &quot;Exit Game&quot;;
+            _restartButton.style.display = DisplayStyle.None;
+            _exitButton.style.display = DisplayStyle.Flex;
+        }
+        else
+        {
+            _windowName.text = &quot;Restart Game&quot;;
+            _restartButton.style.display = DisplayStyle.Flex;
+            _exitButton.style.display = DisplayStyle.None;
+        }
+
+        ShowWindow();
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+        L2GameUI.Instance.WindowOpened(this);
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        base.HideWindow(silent);
+
+        if (!silent)
+            AudioManager.Instance.PlayUISound(&quot;window_close&quot;);
+
+        L2GameUI.Instance.WindowClosed(this);
+    }
+
+    private void HandleRestartButtonClick()
+    {
+        HideWindow(false);
+        GameClient.Instance.ClientPacketHandler.RequestRestart();
+    }
+
+    private void HandleExitButtonClick()
+    {
+        HideWindow(false);
+        GameClient.Instance.ClientPacketHandler.RequestDisconnect();
+    }
+
+    private void HandleCancelButtonClick()
+    {
+        HideWindow(false);
+    }
+}</pre>
+            
+</body>
+</html>

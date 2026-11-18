@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Doorman.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Doorman.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.data.xml.DoorData;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+/**
+ * An instance type extending {@link Folk}, used to open doors and teleport into specific locations. Used notably by Border Frontier captains, and Doorman (clan halls and castles).&lt;br&gt;
+ * &lt;br&gt;
+ * It has an active siege (false by default) and ownership (true by default) checks, which are overidden on children classes.&lt;br&gt;
+ * &lt;br&gt;
+ * It is the mother class of {@link ClanHallDoorman} and {@link CastleDoorman}.
+ */
+public class Doorman extends Folk
+{
+	public Doorman(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;open_doors&quot;))
+		{
+			if (isOwnerClan(player))
+			{
+				if (isUnderSiege())
+				{
+					cannotManageDoors(player);
+					player.sendPacket(SystemMessageId.GATES_NOT_OPENED_CLOSED_DURING_SIEGE);
+				}
+				else
+					openDoors(player, command);
+			}
+		}
+		else if (command.startsWith(&quot;close_doors&quot;))
+		{
+			if (isOwnerClan(player))
+			{
+				if (isUnderSiege())
+				{
+					cannotManageDoors(player);
+					player.sendPacket(SystemMessageId.GATES_NOT_OPENED_CLOSED_DURING_SIEGE);
+				}
+				else
+					closeDoors(player, command);
+			}
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/doormen/&quot; + getTemplate().getNpcId() + ((!isOwnerClan(player)) ? &quot;-no.htm&quot; : &quot;.htm&quot;));
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+		
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	@Override
+	protected boolean isTeleportAllowed(Player player)
+	{
+		return isOwnerClan(player);
+	}
+	
+	protected void openDoors(Player player, String command)
+	{
+		StringTokenizer st = new StringTokenizer(command.substring(10), &quot;, &quot;);
+		st.nextToken();
+		
+		while (st.hasMoreTokens())
+			DoorData.getInstance().getDoor(Integer.parseInt(st.nextToken())).openMe();
+	}
+	
+	protected void closeDoors(Player player, String command)
+	{
+		StringTokenizer st = new StringTokenizer(command.substring(11), &quot;, &quot;);
+		st.nextToken();
+		
+		while (st.hasMoreTokens())
+			DoorData.getInstance().getDoor(Integer.parseInt(st.nextToken())).closeMe();
+	}
+	
+	protected void cannotManageDoors(Player player)
+	{
+		String path = &quot;data/html/doormen/&quot; + getNpcId() + &quot;-busy.htm&quot;;
+		if (!HtmCache.getInstance().isLoadable(path))
+			path = &quot;data/html/doormen/busy.htm&quot;;
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(path);
+		player.sendPacket(html);
+		
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	protected boolean isOwnerClan(Player player)
+	{
+		return true;
+	}
+	
+	protected boolean isUnderSiege()
+	{
+		return false;
+	}
+}</pre>
+            
+</body>
+</html>

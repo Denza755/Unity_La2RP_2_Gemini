@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminBookmark.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminBookmark.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.data.Pagination;
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.sql.BookmarkTable;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.records.Bookmark;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+public class AdminBookmark implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_bk&quot;,
+		&quot;admin_delbk&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		st.nextToken();
+		
+		int page = 1;
+		
+		if (command.startsWith(&quot;admin_bk&quot;))
+		{
+			if (st.hasMoreTokens())
+			{
+				final String param = st.nextToken();
+				if (StringUtil.isDigit(param))
+					page = Integer.parseInt(param);
+				else
+				{
+					if (param.length() &gt; 15)
+					{
+						player.sendMessage(&quot;The bookmark name is too long.&quot;);
+						return;
+					}
+					
+					if (BookmarkTable.getInstance().isExisting(param, player.getObjectId()))
+					{
+						player.sendMessage(&quot;The bookmark name already exists.&quot;);
+						return;
+					}
+					
+					BookmarkTable.getInstance().saveBookmark(param, player);
+				}
+			}
+		}
+		else if (command.startsWith(&quot;admin_delbk&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendMessage(&quot;The command delbk must be followed by a valid name.&quot;);
+				return;
+			}
+			
+			final String param = st.nextToken();
+			
+			if (!BookmarkTable.getInstance().isExisting(param, player.getObjectId()))
+			{
+				player.sendMessage(&quot;That bookmark doesn&#x27;t exist.&quot;);
+				return;
+			}
+			
+			BookmarkTable.getInstance().deleteBookmark(param, player.getObjectId());
+		}
+		showBookmarks(player, page);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+	
+	/**
+	 * Show the basic HTM fed with generated data.
+	 * @param player : The {@link Player} to test.
+	 * @param page : The page id to show.
+	 */
+	private static void showBookmarks(Player player, int page)
+	{
+		// Load static htm.
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		html.setFile(&quot;data/html/admin/bk.htm&quot;);
+		
+		int row = 0;
+		
+		// Generate data.
+		final Pagination&lt;Bookmark&gt; list = new Pagination&lt;&gt;(BookmarkTable.getInstance().getBookmarks(player.getObjectId()).stream(), page, PAGE_LIMIT_15);
+		for (Bookmark bk : list)
+		{
+			list.append(((row % 2) == 0 ? &quot;&lt;table width=280 bgcolor=000000&gt;&lt;tr&gt;&quot; : &quot;&lt;table width=280&gt;&lt;tr&gt;&quot;));
+			list.append(&quot;&lt;td width=230&gt;&lt;a action=\&quot;bypass -h admin_teleport &quot;, bk.x(), &quot; &quot;, bk.y(), &quot; &quot;, bk.z(), &quot;\&quot;&gt;&quot;, bk.name(), &quot; (&quot;, bk.x(), &quot; &quot;, bk.y(), &quot; &quot;, bk.z(), &quot;)&quot;, &quot;&lt;/a&gt;&lt;/td&gt;&lt;td width=50&gt;&lt;a action=\&quot;bypass -h admin_delbk &quot;, bk.name(), &quot;\&quot;&gt;Remove&lt;/a&gt;&lt;/td&gt;&quot;);
+			list.append(&quot;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.SquareGray\&quot; width=280 height=1&gt;&quot;);
+			
+			row++;
+		}
+		
+		list.generateSpace(20);
+		list.generatePages(&quot;bypass admin_bk %page%&quot;);
+		
+		html.replace(&quot;%content%&quot;, list.getContent());
+		player.sendPacket(html);
+	}
+}</pre>
+            
+</body>
+</html>

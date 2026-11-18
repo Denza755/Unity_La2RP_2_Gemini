@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Utils/L2MetaDataUtils.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Utils/L2MetaDataUtils.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using UnityEngine;
+
+public class L2MetaDataUtils
+{
+    public static float ParseFloatFromInfo(string info)
+    {
+        int equalsIndex = info.IndexOf(&#x27;=&#x27;);
+        string valueString = info.Substring(equalsIndex + 1, info.Length - equalsIndex - 1);
+        return float.Parse(valueString);
+    }
+
+    public static bool ParseBoolFromInfo(string info)
+    {
+        int equalsIndex = info.IndexOf(&#x27;=&#x27;);
+        string valueString = info.Substring(equalsIndex + 1, info.Length - equalsIndex - 1);
+        return valueString.Equals(&quot;1&quot;);
+    }
+
+    public static int ParseIntFromInfo(string info)
+    {
+        int equalsIndex = info.IndexOf(&#x27;=&#x27;);
+        string valueString = info.Substring(equalsIndex + 1, info.Length - equalsIndex - 1);
+        return int.Parse(valueString);
+    }
+
+    public static string[] GetFolderAndFileFromInfo(string value)
+    {
+        string textureName = value.Contains(&quot;=&quot;) ? value.Split(&#x27;=&#x27;)[1] : value;
+
+        textureName = textureName.Replace(&quot;Texture&#x27;&quot;, string.Empty);
+        textureName = textureName.Replace(&quot;StaticMesh&#x27;&quot;, string.Empty);
+        /*textureName = textureName.Replace(&quot;.Texture&quot;, string.Empty);
+		textureName = textureName.Replace(&quot;Height.&quot;, string.Empty);*/
+        textureName = textureName.Replace(&quot;&#x27;&quot;, string.Empty);
+
+        string[] result = textureName.Split(&#x27;.&#x27;);
+
+        if (result.Length == 2)
+        {
+            return result;
+        }
+        else if (result.Length &gt; 2)
+        {
+            return new string[2] { result[0], result[2] };
+        }
+
+        return result;
+    }
+
+    public static Vector3 ParseVector3(string line)
+    {
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+        string[] valueParts = valueString.Split(&#x27;,&#x27;);
+
+        float x = 0, y = 0, z = 0;
+        foreach (var part in valueParts)
+        {
+
+            if (part.Contains(&quot;X&quot;))
+            {
+                x = float.Parse(part.Substring(part.IndexOf(&#x27;=&#x27;) + 1), CultureInfo.InvariantCulture);
+            }
+            if (part.Contains(&quot;Y&quot;))
+            {
+                y = float.Parse(part.Substring(part.IndexOf(&#x27;=&#x27;) + 1), CultureInfo.InvariantCulture);
+            }
+            if (part.Contains(&quot;Z&quot;))
+            {
+                z = float.Parse(part.Substring(part.IndexOf(&#x27;=&#x27;) + 1), CultureInfo.InvariantCulture);
+            }
+        }
+
+        return new Vector3(x, y, z);
+    }
+
+    public static Vector3 ParseRotation(string line)
+    {
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+        string[] valueParts = valueString.Split(&#x27;,&#x27;);
+
+        float x = 0, y = 0, z = 0;
+        foreach (string s in valueParts)
+        {
+            if (s.Contains(&quot;Pitch&quot;))
+            {
+                x = int.Parse(s.Split(&quot;=&quot;)[1]);
+            }
+            else if (s.Contains(&quot;Yaw&quot;))
+            {
+                y = int.Parse(s.Split(&quot;=&quot;)[1]);
+            }
+            else if (s.Contains(&quot;Roll&quot;))
+            {
+                z = int.Parse(s.Split(&quot;=&quot;)[1]);
+            }
+        }
+
+        return new Vector3(x, y, z);
+    }
+
+    public static bool ParseBool(string line)
+    {
+        string[] valueParts = line.Split(&#x27;=&#x27;);
+        if (valueParts[1].ToLower() == &quot;true&quot;)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static float ParseFloat(string line)
+    {
+        string[] valueParts = line.Split(&#x27;=&#x27;);
+        return float.Parse(valueParts[1]);
+    }
+
+    public static int ParseInt(string line)
+    {
+        string[] valueParts = line.Split(&#x27;=&#x27;);
+        return int.Parse(valueParts[1]);
+    }
+
+    public static ColorScale ParseColorScale(string line)
+    {
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 1);
+
+
+        float relativeTime = 0;
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        int a = 0;
+        string colorString = &quot;&quot;;
+        string relativeTimeString = &quot;&quot;;
+
+        if (valueString.Contains(&quot;RelativeTime&quot;) &amp;&amp; valueString.Contains(&quot;Color&quot;))
+        {
+            int id = valueString.IndexOf(&#x27;,&#x27;);
+            colorString = valueString.Substring(id + 1, valueString.Length - id - 1);
+            relativeTimeString = valueString.Substring(0, id);
+        }
+        else if (valueString.Contains(&quot;Color&quot;))
+        {
+            colorString = valueString;
+        }
+        else
+        {
+            relativeTimeString = valueString;
+        }
+
+        ColorScale colorScale = new ColorScale();
+
+        if (relativeTimeString.Length &gt; 0)
+        {
+            float.TryParse(relativeTimeString.Replace(&quot;RelativeTime=&quot;, &quot;&quot;), out relativeTime);
+        }
+
+        if (colorString.Length &gt; 0)
+        {
+            colorString = colorString.Replace(&quot;Color=&quot;, &quot;&quot;);
+
+            string[] rgba = colorString.Split(&quot;,&quot;);
+
+            for (int i = 0; i &lt; rgba.Length; i++)
+            {
+                string[] keyval = rgba[i].Split(&quot;=&quot;);
+                int val = int.Parse(keyval[1]);
+
+                if (keyval[0] == &quot;R&quot;)
+                {
+                    r = val;
+                }
+                else if (keyval[0] == &quot;G&quot;)
+                {
+                    g = val;
+                }
+                else if (keyval[0] == &quot;B&quot;)
+                {
+                    b = val;
+                }
+                else if (keyval[0] == &quot;A&quot;)
+                {
+                    a = val;
+                }
+            }
+
+            // FUNCTION USED TO PARSE SYSTEM MESSAGE COLORS
+            /*
+             case &quot;color&quot;:
+                            systemMessage.Color = value;
+                            string r = systemMessage.Color.Substring(0, 2);
+                            string g = systemMessage.Color.Substring(2, 2);
+                            string b = systemMessage.Color.Substring(4, 2);
+                            string a = systemMessage.Color.Substring(6, 2);
+                            systemMessage.Color =  b + g + r + &quot;B0&quot;;
+                            */
+        }
+
+        colorScale.relativeTime = relativeTime;
+        colorScale.r = r;
+        colorScale.g = g;
+        colorScale.b = b;
+        colorScale.a = a;
+
+        return colorScale;
+    }
+
+    public static SizeScale ParseSizeScale(string line)
+    {
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        string valueString = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+
+        SizeScale sizeScale = new SizeScale();
+
+        string[] timeSize = valueString.Split(&quot;,&quot;);
+        Debug.Log(line);
+        for (int i = 0; i &lt; timeSize.Length; i++)
+        {
+            string[] keyVal = timeSize[i].Split(&quot;=&quot;);
+            if (keyVal[0] == &quot;RelativeTime&quot;)
+            {
+                sizeScale.relativeTime = float.Parse(keyVal[1], CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                sizeScale.relativeSize = float.Parse(keyVal[1], CultureInfo.InvariantCulture);
+            }
+        }
+
+        return sizeScale;
+    }
+
+    public static Range3D ParseRange3D(string line)
+    {
+        int equalsIndex = line.IndexOf(&#x27;=&#x27;);
+        line = line.Substring(equalsIndex + 1, line.Length - equalsIndex - 2);
+
+        Range3D range3D = new Range3D();
+
+        line = line.Replace(&quot;,Max&quot;, &quot;|Max&quot;);
+
+        string[] xyz = line.Split(&quot;,&quot;);
+
+        for (int i = 0; i &lt; xyz.Length; i++)
+        {
+            bool x = xyz[i].Contains(&quot;X=&quot;);
+            bool y = xyz[i].Contains(&quot;Y=&quot;);
+            bool z = xyz[i].Contains(&quot;Z=&quot;);
+
+            xyz[i] = xyz[i].Replace(&quot;X=&quot;, &quot;&quot;).Replace(&quot;Y=&quot;, &quot;&quot;).Replace(&quot;Z=&quot;, &quot;&quot;);
+
+            Range range = ParseRange(xyz[i]);
+            if (x) range3D.x = range;
+            if (y) range3D.y = range;
+            if (z) range3D.z = range;
+        }
+
+        return range3D;
+    }
+
+    public static Range ParseRange(string line)
+    {
+        line = line.Replace(&quot;,Max&quot;, &quot;|Max&quot;);
+
+        string[] minMax = line.Split(&quot;|&quot;);
+
+        Debug.LogWarning(line);
+        Range range = new Range();
+        float min = 0;
+        float max = 0;
+        for (int q = 0; q &lt; minMax.Length; q++)
+        {
+            if (minMax[q].Contains(&quot;Min=&quot;))
+            {
+                minMax[q] = minMax[q].Replace(&quot;Min=&quot;, &quot;&quot;);
+                min = float.Parse(minMax[q], CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                minMax[q] = minMax[q].Replace(&quot;Max=&quot;, &quot;&quot;);
+                max = float.Parse(minMax[q], CultureInfo.InvariantCulture);
+            }
+        }
+
+        range.min = min;
+        range.max = max;
+
+        return range;
+    }
+
+    public static Vector3 ParseVector3Poly(string line)
+    {
+        string[] valueParts = line.Split(&#x27;,&#x27;);
+
+        float x = 0, y = 0, z = 0;
+        x = float.Parse(valueParts[0], CultureInfo.InvariantCulture);
+        y = float.Parse(valueParts[1], CultureInfo.InvariantCulture);
+        z = float.Parse(valueParts[2], CultureInfo.InvariantCulture);
+
+        return new Vector3(x, y, z);
+    }
+
+    public static string[] ParsePolyFlags(int value)
+    {
+        if (value == 0)
+        {
+            return new string[] { &quot;PF_Default&quot; };
+        }
+
+        Dictionary&lt;string, int&gt; flags = new Dictionary&lt;string, int&gt;();
+        flags.Add(&quot;PF_Invisible&quot;, 1);
+        flags.Add(&quot;PF_Masked&quot;, 2);
+        flags.Add(&quot;PF_Translucent&quot;, 4);
+        flags.Add(&quot;PF_NotSolid&quot;, 8);
+        flags.Add(&quot;PF_Environment&quot;, 16);
+        flags.Add(&quot;PF_ForceViewZone&quot;, 16);
+        flags.Add(&quot;PF_Semisolid&quot;, 32);
+        flags.Add(&quot;PF_Modulated&quot;, 64);
+        flags.Add(&quot;PF_FakeBackdrop&quot;, 128);
+        flags.Add(&quot;PF_TwoSided&quot;, 256);
+        flags.Add(&quot;PF_AutoUPan&quot;, 512);
+        flags.Add(&quot;PF_AutoVPan&quot;, 1024);
+        flags.Add(&quot;PF_NoSmooth&quot;, 2048);
+        flags.Add(&quot;PF_BigWavy&quot;, 4096);
+        flags.Add(&quot;PF_SpecialPoly&quot;, 4096);
+        flags.Add(&quot;PF_SmallWavy&quot;, 8192);
+        flags.Add(&quot;PF_Flat&quot;, 16384);
+        flags.Add(&quot;PF_LowShadowDetail&quot;, 32768);
+        flags.Add(&quot;PF_NoMerge&quot;, 65536);
+        flags.Add(&quot;PF_CloudWavy&quot;, 131072);
+        flags.Add(&quot;PF_DirtyShadows&quot;, 262144);
+        flags.Add(&quot;PF_BrightCorners&quot;, 524288);
+        flags.Add(&quot;PF_SpecialLit&quot;, 1048576);
+        flags.Add(&quot;PF_Gouraud&quot;, 2097152);
+        flags.Add(&quot;PF_NoBoundRejection&quot;, 2097152);
+        flags.Add(&quot;PF_Unlit&quot;, 4194304);
+        flags.Add(&quot;PF_HighShadowDetail&quot;, 8388608);
+        flags.Add(&quot;PF_Memorized&quot;, 16777216);
+        flags.Add(&quot;PF_RenderHint&quot;, 16777216);
+        flags.Add(&quot;PF_Selected&quot;, 33554432);
+        flags.Add(&quot;PF_Portal&quot;, 67108864);
+        flags.Add(&quot;PF_Mirrored&quot;, 134217728);
+        flags.Add(&quot;PF_Highlighted&quot;, 268435456);
+        flags.Add(&quot;unused&quot;, 536870912);
+        flags.Add(&quot;PF_FlatShaded&quot;, 1073741824);
+        flags.Add(&quot;PF_EdProcessed&quot;, 1073741824);
+        flags.Add(&quot;PF_RenderFog&quot;, 1073741824);
+        /*flags.Add(&quot;PF_EdCut&quot;, 2147483648);
+        flags.Add(&quot;PF_Occlude&quot;, 2147483648);*/
+
+        List&lt;string&gt; setFlags = new List&lt;string&gt;();
+
+        foreach (var entry in flags)
+        {
+            if ((value &amp; entry.Value) != 0)
+            {
+                setFlags.Add(entry.Key);
+            }
+        }
+
+        foreach (string flag in setFlags)
+        {
+            // Debug.Log(flag);
+        }
+
+        return setFlags.ToArray();
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

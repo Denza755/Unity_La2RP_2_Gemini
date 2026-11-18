@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/IconManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/IconManager.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+public class IconTable
+{
+    private string _iconFolder = &quot;Data\\SysTextures\\Icon&quot;;
+
+    private Texture2D _noImageIcon;
+
+    private Dictionary&lt;int, Texture2D&gt; _icons = new Dictionary&lt;int, Texture2D&gt;();
+    private Dictionary&lt;string, Texture2D&gt; _keyIcons = new Dictionary&lt;string, Texture2D&gt;();
+
+    private static IconTable _instance;
+    public static IconTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new IconTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    public void Initialize()
+    {
+        _noImageIcon = GetNoImageIcon();
+
+        CacheIcons();
+    }
+
+    private void CacheIcons()
+    {
+        foreach (Weapon weapon in ItemTable.Instance.Weapons.Values)
+        {
+            Texture2D icon = LoadTextureByName(weapon.Icon);
+            _icons.TryAdd(weapon.Id, icon);
+        }
+
+        foreach (Armor armor in ItemTable.Instance.Armors.Values)
+        {
+            Texture2D icon = LoadTextureByName(armor.Icon);
+            _icons.TryAdd(armor.Id, icon);
+        }
+
+        foreach (EtcItem etcItem in ItemTable.Instance.EtcItems.Values)
+        {
+            Texture2D icon = LoadTextureByName(etcItem.Icon);
+            _icons.TryAdd(etcItem.Id, icon);
+        }
+    }
+
+    public Texture2D LoadTextureByName(string name)
+    {
+        string icon = _iconFolder + &quot;\\&quot; + CleanIconName(name);
+        var result = Resources.Load&lt;Texture2D&gt;(icon);
+
+        //Debug.Log($&quot;Loading icon {name}.&quot;);
+        if (result != null)
+        {
+            return result;
+        }
+
+        // Debug.LogWarning($&quot;Missing icon: {name}.&quot;);
+
+        return _noImageIcon;
+    }
+
+    public Texture2D GetIcon(int id)
+    {
+        Texture2D icon;
+        _icons.TryGetValue(id, out icon);
+
+        if (icon == null)
+        {
+            _icons.Add(id, _noImageIcon);
+            return _noImageIcon;
+        }
+
+        return icon;
+    }
+
+    private Texture2D GetNoImageIcon()
+    {
+        return Resources.Load&lt;Texture2D&gt;(_iconFolder + &quot;\\&quot; + &quot;NOIMAGE&quot;);
+    }
+
+    private string CleanIconName(string name)
+    {
+        return name.Replace(&quot;icon.&quot;, &quot;&quot;);
+    }
+}
+</pre>
+            
+</body>
+</html>

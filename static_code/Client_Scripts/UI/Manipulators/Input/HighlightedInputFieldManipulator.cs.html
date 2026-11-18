@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Manipulators/Input/HighlightedInputFieldManipulator.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Manipulators/Input/HighlightedInputFieldManipulator.cs</h1>
+            <pre>using UnityEngine.UIElements;
+
+public class HighlightedInputFieldManipulator : PointerManipulator
+{
+    private IVisualElementScheduledItem _scheduler;
+    private int _animationFrameCount = 20;
+    private int _currentFrame = 0;
+    private VisualElement _backgroundElement;
+
+    public HighlightedInputFieldManipulator(VisualElement target, int frames)
+    {
+        this.target = target;
+        _animationFrameCount = frames;
+        _backgroundElement = target.Q&lt;VisualElement&gt;(&quot;unity-text-input&quot;);
+    }
+
+    protected override void RegisterCallbacksOnTarget()
+    {
+        _scheduler = target.schedule.Execute(() =&gt; NextBackgroundFrame()).Every(70);
+        _scheduler.Pause();
+
+        target.RegisterCallback&lt;BlurEvent&gt;(OnBlurEvent);
+        target.RegisterCallback&lt;FocusEvent&gt;(OnFocusEvent);
+    }
+
+    protected override void UnregisterCallbacksFromTarget()
+    {
+        target.UnregisterCallback&lt;BlurEvent&gt;(OnBlurEvent);
+        target.UnregisterCallback&lt;FocusEvent&gt;(OnFocusEvent);
+    }
+
+    private void OnFocusEvent(FocusEvent evt)
+    {
+        _currentFrame = 0;
+
+        _scheduler.Resume();
+    }
+
+    private void OnBlurEvent(BlurEvent evt)
+    {
+        if (_backgroundElement.ClassListContains(&quot;bg-highlight-&quot; + _currentFrame))
+        {
+            _backgroundElement.RemoveFromClassList(&quot;bg-highlight-&quot; + _currentFrame);
+        }
+
+        _scheduler.Pause();
+    }
+
+    private void NextBackgroundFrame()
+    {
+        int lastFrame = _currentFrame;
+        if (_currentFrame == _animationFrameCount - 1)
+        {
+            _currentFrame = 0;
+        }
+        else
+        {
+            _currentFrame++;
+        }
+
+        if (_backgroundElement.ClassListContains(&quot;bg-highlight-&quot; + lastFrame))
+        {
+            _backgroundElement.RemoveFromClassList(&quot;bg-highlight-&quot; + lastFrame);
+        }
+
+        _backgroundElement.AddToClassList(&quot;bg-highlight-&quot; + _currentFrame);
+    }
+}</pre>
+            
+</body>
+</html>

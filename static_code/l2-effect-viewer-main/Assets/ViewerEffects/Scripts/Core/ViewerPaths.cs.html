@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Core/ViewerPaths.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Core/ViewerPaths.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+[Serializable]
+public class ViewerConfigData
+{
+    public string ucEffectsDir;
+    public string meshPackageDir;
+    public string texturePackageDir;
+    public string unpackFallbackDir;
+    public string[] extraPackageDirs;
+    public string blenderExe;
+    public string umodelExe;
+    public float worldCalibrationMesh = 1.8f;
+    // Same split as l2-unity L2FxCoreGeometryTest usage: mesh K=1.8, sprite K=1.1.
+    // UC DrawScale is ignored (not applied to transforms).
+    public float worldCalibrationSprite = 1.1f;
+    // BeamEmitter has separate verified geometry; do not include it in the sprite K test.
+    public float worldCalibrationBeam = 1.4f;
+}
+
+public static class ViewerPaths
+{
+    public static ViewerConfigData Config { get; private set; }
+
+    public static string ProjectRoot =&gt; Directory.GetParent(Application.dataPath)!.FullName;
+    public static string ToolsDir =&gt; Path.Combine(ProjectRoot, &quot;Tools&quot;);
+    public static string UModelDir =&gt; Path.Combine(ToolsDir, &quot;UModel&quot;);
+    public static string BlenderToolsDir =&gt; Path.Combine(ToolsDir, &quot;Blender&quot;);
+    public static string ViewerCacheDir =&gt; Path.Combine(ProjectRoot, &quot;ViewerCache&quot;);
+    public static string DecryptedDir =&gt; Path.Combine(ViewerCacheDir, &quot;decrypted&quot;);
+    public static string ExtractDir =&gt; Path.Combine(ViewerCacheDir, &quot;extract&quot;);
+    public static string AssetsCacheDir =&gt; Path.Combine(Application.dataPath, &quot;ViewerEffects&quot;, &quot;Cache&quot;);
+    public static string PskAddonPath =&gt; Path.Combine(BlenderToolsDir, &quot;io_import_scene_unreal_psa_psk_280.py&quot;);
+    public static string PskToFbxScript =&gt; Path.Combine(BlenderToolsDir, &quot;psk_to_fbx.py&quot;);
+    public static string ViewerDataDir =&gt; Path.Combine(Application.streamingAssetsPath, &quot;ViewerData&quot;);
+
+    public static void EnsureLoaded()
+    {
+        if (Config != null)
+            return;
+
+        string jsonPath = Path.Combine(Application.streamingAssetsPath, &quot;ViewerConfig.json&quot;);
+        if (File.Exists(jsonPath))
+            Config = JsonUtility.FromJson&lt;ViewerConfigData&gt;(File.ReadAllText(jsonPath));
+        Config ??= new ViewerConfigData();
+
+        Config.ucEffectsDir = FirstExistingDir(
+            Config.ucEffectsDir,
+            Path.Combine(Application.streamingAssetsPath, &quot;UcEffects&quot;, &quot;Classes&quot;));
+        Config.meshPackageDir = FirstExistingDir(
+            Config.meshPackageDir,
+            Path.Combine(ViewerDataDir, &quot;Meshes&quot;));
+        Config.texturePackageDir = FirstExistingDir(
+            Config.texturePackageDir,
+            Path.Combine(ViewerDataDir, &quot;Textures&quot;));
+        Config.unpackFallbackDir = FirstExistingDir(Config.unpackFallbackDir);
+        Config.blenderExe = FirstExistingFile(Config.blenderExe);
+        Config.umodelExe = FirstExistingFile(
+            Config.umodelExe,
+            Path.Combine(UModelDir, &quot;umodel_64.exe&quot;),
+            Path.Combine(UModelDir, &quot;umodel.exe&quot;));
+
+        if (Config.extraPackageDirs != null)
+        {
+            for (int i = 0; i &lt; Config.extraPackageDirs.Length; i++)
+                Config.extraPackageDirs[i] = ResolvePath(Config.extraPackageDirs[i]);
+        }
+
+        Directory.CreateDirectory(ViewerCacheDir);
+        Directory.CreateDirectory(DecryptedDir);
+        Directory.CreateDirectory(ExtractDir);
+        Directory.CreateDirectory(AssetsCacheDir);
+    }
+
+    public static IEnumerable&lt;string&gt; PackageSearchDirs()
+    {
+        EnsureLoaded();
+        if (Directory.Exists(Config.meshPackageDir))
+            yield return Config.meshPackageDir;
+        if (Directory.Exists(Config.texturePackageDir))
+            yield return Config.texturePackageDir;
+        if (Config.extraPackageDirs != null)
+        {
+            foreach (string dir in Config.extraPackageDirs)
+            {
+                if (Directory.Exists(dir))
+                    yield return dir;
+            }
+        }
+    }
+
+    static string ResolvePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return &quot;&quot;;
+        if (Path.IsPathRooted(path))
+            return path;
+        return Path.GetFullPath(Path.Combine(ProjectRoot, path.Replace(&#x27;/&#x27;, Path.DirectorySeparatorChar)));
+    }
+
+    static string FirstExistingDir(params string[] paths)
+    {
+        foreach (string path in paths)
+        {
+            string resolved = ResolvePath(path);
+            if (!string.IsNullOrWhiteSpace(resolved) &amp;&amp; Directory.Exists(resolved))
+                return resolved;
+        }
+        return ResolvePath(paths.Length &gt; 0 ? paths[0] : &quot;&quot;);
+    }
+
+    static string FirstExistingFile(params string[] paths)
+    {
+        foreach (string path in paths)
+        {
+            string resolved = ResolvePath(path);
+            if (!string.IsNullOrWhiteSpace(resolved) &amp;&amp; File.Exists(resolved))
+                return resolved;
+        }
+        return &quot;&quot;;
+    }
+}
+</pre>
+            
+</body>
+</html>

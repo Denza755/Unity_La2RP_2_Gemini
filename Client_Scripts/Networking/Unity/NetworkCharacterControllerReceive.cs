@@ -14,14 +14,17 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
     [SerializeField] private float _gravity = 28f;
     [SerializeField] private float _moveSpeedMultiplier = 1f;
     [SerializeField] private float _stopAtRange = 0;
-    [SerializeField] private float _stopAtRangeDefault = 0.15f;
-
-
+    [SerializeField] private float _stopAtRangeDefault = 0.02f;
 
     public long lastUpdateTimestamp = 0;
     [SerializeField] private float _verticalVelocity = 0;
     [SerializeField] public bool _isJumping = false;
     public Vector3 MoveDirection { get { return _direction; } set { _direction = value; } }
+
+    private float _pendingFinalRotation;
+    private bool _hasPendingRotation = false;
+    private Vector3 _prevPosition;
+    private float _stuckTimer = 0f;
 
     void Start()
     {
@@ -40,6 +43,7 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
 
         _direction = Vector3.zero;
         _destination = Vector3.zero;
+        _prevPosition = transform.position;
     }
 
     private void FixedUpdate()
@@ -53,34 +57,107 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
         {
             _direction = Vector3.zero;
             _destination = Vector3.zero;
+            _hasPendingRotation = false;
             return;
         }
 
-        // if (!_networkTransformReceive.IsPositionSynced())
-        // {
-        //     /* pause script during position sync */
-        //     return;
-        // }
+        UpdateSpeed();
+        float currentSpeed = _speed * _moveSpeedMultiplier;
+        Vector3 horizMove = Vector3.zero;
 
-        if (_destination != null && _destination != Vector3.zero)
+        if (_destination != Vector3.zero)
         {
-            CheckIfDestinationReached();
+            Vector3 currentFlat = VectorUtils.To2D(transform.position);
+            Vector3 destinationFlat = VectorUtils.To2D(_destination);
+            Vector3 toDestFlat = destinationFlat - currentFlat;
+            _distanceToDestination = toDestFlat.magnitude;
+
+            float effectiveStopRange = _stopAtRange > 0 ? _stopAtRange : _stopAtRangeDefault;
+
+            if (_distanceToDestination <= effectiveStopRange)
+            {
+                _direction = Vector3.zero;
+                _destination = Vector3.zero;
+                _stuckTimer = 0f;
+
+                if (_hasPendingRotation)
+                {
+                    _networkTransformReceive.SetFinalRotation(_pendingFinalRotation);
+                    _hasPendingRotation = false;
+                }
+
+                _entity.OnStopMoving();
+                _networkTransformReceive.SetNewPosition(transform.position);
+                _networkTransformReceive.ResumePositionSync();
+            }
+            else
+            {
+                _direction = toDestFlat / _distanceToDestination;
+                _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+
+                if (_entity != null && _entity.AnimationController != null)
+                {
+                    _entity.AnimationController.Move();
+                }
+
+                float maxStepDist = currentSpeed * Time.fixedDeltaTime;
+                if (_distanceToDestination < maxStepDist)
+                {
+                    horizMove = _direction * (_distanceToDestination / Time.fixedDeltaTime);
+                }
+                else
+                {
+                    horizMove = _direction * currentSpeed;
+                }
+            }
         }
-        Vector3 ajustedDirection = _direction * _speed * _moveSpeedMultiplier;
-        ajustedDirection = ApplyGravity(ajustedDirection);
+        else if (_direction != Vector3.zero)
+        {
+            horizMove = _direction * currentSpeed;
+        }
+
+        Vector3 adjustedDirection = horizMove;
+        adjustedDirection = ApplyGravity(adjustedDirection);
 
         if (_destination != Vector3.zero && _direction != Vector3.zero)
         {
             float yDiff = _destination.y - transform.position.y;
             if (yDiff > 0.1f)
             {
-                ajustedDirection.y += Mathf.Clamp(yDiff * 2f, 0f, 3f);
+                adjustedDirection.y += Mathf.Clamp(yDiff * 2f, 0f, 3f);
             }
         }
 
         ManageJump();
 
-        _characterController.Move(ajustedDirection * Time.fixedDeltaTime);
+        _characterController.Move(adjustedDirection * Time.fixedDeltaTime);
+
+        // Отслеживание фактического перемещения за кадр
+        Vector3 posAfterMove = transform.position;
+        float deltaXZ = VectorUtils.Distance2D(posAfterMove, _prevPosition);
+        float realSpeedXZ = Time.fixedDeltaTime > 0 ? deltaXZ / Time.fixedDeltaTime : 0;
+        _prevPosition = posAfterMove;
+
+        if (_destination != Vector3.zero || _direction != Vector3.zero)
+        {
+            if (realSpeedXZ < 0.05f)
+            {
+                _stuckTimer += Time.fixedDeltaTime;
+                if (_stuckTimer >= 0.6f)
+                {
+                    ResetDestination();
+                    _stuckTimer = 0f;
+                }
+            }
+            else
+            {
+                _stuckTimer = 0f;
+            }
+        }
+        else
+        {
+            _stuckTimer = 0f;
+        }
     }
     private Vector3 ApplyGravity(Vector3 dir)
     {
@@ -127,18 +204,39 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
         if (direction.x != 0 || direction.z != 0)
         {
             _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(direction.x, direction.z));
-        }
-
-        if (direction.x != 0 || direction.z != 0)
-        {
             _entity.AnimationController.Move();
+            _networkTransformReceive.PausePositionSync();
         }
         else
         {
-            _entity.AnimationController.Wait();
-        }
+            float dist = VectorUtils.Distance2D(transform.position, position);
+            if (dist > 0.05f && dist <= 5.0f)
+            {
+                _destination = position;
+                _lastDestination = position;
+                _stopAtRange = 0f;
+                _hasPendingRotation = false;
+                _stuckTimer = 0f;
 
-        _networkTransformReceive.ResumePositionSync();
+                Vector3 transformFlat = VectorUtils.To2D(transform.position);
+                Vector3 destinationFlat = VectorUtils.To2D(_destination);
+                _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
+                _direction = (destinationFlat - transformFlat).normalized;
+
+                _networkTransformReceive.PausePositionSync();
+                _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+                _entity.AnimationController.Move();
+            }
+            else
+            {
+                _direction = Vector3.zero;
+                _destination = Vector3.zero;
+                _hasPendingRotation = false;
+                _stuckTimer = 0f;
+                _entity.AnimationController.Wait();
+                _networkTransformReceive.ResumePositionSync();
+            }
+        }
 
         if (verticalVelocity >= 4.0f)
         {
@@ -153,7 +251,7 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
         if (_isJumping && _verticalVelocity <= 0 && _characterController.isGrounded) // jump is done
         {
             _isJumping = false;
-            if (_direction.x != 0 || _direction.z != 0)
+            if (IsMoving())
             {
                 _entity.AnimationController.Move();
             }
@@ -172,16 +270,16 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
             return;
         }
 
-        // Debug.LogWarning("Set destination: " + destination);
         if (_lastDestination == destination && _direction != Vector3.zero)
         {
             return;
         }
 
         _lastDestination = destination;
-        // Debug.LogWarning("SetDestination: " + destination);
         _stopAtRange = stopAtRange > 0 ? stopAtRange : 0;
         _destination = destination;
+        _hasPendingRotation = false;
+        _stuckTimer = 0f;
         UpdateSpeed();
 
         Vector3 transformFlat = VectorUtils.To2D(transform.position);
@@ -194,6 +292,7 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
         {
             _entity.AnimationController.Move();
             _networkTransformReceive.PausePositionSync();
+            _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
         }
         else
         {
@@ -205,23 +304,72 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
         }
     }
 
-    private void CheckIfDestinationReached()
+    // Серверный StopMove: добегаем последние шаги до финальной stopPosition со штатной скоростью и анимацией бега
+    public void OnServerStopMove(Vector3 stopPosition, float finalRotation)
     {
-        _distanceToDestination = Vector3.Distance(VectorUtils.To2D(transform.position), VectorUtils.To2D(_destination));
-        float effectiveStopRange = _stopAtRange > 0 ? _stopAtRange : _stopAtRangeDefault;
-
-        if (_distanceToDestination <= effectiveStopRange)
+        if (_entity == null)
         {
-            if (_direction != Vector3.zero)
-            {
-                _entity.OnStopMoving();
-                //TODO check if has target and is attacking
-            }
+            _entity = GetComponent<Entity>();
+        }
 
-            _direction = Vector3.zero;
+        if (_entity != null && _entity.Combat != null && _entity.Combat.IsCastingSkill)
+        {
+            return;
+        }
+
+        float dist = VectorUtils.Distance2D(transform.position, stopPosition);
+
+        // Грубый рассинхрон или телепорт (> 5м)
+        if (dist > 5.0f)
+        {
+            stopPosition.y = World.Instance.GetGroundHeight(stopPosition);
+            transform.position = stopPosition;
             _destination = Vector3.zero;
-            _networkTransformReceive.SetNewPosition(transform.position);
+            _direction = Vector3.zero;
+            _hasPendingRotation = false;
+            _stuckTimer = 0f;
+            _networkTransformReceive.SetFinalRotation(finalRotation);
+            _networkTransformReceive.SetNewPosition(stopPosition);
             _networkTransformReceive.ResumePositionSync();
+            _entity.OnStopMoving();
+            return;
+        }
+
+        // Персонаж уже фактически в точке остановки (<= 0.05м)
+        if (dist <= 0.05f)
+        {
+            _destination = Vector3.zero;
+            _direction = Vector3.zero;
+            _hasPendingRotation = false;
+            _stuckTimer = 0f;
+            _networkTransformReceive.SetFinalRotation(finalRotation);
+            _networkTransformReceive.SetNewPosition(stopPosition);
+            _networkTransformReceive.ResumePositionSync();
+            _entity.OnStopMoving();
+            return;
+        }
+
+        // Персонаж еще на бегу (последние 1-2 шага: 0.05м - 5м):
+        // Доводим его точно до финальной точки stopPosition со штатной скоростью и анимацией бега!
+        _destination = stopPosition;
+        _lastDestination = stopPosition;
+        _stopAtRange = 0f;
+        _pendingFinalRotation = finalRotation;
+        _hasPendingRotation = true;
+        _stuckTimer = 0f;
+        UpdateSpeed();
+
+        Vector3 transformFlat = VectorUtils.To2D(transform.position);
+        Vector3 destinationFlat = VectorUtils.To2D(_destination);
+        _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
+        _direction = (destinationFlat - transformFlat).normalized;
+
+        _networkTransformReceive.PausePositionSync();
+        _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+
+        if (_entity != null && _entity.AnimationController != null)
+        {
+            _entity.AnimationController.Move();
         }
     }
 
@@ -229,6 +377,8 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
     {
         _destination = Vector3.zero;
         _direction = Vector3.zero;
+        _hasPendingRotation = false;
+        _stuckTimer = 0f;
         _entity.OnStopMoving();
         _networkTransformReceive.SetNewPosition(transform.position);
         _networkTransformReceive.ResumePositionSync();
@@ -255,6 +405,6 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
 
     public bool IsMoving()
     {
-        return !VectorUtils.IsVectorZero2D(_direction);
+        return !VectorUtils.IsVectorZero2D(_direction) || _destination != Vector3.zero;
     }
 }

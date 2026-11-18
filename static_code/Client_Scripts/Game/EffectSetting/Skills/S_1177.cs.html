@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/EffectSetting/Skills/S_1177.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/EffectSetting/Skills/S_1177.cs</h1>
+            <pre>﻿using UnityEngine;
+
+public class S_1177
+{
+    public static readonly float MOVE_FROM_ORIGINAL_POSITION_FOOTER = 0.2f;
+    public static readonly float MOVE_FROM_ORIGINAL_POSITION_BODY = 0.15f;
+    public static readonly string[] NAME_FOOTER_EFFECT = new string[2] { &quot;windblowin00&quot; , &quot;auraplane00&quot; };
+    public static readonly string[] NAME_BODY_EFFECT = new string[4] { &quot;glowvfx&quot; , &quot;sphere_shader&quot;, &quot;bodywindblowin01&quot; , &quot;bodywindblowin02&quot; };
+    public static readonly string NAME_FOOTER_OBJECT = &quot;Footer&quot;;
+    public static readonly string NAME_BODY_OBJECT = &quot;Body&quot;;
+    public static readonly int startSize = 110;
+    public static float defaultSizeXYZ = 23;
+    public static float defaultBodySizeXYZ = 10;
+    public static float defaulAuratSizeXYZ = 0.1f;
+
+    private static double startTime1 = 17;
+    private static double scale1 = 90;
+
+    private static double startTime2 = 50;
+    private static double scale2 = 70;
+
+    //public static readonly float hideTime = 2f;
+    //public static readonly float showTime = 1f;
+
+    public static Scale[] GetScale()
+    {
+        return new Scale[2] { new Scale(startTime1, scale1), new Scale(startTime2, scale2) };
+    }
+
+    public static Scale[] GetScaleBody()
+    {
+        return new Scale[2] { new Scale(20f, 70), new Scale(50, 90) };
+    }
+
+
+    public class Scale
+    {
+        private float _startTime1;
+        private float _scale1;
+
+        public Scale(double startTime1, double scale1)
+        {
+            _startTime1 =(float) startTime1;
+            _scale1 = (float)scale1;
+        }
+
+        public float TimeProcent { get =&gt; _startTime1; }
+        public float ScaleSizeProcent { get =&gt; _scale1; }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Builder/L2AmbientSoundBuilder.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Builder/L2AmbientSoundBuilder.cs</h1>
+            <pre>#if UNITY_EDITOR
+using FMODUnity;
+using System;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+public class L2AmbientSoundBuilder : MonoBehaviour
+{
+
+    [MenuItem(&quot;Shnok/[Debug][AmbientSound] (JSON) Build ambient sounds&quot;)]
+    static void BuildSoundsMenu()
+    {
+        string title = &quot;Select ambient sound list&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;json&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            AmbientSound[] sounds = L2TerrainInfoParser.ParseAmbientSoundFile(fileToProcess);
+            BuildAmbientSounds(sounds);
+        }
+    }
+
+    [MenuItem(&quot;Shnok/10. [AmbientSound] (T3D) Build ambient sounds&quot;)]
+    static void BuildSoundsMenuT3D()
+    {
+        string title = &quot;Select ambient sound list&quot;;
+        string directory = Path.Combine(Application.dataPath, &quot;Data/Maps&quot;);
+        string extension = &quot;t3d&quot;;
+
+        string fileToProcess = EditorUtility.OpenFilePanel(title, directory, extension);
+
+        if (!string.IsNullOrEmpty(fileToProcess))
+        {
+            Debug.Log(&quot;Selected file: &quot; + fileToProcess);
+            AmbientSound[] sounds = L2T3DInfoParser.ParseAmbientSounds(fileToProcess).ToArray();
+            BuildAmbientSounds(sounds);
+        }
+    }
+
+    private static void BuildAmbientSounds(AmbientSound[] sounds)
+    {
+        GameObject container = new GameObject(&quot;AmbientSounds&quot;);
+
+        foreach (AmbientSound ambientSound in sounds)
+        {
+            Debug.Log(ambientSound);
+
+            GameObject soundObject = BuildAmbientSoundGameObject(ambientSound);
+            soundObject.transform.parent = container.transform;
+        }
+
+        Debug.Log($&quot;Need to {sounds.Length} load ambient sounds.&quot;);
+    }
+
+    private static GameObject BuildAmbientSoundGameObject(AmbientSound ambientSound)
+    {
+
+        GameObject go = new GameObject(ambientSound.name);
+
+        // collider
+        SphereCollider collider = go.AddComponent&lt;SphereCollider&gt;();
+        float soundRadius = ambientSound.soundRadius / 52.5f * 14f;
+        collider.radius = soundRadius;
+        collider.isTrigger = true;
+
+        go.transform.position = VectorUtils.ConvertPosToUnity(ambientSound.position);
+        go.layer = LayerMask.NameToLayer(&quot;AmbientSound&quot;);
+
+        // event
+        AmbientSoundEmitter emitter = go.AddComponent&lt;AmbientSoundEmitter&gt;();
+        string[] parts = ambientSound.ambientSoundName.Split(&quot;.&quot;);
+        string eventName = $&quot;event:/AmbSound/{parts[0]}/{parts[2]}&quot;;
+        EventReference er = RuntimeManager.PathToEventReference(eventName);
+
+        emitter.EventReference = er;
+        emitter.OverrideAttenuation = true;
+        emitter.OverrideMinDistance = soundRadius * 0.05f;
+        emitter.OverrideMaxDistance = soundRadius;
+        emitter.Loop = true;
+        emitter.PlayEvent = EmitterGameEvent.TriggerEnter;
+        emitter.StopEvent = EmitterGameEvent.TriggerExit;
+        emitter.CollisionTag = &quot;Player&quot;;
+        emitter.AllowFadeout = true;
+        if (ambientSound.ambientRandom == 0)
+        {
+            emitter.PlayChancePercent = 100;
+            emitter.LoopDelaySeconds = 0;
+        }
+        else
+        {
+            emitter.PlayChancePercent = ambientSound.ambientRandom;
+            emitter.LoopDelaySeconds = 3;
+        }
+
+        // from UE pitch to FMOD
+        float uePitch = ambientSound.soundPitch;
+        float fmodPitch = uePitch / 100f + 1f;
+        emitter.SoundPitch = fmodPitch;
+
+        AmbientSoundType ambientSoundType = (AmbientSoundType)Enum.Parse(typeof(AmbientSoundType), ambientSound.ambientSoundType);
+        emitter.AmbientSoundType = ambientSoundType;
+        emitter.enabled = true;
+
+        return go;
+    }
+}
+#endif
+</pre>
+            
+</body>
+</html>

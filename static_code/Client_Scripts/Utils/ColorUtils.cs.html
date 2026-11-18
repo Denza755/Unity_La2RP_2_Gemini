@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Utils/ColorUtils.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Utils/ColorUtils.cs</h1>
+            <pre>using UnityEngine;
+
+public class ColorUtils
+{
+    public static Color HexToColor(string hex)
+    {
+        // Remove the alpha channel from the string (last two characters)
+        hex = hex.Substring(0, 6);
+
+        byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+
+        // Convert the color values to the range [0, 1]
+        float rf = r / 255f;
+        float gf = g / 255f;
+        float bf = b / 255f;
+
+        return new Color(rf, gf, bf, 1f);
+    }
+
+    public static int HexToInteger(string hex)
+    {
+        // Remove the alpha channel from the string (last two characters)
+        hex = hex.Substring(0, 6);
+
+        byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+
+        return (r &amp; 0xFF) + ((g &amp; 0xFF) &lt;&lt; 8) + ((b &amp; 0xFF) &lt;&lt; 16);
+    }
+
+    public static Color IntegerToColor(int value)
+    {
+        // Extract the RGB components from the integer
+        int r = value &amp; 0xFF;
+        int g = (value &gt;&gt; 8) &amp; 0xFF;
+        int b = (value &gt;&gt; 16) &amp; 0xFF;
+
+        // Convert to float and create a Unity Color
+        float rf = r / 255f;
+        float gf = g / 255f;
+        float bf = b / 255f;
+
+        return new Color(rf, gf, bf, 1f);
+    }
+}</pre>
+            
+</body>
+</html>

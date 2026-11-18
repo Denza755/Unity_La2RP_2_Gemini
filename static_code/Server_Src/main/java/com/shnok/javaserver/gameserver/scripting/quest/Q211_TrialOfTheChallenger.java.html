@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q211_TrialOfTheChallenger.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q211_TrialOfTheChallenger.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.enums.actors.ClassId;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.network.serverpackets.SocialAction;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q211_TrialOfTheChallenger extends SecondClassQuest
+{
+	private static final String QUEST_NAME = &quot;Q211_TrialOfTheChallenger&quot;;
+	
+	private static final Location MITHRIL_MINES_LOC = new Location(176560, -184969, -3729);
+	
+	// Items
+	private static final int LETTER_OF_KASH = 2628;
+	private static final int WATCHER_EYE_1 = 2629;
+	private static final int WATCHER_EYE_2 = 2630;
+	private static final int SCROLL_OF_SHYSLASSYS = 2631;
+	private static final int BROKEN_KEY = 2632;
+	
+	// Rewards
+	private static final int ADENA = 57;
+	private static final int ELVEN_NECKLACE_BEADS = 1904;
+	private static final int WHITE_TUNIC_PATTERN = 1936;
+	private static final int IRON_BOOTS_DESIGN = 1940;
+	private static final int MANTICOR_SKIN_GAITERS_PATTERN = 1943;
+	private static final int RIP_GAUNTLETS_PATTERN = 1946;
+	private static final int TOME_OF_BLOOD_PAGE = 2030;
+	private static final int MITHRIL_SCALE_GAITERS_MATERIAL = 2918;
+	private static final int BRIGANDINE_GAUNTLETS_PATTERN = 2927;
+	private static final int MARK_OF_CHALLENGER = 2627;
+	
+	// NPCs
+	private static final int FILAUR = 30535;
+	private static final int KASH = 30644;
+	private static final int MARTIEN = 30645;
+	private static final int RALDO = 30646;
+	private static final int CHEST_OF_SHYSLASSYS = 30647;
+	
+	// Monsters
+	private static final int SHYSLASSYS = 27110;
+	private static final int GORR = 27112;
+	private static final int BARAHAM = 27113;
+	private static final int SUCCUBUS_QUEEN = 27114;
+	
+	public Q211_TrialOfTheChallenger()
+	{
+		super(211, &quot;Trial of the Challenger&quot;);
+		
+		setItemsIds(LETTER_OF_KASH, WATCHER_EYE_1, WATCHER_EYE_2, SCROLL_OF_SHYSLASSYS, BROKEN_KEY);
+		
+		addQuestStart(KASH);
+		addTalkId(FILAUR, KASH, MARTIEN, RALDO, CHEST_OF_SHYSLASSYS);
+		
+		addMyDying(SHYSLASSYS, GORR, BARAHAM, SUCCUBUS_QUEEN);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		// KASH
+		if (event.equalsIgnoreCase(&quot;30644-05.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+			
+			if (giveDimensionalDiamonds35(player))
+				htmltext = &quot;30644-05a.htm&quot;;
+		}
+		// MARTIEN
+		else if (event.equalsIgnoreCase(&quot;30645-02.htm&quot;))
+		{
+			st.setCond(4);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, LETTER_OF_KASH, 1);
+		}
+		// RALDO
+		else if (event.equalsIgnoreCase(&quot;30646-04.htm&quot;) || event.equalsIgnoreCase(&quot;30646-06.htm&quot;))
+		{
+			st.setCond(8);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, WATCHER_EYE_2, 1);
+		}
+		// CHEST_OF_SHYSLASSYS
+		else if (event.equalsIgnoreCase(&quot;30647-04.htm&quot;))
+		{
+			if (player.getInventory().hasItem(BROKEN_KEY))
+			{
+				if (Rnd.get(10) &lt; 2)
+				{
+					htmltext = &quot;30647-03.htm&quot;;
+					playSound(player, SOUND_JACKPOT);
+					takeItems(player, BROKEN_KEY, 1);
+					int chance = Rnd.get(100);
+					if (chance &gt; 90)
+					{
+						rewardItems(player, BRIGANDINE_GAUNTLETS_PATTERN, 1);
+						rewardItems(player, IRON_BOOTS_DESIGN, 1);
+						rewardItems(player, MANTICOR_SKIN_GAITERS_PATTERN, 1);
+						rewardItems(player, MITHRIL_SCALE_GAITERS_MATERIAL, 1);
+						rewardItems(player, RIP_GAUNTLETS_PATTERN, 1);
+					}
+					else if (chance &gt; 70)
+					{
+						rewardItems(player, ELVEN_NECKLACE_BEADS, 1);
+						rewardItems(player, TOME_OF_BLOOD_PAGE, 1);
+					}
+					else if (chance &gt; 40)
+						rewardItems(player, WHITE_TUNIC_PATTERN, 1);
+					else
+						rewardItems(player, IRON_BOOTS_DESIGN, 1);
+				}
+				else
+				{
+					htmltext = &quot;30647-02.htm&quot;;
+					takeItems(player, BROKEN_KEY, 1);
+					rewardItems(player, ADENA, Rnd.get(1, 1000));
+				}
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getClassId() != ClassId.WARRIOR &amp;&amp; player.getClassId() != ClassId.ELVEN_KNIGHT &amp;&amp; player.getClassId() != ClassId.PALUS_KNIGHT &amp;&amp; player.getClassId() != ClassId.ORC_RAIDER &amp;&amp; player.getClassId() != ClassId.MONK)
+					htmltext = &quot;30644-02.htm&quot;;
+				else if (player.getStatus().getLevel() &lt; 35)
+					htmltext = &quot;30644-01.htm&quot;;
+				else
+					htmltext = &quot;30644-03.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case KASH:
+						if (cond == 1)
+							htmltext = &quot;30644-06.htm&quot;;
+						else if (cond == 2)
+						{
+							htmltext = &quot;30644-07.htm&quot;;
+							st.setCond(3);
+							playSound(player, SOUND_MIDDLE);
+							takeItems(player, SCROLL_OF_SHYSLASSYS, 1);
+							giveItems(player, LETTER_OF_KASH, 1);
+						}
+						else if (cond == 3)
+							htmltext = &quot;30644-08.htm&quot;;
+						else if (cond &gt; 3)
+							htmltext = &quot;30644-09.htm&quot;;
+						break;
+					
+					case CHEST_OF_SHYSLASSYS:
+						htmltext = &quot;30647-01.htm&quot;;
+						break;
+					
+					case MARTIEN:
+						if (cond == 3)
+							htmltext = &quot;30645-01.htm&quot;;
+						else if (cond == 4)
+							htmltext = &quot;30645-03.htm&quot;;
+						else if (cond == 5)
+						{
+							htmltext = &quot;30645-04.htm&quot;;
+							st.setCond(6);
+							playSound(player, SOUND_MIDDLE);
+							takeItems(player, WATCHER_EYE_1, 1);
+						}
+						else if (cond == 6)
+							htmltext = &quot;30645-05.htm&quot;;
+						else if (cond == 7)
+							htmltext = &quot;30645-07.htm&quot;;
+						else if (cond &gt; 7)
+							htmltext = &quot;30645-06.htm&quot;;
+						break;
+					
+					case RALDO:
+						if (cond == 7)
+							htmltext = &quot;30646-01.htm&quot;;
+						else if (cond == 8)
+							htmltext = &quot;30646-06a.htm&quot;;
+						else if (cond == 10)
+						{
+							htmltext = &quot;30646-07.htm&quot;;
+							takeItems(player, BROKEN_KEY, 1);
+							giveItems(player, MARK_OF_CHALLENGER, 1);
+							rewardExpAndSp(player, 72394, 11250);
+							player.broadcastPacket(new SocialAction(player, 3));
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(false);
+						}
+						break;
+					
+					case FILAUR:
+						if (cond == 8)
+						{
+							if (player.getStatus().getLevel() &gt;= 36)
+							{
+								htmltext = &quot;30535-01.htm&quot;;
+								st.setCond(9);
+								playSound(player, SOUND_MIDDLE);
+							}
+							else
+								htmltext = &quot;30535-03.htm&quot;;
+						}
+						else if (cond == 9)
+						{
+							htmltext = &quot;30535-02.htm&quot;;
+							player.getRadarList().addMarker(MITHRIL_MINES_LOC);
+						}
+						else if (cond == 10)
+							htmltext = &quot;30535-04.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		switch (npc.getNpcId())
+		{
+			case SHYSLASSYS:
+				if (st.getCond() == 1)
+				{
+					st.setCond(2);
+					playSound(player, SOUND_MIDDLE);
+					giveItems(player, BROKEN_KEY, 1);
+					giveItems(player, SCROLL_OF_SHYSLASSYS, 1);
+					addSpawn(CHEST_OF_SHYSLASSYS, npc, false, 200000, true);
+				}
+				break;
+			
+			case GORR:
+				if (st.getCond() == 4 &amp;&amp; dropItemsAlways(player, WATCHER_EYE_1, 1, 1))
+					st.setCond(5);
+				break;
+			
+			case BARAHAM:
+				if (st.getCond() == 6 &amp;&amp; dropItemsAlways(player, WATCHER_EYE_2, 1, 1))
+					st.setCond(7);
+				addSpawn(RALDO, npc, false, 100000, true);
+				break;
+			
+			case SUCCUBUS_QUEEN:
+				if (st.getCond() == 9)
+				{
+					st.setCond(10);
+					playSound(player, SOUND_MIDDLE);
+				}
+				addSpawn(RALDO, npc, false, 100000, true);
+				break;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

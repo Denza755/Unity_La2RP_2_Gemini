@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q126_TheNameOfEvil_2.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q126_TheNameOfEvil_2.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q126_TheNameOfEvil_2 extends Quest
+{
+	public static final String QUEST_NAME = &quot;Q126_TheNameOfEvil_2&quot;;
+	
+	private static final int MUSHIKA = 32114;
+	private static final int ASAMANAH = 32115;
+	private static final int ULU_KAIMU = 32119;
+	private static final int BALU_KAIMU = 32120;
+	private static final int CHUTA_KAIMU = 32121;
+	private static final int WARRIOR_GRAVE = 32122;
+	private static final int SHILEN_STONE_STATUE = 32109;
+	
+	private static final int BONEPOWDER = 8783;
+	private static final int EWA = 729;
+	
+	public Q126_TheNameOfEvil_2()
+	{
+		super(126, &quot;The Name of Evil - 2&quot;);
+		
+		addQuestStart(ASAMANAH);
+		addTalkId(ASAMANAH, MUSHIKA, ULU_KAIMU, BALU_KAIMU, CHUTA_KAIMU, WARRIOR_GRAVE, SHILEN_STONE_STATUE);
+	}
+	
+	@Override
+	public final String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;32115-05.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;32115-10.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32119-02.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32119-09.htm&quot;))
+		{
+			st.setCond(4);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32119-11.htm&quot;))
+		{
+			st.setCond(5);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32120-07.htm&quot;))
+		{
+			st.setCond(6);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32120-09.htm&quot;))
+		{
+			st.setCond(7);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32120-11.htm&quot;))
+		{
+			st.setCond(8);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32121-07.htm&quot;))
+		{
+			st.setCond(9);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32121-10.htm&quot;))
+		{
+			st.setCond(10);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32121-15.htm&quot;))
+		{
+			st.setCond(11);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32122-03.htm&quot;))
+		{
+			st.setCond(12);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32122-15.htm&quot;))
+		{
+			st.setCond(13);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32122-18.htm&quot;))
+		{
+			st.setCond(14);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32122-87.htm&quot;))
+			giveItems(player, BONEPOWDER, 1);
+		else if (event.equalsIgnoreCase(&quot;32122-90.htm&quot;))
+		{
+			st.setCond(18);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32109-02.htm&quot;))
+		{
+			st.setCond(19);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32109-19.htm&quot;))
+		{
+			st.setCond(20);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, BONEPOWDER, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;32115-21.htm&quot;))
+		{
+			st.setCond(21);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32115-28.htm&quot;))
+		{
+			st.setCond(22);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32114-08.htm&quot;))
+		{
+			st.setCond(23);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;32114-09.htm&quot;))
+		{
+			giveItems(player, EWA, 1);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		else if (event.equalsIgnoreCase(&quot;DOOne&quot;))
+		{
+			htmltext = &quot;32122-26.htm&quot;;
+			if (st.getInteger(&quot;DO&quot;) &lt; 1)
+				st.set(&quot;DO&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;MIOne&quot;))
+		{
+			htmltext = &quot;32122-30.htm&quot;;
+			if (st.getInteger(&quot;MI&quot;) &lt; 1)
+				st.set(&quot;MI&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;FAOne&quot;))
+		{
+			htmltext = &quot;32122-34.htm&quot;;
+			if (st.getInteger(&quot;FA&quot;) &lt; 1)
+				st.set(&quot;FA&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;SOLOne&quot;))
+		{
+			htmltext = &quot;32122-38.htm&quot;;
+			if (st.getInteger(&quot;SOL&quot;) &lt; 1)
+				st.set(&quot;SOL&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;FA_2One&quot;))
+		{
+			if (st.getInteger(&quot;FA_2&quot;) &lt; 1)
+				st.set(&quot;FA_2&quot;, 1);
+			htmltext = getSongOne(player, st);
+		}
+		else if (event.equalsIgnoreCase(&quot;FATwo&quot;))
+		{
+			htmltext = &quot;32122-47.htm&quot;;
+			if (st.getInteger(&quot;FA&quot;) &lt; 1)
+				st.set(&quot;FA&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;SOLTwo&quot;))
+		{
+			htmltext = &quot;32122-51.htm&quot;;
+			if (st.getInteger(&quot;SOL&quot;) &lt; 1)
+				st.set(&quot;SOL&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;TITwo&quot;))
+		{
+			htmltext = &quot;32122-55.htm&quot;;
+			if (st.getInteger(&quot;TI&quot;) &lt; 1)
+				st.set(&quot;TI&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;SOL_2Two&quot;))
+		{
+			htmltext = &quot;32122-59.htm&quot;;
+			if (st.getInteger(&quot;SOL_2&quot;) &lt; 1)
+				st.set(&quot;SOL_2&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;FA_2Two&quot;))
+		{
+			if (st.getInteger(&quot;FA_2&quot;) &lt; 1)
+				st.set(&quot;FA_2&quot;, 1);
+			htmltext = getSongTwo(player, st);
+		}
+		else if (event.equalsIgnoreCase(&quot;SOLTri&quot;))
+		{
+			htmltext = &quot;32122-68.htm&quot;;
+			if (st.getInteger(&quot;SOL&quot;) &lt; 1)
+				st.set(&quot;SOL&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;FATri&quot;))
+		{
+			htmltext = &quot;32122-72.htm&quot;;
+			if (st.getInteger(&quot;FA&quot;) &lt; 1)
+				st.set(&quot;FA&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;MITri&quot;))
+		{
+			htmltext = &quot;32122-76.htm&quot;;
+			if (st.getInteger(&quot;MI&quot;) &lt; 1)
+				st.set(&quot;MI&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;FA_2Tri&quot;))
+		{
+			htmltext = &quot;32122-80.htm&quot;;
+			if (st.getInteger(&quot;FA_2&quot;) &lt; 1)
+				st.set(&quot;FA_2&quot;, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;MI_2Tri&quot;))
+		{
+			if (st.getInteger(&quot;MI_2&quot;) &lt; 1)
+				st.set(&quot;MI_2&quot;, 1);
+			htmltext = getSongTri(player, st);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getStatus().getLevel() &lt; 77)
+					htmltext = &quot;32115-02.htm&quot;;
+				else
+				{
+					QuestState st2 = player.getQuestList().getQuestState(Q125_TheNameOfEvil_1.QUEST_NAME);
+					if (st2 != null &amp;&amp; st2.isCompleted())
+						htmltext = &quot;32115-01.htm&quot;;
+					else
+						htmltext = &quot;32115-04.htm&quot;;
+				}
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case ASAMANAH:
+						if (cond == 1)
+						{
+							htmltext = &quot;32115-11.htm&quot;;
+							st.setCond(2);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else if (cond &gt; 1 &amp;&amp; cond &lt; 20)
+							htmltext = &quot;32115-12.htm&quot;;
+						else if (cond == 20)
+							htmltext = &quot;32115-13.htm&quot;;
+						else if (cond == 21)
+							htmltext = &quot;32115-22.htm&quot;;
+						else if (cond == 22)
+							htmltext = &quot;32115-29.htm&quot;;
+						break;
+					
+					case ULU_KAIMU:
+						if (cond == 1)
+							htmltext = &quot;32119-01a.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;32119-02.htm&quot;;
+						else if (cond == 3)
+							htmltext = &quot;32119-08.htm&quot;;
+						else if (cond == 4)
+							htmltext = &quot;32119-09.htm&quot;;
+						else if (cond &gt; 4)
+							htmltext = &quot;32119-12.htm&quot;;
+						break;
+					
+					case BALU_KAIMU:
+						if (cond &lt; 5)
+							htmltext = &quot;32120-02.htm&quot;;
+						else if (cond == 5)
+							htmltext = &quot;32120-01.htm&quot;;
+						else if (cond == 6)
+							htmltext = &quot;32120-03.htm&quot;;
+						else if (cond == 7)
+							htmltext = &quot;32120-08.htm&quot;;
+						else if (cond &gt; 7)
+							htmltext = &quot;32120-12.htm&quot;;
+						break;
+					
+					case CHUTA_KAIMU:
+						if (cond &lt; 8)
+							htmltext = &quot;32121-02.htm&quot;;
+						else if (cond == 8)
+							htmltext = &quot;32121-01.htm&quot;;
+						else if (cond == 9)
+							htmltext = &quot;32121-03.htm&quot;;
+						else if (cond == 10)
+							htmltext = &quot;32121-10.htm&quot;;
+						else if (cond &gt; 10)
+							htmltext = &quot;32121-16.htm&quot;;
+						break;
+					
+					case WARRIOR_GRAVE:
+						if (cond &lt; 11)
+							htmltext = &quot;32122-02.htm&quot;;
+						else if (cond == 11)
+							htmltext = &quot;32122-01.htm&quot;;
+						else if (cond == 12)
+							htmltext = &quot;32122-15.htm&quot;;
+						else if (cond == 13)
+							htmltext = &quot;32122-18.htm&quot;;
+						else if (cond == 14)
+							htmltext = &quot;32122-24.htm&quot;;
+						else if (cond == 15)
+							htmltext = &quot;32122-45.htm&quot;;
+						else if (cond == 16)
+							htmltext = &quot;32122-66.htm&quot;;
+						else if (cond == 17)
+							htmltext = &quot;32122-84.htm&quot;;
+						else if (cond == 18)
+							htmltext = &quot;32122-91.htm&quot;;
+						break;
+					
+					case SHILEN_STONE_STATUE:
+						if (cond &lt; 18)
+							htmltext = &quot;32109-03.htm&quot;;
+						else if (cond == 18)
+							htmltext = &quot;32109-02.htm&quot;;
+						else if (cond == 19)
+							htmltext = &quot;32109-05.htm&quot;;
+						else if (cond &gt; 19)
+							htmltext = &quot;32109-04.htm&quot;;
+						break;
+					
+					case MUSHIKA:
+						if (cond &lt; 22)
+							htmltext = &quot;32114-02.htm&quot;;
+						else if (cond == 22)
+							htmltext = &quot;32114-01.htm&quot;;
+						else if (cond == 23)
+							htmltext = &quot;32114-04.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	private static String getSongOne(Player player, QuestState st)
+	{
+		String htmltext = &quot;32122-24.htm&quot;;
+		if (st.getCond() == 14 &amp;&amp; st.getInteger(&quot;DO&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;MI&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;FA&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;SOL&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;FA_2&quot;) &gt; 0)
+		{
+			htmltext = &quot;32122-42.htm&quot;;
+			st.setCond(15);
+			playSound(player, SOUND_MIDDLE);
+			st.unset(&quot;DO&quot;);
+			st.unset(&quot;MI&quot;);
+			st.unset(&quot;FA&quot;);
+			st.unset(&quot;SOL&quot;);
+			st.unset(&quot;FA_2&quot;);
+		}
+		return htmltext;
+	}
+	
+	private static String getSongTwo(Player player, QuestState st)
+	{
+		String htmltext = &quot;32122-45.htm&quot;;
+		if (st.getCond() == 15 &amp;&amp; st.getInteger(&quot;FA&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;SOL&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;TI&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;SOL_2&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;FA_2&quot;) &gt; 0)
+		{
+			htmltext = &quot;32122-63.htm&quot;;
+			st.setCond(16);
+			playSound(player, SOUND_MIDDLE);
+			st.unset(&quot;FA&quot;);
+			st.unset(&quot;SOL&quot;);
+			st.unset(&quot;TI&quot;);
+			st.unset(&quot;SOL_2&quot;);
+			st.unset(&quot;FA3_2&quot;);
+		}
+		return htmltext;
+	}
+	
+	private static String getSongTri(Player player, QuestState st)
+	{
+		String htmltext = &quot;32122-66.htm&quot;;
+		if (st.getCond() == 16 &amp;&amp; st.getInteger(&quot;SOL&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;FA&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;MI&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;FA_2&quot;) &gt; 0 &amp;&amp; st.getInteger(&quot;MI_2&quot;) &gt; 0)
+		{
+			htmltext = &quot;32122-84.htm&quot;;
+			st.setCond(17);
+			playSound(player, SOUND_MIDDLE);
+			st.unset(&quot;SOL&quot;);
+			st.unset(&quot;FA&quot;);
+			st.unset(&quot;MI&quot;);
+			st.unset(&quot;FA_2&quot;);
+			st.unset(&quot;MI_2&quot;);
+		}
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

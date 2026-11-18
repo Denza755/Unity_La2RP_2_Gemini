@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminAlternativeSpawn.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminAlternativeSpawn.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.awt.Color;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.data.Pagination;
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.model.spawn.Territory;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExServerPrimitive;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class AdminAlternativeSpawn implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_maker&quot;,
+		&quot;admin_terr&quot;,
+		&quot;admin_spawn_event&quot;,
+		&quot;admin_despawn_event&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		String actualCommand = st.nextToken();
+		
+		int page = 1;
+		
+		// NpcMaker info
+		if (actualCommand.equals(&quot;admin_maker&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				showNpcMakersInfo(player, page);
+				return;
+			}
+			
+			final int paramCount = st.countTokens();
+			if (paramCount == 1)
+			{
+				actualCommand = st.nextToken();
+				if (StringUtil.isDigit(actualCommand))
+				{
+					page = Integer.parseInt(actualCommand);
+					showNpcMakersInfo(player, page);
+				}
+				else
+				{
+					final NpcMaker maker = SpawnManager.getInstance().getNpcMaker(actualCommand);
+					if (maker == null)
+					{
+						player.sendMessage(&quot;Maker \&quot;&quot; + actualCommand + &quot;\&quot; doesn&#x27;t exist.&quot;);
+						return;
+					}
+					
+					showNpcMakerInfo(player, maker);
+				}
+			}
+			else if (paramCount &gt;= 2)
+			{
+				actualCommand = st.nextToken();
+				
+				final String name = st.nextToken();
+				final NpcMaker maker = SpawnManager.getInstance().getNpcMaker(name);
+				if (maker == null)
+				{
+					player.sendMessage(&quot;Maker \&quot;&quot; + name + &quot;\&quot; doesn&#x27;t exist.&quot;);
+					return;
+				}
+				
+				switch (actualCommand)
+				{
+					case &quot;delete&quot;:
+						maker.deleteAll();
+						showNpcMakerInfo(player, maker);
+						break;
+					
+					case &quot;respawn&quot;:
+						maker.respawnAll();
+						showNpcMakerInfo(player, maker);
+						break;
+					
+					case &quot;scripts&quot;:
+						showMakerScripts(player, maker);
+						break;
+					
+					case &quot;spawn&quot;:
+						// more tokens present -&gt; disable respawn (//maker_spawn NAME x)
+						maker.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker, 0, 0);
+						showNpcMakerInfo(player, maker);
+						break;
+					
+					case &quot;switch&quot;:
+						showNpcMakerInfo(player, maker);
+						break;
+					
+					default:
+						player.sendMessage(&quot;Usage: //maker [delete|respawn|scripts|spawn|switch &lt;name&gt;]&quot;);
+						break;
+				}
+			}
+		}
+		// Territory
+		else if (actualCommand.equals(&quot;admin_terr&quot;))
+		{
+			final int paramCount = st.countTokens();
+			if (paramCount == 0)
+				showNpcMakersInfo(player, page);
+			else if (paramCount == 1)
+			{
+				actualCommand = st.nextToken();
+				switch (actualCommand)
+				{
+					case &quot;visual_clear&quot;:
+						final ExServerPrimitive debug = player.getDebugPacket(&quot;TERR&quot;);
+						debug.reset();
+						debug.sendTo(player);
+						showNpcMakersInfo(player, page);
+						break;
+				}
+			}
+			else if (paramCount &gt;= 2)
+			{
+				actualCommand = st.nextToken();
+				
+				final String name = st.nextToken();
+				final Territory territory = SpawnManager.getInstance().getTerritory(name);
+				if (territory == null)
+				{
+					player.sendMessage(&quot;Territory \&quot;&quot; + name + &quot;\&quot; doesn&#x27;t exist.&quot;);
+					return;
+				}
+				
+				switch (actualCommand)
+				{
+					case &quot;goto&quot;:
+						player.teleToLocation(territory.getRandomLocation());
+						showNpcMakersInfo(player, page);
+						break;
+					
+					case &quot;test&quot;:
+						ExServerPrimitive debug = player.getDebugPacket(&quot;TERR&quot;);
+						debug.reset();
+						
+						for (int i = 0; i &lt; 10000; i++)
+							debug.addPoint(Color.GREEN, territory.getRandomLocation());
+						
+						debug.sendTo(player);
+						
+						showNpcMakersInfo(player, page);
+						break;
+					
+					case &quot;visual&quot;:
+						debug = player.getDebugPacket(&quot;TERR&quot;);
+						debug.reset();
+						
+						territory.visualize(null, debug, player.getZ());
+						debug.sendTo(player);
+						
+						showNpcMakersInfo(player, page);
+						break;
+				}
+			}
+			else
+				player.sendMessage(&quot;Usage: //terr goto|visual|visual_clear name&quot;);
+		}
+		// Event spawns
+		else if (actualCommand.equals(&quot;admin_spawn_event&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendMessage(&quot;Usage: //spawn_event &lt;event_name&gt;&quot;);
+				return;
+			}
+			
+			String event = st.nextToken();
+			// more tokens present -&gt; spawns once (//spawn_event EVENT x)
+			long total = SpawnManager.getInstance().spawnEventNpcs(event, true);
+			player.sendMessage(&quot;Spawned &quot; + total + &quot; \&quot;&quot; + event + &quot;\&quot; NPCs.&quot;);
+		}
+		else if (actualCommand.equals(&quot;admin_despawn_event&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendMessage(&quot;Usage: //despawn_event &lt;event_name&gt;&quot;);
+				return;
+			}
+			
+			String event = st.nextToken();
+			long total = SpawnManager.getInstance().despawnEventNpcs(event, true);
+			player.sendMessage(&quot;Despawned &quot; + total + &quot; \&quot;&quot; + event + &quot;\&quot; NPCs.&quot;);
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+	
+	private static void showNpcMakersInfo(Player player, int page)
+	{
+		// Load static htm.
+		final NpcHtmlMessage adminReply = new NpcHtmlMessage(0);
+		adminReply.setFile(&quot;data/html/admin/spawnlist/maker_check.htm&quot;);
+		
+		List&lt;NpcMaker&gt; npcMakers = SpawnManager.getInstance().getNpcMakers(player.getPosition());
+		
+		// Generate data.
+		final Pagination&lt;Territory&gt; list = new Pagination&lt;&gt;(npcMakers.stream().map(NpcMaker::getTerritory).distinct(), page, PAGE_LIMIT_1);
+		for (Territory territory : list)
+		{
+			list.append(&quot;&lt;table&gt;&lt;tr&gt;&lt;td width=280&gt;&lt;font color=LEVEL&gt;&quot;, territory.getName(), &quot;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;);
+			list.append(&quot;&lt;table&gt;&lt;tr&gt;&lt;td width=170&gt;min=&quot;, territory.getMinZ(), &quot;, max=&quot;, territory.getMaxZ(), &quot;&lt;/td&gt;&lt;td width=110&gt;&lt;a action=\&quot;bypass -h admin_terr goto &quot;, territory.getName(), &quot;\&quot;&gt;Go To&lt;/a&gt; | &lt;a action=\&quot;bypass -h admin_terr test &quot;, territory.getName(), &quot;\&quot;&gt;Test&lt;/a&gt; | &lt;a action=\&quot;bypass -h admin_terr visual &quot;, territory.getName(), &quot;\&quot;&gt;Visualize&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;);
+			
+			int row = 0;
+			
+			npcMakers = npcMakers.stream().filter(nm -&gt; nm.getTerritory().getName().equals(territory.getName())).toList();
+			for (NpcMaker nm : npcMakers)
+			{
+				list.append(((row % 2) == 0 ? &quot;&lt;table width=280 bgcolor=000000&gt;&lt;tr&gt;&quot; : &quot;&lt;table width=280&gt;&lt;tr&gt;&quot;));
+				list.append(&quot;&lt;td width=10&gt;&lt;/td&gt;&lt;td width=270&gt;&lt;a action=\&quot;bypass -h admin_maker &quot;, nm.getName(), &quot;\&quot;&gt;&quot;, nm.getName(), &quot;&lt;/a&gt;&lt;/td&gt;&quot;);
+				list.append(&quot;&lt;/tr&gt;&lt;/table&gt;&lt;img src=\&quot;L2UI.SquareGray\&quot; width=280 height=1&gt;&quot;);
+				
+				row++;
+			}
+		}
+		
+		list.generatePages(&quot;bypass admin_maker %page%&quot;);
+		
+		adminReply.replace(&quot;%TERRITORIESLIST%&quot;, list.getContent());
+		
+		player.sendPacket(adminReply);
+	}
+	
+	private static void showNpcMakerInfo(Player player, NpcMaker maker)
+	{
+		final NpcHtmlMessage adminReply = new NpcHtmlMessage(0);
+		adminReply.setFile(&quot;data/html/admin/spawnlist/maker_info.htm&quot;);
+		
+		adminReply.replace(&quot;%TERRNAME%&quot;, maker.getTerritory().getName());
+		adminReply.replace(&quot;%BANTERRNAME%&quot;, (maker.getBannedTerritory() == null) ? &quot;&quot; : maker.getBannedTerritory().getName());
+		adminReply.replace(&quot;%MAKERNAME%&quot;, maker.getName());
+		adminReply.replace(&quot;%MAKERSPAWN%&quot;, maker.getMaker().getMakerName());
+		adminReply.replace(&quot;%MAKEREVENT%&quot;, (maker.getEvent() == null) ? &quot;&quot; : maker.getEvent());
+		adminReply.replace(&quot;%MAKERSTART%&quot;, &quot;&quot; + maker.isOnStart());
+		adminReply.replace(&quot;%MAKERRESPAWN%&quot;, maker.getMaker().getMakerName());
+		adminReply.replace(&quot;%MAKERCNTA%&quot;, maker.getNpcsAlive());
+		adminReply.replace(&quot;%MAKERCNTD%&quot;, maker.getNpcsDead());
+		adminReply.replace(&quot;%MAKERCNTT%&quot;, maker.getMaximumNpc());
+		
+		final List&lt;MultiSpawn&gt; spawns = maker.getSpawns();
+		if (spawns.isEmpty())
+			adminReply.replace(&quot;%NPCSLIST%&quot;, &quot;&lt;br&gt;&lt;br&gt;&lt;center&gt;No NPCs at this NPC maker.&lt;/center&gt;&quot;);
+		else
+		{
+			final StringBuilder sb = new StringBuilder(&quot;&lt;table&gt;&lt;tr&gt;&lt;td width=35&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;ID:&lt;/font&gt;&lt;/td&gt;&lt;td width=130&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;Name:&lt;/font&gt;&lt;/td&gt;&lt;td width=35&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;NPCs:&lt;/font&gt;&lt;/td&gt;&lt;td width=70&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;Resp / Rnd:&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			for (MultiSpawn spawn : spawns)
+				StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td&gt;&quot;, spawn.getTemplate().getNpcId(), &quot;&lt;/td&gt;&lt;td&gt;&quot;, spawn.getTemplate().getName(), &quot;&lt;/td&gt;&lt;td&gt;&quot;, spawn.getSpawned(), &quot; / &quot;, spawn.getTotal(), &quot;&lt;/td&gt;&lt;td&gt;&quot;, StringUtil.getTimeStamp(spawn.getRespawnDelay()), &quot; / &quot;, StringUtil.getTimeStamp(spawn.getRespawnRandom()), &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			
+			sb.append(&quot;&lt;/table&gt;&quot;);
+			adminReply.replace(&quot;%NPCSLIST%&quot;, sb.toString());
+		}
+		
+		player.sendPacket(adminReply);
+	}
+	
+	private static void showMakerScripts(Player player, NpcMaker maker)
+	{
+		final NpcHtmlMessage adminReply = new NpcHtmlMessage(0);
+		adminReply.setFile(&quot;data/html/admin/spawnlist/maker_scripts.htm&quot;);
+		
+		adminReply.replace(&quot;%MAKERNAME%&quot;, maker.getName());
+		adminReply.replace(&quot;%MAKERSPAWN%&quot;, maker.getMaker().getMakerName());
+		adminReply.replace(&quot;%MAKEREVENT%&quot;, (maker.getEvent() == null) ? &quot;&quot; : maker.getEvent());
+		adminReply.replace(&quot;%MAKERSTART%&quot;, &quot;&quot; + maker.isOnStart());
+		
+		final List&lt;Quest&gt; quests = maker.getQuestEvents();
+		if (quests.isEmpty())
+			adminReply.replace(&quot;%SCRIPTS%&quot;, &quot;&lt;br&gt;&lt;br&gt;&lt;center&gt;This NPC maker isn&#x27;t affected by scripts.&lt;/center&gt;&quot;);
+		else
+		{
+			final StringBuilder sb = new StringBuilder(&quot;&lt;br&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;ON_MAKER_NPCS_KILLED&lt;/font&gt;&lt;br1&gt;&quot;);
+			
+			for (Quest quest : quests)
+				StringUtil.append(sb, quest.getName(), &quot;&lt;br1&gt;&quot;);
+			
+			adminReply.replace(&quot;%SCRIPTS%&quot;, sb.toString());
+		}
+		
+		player.sendPacket(adminReply);
+	}
+}</pre>
+            
+</body>
+</html>

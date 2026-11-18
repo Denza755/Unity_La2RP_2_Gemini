@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/taskmanager/AiTaskManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/taskmanager/AiTaskManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.taskmanager;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+
+/**
+ * Handle all {@link Npc} AI tasks.
+ */
+public final class AiTaskManager implements Runnable
+{
+	private final Set&lt;Npc&gt; _npcs = ConcurrentHashMap.newKeySet();
+	
+	protected AiTaskManager()
+	{
+		// Run task each second.
+		ThreadPool.scheduleAtFixedRate(this, 1000, 1000);
+	}
+	
+	@Override
+	public final void run()
+	{
+		// Loop all Npcs.
+		for (Npc npc : _npcs)
+			npc.getAI().runAI();
+	}
+	
+	/**
+	 * Add the {@link Npc} set as parameter to the {@link AiTaskManager}.
+	 * @param npc : The {@link Npc} to add.
+	 */
+	public final void add(Npc npc)
+	{
+		npc.setAISleeping(false);
+		
+		_npcs.add(npc);
+	}
+	
+	/**
+	 * Remove the {@link Npc} set as parameter from the {@link AiTaskManager}.
+	 * @param npc : The {@link Npc} to remove.
+	 */
+	public final void remove(Npc npc)
+	{
+		npc.setAISleeping(true);
+		
+		_npcs.remove(npc);
+	}
+	
+	public static final AiTaskManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static final class SingletonHolder
+	{
+		protected static final AiTaskManager INSTANCE = new AiTaskManager();
+	}
+}</pre>
+            
+</body>
+</html>

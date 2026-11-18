@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Skillbar/SkillbarMain.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Skillbar/SkillbarMain.cs</h1>
+            <pre>using UnityEngine.UIElements;
+
+public class SkillbarMain : AbstractSkillbar
+{
+    private Button _expandButton;
+    private Button _minimizeButton;
+    private Button _tooltipButton;
+    private Button _lockButton;
+    private Button _rotateButton;
+
+    public SkillbarMain(VisualElement skillbarWindowElement, int skillbarIndex, int page, bool horizontalBar)
+    : base(skillbarWindowElement, skillbarIndex, page, horizontalBar)
+    {
+    }
+
+    protected override void UpdateVisuals()
+    {
+        _expandButton = _windowEle.Q&lt;Button&gt;(&quot;ExpandBtn&quot;);
+        _expandButton.AddManipulator(new ButtonClickSoundManipulator(_expandButton));
+        _expandButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; SkillbarWindow.Instance.AddSkillbar());
+
+        _minimizeButton = _windowEle.Q&lt;Button&gt;(&quot;MinimizeBtn&quot;);
+        _minimizeButton.AddManipulator(new ButtonClickSoundManipulator(_minimizeButton));
+        _minimizeButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; SkillbarWindow.Instance.ResetSkillbar());
+
+        _rotateButton = _windowEle.Q&lt;Button&gt;(&quot;RotateBtn&quot;);
+        _rotateButton.AddManipulator(new ButtonClickSoundManipulator(_rotateButton));
+
+        _lockButton = _windowEle.Q&lt;Button&gt;(&quot;LockBtn&quot;);
+        _lockButton.AddManipulator(new ButtonClickSoundManipulator(_lockButton));
+
+        _tooltipButton = _windowEle.Q&lt;Button&gt;(&quot;TooltipBtn&quot;);
+        _tooltipButton.AddManipulator(new ButtonClickSoundManipulator(_tooltipButton));
+
+        _rotateButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; HandleRotateClick());
+        _lockButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; HandleLockClick());
+        _tooltipButton.RegisterCallback&lt;ClickEvent&gt;((evt) =&gt; HandleTooltipClick());
+
+        UpdateExpandInput(0);
+    }
+
+    public void UpdateExpandInput(int mode)
+    {
+        if (mode == 0)
+        {
+            _minimizeButton.style.display = DisplayStyle.None;
+            _expandButton.style.display = DisplayStyle.Flex;
+            return;
+        }
+
+        _minimizeButton.style.display = DisplayStyle.Flex;
+        _expandButton.style.display = DisplayStyle.None;
+    }
+
+    private void HandleTooltipClick()
+    {
+        SkillbarWindow.Instance.ToggleDisableTooltip();
+    }
+
+    public void ToggleDisableTooltip()
+    {
+        if (!SkillbarWindow.Instance.TooltipDisabled)
+        {
+            if (_tooltipButton.ClassListContains(&quot;min&quot;))
+            {
+                _tooltipButton.RemoveFromClassList(&quot;min&quot;);
+
+            }
+        }
+        else
+        {
+            if (!_tooltipButton.ClassListContains(&quot;min&quot;))
+            {
+
+                _tooltipButton.AddToClassList(&quot;min&quot;);
+            }
+        }
+    }
+
+    private void HandleLockClick()
+    {
+        SkillbarWindow.Instance.ToggleLockSkillBar();
+    }
+
+    public void ToggleLockSkillBar()
+    {
+        if (!SkillbarWindow.Instance.Locked)
+        {
+            if (_lockButton.ClassListContains(&quot;locked&quot;))
+            {
+                _lockButton.RemoveFromClassList(&quot;locked&quot;);
+            }
+        }
+        else
+        {
+            if (!_lockButton.ClassListContains(&quot;locked&quot;))
+            {
+                _lockButton.AddToClassList(&quot;locked&quot;);
+            }
+        }
+    }
+
+    private void HandleRotateClick()
+    {
+        SkillbarWindow.Instance.ToggleRotate();
+    }
+}
+</pre>
+            
+</body>
+</html>

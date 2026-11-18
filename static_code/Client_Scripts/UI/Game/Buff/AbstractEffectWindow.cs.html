@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Buff/AbstractEffectWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Buff/AbstractEffectWindow.cs</h1>
+            <pre>using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public abstract class AbstractEffectWindow : L2Window
+{
+    protected VisualTreeAsset _buffSlot;
+    protected VisualElement[] _buffRowContainers;
+    protected EffectType _effectType;
+    private List&lt;BuffSlot&gt; _effectSlots;
+    private List&lt;BuffSlot&gt; _specialEffectSlots;
+    private Coroutine _effectCoroutine;
+
+    protected enum EffectType
+    {
+        Buff, Debuff
+    }
+
+    protected void Init(VisualElement root)
+    {
+        InitWindow(root);
+        _windowEle.style.left = 182;
+
+        VisualElement dragArea = GetElementByClass(&quot;drag-area&quot;);
+        if (dragArea != null)
+        {
+            DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+            dragArea.AddManipulator(drag);
+        }
+
+        MouseOverDetectionManipulator mouseOverDetectionManipulator = new MouseOverDetectionManipulator(_windowEle);
+        _windowEle.AddManipulator(mouseOverDetectionManipulator);
+
+        _effectSlots = new List&lt;BuffSlot&gt;();
+        _specialEffectSlots = new List&lt;BuffSlot&gt;();
+
+        _effectCoroutine = StartCoroutine(UpdateBuffTimers());
+    }
+
+    protected void HideWindowIfNeeded()
+    {
+        if ((_effectSlots == null || _effectSlots.Count == 0) &amp;&amp;
+            (_specialEffectSlots == null || _specialEffectSlots.Count == 0))
+        {
+            if (!_isWindowHidden)
+            {
+                HideWindow(true);
+            }
+        }
+    }
+
+    private void CleanupAllNormalEffects()
+    {
+        if (_buffRowContainers != null &amp;&amp; _buffRowContainers.Length &gt; 0 &amp;&amp; _buffRowContainers[0] != null)
+        {
+            _buffRowContainers[0].Clear();
+        }
+        _effectSlots?.Clear();
+    }
+
+    private void CleanupAllSpecialEffects()
+    {
+        if (_buffRowContainers != null &amp;&amp; _buffRowContainers.Length &gt; 1 &amp;&amp; _buffRowContainers[1] != null)
+        {
+            _buffRowContainers[1].Clear();
+        }
+        _specialEffectSlots?.Clear();
+    }
+
+    private void CleanupAllToggleEffects()
+    {
+        if (_buffRowContainers != null &amp;&amp; _buffRowContainers.Length &gt; 2 &amp;&amp; _buffRowContainers[2] != null)
+        {
+            _buffRowContainers[2].Clear();
+        }
+    }
+
+    public void CleanupAllEffects()
+    {
+        CleanupAllNormalEffects();
+        CleanupAllSpecialEffects();
+        CleanupAllToggleEffects();
+    }
+
+    public void SetEffects(BuffEffect[] buffEffects)
+    {
+        CleanupAllEffects();
+
+        if (buffEffects == null || buffEffects.Length == 0)
+        {
+            HideWindowIfNeeded();
+            return;
+        }
+
+        foreach (BuffEffect buffEffect in buffEffects)
+        {
+            if (buffEffect == null) continue;
+
+            Skillgrp skillgrp = SkillgrpTable.Instance.GetSkill(buffEffect.SkillId, buffEffect.SkillLvl);
+            if (skillgrp == null) continue;
+
+            bool isDebuff = skillgrp.Debuff == 1 || skillgrp.IconType == SkillType.Debuff;
+
+            if (_effectType == EffectType.Buff &amp;&amp; !isDebuff)
+            {
+                BuffType bType = Buff.ResolveBuffType(skillgrp);
+                AddEffect(buffEffect.SkillId, buffEffect.SkillLvl, buffEffect.Duration, bType);
+            }
+            else if (_effectType == EffectType.Debuff &amp;&amp; isDebuff)
+            {
+                AddEffect(buffEffect.SkillId, buffEffect.SkillLvl, buffEffect.Duration, BuffType.Debuff);
+            }
+        }
+
+        HideWindowIfNeeded();
+    }
+
+    public void AddEffect(int effectId, int effectLevel, int duration, BuffType type)
+    {
+        Debug.Log($&quot;Received buff: {effectId}, level: {effectLevel}, duration: {duration}, type: {type}&quot;);
+
+        int containerIndex = 0;
+        List&lt;BuffSlot&gt; targetSlotList = _effectSlots;
+
+        if (type == BuffType.Special)
+        {
+            containerIndex = 1;
+            targetSlotList = _specialEffectSlots;
+        }
+        else if (type == BuffType.Toggle)
+        {
+            containerIndex = 2;
+            targetSlotList = _effectSlots;
+        }
+
+        TemplateContainer template = _buffSlot.Instantiate();
+        VisualElement slotVisual = template.Q&lt;VisualElement&gt;(&quot;BgContainer&quot;) ?? (template.childCount &gt; 0 ? template[0] : template);
+
+        BuffSlot buffSlot = new BuffSlot(slotVisual);
+
+        if (_buffRowContainers != null &amp;&amp; containerIndex &lt; _buffRowContainers.Length &amp;&amp; _buffRowContainers[containerIndex] != null)
+        {
+            _buffRowContainers[containerIndex].Add(buffSlot.SlotElement);
+        }
+
+        targetSlotList.Add(buffSlot);
+        buffSlot.AssignEffect(effectId, effectLevel, duration, type);
+
+        if (_isWindowHidden)
+        {
+            ShowWindow();
+        }
+    }
+
+    private IEnumerator UpdateBuffTimers()
+    {
+        while (true)
+        {
+            if (_isWindowHidden)
+            {
+                yield return new WaitForSeconds(1f);
+                continue;
+            }
+
+            bool removedAny = false;
+
+            // Tick &amp; expire standard/toggle effects
+            if (_effectSlots != null)
+            {
+                for (int i = _effectSlots.Count - 1; i &gt;= 0; i--)
+                {
+                    BuffSlot slot = _effectSlots[i];
+                    if (slot == null || slot.Buff == null)
+                    {
+                        _effectSlots.RemoveAt(i);
+                        removedAny = true;
+                        continue;
+                    }
+
+                    if (slot.Buff.Duration &gt; 0)
+                    {
+                        float remaining = slot.GetRemainingDuration();
+                        if (remaining &lt;= 0f)
+                        {
+                            if (slot.SlotElement != null &amp;&amp; slot.SlotElement.parent != null)
+                            {
+                                slot.SlotElement.parent.Remove(slot.SlotElement);
+                            }
+                            _effectSlots.RemoveAt(i);
+                            removedAny = true;
+                            continue;
+                        }
+                    }
+
+                    slot.UpdateRemainingDuration();
+                }
+            }
+
+            // Tick &amp; expire special effects
+            if (_specialEffectSlots != null)
+            {
+                for (int i = _specialEffectSlots.Count - 1; i &gt;= 0; i--)
+                {
+                    BuffSlot slot = _specialEffectSlots[i];
+                    if (slot == null || slot.Buff == null)
+                    {
+                        _specialEffectSlots.RemoveAt(i);
+                        removedAny = true;
+                        continue;
+                    }
+
+                    if (slot.Buff.Duration &gt; 0)
+                    {
+                        float remaining = slot.GetRemainingDuration();
+                        if (remaining &lt;= 0f)
+                        {
+                            if (slot.SlotElement != null &amp;&amp; slot.SlotElement.parent != null)
+                            {
+                                slot.SlotElement.parent.Remove(slot.SlotElement);
+                            }
+                            _specialEffectSlots.RemoveAt(i);
+                            removedAny = true;
+                            continue;
+                        }
+                    }
+
+                    slot.UpdateRemainingDuration();
+                }
+            }
+
+            if (removedAny)
+            {
+                HideWindowIfNeeded();
+            }
+
+            yield return new WaitForSeconds(1f);
+        }
+    }
+
+    public void UpdateBuffs()
+    {
+        if (_effectSlots != null)
+        {
+            foreach (var slot in _effectSlots)
+            {
+                slot?.UpdateRemainingDuration();
+            }
+        }
+        if (_specialEffectSlots != null)
+        {
+            foreach (var slot in _specialEffectSlots)
+            {
+                slot?.UpdateRemainingDuration();
+            }
+        }
+        HideWindowIfNeeded();
+    }
+
+    private void OnDestroy()
+    {
+        if (_effectCoroutine != null)
+        {
+            StopCoroutine(_effectCoroutine);
+        }
+    }
+
+    public virtual void SetEtcEffects(PlayerBuffStatus status)
+    {
+        CleanupAllSpecialEffects();
+    }
+}
+</pre>
+            
+</body>
+</html>

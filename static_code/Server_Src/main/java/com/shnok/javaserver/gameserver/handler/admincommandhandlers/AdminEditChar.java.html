@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminEditChar.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminEditChar.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.data.sql.PlayerInfoTable;
+import com.shnok.javaserver.gameserver.data.xml.NpcData;
+import com.shnok.javaserver.gameserver.data.xml.PlayerData;
+import com.shnok.javaserver.gameserver.data.xml.PlayerLevelData;
+import com.shnok.javaserver.gameserver.enums.actors.ClassId;
+import com.shnok.javaserver.gameserver.enums.actors.Sex;
+import com.shnok.javaserver.gameserver.enums.skills.AbnormalEffect;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.model.records.PlayerLevel;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.AbstractNpcInfo.NpcInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SkillCoolTime;
+
+public class AdminEditChar implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_debug&quot;,
+		&quot;admin_party_info&quot;,
+		&quot;admin_remove&quot;,
+		&quot;admin_set&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		st.nextToken();
+		
+		if (command.startsWith(&quot;admin_debug&quot;))
+		{
+			final Player targetPlayer = (st.hasMoreTokens()) ? getTargetPlayer(player, st.nextToken(), true) : getTargetPlayer(player, true);
+			
+			gatherPlayerInfo(player, targetPlayer);
+		}
+		else if (command.startsWith(&quot;admin_party_info&quot;))
+		{
+			final Player targetPlayer = (st.hasMoreTokens()) ? getTargetPlayer(player, st.nextToken(), true) : getTargetPlayer(player, true);
+			
+			final Party party = targetPlayer.getParty();
+			if (party == null)
+			{
+				player.sendMessage(targetPlayer.getName() + &quot; isn&#x27;t in a party.&quot;);
+				return;
+			}
+			
+			final StringBuilder sb = new StringBuilder(400);
+			for (Player member : party.getMembers())
+			{
+				if (!party.isLeader(member))
+					StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td width=150&gt;&lt;a action=\&quot;bypass -h admin_debug &quot;, member.getName(), &quot;\&quot;&gt;&quot;, member.getName(), &quot; (&quot;, member.getStatus().getLevel(), &quot;)&lt;/a&gt;&lt;/td&gt;&lt;td width=120 align=right&gt;&quot;, member.getClassId().toString(), &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+				else
+					StringUtil.append(sb, &quot;&lt;tr&gt;&lt;td width=150&gt;&lt;a action=\&quot;bypass -h admin_debug &quot;, member.getName(), &quot;\&quot;&gt;&lt;font color=\&quot;LEVEL\&quot;&gt;&quot;, member.getName(), &quot; (&quot;, member.getStatus().getLevel(), &quot;)&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;&lt;td width=120 align=right&gt;&quot;, member.getClassId().toString(), &quot;&lt;/td&gt;&lt;/tr&gt;&quot;);
+			}
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(0);
+			html.setFile(&quot;data/html/admin/partyinfo.htm&quot;);
+			html.replace(&quot;%name%&quot;, targetPlayer.getName());
+			html.replace(&quot;%party%&quot;, sb.toString());
+			player.sendPacket(html);
+		}
+		else if (command.startsWith(&quot;admin_remove&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendMessage(&quot;Usage: //remove &lt;clan_penalty|death_penalty|skill_reuse&gt;&quot;);
+				return;
+			}
+			
+			final Player targetPlayer = getTargetPlayer(player, true);
+			
+			switch (st.nextToken())
+			{
+				case &quot;clan_penalty&quot;:
+					if (!st.hasMoreTokens())
+					{
+						player.sendMessage(&quot;Usage: //remove clan_penalty join|create&quot;);
+						return;
+					}
+					
+					final String param = st.nextToken();
+					if (param.contains(&quot;create&quot;))
+						targetPlayer.setClanCreateExpiryTime(0);
+					else if (param.contains(&quot;join&quot;))
+						targetPlayer.setClanJoinExpiryTime(0);
+					
+					player.sendMessage(&quot;Clan penalty is successfully removed for &quot; + targetPlayer.getName() + &quot;.&quot;);
+					break;
+				
+				case &quot;death_penalty&quot;:
+					targetPlayer.removeDeathPenaltyBuffLevel();
+					
+					if (targetPlayer != player)
+						player.sendMessage(targetPlayer.getName() + &quot;&#x27;s Death Penalty has been lifted.&quot;);
+					break;
+				
+				case &quot;skill_reuse&quot;:
+					targetPlayer.getReuseTimeStamp().clear();
+					targetPlayer.getDisabledSkills().clear();
+					targetPlayer.sendPacket(new SkillCoolTime(targetPlayer));
+					
+					player.sendMessage(targetPlayer.getName() + &quot;&#x27;s skills reuse timers are now cleaned.&quot;);
+					break;
+				
+				default:
+					player.sendMessage(&quot;Usage: //remove &lt;clan_penalty|death_penalty|skill_reuse&gt;&quot;);
+					break;
+			}
+		}
+		else if (command.startsWith(&quot;admin_set&quot;))
+		{
+			if (!st.hasMoreTokens())
+			{
+				player.sendMessage(&quot;Usage: //set &lt;access|class|color|exp|karma|level&gt;&quot;);
+				player.sendMessage(&quot;Usage: //set &lt;name|noble|rec|sex|sp|tcolor|title&gt;&quot;);
+				return;
+			}
+			
+			final WorldObject targetWorldObject = getTarget(WorldObject.class, player, true);
+			
+			switch (st.nextToken())
+			{
+				case &quot;access&quot;:
+					try
+					{
+						final int paramCount = st.countTokens();
+						if (paramCount == 1)
+						{
+							final int lvl = Integer.parseInt(st.nextToken());
+							if (targetWorldObject instanceof Player targetPlayer)
+							{
+								targetPlayer.setAccessLevel(lvl);
+								
+								if (lvl &lt; 0)
+									targetPlayer.logout(false);
+								
+								player.sendMessage(targetPlayer.getName() + &quot;&#x27;s access level is now set to &quot; + lvl + &quot;.&quot;);
+							}
+							else
+								player.sendPacket(SystemMessageId.INVALID_TARGET);
+						}
+						else if (paramCount == 2)
+						{
+							final String name = st.nextToken();
+							final int lvl = Integer.parseInt(st.nextToken());
+							
+							final Player worldPlayer = World.getInstance().getPlayer(name);
+							if (worldPlayer != null)
+							{
+								worldPlayer.setAccessLevel(lvl);
+								
+								if (lvl &lt; 0)
+									worldPlayer.logout(false);
+								
+								player.sendMessage(worldPlayer.getName() + &quot;&#x27;s access level is now set to &quot; + lvl + &quot;.&quot;);
+							}
+							else
+							{
+								try (Connection con = ConnectionPool.getConnection();
+									PreparedStatement ps = con.prepareStatement(&quot;UPDATE characters SET accesslevel=? WHERE char_name=?&quot;))
+								{
+									ps.setInt(1, lvl);
+									ps.setString(2, name);
+									ps.execute();
+									
+									final int count = ps.getUpdateCount();
+									if (count == 0)
+										player.sendMessage(name + &quot;couldn&#x27;t be found - its access level is unaltered.&quot;);
+									else
+										player.sendMessage(name + &quot;&#x27;s access level is now set to &quot; + lvl + &quot;.&quot;);
+								}
+								catch (Exception e)
+								{
+									LOGGER.error(&quot;Couldn&#x27;t update access.&quot;, e);
+								}
+							}
+						}
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set access &lt;level&gt; | &lt;name&gt; &lt;level&gt;&quot;);
+					}
+					break;
+				
+				case &quot;class&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final int newClassId = Integer.parseInt(st.nextToken());
+						if (newClassId &lt; 0 || newClassId &gt; ClassId.VALUES.length)
+							return;
+						
+						final ClassId newClass = ClassId.VALUES[newClassId];
+						
+						// Don&#x27;t bother with dummy classes.
+						if (newClass.getLevel() == -1)
+						{
+							player.sendMessage(&quot;You tried to set an invalid class for &quot; + targetPlayer.getName() + &quot;.&quot;);
+							return;
+						}
+						
+						// Don&#x27;t bother edit ClassId if already set the same.
+						if (targetPlayer.getClassId() == newClass)
+						{
+							player.sendMessage(targetPlayer.getName() + &quot; is already a(n) &quot; + newClass.toString() + &quot;.&quot;);
+							return;
+						}
+						
+						targetPlayer.abortAll(false);
+						targetPlayer.startAbnormalEffect(AbnormalEffect.HOLD_2);
+						targetPlayer.removeKnownObject(targetPlayer);
+						targetPlayer.decayMe();
+						
+						ThreadPool.schedule(() -&gt;
+						{
+							targetPlayer.setClassId(newClass.getId());
+							if (!targetPlayer.isSubClassActive())
+								targetPlayer.setBaseClass(newClass);
+							
+							targetPlayer.spawnMe();
+							targetPlayer.store();
+							targetPlayer.refreshWeightPenalty();
+							targetPlayer.refreshHennaList();
+							targetPlayer.broadcastUserInfo();
+							targetPlayer.stopAbnormalEffect(AbnormalEffect.HOLD_2);
+							targetPlayer.sendPacket(ActionFailed.STATIC_PACKET);
+							
+							player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot; class to &quot; + newClass.toString() + &quot;.&quot;);
+							
+						}, 4000);
+					}
+					catch (Exception e)
+					{
+						sendFile(player, &quot;charclasses.htm&quot;);
+					}
+					break;
+				
+				case &quot;color&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						targetPlayer.getAppearance().setNameColor(Integer.decode(&quot;0x&quot; + st.nextToken()));
+						targetPlayer.broadcastUserInfo();
+						
+						player.sendMessage(&quot;You successfully set color name of &quot; + targetPlayer.getName() + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set color &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;exp&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final long newExp = Long.parseLong(st.nextToken());
+						final long currentExp = targetPlayer.getStatus().getExp();
+						
+						if (currentExp &lt; newExp)
+							targetPlayer.addExpAndSp(newExp - currentExp, 0);
+						else if (currentExp &gt; newExp)
+							targetPlayer.removeExpAndSp(currentExp - newExp, 0);
+						
+						targetPlayer.broadcastUserInfo();
+						
+						player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot;&#x27;s XP to &quot; + newExp + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set exp &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;karma&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final int newKarma = Integer.parseInt(st.nextToken());
+						if (newKarma &lt; 0)
+						{
+							player.sendMessage(&quot;The karma value must be greater or equal to 0.&quot;);
+							return;
+						}
+						
+						targetPlayer.setKarma(newKarma);
+						
+						player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot;&#x27;s karma to &quot; + newKarma + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set karma &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;level&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final int newLevel = Integer.parseInt(st.nextToken());
+						final PlayerLevel pl = PlayerLevelData.getInstance().getPlayerLevel(newLevel);
+						if (pl == null)
+						{
+							player.sendMessage(&quot;Invalid used level for //set level.&quot;);
+							return;
+						}
+						
+						final long pXp = targetPlayer.getStatus().getExp();
+						final long tXp = pl.requiredExpToLevelUp();
+						
+						if (pXp &gt; tXp)
+							targetPlayer.removeExpAndSp(pXp - tXp, 0);
+						else if (pXp &lt; tXp)
+							targetPlayer.addExpAndSp(tXp - pXp, 0);
+						
+						player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot;&#x27;s level to &quot; + newLevel + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set level &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;name&quot;:
+					try
+					{
+						final String newName = st.nextToken();
+						
+						switch (targetWorldObject)
+						{
+							case Player targetPlayer:
+								// Invalid pattern.
+								if (!StringUtil.isValidString(newName, &quot;^[A-Za-z0-9]{1,16}$&quot;))
+								{
+									player.sendPacket(SystemMessageId.INCORRECT_NAME_TRY_AGAIN);
+									return;
+								}
+								
+								// Name is a npc name.
+								if (NpcData.getInstance().getTemplateByName(newName) != null)
+								{
+									player.sendPacket(SystemMessageId.INCORRECT_NAME_TRY_AGAIN);
+									return;
+								}
+								
+								// Name already exists.
+								if (PlayerInfoTable.getInstance().getPlayerObjectId(newName) &gt; 0)
+								{
+									player.sendPacket(SystemMessageId.INCORRECT_NAME_TRY_AGAIN);
+									return;
+								}
+								
+								targetPlayer.setName(newName);
+								PlayerInfoTable.getInstance().updatePlayerData(targetPlayer, false);
+								targetPlayer.broadcastUserInfo();
+								targetPlayer.store();
+								
+								player.sendMessage(&quot;You successfully set your target&#x27;s name to &quot; + targetPlayer.getName() + &quot;.&quot;);
+								break;
+							
+							case Npc targetNpc:
+								targetNpc.setName(newName);
+								targetNpc.broadcastPacket(new NpcInfo(targetNpc, null));
+								
+								player.sendMessage(&quot;You successfully set your target&#x27;s name to &quot; + targetNpc.getName() + &quot;.&quot;);
+								break;
+							
+							default:
+								player.sendPacket(SystemMessageId.INVALID_TARGET);
+								break;
+						}
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set name &lt;name&gt;&quot;);
+					}
+					break;
+				
+				case &quot;noble&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						targetPlayer.setNoble(!targetPlayer.isNoble(), true);
+						player.sendMessage(&quot;You have modified &quot; + targetPlayer.getName() + &quot;&#x27;s noble status.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set rec &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;rec&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final int newRec = Integer.parseInt(st.nextToken());
+						
+						targetPlayer.setRecomHave(newRec);
+						targetPlayer.broadcastUserInfo();
+						
+						player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot; to &quot; + newRec + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set rec &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;sex&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final Sex sex = Enum.valueOf(Sex.class, st.nextToken().toUpperCase());
+						
+						if (sex == targetPlayer.getAppearance().getSex())
+						{
+							player.sendMessage(targetPlayer.getName() + &quot;&#x27;s sex is already defined as &quot; + sex.toString() + &quot;.&quot;);
+							return;
+						}
+						
+						targetPlayer.abortAll(false);
+						targetPlayer.startAbnormalEffect(AbnormalEffect.HOLD_2);
+						targetPlayer.removeKnownObject(targetPlayer);
+						targetPlayer.decayMe();
+						
+						ThreadPool.schedule(() -&gt;
+						{
+							targetPlayer.getAppearance().setSex(sex);
+							targetPlayer.spawnMe();
+							targetPlayer.store();
+							targetPlayer.broadcastUserInfo();
+							targetPlayer.stopAbnormalEffect(AbnormalEffect.HOLD_2);
+							targetPlayer.sendPacket(ActionFailed.STATIC_PACKET);
+							
+							player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot; gender to &quot; + sex.toString() + &quot;.&quot;);
+							
+						}, 4000);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set sex &lt;sex&gt;&quot;);
+					}
+					break;
+				
+				case &quot;sp&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+						
+						final int newSp = Integer.parseInt(st.nextToken());
+						final int currentSp = targetPlayer.getStatus().getSp();
+						
+						if (currentSp &lt; newSp)
+							targetPlayer.addExpAndSp(0, newSp - currentSp);
+						else if (currentSp &gt; newSp)
+							targetPlayer.removeExpAndSp(0, currentSp - newSp);
+						
+						targetPlayer.broadcastUserInfo();
+						
+						player.sendMessage(&quot;You successfully set &quot; + targetPlayer.getName() + &quot;&#x27;s SP to &quot; + newSp + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set sp &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;tcolor&quot;:
+					try
+					{
+						if (!(targetWorldObject instanceof Player targetPlayer))
+							return;
+
+						targetPlayer.getAppearance().setTitleColor(Integer.decode(&quot;0x&quot; + st.nextToken())); //fix on the previous substring
+						targetPlayer.broadcastUserInfo();
+						
+						player.sendMessage(&quot;You successfully set title color name of &quot; + targetPlayer.getName() + &quot;.&quot;);
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set tcolor &lt;number&gt;&quot;);
+					}
+					break;
+				
+				case &quot;title&quot;:
+					try
+					{
+						final String newTitle = st.nextToken();
+						
+						switch (targetWorldObject)
+						{
+							case Player targetPlayer:
+								targetPlayer.setTitle(newTitle);
+								targetPlayer.broadcastTitleInfo();
+								
+								player.sendMessage(&quot;You successfully set your target&#x27;s title to &quot; + targetPlayer.getTitle() + &quot;.&quot;);
+								break;
+							
+							case Npc targetNpc:
+								targetNpc.setTitle(newTitle);
+								targetNpc.broadcastPacket(new NpcInfo(targetNpc, null));
+								
+								player.sendMessage(&quot;You successfully set your target&#x27;s title to &quot; + targetNpc.getTitle() + &quot;.&quot;);
+								break;
+							
+							default:
+								player.sendPacket(SystemMessageId.INVALID_TARGET);
+								break;
+						}
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Usage: //set title &lt;title&gt;&quot;);
+					}
+					break;
+				
+				default:
+					player.sendMessage(&quot;Usage: //set access|class|color|exp|karma&quot;);
+					player.sendMessage(&quot;Usage: //set level|name|rec|sex|sp|tcolor|title&quot;);
+					break;
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+	
+	/**
+	 * Gather {@link Player} informations and send them on an existing {@link NpcHtmlMessage}. Additionally, set the target to this {@link Player}.
+	 * @param player : The {@link Player} who requested that action.
+	 * @param targetPlayer : The {@link Player} target to gather informations from.
+	 * @param html : The {@link NpcHtmlMessage} used as reference.
+	 */
+	public static void gatherPlayerInfo(Player player, Player targetPlayer, NpcHtmlMessage html)
+	{
+		player.setTarget(targetPlayer);
+		
+		html.setFile(&quot;data/html/admin/charinfo.htm&quot;);
+		html.replace(&quot;%name%&quot;, targetPlayer.getName());
+		html.replace(&quot;%objid%&quot;, targetPlayer.getObjectId());
+		html.replace(&quot;%clan%&quot;, (targetPlayer.getClan() != null) ? &quot;&lt;a action=\&quot;bypass -h admin_pledge info &quot; + targetPlayer.getClan().getName() + &quot;\&quot;&gt;&quot; + targetPlayer.getClan().getName() + &quot;&lt;/a&gt;&quot; : &quot;N/A&quot;);
+		html.replace(&quot;%party%&quot;, (targetPlayer.getParty() != null) ? &quot;&lt;a action=\&quot;bypass -h admin_party_info &quot; + targetPlayer.getName() + &quot;\&quot;&gt;&quot; + targetPlayer.getParty().getMembers().size() + &quot; members&lt;/a&gt;&quot; : &quot;N/A&quot;);
+		html.replace(&quot;%baseclass%&quot;, PlayerData.getInstance().getClassNameById(targetPlayer.getBaseClass()));
+		html.replace(&quot;%xp%&quot;, targetPlayer.getStatus().getExp());
+		html.replace(&quot;%curai%&quot;, targetPlayer.getAI().getCurrentIntention().getType().toString());
+		html.replace(&quot;%nextai%&quot;, targetPlayer.getAI().getNextIntention().getType().toString());
+		html.replace(&quot;%loc%&quot;, targetPlayer.getPosition().toString());
+		html.replace(&quot;%account%&quot;, targetPlayer.getAccountName());
+		html.replace(&quot;%ip%&quot;, (targetPlayer.getClient() == null || targetPlayer.getClient().isDetached()) ? &quot;Disconnected&quot; : targetPlayer.getClient().getConnection().getInetAddress().getHostAddress());
+	}
+	
+	/**
+	 * Gather {@link Player} informations and send them on a new {@link NpcHtmlMessage}. Additionally, set the target to this {@link Player}.
+	 * @param player : The {@link Player} who requested that action.
+	 * @param targetPlayer : The {@link Player} target to gather informations from.
+	 */
+	private static void gatherPlayerInfo(Player player, Player targetPlayer)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(0);
+		gatherPlayerInfo(player, targetPlayer, html);
+		player.sendPacket(html);
+	}
+}
+</pre>
+            
+</body>
+</html>

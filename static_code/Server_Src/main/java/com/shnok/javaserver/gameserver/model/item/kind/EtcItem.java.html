@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/kind/EtcItem.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/kind/EtcItem.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.item.kind;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.enums.items.EtcItemType;
+import com.shnok.javaserver.gameserver.model.itemcontainer.PcInventory;
+
+/**
+ * This class is dedicated to the management of EtcItem.
+ */
+public final class EtcItem extends Item
+{
+	private final String _handler;
+	private final int _sharedReuseGroup;
+	private EtcItemType _type;
+	private final int _reuseDelay;
+	
+	public EtcItem(StatSet set)
+	{
+		super(set);
+		
+		_type = set.getEnum(&quot;etcitem_type&quot;, EtcItemType.class, EtcItemType.NONE);
+		
+		switch (getDefaultAction())
+		{
+			case soulshot, spiritshot, summon_soulshot, summon_spiritshot:
+				_type = EtcItemType.SHOT;
+				break;
+		}
+		
+		_type1 = Item.TYPE1_ITEM_QUESTITEM_ADENA;
+		_type2 = Item.TYPE2_OTHER; // default is other
+		
+		if (isQuestItem())
+			_type2 = Item.TYPE2_QUEST;
+		else if (getItemId() == PcInventory.ADENA_ID || getItemId() == PcInventory.ANCIENT_ADENA_ID)
+			_type2 = Item.TYPE2_MONEY;
+		
+		_handler = set.getString(&quot;handler&quot;, null);
+		_sharedReuseGroup = set.getInteger(&quot;shared_reuse_group&quot;, -1);
+		_reuseDelay = set.getInteger(&quot;reuse_delay&quot;, 0);
+	}
+	
+	@Override
+	public EtcItemType getItemType()
+	{
+		return _type;
+	}
+	
+	@Override
+	public final boolean isConsumable()
+	{
+		return ((getItemType() == EtcItemType.SHOT) || (getItemType() == EtcItemType.POTION));
+	}
+	
+	@Override
+	public int getItemMask()
+	{
+		return getItemType().mask();
+	}
+	
+	/**
+	 * @return the handler name, or null otherwise.
+	 */
+	public String getHandlerName()
+	{
+		return _handler;
+	}
+	
+	public int getSharedReuseGroup()
+	{
+		return _sharedReuseGroup;
+	}
+	
+	public int getReuseDelay()
+	{
+		return _reuseDelay;
+	}
+}</pre>
+            
+</body>
+</html>

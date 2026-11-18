@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q363_SorrowfulSoundOfFlute.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q363_SorrowfulSoundOfFlute.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q363_SorrowfulSoundOfFlute extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q363_SorrowfulSoundOfFlute&quot;;
+	
+	// NPCs
+	private static final int NANARIN = 30956;
+	private static final int OPIX = 30595;
+	private static final int ALDO = 30057;
+	private static final int RANSPO = 30594;
+	private static final int HOLVAS = 30058;
+	private static final int BARBADO = 30959;
+	private static final int POITAN = 30458;
+	
+	// Item
+	private static final int NANARIN_FLUTE = 4319;
+	private static final int BLACK_BEER = 4320;
+	private static final int CLOTHES = 4318;
+	
+	// Reward
+	private static final int THEME_OF_SOLITUDE = 4420;
+	
+	public Q363_SorrowfulSoundOfFlute()
+	{
+		super(363, &quot;Sorrowful Sound of Flute&quot;);
+		
+		setItemsIds(NANARIN_FLUTE, BLACK_BEER, CLOTHES);
+		
+		addQuestStart(NANARIN);
+		addTalkId(NANARIN, OPIX, ALDO, RANSPO, HOLVAS, BARBADO, POITAN);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30956-02.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30956-05.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, CLOTHES, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;30956-06.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, NANARIN_FLUTE, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;30956-07.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, BLACK_BEER, 1);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 15) ? &quot;30956-03.htm&quot; : &quot;30956-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case NANARIN:
+						if (cond == 1)
+							htmltext = &quot;30956-02.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;30956-04.htm&quot;;
+						else if (cond == 3)
+							htmltext = &quot;30956-08.htm&quot;;
+						else if (cond == 4)
+						{
+							if (st.getInteger(&quot;success&quot;) == 1)
+							{
+								htmltext = &quot;30956-09.htm&quot;;
+								giveItems(player, THEME_OF_SOLITUDE, 1);
+								playSound(player, SOUND_FINISH);
+							}
+							else
+							{
+								htmltext = &quot;30956-10.htm&quot;;
+								playSound(player, SOUND_GIVEUP);
+							}
+							st.exitQuest(true);
+						}
+						break;
+					
+					case OPIX, POITAN, ALDO, RANSPO, HOLVAS:
+						htmltext = npc.getNpcId() + &quot;-01.htm&quot;;
+						if (cond == 1)
+						{
+							st.setCond(2);
+							playSound(player, SOUND_MIDDLE);
+						}
+						break;
+					
+					case BARBADO:
+						if (cond == 3)
+						{
+							st.setCond(4);
+							playSound(player, SOUND_MIDDLE);
+							
+							if (player.getInventory().hasItem(NANARIN_FLUTE))
+							{
+								htmltext = &quot;30959-02.htm&quot;;
+								st.set(&quot;success&quot;, 1);
+							}
+							else
+								htmltext = &quot;30959-01.htm&quot;;
+							
+							takeItems(player, BLACK_BEER, -1);
+							takeItems(player, CLOTHES, -1);
+							takeItems(player, NANARIN_FLUTE, -1);
+						}
+						else if (cond == 4)
+							htmltext = &quot;30959-03.htm&quot;;
+						break;
+				}
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

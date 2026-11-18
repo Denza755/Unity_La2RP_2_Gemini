@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/multisell/Entry.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/multisell/Entry.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.multisell;
+
+import java.util.List;
+
+/**
+ * A datatype which is part of multisell system. A multisell list can hold multiple Products.&lt;br&gt;
+ * Each Product owns a List of &quot;required part(s)&quot; and &quot;result(s)&quot; known both as {@link Ingredient}s.
+ */
+public class Entry
+{
+	protected List&lt;Ingredient&gt; _ingredients;
+	protected List&lt;Ingredient&gt; _products;
+	protected boolean _stackable = true;
+	
+	public Entry(final List&lt;Ingredient&gt; ingredients, final List&lt;Ingredient&gt; products)
+	{
+		_ingredients = ingredients;
+		_products = products;
+		_stackable = products.stream().allMatch(Ingredient::isStackable);
+	}
+	
+	/**
+	 * This constructor used in PreparedEntry only, ArrayLists not created.
+	 */
+	protected Entry()
+	{
+	}
+	
+	public List&lt;Ingredient&gt; getProducts()
+	{
+		return _products;
+	}
+	
+	public List&lt;Ingredient&gt; getIngredients()
+	{
+		return _ingredients;
+	}
+	
+	public boolean isStackable()
+	{
+		return _stackable;
+	}
+	
+	public int getTaxAmount()
+	{
+		return 0;
+	}
+}</pre>
+            
+</body>
+</html>

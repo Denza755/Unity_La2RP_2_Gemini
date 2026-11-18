@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/Converter/TerrainToMesh.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/Converter/TerrainToMesh.cs</h1>
+            <pre>#if (UNITY_EDITOR) 
+using System.Collections.Generic;
+using UnityEngine;
+
+public class TerrainToMesh : MonoBehaviour {
+    public Terrain terrain;
+    public GameObject dest;
+    public int meshSubdivisions = 255;
+
+    // Start is called before the first frame update
+    void Start() {
+        // BuildMeshBase();
+        // ConvertTerrain();
+        // AssetDatabase.ExportPackage(&quot;Assets/Data/Maps/17_25/TerrainData&quot;, &quot;TerrainPackage.unitypackage&quot;);
+    }
+
+    public void BuildMeshBase() {
+        Mesh planeMesh = new Mesh();
+        SetVertices(planeMesh, meshSubdivisions);
+        SetTriangles(planeMesh, meshSubdivisions);
+        SetUVs(planeMesh, meshSubdivisions);
+
+        var meshFilter = dest.AddComponent&lt;MeshFilter&gt;();
+        meshFilter.mesh = planeMesh;
+        var meshRenderer = dest.AddComponent&lt;MeshRenderer&gt;();
+        Material material = new Material(Shader.Find(&quot;Universal Render Pipeline/Lit&quot;));
+        meshRenderer.material = material;
+
+        Vector3 meshScale = new Vector3(terrain.terrainData.size.x, 1, terrain.terrainData.size.z);
+        dest.transform.localScale = meshScale;
+        dest.transform.position = terrain.transform.position;
+    }
+
+    private void SetVertices(Mesh mesh, int subdivisions) {
+        Vector3[] vertices = new Vector3[(subdivisions + 1) * (subdivisions + 1)];
+        float step = 1f / subdivisions;
+        for(int i = 0, z = 0; z &lt;= subdivisions; z++) {
+            for(int x = 0; x &lt;= subdivisions; x++) {
+                vertices[i] = new Vector3(x * step, 0, z * step);
+                i++;
+            }
+        }
+        mesh.vertices = vertices;
+    }
+
+    /*private void SetTriangles(Mesh mesh, int subdivisions) {
+        int[] triangles = new int[subdivisions * subdivisions * 6];
+        int vert = 0;
+        int tris = 0;
+        for(int z = 0; z &lt; subdivisions; z++) {
+            for(int x = 0; x &lt; subdivisions; x++) {
+                triangles[tris + 0] = vert + 0;
+                triangles[tris + 1] = vert + subdivisions + 1;
+                triangles[tris + 2] = vert + 1;
+                triangles[tris + 3] = vert + 1;
+                triangles[tris + 4] = vert + subdivisions + 1;
+                triangles[tris + 5] = vert + subdivisions + 2;
+                vert++;
+                tris += 6;
+            }
+            vert++;
+        }
+        mesh.triangles = triangles;
+    }*/
+
+    private void SetTriangles(Mesh mesh, int subdivisions) {
+        int[] triangles = new int[subdivisions * subdivisions * 6];
+        int vert = 0;
+        int tris = 0;
+        for(int z = 0; z &lt; subdivisions; z++) {
+            for(int x = 0; x &lt; subdivisions; x++) {
+                triangles[tris + 0] = vert + 0;
+                triangles[tris + 1] = vert + subdivisions + 1;
+                triangles[tris + 2] = vert + 1;
+                triangles[tris + 3] = vert + 1;
+                triangles[tris + 4] = vert + subdivisions + 1;
+                triangles[tris + 5] = vert + subdivisions + 2;
+                vert++;
+                tris += 6;
+            }
+            vert++; // Move to the next row
+        }
+        mesh.triangles = triangles;
+    }
+
+    private void SetUVs(Mesh mesh, int subdivisions) {
+        Vector2[] uvs = new Vector2[mesh.vertices.Length];
+        for(int i = 0, z = 0; z &lt;= subdivisions; z++) {
+            for(int x = 0; x &lt;= subdivisions; x++) {
+                uvs[i] = new Vector2((float)x / subdivisions, (float)z / subdivisions);
+                i++;
+            }
+        }
+        mesh.uv = uvs;
+    }
+
+
+    public void ConvertTerrain(bool optimize) {
+        // get the bounds of the terrain
+        var bounds = terrain.terrainData.bounds;
+
+        var mf = dest.GetComponent&lt;MeshFilter&gt;();
+        var mesh = mf.mesh;
+
+        List&lt;Vector3&gt; newVerts = new List&lt;Vector3&gt;();
+        foreach(var vert in mesh.vertices) {
+            var wPos = dest.transform.localToWorldMatrix * vert;
+            var newVert = vert;
+            newVert.y = terrain.SampleHeight(wPos);
+            newVerts.Add(newVert);
+        }
+        mesh.SetVertices(newVerts.ToArray());
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        mesh.RecalculateBounds();
+
+        if(optimize) {
+            mesh.Optimize();
+        }
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

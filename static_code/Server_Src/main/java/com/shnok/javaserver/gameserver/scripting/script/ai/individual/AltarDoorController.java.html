@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/AltarDoorController.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/AltarDoorController.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+
+public class AltarDoorController extends DefaultNpc
+{
+	private static final String MAKER_NAME_UNIQUE_NPC_2ND_FLOOR = &quot;altar_start_02&quot;;
+	private static final String MAKER_NAME_JAKO_2ND_FLOOR = &quot;altar_start_01&quot;;
+	private static final String MAKER_NAME_STAGE_CON = &quot;rune14_andreas_m2&quot;;
+	
+	public AltarDoorController()
+	{
+		super(&quot;ai/individual&quot;);
+		
+		addFirstTalkId(_npcIds);
+	}
+	
+	public AltarDoorController(String descr)
+	{
+		super(descr);
+		
+		addFirstTalkId(_npcIds);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		32051
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai0 = 0;
+		npc._i_ai1 = 0;
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		return null;
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (npc._i_ai0 == 0)
+			broadcastScriptEvent(npc, 1, creature.getObjectId(), 4000);
+		else if (npc._i_ai0 == 2)
+			broadcastScriptEvent(npc, 3, creature.getObjectId(), 4000);
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		final String doorName = getNpcStringAIParam(npc, &quot;DoorName&quot;);
+		final String doorName3rdFloor = getNpcStringAIParam(npc, &quot;DoorName3rdFloor&quot;);
+		
+		if (eventId == 0)
+		{
+			if (doorName != null)
+				openCloseDoor(doorName, 0);
+			
+			if (doorName3rdFloor != null)
+				openCloseDoor(doorName3rdFloor, 1);
+		}
+		else if (eventId == 1)
+		{
+			NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_UNIQUE_NPC_2ND_FLOOR);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_JAKO_2ND_FLOOR);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_STAGE_CON);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			
+			startQuestTimer(&quot;2001&quot;, npc, null, 3 * 60 * 1000L);
+		}
+		else if (eventId == 2)
+		{
+			npc.broadcastNpcShout(NpcStringId.ID_10079);
+			if (doorName3rdFloor != null)
+				openCloseDoor(doorName3rdFloor, 0);
+			
+			startQuestTimer(&quot;2002&quot;, npc, null, 3 * 60 * 1000L);
+		}
+		else if (eventId == 3)
+		{
+			npc._i_ai1 = 1;
+			startQuestTimer(&quot;2003&quot;, npc, null, 2 * 60 * 1000L);
+		}
+		else if (eventId == 5)
+		{
+			if (doorName3rdFloor != null)
+				openCloseDoor(doorName3rdFloor, 0);
+			
+			if (doorName != null)
+				openCloseDoor(doorName, 0);
+			
+			NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_STAGE_CON);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			startQuestTimer(&quot;2004&quot;, npc, null, 3 * 60 * 1000L);
+		}
+		else if (eventId == 6)
+		{
+			if (doorName3rdFloor != null)
+				openCloseDoor(doorName3rdFloor, 1);
+			
+			startQuestTimer(&quot;2005&quot;, npc, null, 3 * 60 * 1000L);
+		}
+		else if (eventId == 7)
+		{
+			if (doorName3rdFloor != null)
+				openCloseDoor(doorName3rdFloor, 0);
+			
+			startQuestTimer(&quot;2006&quot;, npc, null, 60 * 60 * 1000L);
+		}
+		if (eventId &lt; 9)
+		{
+			npc._i_ai0 = eventId;
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		final String doorName = getNpcStringAIParam(npc, &quot;DoorName&quot;);
+		final String doorName3rdFloor = getNpcStringAIParam(npc, &quot;DoorName3rdFloor&quot;);
+		
+		if (name.equalsIgnoreCase(&quot;2001&quot;))
+		{
+			if (doorName != null)
+				openCloseDoor(doorName, 1);
+		}
+		else if (name.equalsIgnoreCase(&quot;2002&quot;))
+		{
+			if (npc._i_ai1 == 0 &amp;&amp; doorName3rdFloor != null)
+				openCloseDoor(doorName3rdFloor, 1);
+		}
+		else if (name.equalsIgnoreCase(&quot;2003&quot;))
+		{
+			npc._i_ai1 = 0;
+			startQuestTimer(&quot;2002&quot;, npc, player, 60000);
+		}
+		else if (name.equalsIgnoreCase(&quot;2004&quot;))
+		{
+			broadcastScriptEvent(npc, 6, npc.getObjectId(), 4000);
+		}
+		else if (name.equalsIgnoreCase(&quot;2005&quot;))
+		{
+			npc.deleteMe();
+		}
+		else if (name.equalsIgnoreCase(&quot;2006&quot;))
+		{
+			NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_UNIQUE_NPC_2ND_FLOOR);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_STAGE_CON);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			
+			if (doorName != null)
+				openCloseDoor(doorName, 0);
+			
+			npc._i_ai0 = 0;
+			broadcastScriptEvent(npc, 0, npc.getObjectId(), 4000);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+}
+</pre>
+            
+</body>
+</html>

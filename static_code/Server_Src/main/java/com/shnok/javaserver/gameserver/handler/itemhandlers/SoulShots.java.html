@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/itemhandlers/SoulShots.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/itemhandlers/SoulShots.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.itemhandlers;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.items.ShotType;
+import com.shnok.javaserver.gameserver.handler.IItemHandler;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.model.item.kind.Weapon;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.skill.MagicSkillUse;
+
+public class SoulShots implements IItemHandler
+{
+	@Override
+	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
+	{
+		if (!(playable instanceof Player player))
+			return;
+		
+		final ItemInstance weaponInst = player.getActiveWeaponInstance();
+		final Weapon weaponItem = player.getActiveWeaponItem();
+		
+		// Check if soulshot can be used
+		if (weaponInst == null || weaponItem.getSoulShotCount() == 0)
+		{
+			if (!player.getAutoSoulShot().contains(item.getItemId()))
+				player.sendPacket(SystemMessageId.CANNOT_USE_SOULSHOTS);
+			
+			return;
+		}
+		
+		if (weaponItem.getCrystalType() != item.getItem().getCrystalType())
+		{
+			if (!player.getAutoSoulShot().contains(item.getItemId()))
+				player.sendPacket(SystemMessageId.SOULSHOTS_GRADE_MISMATCH);
+			
+			return;
+		}
+		
+		// Check if Soulshot are already active.
+		if (player.isChargedShot(ShotType.SOULSHOT))
+			return;
+		
+		// Consume Soulshots if player has enough of them.
+		int ssCount = weaponItem.getSoulShotCount();
+		if (weaponItem.getReducedSoulShot() &gt; 0 &amp;&amp; Rnd.get(100) &lt; weaponItem.getReducedSoulShotChance())
+			ssCount = weaponItem.getReducedSoulShot();
+		
+		if (!player.destroyItem(item.getObjectId(), ssCount, false))
+		{
+			if (!player.disableAutoShot(item.getItemId()))
+				player.sendPacket(SystemMessageId.NOT_ENOUGH_SOULSHOTS);
+			
+			return;
+		}
+		
+		final IntIntHolder[] skills = item.getItem().getSkills();
+		
+		weaponInst.setChargedShot(ShotType.SOULSHOT, true);
+		player.sendPacket(SystemMessageId.ENABLED_SOULSHOT);
+		player.broadcastPacketInRadius(new MagicSkillUse(player, player, skills[0].getId(), 1, 0, 0), 600);
+	}
+}
+</pre>
+            
+</body>
+</html>

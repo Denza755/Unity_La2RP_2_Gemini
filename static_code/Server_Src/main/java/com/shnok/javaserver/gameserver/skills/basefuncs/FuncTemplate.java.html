@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/basefuncs/FuncTemplate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/basefuncs/FuncTemplate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills.basefuncs;
+
+import java.lang.reflect.Constructor;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+
+import com.shnok.javaserver.gameserver.enums.skills.Stats;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.skills.conditions.Condition;
+
+public final class FuncTemplate
+{
+	private static final CLogger LOGGER = new CLogger(FuncTemplate.class.getName());
+	
+	private final Condition _attachCond;
+	private final Condition _applyCond;
+	private final Constructor&lt;?&gt; _constructor;
+	private final Stats _stat;
+	private final double _value;
+	
+	public FuncTemplate(Condition attachCond, Condition applyCond, String function, Stats stat, double value)
+	{
+		_attachCond = attachCond;
+		_applyCond = applyCond;
+		_stat = stat;
+		_value = value;
+		
+		try
+		{
+			final Class&lt;?&gt; functionClass = Class.forName(&quot;com.shnok.javaserver.gameserver.skills.basefuncs.Func&quot; + function);
+			_constructor = functionClass.getConstructor(Object.class, Stats.class, Double.TYPE, Condition.class);
+		}
+		catch (ClassNotFoundException | NoSuchMethodException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Gets the functions for skills.
+	 * @param caster the caster
+	 * @param target the target
+	 * @param skill the skill
+	 * @param owner the owner
+	 * @return the function if conditions are met, {@code null} otherwise
+	 */
+	public Func getFunc(Creature caster, Creature target, L2Skill skill, Object owner)
+	{
+		return getFunc(caster, target, skill, null, owner);
+	}
+	
+	/**
+	 * Gets the functions for items.
+	 * @param caster the caster
+	 * @param target the target
+	 * @param item the item
+	 * @param owner the owner
+	 * @return the function if conditions are met, {@code null} otherwise
+	 */
+	public Func getFunc(Creature caster, Creature target, ItemInstance item, Object owner)
+	{
+		return getFunc(caster, target, null, item, owner);
+	}
+	
+	/**
+	 * Gets the functions for skills and items.
+	 * @param caster the caster
+	 * @param target the target
+	 * @param skill the skill
+	 * @param item the item
+	 * @param owner the owner
+	 * @return the function if conditions are met, {@code null} otherwise
+	 */
+	private Func getFunc(Creature caster, Creature target, L2Skill skill, ItemInstance item, Object owner)
+	{
+		if (_attachCond != null &amp;&amp; !_attachCond.test(caster, target, skill))
+			return null;
+		
+		try
+		{
+			return (Func) _constructor.newInstance(owner, _stat, _value, _applyCond);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;An error occured during getFunc.&quot;, e);
+		}
+		return null;
+	}
+}</pre>
+            
+</body>
+</html>

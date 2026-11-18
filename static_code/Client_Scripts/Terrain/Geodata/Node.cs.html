@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Terrain/Geodata/Node.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Terrain/Geodata/Node.cs</h1>
+            <pre>using System;
+using UnityEngine;
+
+[System.Serializable]
+public class Node : IEquatable&lt;Node&gt; {
+	public Vector3 nodeIndex;
+	public Vector3 worldPosition;
+	public Vector3 center;
+
+	public Node parentNode;
+	public float cost;
+	public float gCost;
+	public float hCost;
+	public float fCost =&gt; gCost + hCost;
+
+	public Node() {}
+
+	public Node(Node original) {
+		this.nodeIndex = original.nodeIndex;
+		this.worldPosition = original.worldPosition;
+		this.center = original.center;
+		this.parentNode = original.parentNode;
+		this.cost = original.cost;
+		this.gCost = original.gCost;
+		this.hCost = original.hCost;
+	}
+
+	public Node(Vector3 nodeIndex, Vector3 worldPosition, float size) {
+		this.nodeIndex = nodeIndex;
+		this.worldPosition = worldPosition;
+		center = new Vector3 (worldPosition.x + size / 2f, worldPosition.y, worldPosition.z + size / 2f);
+	}
+
+	public bool Equals(Node other) {
+		if (ReferenceEquals(null, other)) return false;
+		if (ReferenceEquals(this, other)) return true;
+		return nodeIndex.Equals(other.nodeIndex);
+	}
+
+	public override bool Equals(object obj) {
+		if (ReferenceEquals(null, obj)) return false;
+		if (ReferenceEquals(this, obj)) return true;
+		if (obj.GetType() != this.GetType()) return false;
+		return Equals((Node)obj);
+	}
+
+	public override int GetHashCode() {
+		return nodeIndex.GetHashCode();
+	}
+}
+</pre>
+            
+</body>
+</html>

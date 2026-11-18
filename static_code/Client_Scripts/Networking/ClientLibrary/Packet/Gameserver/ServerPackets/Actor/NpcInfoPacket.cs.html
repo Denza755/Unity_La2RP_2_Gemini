@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Actor/NpcInfoPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Actor/NpcInfoPacket.cs</h1>
+            <pre>using System;
+using UnityEngine;
+
+public class NpcInfoPacket : ServerPacket
+{
+    public NetworkIdentity Identity { get; private set; }
+    public NpcStatus Status { get; private set; }
+    public Stats Stats { get; private set; }
+    public Appearance Appearance { get; private set; }
+    public EntityActionInfo EntityActionInfo { get; set; }
+
+    public NpcInfoPacket(byte[] d) : base(d)
+    {
+        Identity = new NetworkIdentity();
+        Status = new NpcStatus();
+        Appearance = new Appearance();
+        Stats = new Stats();
+        EntityActionInfo = new EntityActionInfo();
+        Parse();
+    }
+
+    public override void Parse()
+    {
+        try
+        {
+            Identity.Id = ReadI();
+            Identity.NpcId = ReadI() - 1000000;
+            Identity.IsAttackable = ReadI() != 0;
+
+            Identity.SetPosZ(ReadI() / 52.5f);
+            Identity.SetPosX(ReadI() / 52.5f);
+            Identity.SetPosY(ReadI() / 52.5f);
+            Identity.Heading = ReadI();
+
+            ReadI();
+
+            // Stats
+            Stats.MAtkSpd = ReadI();
+            Stats.PAtkSpd = ReadI();
+            Stats.RunSpeed = ReadI();
+            Stats.WalkSpeed = ReadI();
+            Stats.RunSpeed = ReadI();
+            Stats.WalkSpeed = ReadI();
+            Stats.RunSpeed = ReadI();
+            Stats.WalkSpeed = ReadI();
+            Stats.RunSpeed = ReadI();
+            Stats.WalkSpeed = ReadI();
+
+            Stats.MoveSpeedMultiplier = (float)ReadD();
+            Stats.AttackSpeedMultiplier = (float)ReadD();
+
+            Appearance.CollisionRadius = (float)ReadD() / 52.5f;
+            Appearance.CollisionHeight = (float)ReadD() / 52.5f;
+
+            Appearance.RHand = ReadI(); //rhand
+            ReadI(); //chest
+            Appearance.LHand = ReadI(); //lhand
+
+            ReadB();
+            EntityActionInfo.Running = ReadB() == 1;
+            EntityActionInfo.InCombat = ReadB() == 1; //in combat -&gt; Better handled client side
+            EntityActionInfo.AlikeDead = ReadB() == 1; //dead
+            ReadB(); //summoned? always 2
+
+            Identity.Name = ReadS();
+            Identity.Title = ReadS();
+
+            ReadI();
+            ReadI();
+            ReadI();
+
+            ReadI(); //abnormal effect
+
+            ReadI(); //clan
+            ReadI(); //clancrest
+            ReadI(); //ally
+            ReadI(); //allycrest
+
+            ReadB(); //movetype
+            ReadB();
+
+            Appearance.CollisionRadius = (float)ReadD() / 52.5f;
+            Appearance.CollisionHeight = (float)ReadD() / 52.5f;
+
+            ReadI(); //enchant effct
+            ReadI(); //flying
+
+            Stats.RunSpeed = (int)(Stats.MoveSpeedMultiplier &gt; 0 ? Stats.RunSpeed * Stats.MoveSpeedMultiplier : Stats.RunSpeed);
+            Stats.WalkSpeed = (int)(Stats.MoveSpeedMultiplier &gt; 0 ? Stats.WalkSpeed * Stats.MoveSpeedMultiplier : Stats.WalkSpeed);
+
+            Stats.AttackRange = ReadI() / 52.5f;
+            Stats.MaxHp = ReadI();
+            Stats.Level = ReadI();
+
+            // Debug.LogWarning(ToString());
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    public override string ToString()
+    {
+        return $&quot;Identity: {{ &quot; +
+               $&quot;Id = {Identity.Id}, &quot; +
+               $&quot;NpcId = {Identity.NpcId}, &quot; +
+               $&quot;Position = {Identity.Position}), &quot; +
+               $&quot;Heading = {Identity.Heading}, &quot; +
+               $&quot;Name = \&quot;{Identity.Name}\&quot;, &quot; +
+               $&quot;Title = \&quot;{Identity.Title}\&quot; }}\n&quot; +
+
+               $&quot;Stats: {{ &quot; +
+               $&quot;MAtkSpd = {Stats.MAtkSpd}, &quot; +
+               $&quot;PAtkSpd = {Stats.PAtkSpd}, &quot; +
+               $&quot;RunSpeed = {Stats.RunSpeed}, &quot; +
+               $&quot;WalkSpeed = {Stats.WalkSpeed}, &quot; +
+               $&quot;MoveSpeedMultiplier = {Stats.MoveSpeedMultiplier:F2}, &quot; +
+               $&quot;AttackSpeedMultiplier = {Stats.AttackRange:F2}, &quot; +
+               $&quot;AttackSpeedMultiplier = {Stats.AttackSpeedMultiplier:F2} }}\n&quot; +
+
+               $&quot;Appearance: {{ &quot; +
+               $&quot;CollisionRadius = {Appearance.CollisionRadius:F2}, &quot; +
+               $&quot;CollisionHeight = {Appearance.CollisionHeight:F2}, &quot; +
+               $&quot;RHand = {Appearance.RHand}, &quot; +
+               $&quot;LHand = {Appearance.LHand} }}\n&quot; +
+
+               $&quot;Other: {{ &quot; +
+               $&quot;Running = {EntityActionInfo.Running} InCombat = {EntityActionInfo.InCombat} AlikeDead = {EntityActionInfo.AlikeDead} }}&quot;;
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminGeoEngine.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminGeoEngine.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.awt.Color;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.geoengine.GeoEngine;
+import com.shnok.javaserver.gameserver.geoengine.geodata.ABlock;
+import com.shnok.javaserver.gameserver.geoengine.geodata.GeoStructure;
+import com.shnok.javaserver.gameserver.geoengine.geodata.IGeoObject;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExServerPrimitive;
+
+public class AdminGeoEngine implements IAdminCommandHandler
+{
+	private static final String Y = &quot;x &quot;;
+	private static final String N = &quot;   &quot;;
+	
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_geo&quot;,
+		&quot;admin_path&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+		st.nextToken();
+		
+		if (command.startsWith(&quot;admin_geo&quot;))
+		{
+			try
+			{
+				switch (st.nextToken())
+				{
+					case &quot;bug&quot;:
+						int geoX = GeoEngine.getGeoX(player.getX());
+						int geoY = GeoEngine.getGeoY(player.getY());
+						
+						if (GeoEngine.getInstance().hasGeoPos(geoX, geoY))
+						{
+							try
+							{
+								String comment = command.substring(14);
+								if (GeoEngine.getInstance().addGeoBug(player.getPosition(), player.getName() + &quot;: &quot; + comment))
+									player.sendMessage(&quot;GeoData bug saved.&quot;);
+							}
+							catch (Exception e)
+							{
+								player.sendMessage(&quot;Usage: //geo bug comments&quot;);
+							}
+						}
+						else
+							player.sendMessage(&quot;There is no geodata at this position.&quot;);
+						break;
+					
+					case &quot;pos&quot;:
+						int ox = player.getX();
+						int oy = player.getY();
+						int oz = player.getZ();
+						
+						geoX = GeoEngine.getGeoX(ox);
+						geoY = GeoEngine.getGeoY(oy);
+						
+						int rx = (ox - World.WORLD_X_MIN) / World.TILE_SIZE + World.TILE_X_MIN;
+						int ry = (oy - World.WORLD_Y_MIN) / World.TILE_SIZE + World.TILE_Y_MIN;
+						ABlock block = GeoEngine.getInstance().getBlock(geoX, geoY);
+						
+						player.sendMessage(&quot;Region: &quot; + rx + &quot;_&quot; + ry + &quot;; Block: &quot; + block.getClass().getSimpleName());
+						
+						if (block.hasGeoPos())
+						{
+							int geoZ = block.getHeightNearest(geoX, geoY, player.getZ(), null);
+							byte nswe = block.getNsweNearest(geoX, geoY, geoZ, null);
+							
+							player.sendMessage(&quot;    &quot; + ((nswe &amp; GeoStructure.CELL_FLAG_N) != 0 &amp;&amp; (nswe &amp; GeoStructure.CELL_FLAG_W) != 0 ? Y : N) + ((nswe &amp; GeoStructure.CELL_FLAG_N) != 0 ? Y : N) + ((nswe &amp; GeoStructure.CELL_FLAG_N) != 0 &amp;&amp; (nswe &amp; GeoStructure.CELL_FLAG_E) != 0 ? Y : N) + &quot;         GeoX=&quot; + geoX);
+							player.sendMessage(&quot;    &quot; + ((nswe &amp; GeoStructure.CELL_FLAG_W) != 0 ? Y : N) + &quot;o &quot; + ((nswe &amp; GeoStructure.CELL_FLAG_E) != 0 ? Y : N) + &quot;         GeoY=&quot; + geoY);
+							player.sendMessage(&quot;    &quot; + ((nswe &amp; GeoStructure.CELL_FLAG_S) != 0 &amp;&amp; (nswe &amp; GeoStructure.CELL_FLAG_W) != 0 ? Y : N) + ((nswe &amp; GeoStructure.CELL_FLAG_S) != 0 ? Y : N) + ((nswe &amp; GeoStructure.CELL_FLAG_S) != 0 &amp;&amp; (nswe &amp; GeoStructure.CELL_FLAG_E) != 0 ? Y : N) + &quot;         GeoZ=&quot; + geoZ);
+							
+							ExServerPrimitive debug = player.getDebugPacket(&quot;POS&quot;);
+							debug.reset();
+							
+							debug.addSquare(Color.GREEN, ox &amp; 0xFFFFFFF0, oy &amp; 0xFFFFFFF0, oz, 15);
+							debug.addPoint(&quot;POS&quot;, Color.RED, true, ox, oy, oz);
+							
+							debug.sendTo(player);
+						}
+						else
+							player.sendMessage(&quot;There is no geodata at this position.&quot;);
+						break;
+					
+					case &quot;see&quot;:
+						Creature targetCreature = getTargetCreature(player, true);
+						
+						ExServerPrimitive debug = player.getDebugPacket(&quot;CAN_SEE&quot;);
+						debug.reset();
+						
+						ox = player.getX();
+						oy = player.getY();
+						oz = player.getZ();
+						
+						int oh = (int) (2 * player.getCollisionHeight());
+						debug.addLine(&quot;origin&quot;, Color.BLUE, true, ox, oy, oz, ox, oy, oz + oh);
+						oh = (oh * Config.PART_OF_CHARACTER_HEIGHT) / 100;
+						
+						int tx = targetCreature.getX();
+						int ty = targetCreature.getY();
+						int tz = targetCreature.getZ();
+						
+						int th = (int) (2 * targetCreature.getCollisionHeight());
+						debug.addLine(&quot;target&quot;, Color.BLUE, true, tx, ty, tz, tx, ty, tz + th);
+						th = (th * Config.PART_OF_CHARACTER_HEIGHT) / 100;
+						
+						IGeoObject ignore = (targetCreature instanceof IGeoObject igo) ? igo : null;
+						
+						boolean canSee = GeoEngine.getInstance().canSee(tx, ty, tz, th, ox, oy, oz, oh, ignore, debug);
+						canSee &amp;= GeoEngine.getInstance().canSee(ox, oy, oz, oh, tx, ty, tz, th, ignore, debug);
+						
+						oh += oz;
+						th += tz;
+						
+						debug.addLine(&quot;Line-of-Sight&quot;, canSee ? Color.GREEN : Color.RED, true, ox, oy, oh, tx, ty, th);
+						debug.addLine(&quot;Geodata limit&quot;, Color.MAGENTA, true, ox, oy, oh + Config.MAX_OBSTACLE_HEIGHT, tx, ty, th + Config.MAX_OBSTACLE_HEIGHT);
+						debug.sendTo(player);
+						break;
+					
+					case &quot;move&quot;:
+						final WorldObject targetWorldObject = player.getTarget();
+						if (targetWorldObject == null)
+						{
+							player.sendPacket(SystemMessageId.INVALID_TARGET);
+							return;
+						}
+						
+						SpawnLocation aLoc = player.getPosition();
+						SpawnLocation tLoc = targetWorldObject.getPosition();
+						
+						debug = player.getDebugPacket(&quot;CAN_MOVE&quot;);
+						debug.reset();
+						
+						Location loc = GeoEngine.getInstance().getValidLocation(aLoc.getX(), aLoc.getY(), aLoc.getZ(), tLoc.getX(), tLoc.getY(), tLoc.getZ(), debug);
+						debug.addLine(&quot;Can move&quot;, Color.GREEN, true, aLoc, loc);
+						if (loc.getX() == tLoc.getX() &amp;&amp; loc.getY() == tLoc.getY() &amp;&amp; loc.getZ() == tLoc.getZ())
+						{
+							player.sendMessage(&quot;Can move beeline.&quot;);
+						}
+						else
+						{
+							debug.addLine(Color.WHITE, aLoc, tLoc);
+							debug.addLine(&quot;Inaccessible&quot;, Color.RED, true, loc, tLoc);
+							debug.addPoint(&quot;Limit&quot;, Color.RED, true, loc);
+							player.sendMessage(&quot;Can not move beeline!&quot;);
+						}
+						break;
+					
+					case &quot;fly&quot;:
+						targetCreature = getTargetCreature(player, true);
+						
+						debug = player.getDebugPacket(&quot;CAN_FLY&quot;);
+						debug.reset();
+						
+						ox = player.getX();
+						oy = player.getY();
+						oz = player.getZ();
+						oh = (int) (2 * player.getCollisionHeight());
+						debug.addLine(&quot;origin&quot;, Color.BLUE, true, ox, oy, oz - 32, ox, oy, oz + oh - 32);
+						
+						tx = targetCreature.getX();
+						ty = targetCreature.getY();
+						tz = targetCreature.getZ();
+						
+						loc = GeoEngine.getInstance().getValidFlyLocation(ox, oy, oz, oh, tx, ty, tz, debug);
+						int x = loc.getX();
+						int y = loc.getY();
+						int z = loc.getZ();
+						
+						boolean canFly = x == tx &amp;&amp; y == ty &amp;&amp; z == tz;
+						
+						debug.addLine(&quot;Can fly&quot;, Color.GREEN, true, ox, oy, oz - 32, x, y, z - 32);
+						
+						if (canFly)
+							player.sendMessage(&quot;Can fly beeline.&quot;);
+						else
+						{
+							player.sendMessage(&quot;Can not fly beeline!&quot;);
+							
+							debug.addLine(Color.WHITE, ox, oy, oz - 32, tx, ty, tz - 32);
+							debug.addLine(&quot;Inaccessible&quot;, Color.RED, true, x, y, z - 32, tx, ty, tz - 32);
+							debug.addLine(&quot;Last position&quot;, Color.RED, true, x, y, z - 32, x, y, z + oh - 32);
+						}
+						
+						debug.addLine(&quot;Line-of-Flight MIN&quot;, canFly ? Color.GREEN : Color.RED, true, ox, oy, oz - 32, tx, ty, tz - 32);
+						debug.addLine(&quot;Line-of-Fligth MAX&quot;, canFly ? Color.GREEN : Color.RED, true, ox, oy, oz + oh - 32, tx, ty, tz + oh - 32);
+						debug.sendTo(player);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage: //geo bug|pos|see|move|fly&quot;);
+			}
+		}
+		else if (command.startsWith(&quot;admin_path&quot;))
+		{
+			try
+			{
+				switch (st.nextToken())
+				{
+					case &quot;find&quot;:
+						final WorldObject targetWorldObject = player.getTarget();
+						if (targetWorldObject == null)
+						{
+							player.sendPacket(SystemMessageId.INVALID_TARGET);
+							return;
+						}
+						
+						final ExServerPrimitive debug = player.getDebugPacket(&quot;PATH&quot;);
+						debug.reset();
+						
+						final List&lt;Location&gt; path = GeoEngine.getInstance().findPath(player.getX(), player.getY(), player.getZ(), targetWorldObject.getX(), targetWorldObject.getY(), targetWorldObject.getZ(), true, debug);
+						if (path.isEmpty())
+						{
+							player.sendMessage(&quot;No route found or pathfinding is disabled.&quot;);
+							return;
+						}
+						
+						for (Location loc : path)
+							player.sendMessage(&quot;x:&quot; + loc.getX() + &quot; y:&quot; + loc.getY() + &quot; z:&quot; + loc.getZ());
+						
+						debug.sendTo(player);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage: //path find|info&quot;);
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

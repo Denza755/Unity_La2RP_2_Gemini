@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q032_AnObviousLie.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q032_AnObviousLie.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q032_AnObviousLie extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q032_AnObviousLie&quot;;
+	
+	// Items
+	private static final int SUEDE = 1866;
+	private static final int THREAD = 1868;
+	private static final int SPIRIT_ORE = 3031;
+	private static final int MAP = 7165;
+	private static final int MEDICINAL_HERB = 7166;
+	
+	// Rewards
+	private static final int CAT_EARS = 6843;
+	private static final int RACOON_EARS = 7680;
+	private static final int RABBIT_EARS = 7683;
+	
+	// NPCs
+	private static final int GENTLER = 30094;
+	private static final int MAXIMILIAN = 30120;
+	private static final int MIKI_THE_CAT = 31706;
+	
+	public Q032_AnObviousLie()
+	{
+		super(32, &quot;An Obvious Lie&quot;);
+		
+		setItemsIds(MAP, MEDICINAL_HERB);
+		
+		addQuestStart(MAXIMILIAN);
+		addTalkId(MAXIMILIAN, GENTLER, MIKI_THE_CAT);
+		
+		addMyDying(20135); // Alligator
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30120-1.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30094-1.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, MAP, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31706-1.htm&quot;))
+		{
+			st.setCond(3);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, MAP, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;30094-4.htm&quot;))
+		{
+			st.setCond(5);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, MEDICINAL_HERB, 20);
+		}
+		else if (event.equalsIgnoreCase(&quot;30094-7.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(SPIRIT_ORE) &lt; 500)
+				htmltext = &quot;30094-5.htm&quot;;
+			else
+			{
+				st.setCond(6);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, SPIRIT_ORE, 500);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;31706-4.htm&quot;))
+		{
+			st.setCond(7);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30094-10.htm&quot;))
+		{
+			st.setCond(8);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30094-13.htm&quot;))
+			playSound(player, SOUND_MIDDLE);
+		else if (event.equalsIgnoreCase(&quot;cat&quot;))
+		{
+			if (player.getInventory().getItemCount(THREAD) &lt; 1000 || player.getInventory().getItemCount(SUEDE) &lt; 500)
+				htmltext = &quot;30094-11.htm&quot;;
+			else
+			{
+				htmltext = &quot;30094-14.htm&quot;;
+				takeItems(player, SUEDE, 500);
+				takeItems(player, THREAD, 1000);
+				giveItems(player, CAT_EARS, 1);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(false);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;racoon&quot;))
+		{
+			if (player.getInventory().getItemCount(THREAD) &lt; 1000 || player.getInventory().getItemCount(SUEDE) &lt; 500)
+				htmltext = &quot;30094-11.htm&quot;;
+			else
+			{
+				htmltext = &quot;30094-14.htm&quot;;
+				takeItems(player, SUEDE, 500);
+				takeItems(player, THREAD, 1000);
+				giveItems(player, RACOON_EARS, 1);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(false);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;rabbit&quot;))
+		{
+			if (player.getInventory().getItemCount(THREAD) &lt; 1000 || player.getInventory().getItemCount(SUEDE) &lt; 500)
+				htmltext = &quot;30094-11.htm&quot;;
+			else
+			{
+				htmltext = &quot;30094-14.htm&quot;;
+				takeItems(player, SUEDE, 500);
+				takeItems(player, THREAD, 1000);
+				giveItems(player, RABBIT_EARS, 1);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(false);
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 45) ? &quot;30120-0a.htm&quot; : &quot;30120-0.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case MAXIMILIAN:
+						htmltext = &quot;30120-2.htm&quot;;
+						break;
+					
+					case GENTLER:
+						if (cond == 1)
+							htmltext = &quot;30094-0.htm&quot;;
+						else if (cond == 2 || cond == 3)
+							htmltext = &quot;30094-2.htm&quot;;
+						else if (cond == 4)
+							htmltext = &quot;30094-3.htm&quot;;
+						else if (cond == 5)
+							htmltext = (player.getInventory().getItemCount(SPIRIT_ORE) &lt; 500) ? &quot;30094-5.htm&quot; : &quot;30094-6.htm&quot;;
+						else if (cond == 6)
+							htmltext = &quot;30094-8.htm&quot;;
+						else if (cond == 7)
+							htmltext = &quot;30094-9.htm&quot;;
+						else if (cond == 8)
+							htmltext = (player.getInventory().getItemCount(THREAD) &lt; 1000 || player.getInventory().getItemCount(SUEDE) &lt; 500) ? &quot;30094-11.htm&quot; : &quot;30094-12.htm&quot;;
+						break;
+					
+					case MIKI_THE_CAT:
+						if (cond == 2)
+							htmltext = &quot;31706-0.htm&quot;;
+						else if (cond &gt; 2 &amp;&amp; cond &lt; 6)
+							htmltext = &quot;31706-2.htm&quot;;
+						else if (cond == 6)
+							htmltext = &quot;31706-3.htm&quot;;
+						else if (cond &gt; 6)
+							htmltext = &quot;31706-5.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 3);
+		if (st == null)
+			return;
+		
+		if (dropItemsAlways(player, MEDICINAL_HERB, 1, 20))
+			st.setCond(4);
+	}
+}</pre>
+            
+</body>
+</html>

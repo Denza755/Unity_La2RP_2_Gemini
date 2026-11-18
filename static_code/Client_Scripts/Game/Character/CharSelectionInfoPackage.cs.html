@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Character/CharSelectionInfoPackage.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Character/CharSelectionInfoPackage.cs</h1>
+            <pre>using UnityEngine;
+
+[System.Serializable]
+public struct CharSelectionInfoPackage
+{
+    [SerializeField] private int _slot;
+    [SerializeField] private string _name;
+    [SerializeField] private string _account;
+    [SerializeField] private int _id;
+    [SerializeField] private Vector3 _position;
+    [SerializeField] private PlayerAppearance _playerAppearance;
+    [SerializeField] private CharacterModelType _characterRaceAnimation;
+    [SerializeField] private PlayerStatus _playerStatus;
+    [SerializeField] private PlayerStats _playerStats;
+    [SerializeField] private bool _isMage;
+    [SerializeField] private byte _classId;
+    [SerializeField] private byte _baseClassId;
+    [SerializeField] private int _exp;
+    [SerializeField] private int _sp;
+    [SerializeField] private float _expPercent;
+    [SerializeField] private int _karma;
+    [SerializeField] private int _pvpKills;
+    [SerializeField] private int _pkKills;
+    [SerializeField] private int _deleteTimer;
+    [SerializeField] private int _clanId;
+    [SerializeField] private bool _selected;
+
+    public PlayerAppearance PlayerAppearance { get =&gt; _playerAppearance; set =&gt; _playerAppearance = value; }
+    public CharacterModelType CharacterRaceAnimation { get =&gt; _characterRaceAnimation; set =&gt; _characterRaceAnimation = value; }
+    public Vector3 Position { get =&gt; _position; set =&gt; _position = value; }
+    public string Name { get =&gt; _name; set =&gt; _name = value; }
+    public string Account { get =&gt; _account; set =&gt; _account = value; }
+    public int Id { get =&gt; _id; set =&gt; _id = value; }
+    public int Slot { get =&gt; _slot; set =&gt; _slot = value; }
+    public bool IsMage { get =&gt; _isMage; set =&gt; _isMage = value; }
+    public byte ClassId { get =&gt; _classId; set =&gt; _classId = value; }
+    public PlayerStatus PlayerStatus { get =&gt; _playerStatus; set =&gt; _playerStatus = value; }
+    public PlayerStats PlayerStats { get =&gt; _playerStats; set =&gt; _playerStats = value; }
+    public int Exp { get =&gt; _exp; set =&gt; _exp = value; }
+    public int Sp { get =&gt; _sp; set =&gt; _sp = value; }
+    public float ExpPercent { get =&gt; _expPercent; set =&gt; _expPercent = value; }
+    public int Karma { get =&gt; _karma; set =&gt; _karma = value; }
+    public int PvpKills { get =&gt; _pvpKills; set =&gt; _pvpKills = value; }
+    public int PkKills { get =&gt; _pkKills; set =&gt; _pkKills = value; }
+    public int DeleteTimer { get =&gt; _deleteTimer; set =&gt; _deleteTimer = value; }
+    public int ClanId { get =&gt; _clanId; set =&gt; _clanId = value; }
+    public bool Selected { get =&gt; _selected; set =&gt; _selected = value; }
+    public byte BaseClassId { get =&gt; _baseClassId; set =&gt; _baseClassId = value; }
+
+}
+</pre>
+            
+</body>
+</html>

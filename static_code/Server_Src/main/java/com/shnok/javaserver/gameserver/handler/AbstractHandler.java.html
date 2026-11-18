@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/AbstractHandler.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/AbstractHandler.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler;
+
+import java.io.File;
+import java.lang.reflect.Modifier;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+
+public abstract class AbstractHandler&lt;K, H&gt;
+{
+	private static final CLogger LOGGER = new CLogger(AbstractHandler.class.getName());
+	
+	protected final Map&lt;K, H&gt; _entries = new HashMap&lt;&gt;();
+	
+	protected abstract void registerHandler(H handler);
+	
+	protected AbstractHandler(Class&lt;H&gt; handlerInterface, String className)
+	{
+		final String packagePath = &quot;com/shnok/javaserver/gameserver/handler/&quot; + className;
+		
+		try
+		{
+			final Enumeration&lt;URL&gt; resources = Thread.currentThread().getContextClassLoader().getResources(packagePath);
+			while (resources.hasMoreElements())
+			{
+				final URL resource = resources.nextElement();
+				
+				// Handle debug process.
+				if (resource.getProtocol().equals(&quot;file&quot;))
+				{
+					final File directory = new File(resource.getFile());
+					if (!directory.exists())
+						continue;
+					
+					final String packageName = packagePath.replace(&quot;/&quot;, &quot;.&quot;);
+					
+					for (String file : directory.list())
+					{
+						if (!file.endsWith(&quot;.class&quot;))
+							continue;
+						
+						final Class&lt;?&gt; clazz = Class.forName(packageName + &quot;.&quot; + file.substring(0, file.length() - 6));
+						if (!handlerInterface.isAssignableFrom(clazz) || clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()))
+							continue;
+						
+						registerHandler(handlerInterface.cast(clazz.getDeclaredConstructor().newInstance()));
+					}
+				}
+				// Handle regular JAR process.
+				else if (resource.getProtocol().equals(&quot;jar&quot;))
+				{
+					final JarURLConnection conn = (JarURLConnection) resource.openConnection();
+					try (JarFile jarFile = conn.getJarFile())
+					{
+						final Enumeration&lt;JarEntry&gt; entries = jarFile.entries();
+						while (entries.hasMoreElements())
+						{
+							final JarEntry entry = entries.nextElement();
+							final String entryName = entry.getName();
+							
+							if (!entryName.startsWith(packagePath) || !entryName.endsWith(&quot;.class&quot;))
+								continue;
+							
+							final Class&lt;?&gt; clazz = Class.forName(entryName.replace(&#x27;/&#x27;, &#x27;.&#x27;).replace(&quot;.class&quot;, &quot;&quot;));
+							if (!handlerInterface.isAssignableFrom(clazz) || clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()))
+								continue;
+							
+							registerHandler(handlerInterface.cast(clazz.getDeclaredConstructor().newInstance()));
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn(&quot;Failed to load classes from package {}&quot;, e, packagePath);
+		}
+	}
+	
+	public int size()
+	{
+		return _entries.size();
+	}
+	
+	public H getHandler(Object key)
+	{
+		return _entries.getOrDefault(key, null);
+	}
+}</pre>
+            
+</body>
+</html>

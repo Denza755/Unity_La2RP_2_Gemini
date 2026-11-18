@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/AlarmDeviceMaker1.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/maker/AlarmDeviceMaker1.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.maker;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.spawn.MultiSpawn;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+
+public class AlarmDeviceMaker1 extends DefaultMaker
+{
+	public AlarmDeviceMaker1(String name)
+	{
+		super(name);
+	}
+	
+	@Override
+	public void onStart(NpcMaker maker)
+	{
+		maker.getMakerMemo().set(&quot;i_ai0&quot;, 1);
+		
+		ThreadPool.schedule(() -&gt; onTimer(&quot;2000&quot;, maker), 3000);
+	}
+	
+	@Override
+	public void onTimer(String name, NpcMaker maker)
+	{
+		if (name.equalsIgnoreCase(&quot;2000&quot;))
+		{
+			final MultiSpawn def0 = maker.getSpawns().get(0);
+			if (def0 != null)
+				def0.sendScriptEvent(10025, 1, 0);
+		}
+	}
+	
+	@Override
+	public void onMakerScriptEvent(String name, NpcMaker maker, int int1, int int2)
+	{
+		if (name.equalsIgnoreCase(&quot;10008&quot;))
+		{
+			maker.getMakerMemo().set(&quot;i_ai0&quot;, maker.getMakerMemo().getInteger(&quot;i_ai0&quot;) + 1);
+			
+			final MultiSpawn def0 = maker.getSpawns().get(0);
+			if (def0 != null)
+				def0.sendScriptEvent(10025, maker.getMakerMemo().getInteger(&quot;i_ai0&quot;), 0);
+		}
+		else if (name.equalsIgnoreCase(&quot;1001&quot;))
+		{
+			maker.getMakerMemo().set(&quot;i_ai0&quot;, 1);
+			
+			ThreadPool.schedule(() -&gt; onTimer(&quot;2000&quot;, maker), 3000);
+		}
+		super.onMakerScriptEvent(name, maker, int1, int2);
+	}
+	
+	@Override
+	public void onNpcDeleted(Npc npc, MultiSpawn ms, NpcMaker maker)
+	{
+		if (maker.getNpcsAlive() == 0)
+		{
+			onMakerScriptEvent(&quot;10008&quot;, maker, 0, 0);
+			
+			NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_19m1&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;10008&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_20m1&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;10008&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(&quot;godard32_2515_21m1&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;10008&quot;, maker0, 0, 0);
+			
+			maker.getMakerMemo().set(&quot;i_ai0&quot;, 0);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

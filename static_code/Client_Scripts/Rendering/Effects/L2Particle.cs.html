@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Rendering/Effects/L2Particle.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Rendering/Effects/L2Particle.cs</h1>
+            <pre>using UnityEngine;
+
+public class L2Particle : MonoBehaviour
+{
+    [SerializeField] private Transform _owner;
+    [SerializeField] private Vector3 _surfaceNormal;
+    [SerializeField] private PooledEffect _pooledEffect = new PooledEffect();
+    [SerializeField] private ParticleGroup[] _particleGroups;
+
+    public PooledEffect PooledEffect 
+    { 
+        get 
+        { 
+            if (_pooledEffect == null)
+            {
+                _pooledEffect = new PooledEffect();
+                _pooledEffect.ResetTimerCallback = () =&gt; ResetTimer();
+            }
+            return _pooledEffect; 
+        } 
+    }
+    public Vector3 SurfaceNormal { get { return _surfaceNormal; } set { _surfaceNormal = value; } }
+
+    private void Awake()
+    {
+        if (_pooledEffect == null)
+        {
+            _pooledEffect = new PooledEffect();
+        }
+        _pooledEffect.ResetTimerCallback = () =&gt;
+        {
+            ResetTimer();
+        };
+    }
+
+    public void ResetTimer()
+    {
+        if (_particleGroups == null || _particleGroups.Length == 0)
+        {
+            _particleGroups = GetComponentsInChildren&lt;ParticleGroup&gt;();
+        }
+
+        if (_particleGroups != null)
+        {
+            for (int i = 0; i &lt; _particleGroups.Length; i++)
+            {
+                if (_particleGroups[i] == null) continue;
+                if (_owner != null)
+                {
+                    _particleGroups[i].OwnerPosition = _owner.position;
+                }
+                _particleGroups[i].SurfaceNormal = _surfaceNormal;
+                _particleGroups[i].ResetTimer(_pooledEffect != null ? _pooledEffect.HitTime : 1f);
+            }
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/records/PetDataEntry.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/records/PetDataEntry.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.records;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+public record PetDataEntry(long maxExp, int maxMeal, int expType, int mealInBattle, int mealInNormal, double pAtk, double pDef, double mAtk, double mDef, double maxHp, double maxMp, float hpRegen, float mpRegen, int ssCount, int spsCount, int mountMealInBattle, int mountMealInNormal, double mountAtkSpd, double mountPatk, double mountMatk, int mountBaseSpeed, int mountWaterSpeed, int mountFlySpeed)
+{
+	public PetDataEntry(StatSet set)
+	{
+		this(set.getLong(&quot;exp&quot;), set.getInteger(&quot;maxMeal&quot;), set.getInteger(&quot;expType&quot;), set.getInteger(&quot;mealInBattle&quot;), set.getInteger(&quot;mealInNormal&quot;), set.getDouble(&quot;pAtk&quot;), set.getDouble(&quot;pDef&quot;), set.getDouble(&quot;mAtk&quot;), set.getDouble(&quot;mDef&quot;), set.getDouble(&quot;hp&quot;), set.getDouble(&quot;mp&quot;), set.getFloat(&quot;hpRegen&quot;), set.getFloat(&quot;mpRegen&quot;), set.getInteger(&quot;ssCount&quot;), set.getInteger(&quot;spsCount&quot;), set.getInteger(&quot;mealInBattleOnRide&quot;, 0), set.getInteger(&quot;mealInNormalOnRide&quot;, 0), set.getDouble(&quot;atkSpdOnRide&quot;, 0.), set.getDouble(&quot;pAtkOnRide&quot;, 0.), set.getDouble(&quot;mAtkOnRide&quot;, 0.), set.getInteger(&quot;mountBaseSpeed&quot;), set.getInteger(&quot;mountWaterSpeed&quot;), set.getInteger(&quot;mountFlySpeed&quot;));
+	}
+}</pre>
+            
+</body>
+</html>

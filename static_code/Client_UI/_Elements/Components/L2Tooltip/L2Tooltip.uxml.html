@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Components/L2Tooltip/L2Tooltip.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Components/L2Tooltip/L2Tooltip.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Tooltip/L2Tooltip.uss?fileID=7433441132597879392&amp;amp;guid=988ae1650f5f438f8eef665ee178196e&amp;amp;type=3#L2Tooltip&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Slot/L2Slot.uss?fileID=7433441132597879392&amp;amp;guid=5cebba6f4b1058048870da7302ad5971&amp;amp;type=3#L2Slot&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;Tooltip&quot; tabindex=&quot;-1&quot; picking-mode=&quot;Ignore&quot; style=&quot;position: absolute;&quot;&gt;
+        &lt;ui:VisualElement name=&quot;LabelTooltip&quot; style=&quot;flex-grow: 1; height: auto;&quot;&gt;
+            &lt;ui:VisualElement name=&quot;LabelTooltipContainer&quot; class=&quot;tooltip-background label-tooltip-container&quot;&gt;
+                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Adena (0)&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Content&quot; class=&quot;tooltip-item-title&quot; /&gt;
+                &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;&quot; name=&quot;ItemIdLabel&quot; class=&quot;tooltip-item-id&quot; style=&quot;display: none;&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement name=&quot;SkillTooltip&quot; style=&quot;max-width: 250px; width: 250px;&quot;&gt;
+            &lt;ui:VisualElement name=&quot;Content&quot; class=&quot;tooltip-background&quot; style=&quot;align-items: stretch; max-width: 250px; width: 250px;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;SkillTooltipFirst&quot; class=&quot;skill-tooltip-first&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;SkillTooltipIcon&quot; class=&quot;l2-slot&quot; style=&quot;border-radius: 2px;&quot; /&gt;
+                    &lt;ui:VisualElement style=&quot;margin-left: 6px;&quot;&gt;
+                        &lt;ui:VisualElement class=&quot;toolitp-skill-label-container&quot;&gt;
+                            &lt;ui:Label text=&quot;Triple sonic slash triple ultimate&quot; name=&quot;SkillTooltipName&quot; class=&quot;l2-color-4 tooltip-skill-name&quot; /&gt;
+                            &lt;ui:Label text=&quot;Lv&quot; name=&quot;SkillTooltipLevel&quot; class=&quot;l2-color-3 tooltip-skill-level&quot; /&gt;
+                            &lt;ui:Label text=&quot;1&quot; name=&quot;SkillTooltipLevelValue&quot; class=&quot;l2-color-2 tooltip-skill-level-value&quot; /&gt;
+                        &lt;/ui:VisualElement&gt;
+                        &lt;ui:Label text=&quot;Passive Skill&quot; name=&quot;SkillTooltipType&quot; class=&quot;l2-color-2 tooltip-skill-type&quot; style=&quot;font-size: 12px;&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;SkillTooltipSecond&quot; class=&quot;skill-tooltip-second&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;SkillTooltipMpCost&quot; class=&quot;skill-tooltip-group&quot; style=&quot;font-size: 14px;&quot;&gt;
+                        &lt;ui:Label text=&quot;MP Cost :&quot; name=&quot;Label&quot; class=&quot;l2-color-4 tooltip-group-label&quot; /&gt;
+                        &lt;ui:Label text=&quot;1&quot; name=&quot;SkillTooltipMpCostValue&quot; class=&quot;l2-color-5 tooltip-group-value&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SkillTooltipRange&quot; class=&quot;skill-tooltip-group&quot;&gt;
+                        &lt;ui:Label text=&quot;Range :&quot; class=&quot;l2-color-3 tooltip-group-label&quot; /&gt;
+                        &lt;ui:Label text=&quot;300&quot; name=&quot;SkillTooltipRangeValue&quot; class=&quot;l2-color-2 tooltip-group-value&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SkillTooltipCastingTime&quot; class=&quot;skill-tooltip-group&quot;&gt;
+                        &lt;ui:Label text=&quot;Casting Time :&quot; name=&quot;Label&quot; class=&quot;l2-color-3 tooltip-group-label&quot; /&gt;
+                        &lt;ui:Label text=&quot;3 Sec.&quot; name=&quot;SkillTooltipCastingTimeValue&quot; class=&quot;l2-color-2 tooltip-group-value&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:VisualElement name=&quot;SkillTooltipReuseTime&quot; class=&quot;skill-tooltip-group&quot;&gt;
+                        &lt;ui:Label text=&quot;Reuse Time :&quot; class=&quot;l2-color-3 tooltip-group-label&quot; /&gt;
+                        &lt;ui:Label text=&quot;4 Sec.&quot; name=&quot;SkillTooltipReuseTimeValue&quot; class=&quot;l2-color-2 tooltip-group-value&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement style=&quot;max-height: 3px; border-bottom-width: 1px; border-radius: 0.3px; border-color: rgba(55, 51, 43, 0.6);&quot; /&gt;
+                &lt;ui:VisualElement name=&quot;SkillTooltipDescriptionContainer&quot; class=&quot;skill-tooltip-description-container&quot;&gt;
+                    &lt;ui:Label name=&quot;SkillTooltipDescription&quot; text=&quot;Attacks the enemy with $s1 Power added to P. Atk., and inflicts Bleed causing loss of $s3 HP per second for $s2. Requires a sword, dagger, or dual sword. Over-hit.&quot; double-click-selects-word=&quot;false&quot; triple-click-selects-line=&quot;false&quot; enable-rich-text=&quot;false&quot; emoji-fallback-support=&quot;false&quot; class=&quot;skill-tooltip-group l2-color-6&quot; style=&quot;white-space: normal;&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:VisualElement name=&quot;EffectTooltip&quot; style=&quot;flex-grow: 1;&quot;&gt;
+            &lt;ui:VisualElement name=&quot;Content&quot; class=&quot;tooltip-background&quot; style=&quot;max-width: 170px; align-items: stretch; font-size: 12px;&quot;&gt;
+                &lt;ui:VisualElement class=&quot;effect-tooltip-section&quot;&gt;
+                    &lt;ui:Label text=&quot;Sprint&quot; name=&quot;EffectTooltipName&quot; class=&quot;l2-color-4&quot; style=&quot;margin-right: 3px;&quot; /&gt;
+                    &lt;ui:Label name=&quot;EffectTooltipEnchant&quot; class=&quot;l2-color-5&quot; style=&quot;display: none; margin-right: 3px;&quot; /&gt;
+                    &lt;ui:Label text=&quot;Lv&quot; name=&quot;EffectTooltipLevel&quot; class=&quot;l2-color-3&quot; style=&quot;margin-right: 3px;&quot; /&gt;
+                    &lt;ui:Label text=&quot;1&quot; name=&quot;EffectTooltipLevelValue&quot; class=&quot;l2-color-2&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;EffectTooltipDurationContainer&quot; class=&quot;effect-tooltip-section&quot;&gt;
+                    &lt;ui:Label text=&quot;Remaining Time :&quot; class=&quot;l2-color-3&quot; style=&quot;margin-right: 3px;&quot; /&gt;
+                    &lt;ui:Label text=&quot;1h 2m 3s&quot; name=&quot;EffectTooltipDurationValue&quot; class=&quot;l2-color-2&quot; /&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:Label text=&quot;Increases Movement Speed by 33 for 20 minutes.&quot; name=&quot;EffectTooltipDescription&quot; class=&quot;l2-color-6&quot; style=&quot;margin: 4px 3px 2px 3px; padding: 0; white-space: normal;&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

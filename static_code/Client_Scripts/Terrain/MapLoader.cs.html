@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Terrain/MapLoader.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Terrain/MapLoader.cs</h1>
+            <pre>using UnityEngine;
+
+public class MapLoader : MonoBehaviour {
+
+//    public bool generateMap = true;
+//    public static List&lt;L2TerrainInfo&gt; terrainInfos;
+//    public List&lt;L2StaticMeshActor&gt; meshActors;
+//    public static List&lt;Terrain&gt; terrains;
+//    public static Dictionary&lt;string, Terrain&gt; terrainsDict;
+
+//    void Start() {
+//        // InitializeVariables();
+//    }
+
+//    private static void GenerateMap() {
+//        terrainInfos = new List&lt;L2TerrainInfo&gt;();
+//        terrains = new List&lt;Terrain&gt;();
+//        terrainsDict = new Dictionary&lt;string, Terrain&gt;();
+
+//        for (int i = 0; i &lt; mapsToGenerate.Count; i++) {
+
+//            if (!mapsToGenerate[i].enabled) {
+//                continue;
+//            }
+
+////TODO: UPDATE TO SCENE LOAD
+//            string mapFolder = Path.Combine(&quot;Assets&quot;, &quot;Data&quot;, &quot;Maps&quot;, mapsToGenerate[i].mapName);
+//            GameObject map = AssetDatabase.LoadAssetAtPath&lt;GameObject&gt;(Path.Combine(mapFolder, mapsToGenerate[i].mapName + &quot;.prefab&quot;));
+//            if (map != null) {
+//                map = GameObject.Instantiate(map);
+//            } else {
+//                Debug.LogWarning(&quot;Could not find map &quot; + mapsToGenerate[i].mapName + &quot; prefab.&quot;);
+//            }
+//            if (mapsToGenerate[i].generateStaticMeshes) {
+//                GameObject staticmeshes = AssetDatabase.LoadAssetAtPath&lt;GameObject&gt;(Path.Combine(mapFolder, &quot;StaticMeshes.prefab&quot;));
+//                if (staticmeshes != null) {
+//                    staticmeshes = GameObject.Instantiate(staticmeshes);
+//                    staticmeshes.transform.parent = map.transform;
+//                    staticmeshes.transform.position = Vector3.zero;
+//                } else {
+//                    Debug.LogWarning(&quot;Could not find staticmeshes for map &quot; + mapsToGenerate[i].mapName + &quot;.&quot;);
+//                }
+//            }
+//            if (mapsToGenerate[i].generateBrushes) {
+//                GameObject brushes = AssetDatabase.LoadAssetAtPath&lt;GameObject&gt;(Path.Combine(mapFolder, &quot;Brushes.prefab&quot;));
+//                if (brushes != null) {
+//                    brushes = GameObject.Instantiate(brushes);
+//                    brushes.transform.parent = map.transform;
+//                    brushes.transform.position = Vector3.zero;
+//                } else {
+//                    Debug.LogWarning(&quot;Could not find brushes for map &quot; + mapsToGenerate[i].mapName + &quot;.&quot;);
+//                }
+//            }
+//        }
+//    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/ClanBBSManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/communitybbs/manager/ClanBBSManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.communitybbs.manager;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.data.cache.HtmCache;
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.pledge.ClanMember;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+
+public class ClanBBSManager extends BaseBBSManager
+{
+	protected ClanBBSManager()
+	{
+	}
+	
+	@Override
+	public void parseCmd(String command, Player player)
+	{
+		if (command.equalsIgnoreCase(&quot;_bbsclan&quot;))
+		{
+			if (player.getClan() == null)
+				sendClanList(player, 1);
+			else
+				sendClanDetails(player, player.getClan().getClanId());
+		}
+		else if (command.startsWith(&quot;_bbsclan&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot;;&quot;);
+			st.nextToken();
+			
+			final String clanCommand = st.nextToken();
+			if (clanCommand.equalsIgnoreCase(&quot;clan&quot;))
+				sendClanList(player, Integer.parseInt(st.nextToken()));
+			else if (clanCommand.equalsIgnoreCase(&quot;home&quot;))
+				sendClanDetails(player, Integer.parseInt(st.nextToken()));
+			else if (clanCommand.equalsIgnoreCase(&quot;mail&quot;))
+				sendClanMail(player, Integer.parseInt(st.nextToken()));
+			else if (clanCommand.equalsIgnoreCase(&quot;management&quot;))
+				sendClanManagement(player, Integer.parseInt(st.nextToken()));
+			else if (clanCommand.equalsIgnoreCase(&quot;notice&quot;))
+			{
+				if (st.hasMoreTokens())
+				{
+					final String noticeCommand = st.nextToken();
+					if (!noticeCommand.isEmpty() &amp;&amp; player.getClan() != null)
+						player.getClan().setNotice(Boolean.parseBoolean(noticeCommand));
+				}
+				sendClanNotice(player, player.getClanId());
+			}
+		}
+		else
+			super.parseCmd(command, player);
+	}
+	
+	@Override
+	public void parseWrite(String ar1, String ar2, String ar3, String ar4, String ar5, Player player)
+	{
+		if (ar1.equalsIgnoreCase(&quot;intro&quot;))
+		{
+			if (Integer.valueOf(ar2) != player.getClanId())
+				return;
+			
+			final Clan clan = ClanTable.getInstance().getClan(player.getClanId());
+			if (clan == null)
+				return;
+			
+			clan.setIntroduction(ar3, true);
+			sendClanManagement(player, Integer.valueOf(ar2));
+		}
+		else if (ar1.equals(&quot;notice&quot;))
+		{
+			final Clan clan = player.getClan();
+			if (clan != null)
+			{
+				clan.setNotice(ar4);
+				sendClanNotice(player, player.getClanId());
+			}
+		}
+		else if (ar1.equalsIgnoreCase(&quot;mail&quot;))
+		{
+			if (Integer.valueOf(ar2) != player.getClanId())
+				return;
+			
+			final Clan clan = ClanTable.getInstance().getClan(player.getClanId());
+			if (clan == null)
+				return;
+			
+			// Retrieve clans members, and store them under a String.
+			final StringBuilder members = new StringBuilder();
+			
+			for (ClanMember member : clan.getMembers())
+			{
+				if (members.length() &gt; 0)
+					members.append(&quot;;&quot;);
+				
+				members.append(member.getName());
+			}
+			MailBBSManager.getInstance().sendMail(members.toString(), ar4, ar5, player);
+			sendClanDetails(player, player.getClanId());
+		}
+		else
+			super.parseWrite(ar1, ar2, ar3, ar4, ar5, player);
+	}
+	
+	@Override
+	protected String getFolder()
+	{
+		return &quot;clan/&quot;;
+	}
+	
+	private static void sendClanMail(Player player, int clanId)
+	{
+		final Clan clan = ClanTable.getInstance().getClan(clanId);
+		if (clan == null)
+			return;
+		
+		if (player.getClanId() != clanId || !player.isClanLeader())
+		{
+			player.sendPacket(SystemMessageId.ONLY_THE_CLAN_LEADER_IS_ENABLED);
+			sendClanList(player, 1);
+			return;
+		}
+		
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanhome-mail.htm&quot;);
+		content = content.replace(&quot;%clanid%&quot;, Integer.toString(clanId));
+		content = content.replace(&quot;%clanName%&quot;, clan.getName());
+		separateAndSend(content, player);
+	}
+	
+	private static void sendClanManagement(Player player, int clanId)
+	{
+		final Clan clan = ClanTable.getInstance().getClan(clanId);
+		if (clan == null)
+			return;
+		
+		if (player.getClanId() != clanId || !player.isClanLeader())
+		{
+			player.sendPacket(SystemMessageId.ONLY_THE_CLAN_LEADER_IS_ENABLED);
+			sendClanList(player, 1);
+			return;
+		}
+		
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanhome-management.htm&quot;);
+		content = content.replace(&quot;%clanid%&quot;, Integer.toString(clan.getClanId()));
+		content = content.replace(&quot;%curAnnNonPer%&quot;, clan.getAnnBoard().getAccess().getDesc());
+		content = content.replace(&quot;%curAnnMemPer%&quot;, clan.getAnnBoard().getAccess().getDesc());
+		content = content.replace(&quot;%curCbbNonPer%&quot;, clan.getCbbBoard().getAccess().getDesc());
+		content = content.replace(&quot;%curCbbMemPer%&quot;, clan.getCbbBoard().getAccess().getDesc());
+		
+		send1001(content, player);
+		send1002(player, clan.getIntroduction(), &quot;&quot;, &quot;&quot;);
+	}
+	
+	private static void sendClanNotice(Player player, int clanId)
+	{
+		final Clan clan = ClanTable.getInstance().getClan(clanId);
+		if (clan == null || player.getClanId() != clanId)
+			return;
+		
+		if (clan.getLevel() &lt; 2)
+		{
+			player.sendPacket(SystemMessageId.NO_CB_IN_MY_CLAN);
+			sendClanList(player, 1);
+			return;
+		}
+		
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanhome-notice.htm&quot;);
+		content = content.replace(&quot;%clanid%&quot;, Integer.toString(clan.getClanId()));
+		content = content.replace(&quot;%enabled%&quot;, &quot;[&quot; + clan.isNoticeEnabled() + &quot;]&quot;);
+		content = content.replace(&quot;%flag%&quot;, String.valueOf(!clan.isNoticeEnabled()));
+		send1001(content, player);
+		send1002(player, clan.getNotice(), &quot;&quot;, &quot;&quot;);
+	}
+	
+	private static void sendClanList(Player player, int index)
+	{
+		String content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanlist.htm&quot;);
+		
+		// Player got a clan, show the associated header.
+		final StringBuilder sb = new StringBuilder();
+		
+		final Clan clan = player.getClan();
+		if (clan != null)
+			StringUtil.append(sb, &quot;&lt;table width=610 bgcolor=A7A19A&gt;&lt;tr&gt;&lt;td width=5&gt;&lt;/td&gt;&lt;td width=605&gt;&lt;a action=\&quot;bypass _bbsclan;home;&quot;, clan.getClanId(), &quot;\&quot;&gt;[GO TO MY CLAN]&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&quot;);
+		
+		content = content.replace(&quot;%homebar%&quot;, sb.toString());
+		
+		if (index &lt; 1)
+			index = 1;
+		
+		// Cleanup sb.
+		sb.setLength(0);
+		
+		// List of clans.
+		int i = 0;
+		for (Clan cl : ClanTable.getInstance().getClans())
+		{
+			if (i &gt; (index + 1) * 7)
+				break;
+			
+			if (i++ &gt;= (index - 1) * 7)
+				StringUtil.append(sb, &quot;&lt;table width=610&gt;&lt;tr&gt;&lt;td width=5&gt;&lt;/td&gt;&lt;td width=150 align=center&gt;&lt;a action=\&quot;bypass _bbsclan;home;&quot;, cl.getClanId(), &quot;\&quot;&gt;&quot;, cl.getName(), &quot;&lt;/a&gt;&lt;/td&gt;&lt;td width=150 align=center&gt;&quot;, cl.getLeaderName(), &quot;&lt;/td&gt;&lt;td width=100 align=center&gt;&quot;, cl.getLevel(), &quot;&lt;/td&gt;&lt;td width=200 align=center&gt;&quot;, cl.getMembersCount(), &quot;&lt;/td&gt;&lt;td width=5&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br1&gt;&lt;img src=\&quot;L2UI.Squaregray\&quot; width=605 height=1&gt;&lt;br1&gt;&quot;);
+		}
+		sb.append(&quot;&lt;table&gt;&lt;tr&gt;&quot;);
+		
+		if (index == 1)
+			sb.append(&quot;&lt;td&gt;&lt;button action=\&quot;\&quot; back=\&quot;l2ui_ch3.prev1_down\&quot; fore=\&quot;l2ui_ch3.prev1\&quot; width=16 height=16&gt;&lt;/td&gt;&quot;);
+		else
+			StringUtil.append(sb, &quot;&lt;td&gt;&lt;button action=\&quot;_bbsclan;clan;&quot;, index - 1, &quot;\&quot; back=\&quot;l2ui_ch3.prev1_down\&quot; fore=\&quot;l2ui_ch3.prev1\&quot; width=16 height=16 &gt;&lt;/td&gt;&quot;);
+		
+		int pageNumber = ClanTable.getInstance().getClans().size() / 8;
+		if (pageNumber * 8 != ClanTable.getInstance().getClans().size())
+			pageNumber++;
+		
+		for (i = 1; i &lt;= pageNumber; i++)
+		{
+			if (i == index)
+				StringUtil.append(sb, &quot;&lt;td&gt; &quot;, i, &quot; &lt;/td&gt;&quot;);
+			else
+				StringUtil.append(sb, &quot;&lt;td&gt;&lt;a action=\&quot;bypass _bbsclan;clan;&quot;, i, &quot;\&quot;&gt; &quot;, i, &quot; &lt;/a&gt;&lt;/td&gt;&quot;);
+		}
+		
+		if (index == pageNumber)
+			sb.append(&quot;&lt;td&gt;&lt;button action=\&quot;\&quot; back=\&quot;l2ui_ch3.next1_down\&quot; fore=\&quot;l2ui_ch3.next1\&quot; width=16 height=16&gt;&lt;/td&gt;&quot;);
+		else
+			StringUtil.append(sb, &quot;&lt;td&gt;&lt;button action=\&quot;bypass _bbsclan;clan;&quot;, index + 1, &quot;\&quot; back=\&quot;l2ui_ch3.next1_down\&quot; fore=\&quot;l2ui_ch3.next1\&quot; width=16 height=16 &gt;&lt;/td&gt;&quot;);
+		
+		sb.append(&quot;&lt;/tr&gt;&lt;/table&gt;&quot;);
+		
+		content = content.replace(&quot;%clanlist%&quot;, sb.toString());
+		separateAndSend(content, player);
+	}
+	
+	private static void sendClanDetails(Player player, int clanId)
+	{
+		final Clan clan = ClanTable.getInstance().getClan(clanId);
+		if (clan == null)
+			return;
+		
+		if (clan.getLevel() &lt; 2)
+		{
+			player.sendPacket(SystemMessageId.NO_CB_IN_MY_CLAN);
+			sendClanList(player, 1);
+			return;
+		}
+		
+		// Load different HTM following player case, 3 possibilites : randomer, member, clan leader.
+		String content;
+		if (player.getClanId() != clanId)
+			content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanhome.htm&quot;);
+		else if (player.isClanLeader())
+			content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanhome-leader.htm&quot;);
+		else
+			content = HtmCache.getInstance().getHtm(CB_PATH + &quot;clan/clanhome-member.htm&quot;);
+		
+		content = content.replace(&quot;%clanid%&quot;, Integer.toString(clan.getClanId()));
+		content = content.replace(&quot;%clanIntro%&quot;, clan.getIntroduction());
+		content = content.replace(&quot;%clanName%&quot;, clan.getName());
+		content = content.replace(&quot;%clanLvL%&quot;, Integer.toString(clan.getLevel()));
+		content = content.replace(&quot;%clanMembers%&quot;, Integer.toString(clan.getMembersCount()));
+		content = content.replace(&quot;%clanLeader%&quot;, clan.getLeaderName());
+		content = content.replace(&quot;%allyName%&quot;, (clan.getAllyId() &gt; 0) ? clan.getAllyName() : &quot;&quot;);
+		separateAndSend(content, player);
+	}
+	
+	public static ClanBBSManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final ClanBBSManager INSTANCE = new ClanBBSManager();
+	}
+}</pre>
+            
+</body>
+</html>

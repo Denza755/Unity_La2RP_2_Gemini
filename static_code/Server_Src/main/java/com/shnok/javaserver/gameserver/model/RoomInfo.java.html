@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/RoomInfo.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/RoomInfo.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.taskmanager.GameTimeTaskManager;
+
+public class RoomInfo
+{
+	private final int _index;
+	private final AtomicBoolean _isLocked = new AtomicBoolean();
+	
+	private int _time;
+	private Party _party;
+	private List&lt;Integer&gt; _memberIds;
+	
+	public RoomInfo(int index)
+	{
+		_index = index;
+	}
+	
+	public int getIndex()
+	{
+		return _index;
+	}
+	
+	public int getTime()
+	{
+		return _time;
+	}
+	
+	public Party getParty()
+	{
+		return _party;
+	}
+	
+	public void setParty(Party party)
+	{
+		_party = party;
+		_memberIds = party.getMembers().stream().map(pm -&gt; pm.getObjectId()).toList();
+	}
+	
+	/**
+	 * @return True if the {@link Party} evolved, being an edition of members amount or Player objectIds - or false otherwise.
+	 */
+	public boolean isPartyChanged()
+	{
+		if (_party == null)
+			return true;
+		
+		if (_memberIds.size() != _party.getMembers().size())
+			return true;
+		
+		return !_party.getMembers().stream().allMatch(m -&gt; _memberIds.contains(m.getObjectId()));
+	}
+	
+	public List&lt;Integer&gt; getMemberIds()
+	{
+		return _memberIds;
+	}
+	
+	public boolean isLocked()
+	{
+		return _isLocked.get();
+	}
+	
+	public void setLock(boolean isLocked)
+	{
+		_time = GameTimeTaskManager.getInstance().getCurrentTick();
+		_isLocked.set(isLocked);
+	}
+	
+	/**
+	 * Reset {@link Party} and {@link List} member ids references, and unlock the room.
+	 */
+	public void clear()
+	{
+		_party = null;
+		_memberIds = null;
+		
+		setLock(false);
+	}
+}</pre>
+            
+</body>
+</html>

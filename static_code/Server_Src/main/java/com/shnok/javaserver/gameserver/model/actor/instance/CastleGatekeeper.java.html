@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/CastleGatekeeper.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/CastleGatekeeper.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import java.util.concurrent.Future;
+
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.gameserver.enums.SayType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.network.serverpackets.NpcSay;
+
+/**
+ * This class manages all Mass Gatekeepers, an entity linked to Castle system. It inherits from {@link Folk}.&lt;br&gt;
+ * &lt;br&gt;
+ * Mass Gatekeepers allow Castle Defenders Players to teleport back to battle, after 30 seconds. The time can increase to 480 seconds (8 minutes) during an active siege where all ControlTowers shattered.
+ */
+public class CastleGatekeeper extends Folk
+{
+	private Future&lt;?&gt; _teleportTask;
+	
+	public CastleGatekeeper(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;tele&quot;))
+		{
+			if (_teleportTask == null)
+				_teleportTask = ThreadPool.schedule(this::oustPlayers, getTeleportDelay() * 1000L);
+			
+			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+			html.setFile(&quot;data/html/castleteleporter/MassGK-1.htm&quot;);
+			html.replace(&quot;%delay%&quot;, getTeleportDelay());
+			player.sendPacket(html);
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		
+		if (_teleportTask == null)
+		{
+			if (getCastle().getSiege().isInProgress() &amp;&amp; getCastle().getAliveLifeTowerCount() == 0)
+				html.setFile(&quot;data/html/castleteleporter/MassGK-2.htm&quot;);
+			else
+				html.setFile(&quot;data/html/castleteleporter/MassGK.htm&quot;);
+		}
+		else
+		{
+			html.setFile(&quot;data/html/castleteleporter/MassGK-1.htm&quot;);
+			html.replace(&quot;%delay%&quot;, getTeleportDelay());
+		}
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+	}
+	
+	/**
+	 * Oust all {@link Player}s and broadcast a message to everyone set into the region, during an active siege event.
+	 */
+	private final void oustPlayers()
+	{
+		// Region talk is only done during an active siege.
+		if (getCastle().getSiege().isInProgress())
+			World.broadcastToSameRegion(this, new NpcSay(this, SayType.SHOUT, &quot;The defenders of &quot; + getCastle().getName() + &quot; castle have been teleported to the inner castle.&quot;));
+		
+		// Oust all related players.
+		getCastle().oustAllPlayers();
+		
+		// Reset the variable, in order to properly reuse it.
+		_teleportTask = null;
+	}
+	
+	/**
+	 * @return The teleport delay, as following : 30 seconds for regular teleport, 480 seconds (8 minutes) during an active siege, and if all ControlTowers have been broken.
+	 */
+	private final int getTeleportDelay()
+	{
+		return (getCastle().getSiege().isInProgress() &amp;&amp; getCastle().getAliveLifeTowerCount() == 0) ? 480 : 30;
+	}
+}</pre>
+            
+</body>
+</html>

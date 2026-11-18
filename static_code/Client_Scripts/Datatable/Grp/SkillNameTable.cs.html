@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/SkillNameTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/SkillNameTable.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using UnityEngine;
+
+public class SkillNameTable
+{
+    private static SkillNameTable _instance;
+    private static Dictionary&lt;int, Dictionary&lt;int, SkillNameData&gt;&gt; _names;
+    public Dictionary&lt;int, Dictionary&lt;int, SkillNameData&gt;&gt; Names { get { return _names; } }
+    public static SkillNameTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new SkillNameTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    public void Initialize()
+    {
+        _names = new Dictionary&lt;int, Dictionary&lt;int, SkillNameData&gt;&gt;();
+        ParseSkillNameGrps();
+    }
+
+    public void ClearTable()
+    {
+        _names.Clear();
+        _names = null;
+        _instance = null;
+    }
+
+    public SkillNameData GetName(int id, int level)
+    {
+        _names.TryGetValue(id, out Dictionary&lt;int, SkillNameData&gt; skillLevel);
+
+        if (skillLevel == null) return null;
+
+        skillLevel.TryGetValue(level, out SkillNameData skillName);
+
+        return skillName;
+    }
+
+    public Dictionary&lt;int, SkillNameData&gt; GetNames(int id)
+    {
+        _names.TryGetValue(id, out Dictionary&lt;int, SkillNameData&gt; skillLevel);
+
+        return skillLevel;
+    }
+
+    // public string GetDescription(int id)
+    // {
+    //     return GetDescription(id, 1);
+    // }
+
+    // public string GetDescription(int id, int level)
+    // {
+    //     _names.TryGetValue(id, out Dictionary&lt;int, SkillNameData&gt; skillLevel);
+    //     if (skillLevel == null) return null;
+
+    //     bool found = skillLevel.TryGetValue(level, out SkillNameData skillName);
+    //     if (found)
+    //     {
+    //         return skillName.Desc;
+    //     }
+
+    //     string desc = string.Empty;
+    //     foreach (KeyValuePair&lt;int, SkillNameData&gt; lvl in skillLevel)
+    //     {
+    //         if (!string.IsNullOrEmpty(lvl.Value.Desc))
+    //         {
+    //             desc = lvl.Value.Desc;
+    //             break;
+    //         }
+    //     }
+    //     return desc;
+    // }
+
+    private void ParseSkillNameGrps()
+    {
+
+        string dataPath = Path.Combine(Application.streamingAssetsPath, &quot;Data/Meta/SkillName_Classic-eu.txt&quot;);
+
+        if (!File.Exists(dataPath))
+        {
+            Debug.LogWarning(&quot;File not found: &quot; + dataPath);
+            return;
+        }
+
+        using (StreamReader reader = new StreamReader(dataPath))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                SkillNameData nameData = new SkillNameData();
+
+                string[] keyvals = line.Split(&#x27;\t&#x27;);
+
+                for (int i = 0; i &lt; keyvals.Length; i++)
+                {
+                    if (!keyvals[i].Contains(&quot;=&quot;))
+                    {
+                        continue;
+                    }
+
+                    string[] keyval = keyvals[i].Split(&quot;=&quot;);
+                    string key = keyval[0];
+                    string value = keyval[1];
+
+                    switch (key)
+                    {
+                        case &quot;skill_id&quot;:
+                            nameData.Id = ParseIntSafe(value);
+                            break;
+                        case &quot;skill_level&quot;:
+                            nameData.Level = ParseIntSafe(value);
+                            break;
+                        case &quot;skill_sublevel&quot;:
+                            nameData.SubLevel = ParseIntSafe(value);
+                            break;
+                        case &quot;name&quot;:
+                            nameData.Name = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;desc&quot;:
+                            nameData.Desc = DatUtils.CleanupString(value);
+                            break;
+                        case &quot;prev_skill_id&quot;:
+                            nameData.PrevSkillId = ParseIntSafe(value);
+                            break;
+                        case &quot;desc_param&quot;:
+                            nameData.DescParams = DatUtils.CleanupString(value).Split(&#x27;;&#x27;);
+                            break;
+                    }
+                }
+
+                if (!SkillTable.Instance.ShouldLoadSkill(nameData.Id))
+                {
+                    continue;
+                }
+
+                TryAdd(nameData);
+            }
+
+            Debug.Log($&quot;Successfully imported {_names.Count} actionName(s)&quot;);
+        }
+    }
+
+    private void TryAdd(SkillNameData skillName)
+    {
+
+        if (_names.ContainsKey(skillName.Id) == true)
+        {
+            Dictionary&lt;int, SkillNameData&gt; dataGrp = _names[skillName.Id];
+            dataGrp.TryAdd(skillName.Level, skillName);
+        }
+        else
+        {
+            Dictionary&lt;int, SkillNameData&gt; dataGrp = CreateDict();
+            AddDict(dataGrp, skillName);
+            _names.TryAdd(skillName.Id, dataGrp);
+        }
+    }
+
+    private Dictionary&lt;int, SkillNameData&gt; CreateDict()
+    {
+        return new Dictionary&lt;int, SkillNameData&gt;();
+    }
+
+    private void AddDict(Dictionary&lt;int, SkillNameData&gt; dataGrp, SkillNameData skillName)
+    {
+        dataGrp.TryAdd(skillName.Level, skillName);
+    }
+
+    private static int ParseIntSafe(string value)
+    {
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intVal))
+            return intVal;
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float floatVal))
+            return (int)Math.Round(floatVal);
+        return 0;
+    }
+}
+</pre>
+            
+</body>
+</html>

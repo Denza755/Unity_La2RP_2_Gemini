@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/util/IPSubnet.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/util/IPSubnet.java</h1>
+            <pre>package com.shnok.javaserver.util;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+
+public class IPSubnet {
+    final byte[] _addr;
+    final byte[] _mask;
+    final boolean _isIPv4;
+
+    public IPSubnet(String input) throws UnknownHostException, NumberFormatException, ArrayIndexOutOfBoundsException {
+        _addr = InetAddress.getByName(input).getAddress();
+        _mask = getMask(_addr.length * 8, _addr.length); // host, no need to check mask
+        _isIPv4 = _addr.length == 4;
+    }
+
+    public IPSubnet(InetAddress addr, int mask) throws UnknownHostException {
+        _addr = addr.getAddress();
+        _isIPv4 = _addr.length == 4;
+        _mask = getMask(mask, _addr.length);
+        if (!applyMask(_addr)) {
+            throw new UnknownHostException(addr + &quot;/&quot; + mask);
+        }
+    }
+
+    public byte[] getAddress() {
+        return _addr;
+    }
+
+    public boolean applyMask(byte[] addr) {
+        // V4 vs V4 or V6 vs V6 checks
+        if (_isIPv4 == (addr.length == 4)) {
+            for (int i = 0; i &lt; _addr.length; i++) {
+                if ((addr[i] &amp; _mask[i]) != _addr[i]) {
+                    return false;
+                }
+            }
+        } else {
+            // check for embedded v4 in v6 addr (not done !)
+            if (_isIPv4) {
+                // my V4 vs V6
+                for (int i = 0; i &lt; _addr.length; i++) {
+                    if ((addr[i + 12] &amp; _mask[i]) != _addr[i]) {
+                        return false;
+                    }
+                }
+            } else {
+                // my V6 vs V4
+                for (int i = 0; i &lt; _addr.length; i++) {
+                    if ((addr[i] &amp; _mask[i + 12]) != _addr[i + 12]) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        int size = 0;
+        for (byte element : _mask) {
+            size += Integer.bitCount((element &amp; 0xFF));
+        }
+
+        try {
+            return InetAddress.getByAddress(_addr) + &quot;/&quot; + size;
+        } catch (UnknownHostException e) {
+            return &quot;Invalid&quot;;
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof IPSubnet) {
+            return applyMask(((IPSubnet) o).getAddress());
+        } else if (o instanceof InetAddress) {
+            return applyMask(((InetAddress) o).getAddress());
+        }
+
+        return false;
+    }
+
+    private static byte[] getMask(int n, int maxLength) throws UnknownHostException {
+        if ((n &gt; (maxLength &lt;&lt; 3)) || (n &lt; 0)) {
+            throw new UnknownHostException(&quot;Invalid netmask: &quot; + n);
+        }
+
+        final byte[] result = new byte[maxLength];
+        Arrays.fill(result, (byte) 0xFF);
+
+        for (int i = (maxLength &lt;&lt; 3) - 1; i &gt;= n; i--) {
+            result[i &gt;&gt; 3] = (byte) (result[i &gt;&gt; 3] &lt;&lt; 1);
+        }
+
+        return result;
+    }
+}</pre>
+            
+</body>
+</html>

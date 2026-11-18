@@ -1,15 +1,783 @@
 === GIT STATUS === 
+ M Client_Scripts/Datatable/ParticleEffectTable.cs
+ M Client_Scripts/Game/Manager/Effect/ParticleManager.cs
+ M Client_Scripts/Game/Manager/Effect/PooledEffect.cs
+ M Client_Scripts/Game/Manager/Effect/ProjectileManager.cs
+ M Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs
+ M Client_Scripts/Game/Manager/World/World.cs
+ M Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs
+ M Client_Scripts/Networking/Unity/NetworkTransformReceive.cs
  M PROJECT_CONTEXT.md
-?? FILE_TREE.txt
-?? LATEST_GIT_DIFF.txt
+?? Client_Scripts/Game/Manager/Effect/ModernSpellEffects.cs
  
 === GIT DIFF === 
+diff --git a/Client_Scripts/Datatable/ParticleEffectTable.cs b/Client_Scripts/Datatable/ParticleEffectTable.cs
+index 74c9b0a..e02c057 100644
+--- a/Client_Scripts/Datatable/ParticleEffectTable.cs
++++ b/Client_Scripts/Datatable/ParticleEffectTable.cs
+@@ -154,6 +154,8 @@ public class ParticleEffectTable
+         { "m_u003_a", "Data/Effects/vampiric/m_u003_b/m_u003_b" },
+         { "m_u003_b", "Data/Effects/vampiric/m_u003_b/m_u003_b" },
+         { "m_u003_c", "Data/Effects/vampiric/m_u003_c/m_u003_c" },
++        { "e_u003_a", "Data/Particles/e_u003_a" },
++        { "p_u003_a", "Data/Particles/p_u003_a" },
+         { "bl_berserker_spirit_ca", "Data/Effects/mo_war_cry_ca/mo_war_cry_ca" },
+         { "sa_mass_frenzy_ca", "Data/Effects/mo_war_cry_ca/mo_war_cry_ca" },
+         { "dw_spoil_ca", "Data/Effects/curse_weakness/curse_weakness_composite" },
+diff --git a/Client_Scripts/Game/Manager/Effect/ParticleManager.cs b/Client_Scripts/Game/Manager/Effect/ParticleManager.cs
+index 032abf5..43b9441 100644
+--- a/Client_Scripts/Game/Manager/Effect/ParticleManager.cs
++++ b/Client_Scripts/Game/Manager/Effect/ParticleManager.cs
+@@ -233,80 +233,86 @@ public class ParticleManager : MonoBehaviour
+ 
+     #region Skill Particles
+     public PooledEffect[] SpawnCastParticles(Entity caster, Skill skill, int hitTime)
++{
++    // Intercept Life Drain (Skill ID 1090) to use modern effect system
++    if (skill != null && skill.SkillId == 1090)
+     {
+-        List<EffectEmitter> castingActions = skill.SkillEffect.CastingActions;
+-        if (castingActions == null || castingActions.Count == 0)
+-        {
+-            Debug.Log("Skill doesn't have any casting action.");
+-            return null;
+-        }
++        global::ModernSpellEffects.SpawnCastEffect(caster, skill);
++        return null; // No traditional pooled effects used
++    }
++    // Original implementation for other skills
++    List<EffectEmitter> castingActions = skill.SkillEffect.CastingActions;
++    if (castingActions == null || castingActions.Count == 0)
++    {
++        Debug.Log("Skill doesn't have any casting action.");
++        return null;
++    }
+ 
+-        PooledEffect[] castEffects = new PooledEffect[castingActions.Count];
++    PooledEffect[] castEffects = new PooledEffect[castingActions.Count];
+ 
+-        for (int i = 0; i < castingActions.Count; i++)
+-        {
+-            EffectEmitter action = castingActions[i];
+-            AttachMethod attachOn = action.AttachOn;
+-            string effectClass = action.EffectClass;
+-            byte repeatCount = 1;
++    for (int i = 0; i < castingActions.Count; i++)
++    {
++        EffectEmitter action = castingActions[i];
++        AttachMethod attachOn = action.AttachOn;
++        string effectClass = action.EffectClass;
++        byte repeatCount = 1;
+ 
+-            if (action.EtcEffect == EtcEffect.EET_SOULSHOT)
++        if (action.EtcEffect == EtcEffect.EET_SOULSHOT)
++        {
++            if (caster.Gear?.WeaponType == WeaponType.bow)
+             {
+-                if (caster.Gear?.WeaponType == WeaponType.bow)
+-                {
+-                    attachOn = AttachMethod.AM_LH;
+-                }
++                attachOn = AttachMethod.AM_LH;
++            }
+ 
+-                if (caster.Gear?.WeaponType == WeaponType.bow || caster.Gear?.WeaponType == WeaponType.fist)
+-                {
+-                    effectClass = action.SecondaryEffectClass;
+-                }
++            if (caster.Gear?.WeaponType == WeaponType.bow || caster.Gear?.WeaponType == WeaponType.fist)
++            {
++                effectClass = action.SecondaryEffectClass;
++            }
+ 
+-                if (caster.Gear?.WeaponType == WeaponType.fist || caster.Gear?.WeaponType == WeaponType.dual)
+-                {
+-                    repeatCount = 2;
+-                }
++            if (caster.Gear?.WeaponType == WeaponType.fist || caster.Gear?.WeaponType == WeaponType.dual)
++            {
++                repeatCount = 2;
+             }
++        }
+ 
+-            for (int r = 0; r < repeatCount; r++)
++        for (int r = 0; r < repeatCount; r++)
++        {
++            if (repeatCount > 1)
+             {
+-                if (repeatCount > 1)
++                if (r == 0)
+                 {
+-                    if (r == 0)
+-                    {
+-                        attachOn = AttachMethod.AM_LH;
+-                    }
+-                    else
+-                    {
+-                        attachOn = AttachMethod.AM_RH;
+-                    }
++                    attachOn = AttachMethod.AM_LH;
+                 }
+-
+-                PooledEffect effect = SpawnEffect(effectClass);
+-                if (effect == null || effect.GameObject == null)
++                else
+                 {
+-                    Debug.LogWarning($"Can't spawn skill effect {effectClass} for skill {skill.SkillId}.");
+-                    continue;
++                    attachOn = AttachMethod.AM_RH;
+                 }
++            }
++
++            PooledEffect effect = SpawnEffect(effectClass);
++            if (effect == null || effect.GameObject == null)
++            {
++                Debug.LogWarning($"Can't spawn skill effect {effectClass} for skill {skill.SkillId}.");
++                continue;
++            }
+ 
+-                effect.HitTime = hitTime / 1000f; //in seconds
++            effect.HitTime = hitTime / 1000f; //in seconds
+ 
+-                effect.GameObject.transform.parent = GetAttachTransform(caster, attachOn);
++            effect.GameObject.transform.parent = GetAttachTransform(caster, attachOn);
+ 
+-                UpdateSkillEffectTransform(caster, action, effect.GameObject.transform, effect, attachOn);
++            UpdateSkillEffectTransform(caster, action, effect.GameObject.transform, effect, attachOn);
+ 
+-                float effectRatio = CalculateCastParticleSizeRatio(caster);
+-                effect.GameObject.transform.localScale = effect.GameObject.transform.localScale * effectRatio;
++            float effectRatio = CalculateCastParticleSizeRatio(caster);
++            effect.GameObject.transform.localScale = effect.GameObject.transform.localScale * effectRatio;
+ 
+-                ActiveEffects.Enqueue(effect);
++            ActiveEffects.Enqueue(effect);
+ 
+-                castEffects[i] = effect;
+-            }
++            castEffects[i] = effect;
+         }
+-
+-        return castEffects;
+     }
+ 
++    return castEffects;
++}
+     private float CalculateCastParticleSizeRatio(Entity caster)
+     {
+         float colRadius = caster.Appearance.CollisionRadius;
+@@ -374,6 +380,13 @@ public class ParticleManager : MonoBehaviour
+                 effect.GameObject.transform.parent = GetAttachTransform(target, attachOn);
+ 
+                 PlaceHitParticle(effect, caster, target, action);
++
++                // Phase 2->3: If this is a life drain skill (e.g. Life Drain 1090, Drain Health 70),
++                // spawn a return projectile flying from target (mob) back to caster (mage)
++                if (skill.SkillId == 1090 || skill.SkillId == 70)
++                {
++                    SpawnDrainReturnProjectile(caster, target, skill);
++                }
+             }
+             else
+             {
+@@ -408,6 +421,80 @@ public class ParticleManager : MonoBehaviour
+         }
+     }
+ 
++    public void SpawnDrainReturnProjectile(Entity caster, Entity target, Skill skill)
++    {
++        if (caster == null || target == null || skill == null) return;
++
++        // Try to spawn return projectile effect (e.g. m_u003_c or p_u003_a)
++        string effectName = "m_u003_c";
++        PooledEffect drainProj = SpawnEffect(effectName);
++        if (drainProj == null || drainProj.GameObject == null)
++        {
++            drainProj = SpawnEffect("p_u003_a");
++        }
++
++        if (drainProj == null || drainProj.GameObject == null)
++        {
++            Debug.LogWarning($"[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}");
++            return;
++        }
++
++        if (drainProj == null || drainProj.GameObject == null)
++        {
++            Debug.LogWarning($"[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}");
++            return;
++        }
++
++        float targetCenterY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
++        float casterCenterY = caster.Appearance != null ? caster.Appearance.CollisionHeight * 0.7f : 1.0f;
++
++        Vector3 startPos = target.transform.position + Vector3.up * targetCenterY;
++        Vector3 endPos = caster.transform.position + Vector3.up * casterCenterY;
++
++        drainProj.Caster = target; // Flies FROM target
++        drainProj.Target = caster; // TO caster
++        drainProj.IsDrainReturn = true;
++        drainProj.IsArrow = false;
++        drainProj.Skill = skill;
++        drainProj.EffectClass = effectName;
++
++        drainProj.GameObject.transform.parent = _effectContainer.transform;
++        drainProj.GameObject.transform.position = startPos;
++        drainProj.GameObject.transform.localScale = Vector3.one * 0.8f;
++        drainProj.GameObject.SetActive(true);
++
++        drainProj.StartingPosition = startPos;
++        drainProj.TargetPosition = endPos;
++        drainProj.StartTime = Time.time;
++
++        float distance = Vector3.Distance(startPos, endPos);
++        float flightDuration = Mathf.Clamp(distance / 14.0f, 0.35f, 1.2f);
++        drainProj.HitTime = Time.time + flightDuration;
++        drainProj.EffectDurationSec = flightDuration + 0.5f;
++        drainProj.HitSuccess = true;
++
++        drainProj.OnArrival = () =>
++        {
++            // Trigger healing burst on caster upon blood essence reaching caster
++            PooledEffect healFx = SpawnEffect("e_u003_a");
++            if (healFx != null && healFx.GameObject != null)
++            {
++                healFx.GameObject.transform.parent = _effectContainer.transform;
++                healFx.GameObject.transform.position = caster.transform.position;
++                healFx.GameObject.transform.localScale = Vector3.one * 1.0f;
++                healFx.GameObject.SetActive(true);
++                healFx.StartTime = Time.time;
++                healFx.EffectDurationSec = 1.2f;
++                ActiveEffects.Enqueue(healFx);
++            }
++            SpellDynamicLight.TriggerSelfFlash(caster, skill);
++        };
++
++        drainProj.Restart();
++        ProjectileManager.Instance.AddProjectile(drainProj);
++        ActiveEffects.Enqueue(drainProj);
++    }
++
+     public void SpawnSkillExplosionParticle(Entity caster, Entity target, Skill skill)
+     {
+         if (caster == null || skill == null || skill.SkillEffect == null) return;
+diff --git a/Client_Scripts/Game/Manager/Effect/PooledEffect.cs b/Client_Scripts/Game/Manager/Effect/PooledEffect.cs
+index a66c183..bf13cfe 100644
+--- a/Client_Scripts/Game/Manager/Effect/PooledEffect.cs
++++ b/Client_Scripts/Game/Manager/Effect/PooledEffect.cs
+@@ -21,6 +21,8 @@ public class PooledEffect
+     [SerializeField] private Action _resetCallback;
+     [SerializeField] private bool _isArrow;
+     [SerializeField] private Vector3 _arrowForwardAxis = Vector3.left;
++    [SerializeField] private bool _isDrainReturn;
++    [SerializeField] private Action _onArrival;
+ 
+     public float StartTime { get { return _startTime; } set { _startTime = value; } }
+     public float EffectDurationSec { get { return _effectDurationSec; } set { _effectDurationSec = value; } }
+@@ -36,6 +38,8 @@ public class PooledEffect
+     public bool HitSuccess { get { return _hitSuccess; } set { _hitSuccess = value; } }
+     public bool IsArrow { get { return _isArrow; } set { _isArrow = value; } }
+     public Vector3 ArrowForwardAxis { get { return _arrowForwardAxis; } set { _arrowForwardAxis = value; } }
++    public bool IsDrainReturn { get { return _isDrainReturn; } set { _isDrainReturn = value; } }
++    public Action OnArrival { get { return _onArrival; } set { _onArrival = value; } }
+     public Vector3 StartingPosition { get { return _startingPosition; } set { _startingPosition = value; } }
+     public Vector3 TargetPosition { get { return _endPosition; } set { _endPosition = value; } }
+     public Action ResetTimerCallback { get { return _resetCallback; } set { _resetCallback = value; } }
+diff --git a/Client_Scripts/Game/Manager/Effect/ProjectileManager.cs b/Client_Scripts/Game/Manager/Effect/ProjectileManager.cs
+index 97d8aed..cffd74b 100644
+--- a/Client_Scripts/Game/Manager/Effect/ProjectileManager.cs
++++ b/Client_Scripts/Game/Manager/Effect/ProjectileManager.cs
+@@ -118,9 +118,17 @@ public class ProjectileManager : MonoBehaviour
+                     }
+                     else
+                     {
+-                        //TODO: ignore hit effect on first target when skill is shot from skill shot packet?
+-                        WorldCombat.Instance.SkillProjectileHitTarget(effect.Caster, effect.Target, effect.Skill);
+-                        SpellDynamicLight.TriggerHitFlash(effect.Target, effect.Skill, effect.EffectClass, effect.TargetPosition);
++                        if (effect.IsDrainReturn)
++                        {
++                            effect.OnArrival?.Invoke();
++                            SpellDynamicLight.TriggerHitFlash(effect.Target, effect.Skill, effect.EffectClass, effect.TargetPosition);
++                        }
++                        else
++                        {
++                            //TODO: ignore hit effect on first target when skill is shot from skill shot packet?
++                            WorldCombat.Instance.SkillProjectileHitTarget(effect.Caster, effect.Target, effect.Skill);
++                            SpellDynamicLight.TriggerHitFlash(effect.Target, effect.Skill, effect.EffectClass, effect.TargetPosition);
++                        }
+                     }
+                 }
+             }
+diff --git a/Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs b/Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs
+index 0c41ae8..16c48fe 100644
+--- a/Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs
++++ b/Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs
+@@ -118,6 +118,30 @@ public class SpellDynamicLight : MonoBehaviour
+         RegisterConfig(darkConfig, "vampiric_touch", "death_spike", "dark");
+         _configsBySkillId[1147] = darkConfig; // Vampiric Touch (1147)
+ 
++        // Template 3b. Life Drain (Skill ID 1090) - Crimson-ruby glow for cast, drain return flight, and hit flash
++        SpellLightConfig lifeDrainConfig = new SpellLightConfig
++        {
++            SkillId = 1090,
++            SkillName = "Life Drain",
++            CastLightColor = new Color(0.72f, 0.08f, 0.08f), // Deep crimson-ruby glow at feet
++            CastLightRange = 5.0f,
++            CastMaxIntensity = 4.2f,
++            CastHeightOffset = 0.3f, // Near ground/feet to illuminate pentagram
++
++            ProjectileLightColor = new Color(0.85f, 0.12f, 0.12f), // Vivid ruby blood flight
++            ProjectileLightRange = 6.0f,
++            ProjectileIntensity = 5.0f,
++
++            HitFlashColor = new Color(0.92f, 0.18f, 0.18f), // Intense blood burst on target / golden-crimson on return
++            HitFlashRange = 7.0f,
++            HitFlashPeakIntensity = 7.5f,
++            HitFlashHoldTime = 0.08f,
++            HitFlashFadeTime = 0.25f
++        };
++        RegisterConfig(lifeDrainConfig, "life_drain", "vampiric", "m_u003");
++        _configsBySkillId[1090] = lifeDrainConfig; // Life Drain (1090)
++        _configsBySkillId[70] = lifeDrainConfig;   // Drain Health (70)
++
+         // 4. Self Heal (Skill ID 1216) & Healing skills - Warm golden-peach cast light, golden-white heal flash
+         SpellLightConfig healConfig = new SpellLightConfig
+         {
+diff --git a/Client_Scripts/Game/Manager/World/World.cs b/Client_Scripts/Game/Manager/World/World.cs
+index f5fad45..ff869d5 100644
+--- a/Client_Scripts/Game/Manager/World/World.cs
++++ b/Client_Scripts/Game/Manager/World/World.cs
+@@ -240,9 +240,15 @@ public class World : MonoBehaviour
+                 NetworkEntityReferenceHolder holder = e.ReferenceHolder as NetworkEntityReferenceHolder;
+                 if (holder != null)
+                 {
+-                    holder.NetworkTransformReceive?.SetFinalRotation(rotation);
+-                    holder.NetworkTransformReceive?.SetNewPosition(position);
+-                    holder.NetworkCharacterControllerReceive?.ResetDestination();
++                    if (holder.NetworkCharacterControllerReceive != null)
++                    {
++                        holder.NetworkCharacterControllerReceive.OnServerStopMove(position, rotation);
++                    }
++                    else
++                    {
++                        holder.NetworkTransformReceive?.SetFinalRotation(rotation);
++                        holder.NetworkTransformReceive?.SetNewPosition(position);
++                    }
+                 }
+             }
+         });
+diff --git a/Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs b/Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs
+index f59265b..608464e 100644
+--- a/Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs
++++ b/Client_Scripts/Networking/Unity/NetworkCharacterControllerReceive.cs
+@@ -14,15 +14,18 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+     [SerializeField] private float _gravity = 28f;
+     [SerializeField] private float _moveSpeedMultiplier = 1f;
+     [SerializeField] private float _stopAtRange = 0;
+-    [SerializeField] private float _stopAtRangeDefault = 0.15f;
+-
+-
++    [SerializeField] private float _stopAtRangeDefault = 0.02f;
+ 
+     public long lastUpdateTimestamp = 0;
+     [SerializeField] private float _verticalVelocity = 0;
+     [SerializeField] public bool _isJumping = false;
+     public Vector3 MoveDirection { get { return _direction; } set { _direction = value; } }
+ 
++    private float _pendingFinalRotation;
++    private bool _hasPendingRotation = false;
++    private Vector3 _prevPosition;
++    private float _stuckTimer = 0f;
++
+     void Start()
+     {
+         if (World.Instance.OfflineMode)
+@@ -40,6 +43,7 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+ 
+         _direction = Vector3.zero;
+         _destination = Vector3.zero;
++        _prevPosition = transform.position;
+     }
+ 
+     private void FixedUpdate()
+@@ -53,34 +57,107 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+         {
+             _direction = Vector3.zero;
+             _destination = Vector3.zero;
++            _hasPendingRotation = false;
+             return;
+         }
+ 
+-        // if (!_networkTransformReceive.IsPositionSynced())
+-        // {
+-        //     /* pause script during position sync */
+-        //     return;
+-        // }
++        UpdateSpeed();
++        float currentSpeed = _speed * _moveSpeedMultiplier;
++        Vector3 horizMove = Vector3.zero;
++
++        if (_destination != Vector3.zero)
++        {
++            Vector3 currentFlat = VectorUtils.To2D(transform.position);
++            Vector3 destinationFlat = VectorUtils.To2D(_destination);
++            Vector3 toDestFlat = destinationFlat - currentFlat;
++            _distanceToDestination = toDestFlat.magnitude;
++
++            float effectiveStopRange = _stopAtRange > 0 ? _stopAtRange : _stopAtRangeDefault;
++
++            if (_distanceToDestination <= effectiveStopRange)
++            {
++                _direction = Vector3.zero;
++                _destination = Vector3.zero;
++                _stuckTimer = 0f;
++
++                if (_hasPendingRotation)
++                {
++                    _networkTransformReceive.SetFinalRotation(_pendingFinalRotation);
++                    _hasPendingRotation = false;
++                }
+ 
+-        if (_destination != null && _destination != Vector3.zero)
++                _entity.OnStopMoving();
++                _networkTransformReceive.SetNewPosition(transform.position);
++                _networkTransformReceive.ResumePositionSync();
++            }
++            else
++            {
++                _direction = toDestFlat / _distanceToDestination;
++                _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
++
++                if (_entity != null && _entity.AnimationController != null)
++                {
++                    _entity.AnimationController.Move();
++                }
++
++                float maxStepDist = currentSpeed * Time.fixedDeltaTime;
++                if (_distanceToDestination < maxStepDist)
++                {
++                    horizMove = _direction * (_distanceToDestination / Time.fixedDeltaTime);
++                }
++                else
++                {
++                    horizMove = _direction * currentSpeed;
++                }
++            }
++        }
++        else if (_direction != Vector3.zero)
+         {
+-            CheckIfDestinationReached();
++            horizMove = _direction * currentSpeed;
+         }
+-        Vector3 ajustedDirection = _direction * _speed * _moveSpeedMultiplier;
+-        ajustedDirection = ApplyGravity(ajustedDirection);
++
++        Vector3 adjustedDirection = horizMove;
++        adjustedDirection = ApplyGravity(adjustedDirection);
+ 
+         if (_destination != Vector3.zero && _direction != Vector3.zero)
+         {
+             float yDiff = _destination.y - transform.position.y;
+             if (yDiff > 0.1f)
+             {
+-                ajustedDirection.y += Mathf.Clamp(yDiff * 2f, 0f, 3f);
++                adjustedDirection.y += Mathf.Clamp(yDiff * 2f, 0f, 3f);
+             }
+         }
+ 
+         ManageJump();
+ 
+-        _characterController.Move(ajustedDirection * Time.fixedDeltaTime);
++        _characterController.Move(adjustedDirection * Time.fixedDeltaTime);
++
++        // Отслеживание фактического перемещения за кадр
++        Vector3 posAfterMove = transform.position;
++        float deltaXZ = VectorUtils.Distance2D(posAfterMove, _prevPosition);
++        float realSpeedXZ = Time.fixedDeltaTime > 0 ? deltaXZ / Time.fixedDeltaTime : 0;
++        _prevPosition = posAfterMove;
++
++        if (_destination != Vector3.zero || _direction != Vector3.zero)
++        {
++            if (realSpeedXZ < 0.05f)
++            {
++                _stuckTimer += Time.fixedDeltaTime;
++                if (_stuckTimer >= 0.6f)
++                {
++                    ResetDestination();
++                    _stuckTimer = 0f;
++                }
++            }
++            else
++            {
++                _stuckTimer = 0f;
++            }
++        }
++        else
++        {
++            _stuckTimer = 0f;
++        }
+     }
+     private Vector3 ApplyGravity(Vector3 dir)
+     {
+@@ -127,19 +204,40 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+         if (direction.x != 0 || direction.z != 0)
+         {
+             _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(direction.x, direction.z));
+-        }
+-
+-        if (direction.x != 0 || direction.z != 0)
+-        {
+             _entity.AnimationController.Move();
++            _networkTransformReceive.PausePositionSync();
+         }
+         else
+         {
+-            _entity.AnimationController.Wait();
++            float dist = VectorUtils.Distance2D(transform.position, position);
++            if (dist > 0.05f && dist <= 5.0f)
++            {
++                _destination = position;
++                _lastDestination = position;
++                _stopAtRange = 0f;
++                _hasPendingRotation = false;
++                _stuckTimer = 0f;
++
++                Vector3 transformFlat = VectorUtils.To2D(transform.position);
++                Vector3 destinationFlat = VectorUtils.To2D(_destination);
++                _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
++                _direction = (destinationFlat - transformFlat).normalized;
++
++                _networkTransformReceive.PausePositionSync();
++                _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
++                _entity.AnimationController.Move();
++            }
++            else
++            {
++                _direction = Vector3.zero;
++                _destination = Vector3.zero;
++                _hasPendingRotation = false;
++                _stuckTimer = 0f;
++                _entity.AnimationController.Wait();
++                _networkTransformReceive.ResumePositionSync();
++            }
+         }
+ 
+-        _networkTransformReceive.ResumePositionSync();
+-
+         if (verticalVelocity >= 4.0f)
+         {
+             _isJumping = true;
+@@ -153,7 +251,7 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+         if (_isJumping && _verticalVelocity <= 0 && _characterController.isGrounded) // jump is done
+         {
+             _isJumping = false;
+-            if (_direction.x != 0 || _direction.z != 0)
++            if (IsMoving())
+             {
+                 _entity.AnimationController.Move();
+             }
+@@ -172,16 +270,16 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+             return;
+         }
+ 
+-        // Debug.LogWarning("Set destination: " + destination);
+         if (_lastDestination == destination && _direction != Vector3.zero)
+         {
+             return;
+         }
+ 
+         _lastDestination = destination;
+-        // Debug.LogWarning("SetDestination: " + destination);
+         _stopAtRange = stopAtRange > 0 ? stopAtRange : 0;
+         _destination = destination;
++        _hasPendingRotation = false;
++        _stuckTimer = 0f;
+         UpdateSpeed();
+ 
+         Vector3 transformFlat = VectorUtils.To2D(transform.position);
+@@ -194,6 +292,7 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+         {
+             _entity.AnimationController.Move();
+             _networkTransformReceive.PausePositionSync();
++            _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
+         }
+         else
+         {
+@@ -205,23 +304,72 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+         }
+     }
+ 
+-    private void CheckIfDestinationReached()
++    // Серверный StopMove: добегаем последние шаги до финальной stopPosition со штатной скоростью и анимацией бега
++    public void OnServerStopMove(Vector3 stopPosition, float finalRotation)
+     {
+-        _distanceToDestination = Vector3.Distance(VectorUtils.To2D(transform.position), VectorUtils.To2D(_destination));
+-        float effectiveStopRange = _stopAtRange > 0 ? _stopAtRange : _stopAtRangeDefault;
++        if (_entity == null)
++        {
++            _entity = GetComponent<Entity>();
++        }
+ 
+-        if (_distanceToDestination <= effectiveStopRange)
++        if (_entity != null && _entity.Combat != null && _entity.Combat.IsCastingSkill)
+         {
+-            if (_direction != Vector3.zero)
+-            {
+-                _entity.OnStopMoving();
+-                //TODO check if has target and is attacking
+-            }
++            return;
++        }
++
++        float dist = VectorUtils.Distance2D(transform.position, stopPosition);
+ 
++        // Грубый рассинхрон или телепорт (> 5м)
++        if (dist > 5.0f)
++        {
++            stopPosition.y = World.Instance.GetGroundHeight(stopPosition);
++            transform.position = stopPosition;
++            _destination = Vector3.zero;
+             _direction = Vector3.zero;
++            _hasPendingRotation = false;
++            _stuckTimer = 0f;
++            _networkTransformReceive.SetFinalRotation(finalRotation);
++            _networkTransformReceive.SetNewPosition(stopPosition);
++            _networkTransformReceive.ResumePositionSync();
++            _entity.OnStopMoving();
++            return;
++        }
++
++        // Персонаж уже фактически в точке остановки (<= 0.05м)
++        if (dist <= 0.05f)
++        {
+             _destination = Vector3.zero;
+-            _networkTransformReceive.SetNewPosition(transform.position);
++            _direction = Vector3.zero;
++            _hasPendingRotation = false;
++            _stuckTimer = 0f;
++            _networkTransformReceive.SetFinalRotation(finalRotation);
++            _networkTransformReceive.SetNewPosition(stopPosition);
+             _networkTransformReceive.ResumePositionSync();
++            _entity.OnStopMoving();
++            return;
++        }
++
++        // Персонаж еще на бегу (последние 1-2 шага: 0.05м - 5м):
++        // Доводим его точно до финальной точки stopPosition со штатной скоростью и анимацией бега!
++        _destination = stopPosition;
++        _lastDestination = stopPosition;
++        _stopAtRange = 0f;
++        _pendingFinalRotation = finalRotation;
++        _hasPendingRotation = true;
++        _stuckTimer = 0f;
++        UpdateSpeed();
++
++        Vector3 transformFlat = VectorUtils.To2D(transform.position);
++        Vector3 destinationFlat = VectorUtils.To2D(_destination);
++        _distanceToDestination = Vector3.Distance(transformFlat, destinationFlat);
++        _direction = (destinationFlat - transformFlat).normalized;
++
++        _networkTransformReceive.PausePositionSync();
++        _networkTransformReceive.SetFinalRotation(VectorUtils.CalculateMoveDirectionAngle(_direction.x, _direction.z));
++
++        if (_entity != null && _entity.AnimationController != null)
++        {
++            _entity.AnimationController.Move();
+         }
+     }
+ 
+@@ -229,6 +377,8 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+     {
+         _destination = Vector3.zero;
+         _direction = Vector3.zero;
++        _hasPendingRotation = false;
++        _stuckTimer = 0f;
+         _entity.OnStopMoving();
+         _networkTransformReceive.SetNewPosition(transform.position);
+         _networkTransformReceive.ResumePositionSync();
+@@ -255,6 +405,6 @@ public class NetworkCharacterControllerReceive : MonoBehaviour
+ 
+     public bool IsMoving()
+     {
+-        return !VectorUtils.IsVectorZero2D(_direction);
++        return !VectorUtils.IsVectorZero2D(_direction) || _destination != Vector3.zero;
+     }
+ }
+diff --git a/Client_Scripts/Networking/Unity/NetworkTransformReceive.cs b/Client_Scripts/Networking/Unity/NetworkTransformReceive.cs
+index e8e7d17..89afd6b 100644
+--- a/Client_Scripts/Networking/Unity/NetworkTransformReceive.cs
++++ b/Client_Scripts/Networking/Unity/NetworkTransformReceive.cs
+@@ -15,7 +15,7 @@ public class NetworkTransformReceive : MonoBehaviour
+     [SerializeField] private bool _positionSyncPaused = false;
+     private float _lerpDuration = 0.35f;
+     [SerializeField] private float _positionDelta;
+-    private float _finalLerpDelta = 0.05f;
++    private float _finalLerpDelta = 0.02f;
+     [SerializeField] private long _lastDesyncTime = 0;
+     [SerializeField] private long _lastDesyncDuration = 0;
+     private long _maximumAllowedDesyncTimeMs = 0;
+@@ -128,21 +128,45 @@ public class NetworkTransformReceive : MonoBehaviour
+                 return;
+             }
+ 
+-            if (_posLerpValue >= 1f)
++            // Доводка линейным MoveTowards со штатной скоростью персонажа
++            float moveSpeed = 4.0f;
++            Entity entity = GetComponent<Entity>();
++            if (entity != null && entity.Stats != null)
++            {
++                float runSpd = entity.Stats.ScaledRunSpeed > 0 ? entity.Stats.ScaledRunSpeed : 4.0f;
++                float walkSpd = entity.Stats.ScaledWalkSpeed > 0 ? entity.Stats.ScaledWalkSpeed : 2.0f;
++                moveSpeed = entity.Running ? runSpd : walkSpd;
++            }
++
++            Vector3 targetPosition = _serverPosition;
++            targetPosition.y = transform.position.y;
++            transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.fixedDeltaTime);
++
++            if (VectorUtils.Distance2D(transform.position, _serverPosition) <= _finalLerpDelta)
+             {
+                 Vector3 finalPosition = _serverPosition;
+                 finalPosition.y = transform.position.y;
+                 transform.position = finalPosition;
+                 _positionSynced = true;
+-                return;
+-            }
+ 
+-            Vector3 newPosition = Vector3.Lerp(_lastPos, _serverPosition, _posLerpValue);
+-            _posLerpValue += (1f / _lerpDuration) * Time.deltaTime;
+-            newPosition.y = transform.position.y; // Keep the current y position
+-            transform.position = newPosition;
++                NetworkCharacterControllerReceive netCC = GetComponent<NetworkCharacterControllerReceive>();
++                if (netCC == null || !netCC.IsMoving())
++                {
++                    if (entity != null && entity.AnimationController != null && !(this is PlayerTransformReceive))
++                    {
++                        entity.AnimationController.Wait();
++                    }
++                }
++            }
++            else
++            {
++                // Пока модель фактически перемещается по земле - анимация движения остается активной
++                if (entity != null && entity.AnimationController != null && !(this is PlayerTransformReceive))
++                {
++                    entity.AnimationController.Move();
++                }
++            }
+         }
+-
+     }
+ 
+     /* Ajust rotation */
 diff --git a/PROJECT_CONTEXT.md b/PROJECT_CONTEXT.md
-index 198dced..884d06b 100644
+index 884d06b..7a3fab5 100644
 --- a/PROJECT_CONTEXT.md
 +++ b/PROJECT_CONTEXT.md
-@@ -67,3 +67,4 @@
+@@ -67,4 +67,5 @@
  • [2026-11-18] Исправление FormatException при парсинге метаданных: в Skillgrp_Classic.txt исправлены записи с дробным mp_consume (скилл 1194, 11.7 -> 12). В SkillgrpTable.cs и SkillNameTable.cs внедрен безопасный парсинг чисел ParseIntSafe с поддержкой округления float/InvariantCulture и Enum.TryParse с безопасными дефолтами (SkillType.Physical, SkillMagicType.None). Сборка l2-unity.sln завершена с 0 ошибок.
  • [2026-11-18] Устранение NullReferenceException в SkillTable.CacheSkills: добавлен null-safe fallback для skillname и skillgrp (генерация дефолтного имени Skill_{ID} при отсутствии записи в SkillNameTable). В Skill.cs свойство EffectId защищено от пустого массива Skillgrps. В SkillName_Classic-eu.txt добавлены отсутствовавшие скиллы 3695 и 3696 (Squire's Shirt). Сборка l2-unity.sln завершена с 0 ошибок.
  • [2026-11-18] Устранение NullReferenceException в ParticleManager.SpawnEffect: в ParticleManager.cs добавлено автодобавление компонента L2Particle при создании эффектов и хитов (AddComponent<L2Particle>), а также безопасная инициализация PooledEffect. В L2Particle.cs обеспечено автосоздание _pooledEffect в геттере и Awake, защита от null в ResetTimer(). В SpawnCastParticles заменен прерывающий return null на continue при невозможности спавна отдельного эффекта. Сборка l2-unity.sln завершена с 0 ошибок.
-+• [2026-11-18] Исправление визуала Life Drain (ID 1090): в m_u003_b.prefab и m_u003_c.prefab материалы переведены на Universal Render Pipeline/Particles/Unlit с багровым оттенком (#B01515); устранен розовый артефакт. Для каста m_u003_b выставлен разворот в плоскость XZ (pitch 90°), высота localPosition.y = 0.03f и диаметр ~2.3м. Сборка l2-unity.sln прошла с 0 ошибок.
+-• [2026-11-18] Исправление визуала Life Drain (ID 1090): в m_u003_b.prefab и m_u003_c.prefab материалы переведены на Universal Render Pipeline/Particles/Unlit с багровым оттенком (#B01515); устранен розовый артефакт. Для каста m_u003_b выставлен разворот в плоскость XZ (pitch 90°), высота localPosition.y = 0.03f и диаметр ~2.3м. Сборка l2-unity.sln прошла с 0 ошибок.
++• [2026-11-18] Исправление визуала и 3-фазной механики Life Drain (ID 1090): в m_u003_b.prefab и m_u003_c.prefab материалы переведены на Universal Render Pipeline/Particles/Unlit с багровым оттенком (#B01515); устранен розовый артефакт. Для m_u003_b выставлен разворот в плоскость XZ (pitch 90°), высота localPosition.y = 0.03f и диаметр ~2.3м. В ParticleManager/ProjectileManager/PooledEffect реализован каноничный обратный полет снаряда жизненной силы от цели к магу с мягкой вспышкой исцеления при долете и багрово-рубиновым динамическим светом (SpellDynamicLight). Сборка l2-unity.sln прошла с 0 ошибок.
++• [2026-11-18] Исправление сетевой синхронизации движения удаленных игроков: устранен преждевременный сброс бега в стоячую позу Idle (скольжение). В World.cs (ObjectStoppedMove) внедрен OnServerStopMove с доводкой оставшихся шагов; в NetworkCharacterControllerReceive.cs реализован равномерный MoveTowards со штатной moveSpeed (стоп-порог 0.02м вместо 0.15м, удержание анимации Move до полной остановки, отслеживание застревания). В NetworkTransformReceive.cs вязкий Lerp заменен на линейный MoveTowards со штатной скоростью и гарантией анимации движения для удаленных персонажей без изменения PlayerController.

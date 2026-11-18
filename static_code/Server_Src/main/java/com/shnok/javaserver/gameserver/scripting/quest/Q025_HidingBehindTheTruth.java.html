@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q025_HidingBehindTheTruth.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q025_HidingBehindTheTruth.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class Q025_HidingBehindTheTruth extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q025_HidingBehindTheTruth&quot;;
+	
+	// Items
+	private static final int FOREST_OF_DEADMAN_MAP = 7063;
+	private static final int CONTRACT = 7066;
+	private static final int LIDIA_DRESS = 7155;
+	private static final int SUSPICIOUS_TOTEM_DOLL_2 = 7156;
+	private static final int GEMSTONE_KEY = 7157;
+	private static final int SUSPICIOUS_TOTEM_DOLL_3 = 7158;
+	
+	// Rewards
+	private static final int EARRING_OF_BLESSING = 874;
+	private static final int RING_OF_BLESSING = 905;
+	private static final int NECKLACE_OF_BLESSING = 936;
+	
+	// NPCs
+	private static final int AGRIPEL = 31348;
+	private static final int BENEDICT = 31349;
+	private static final int MYSTERIOUS_WIZARD = 31522;
+	private static final int TOMBSTONE = 31531;
+	private static final int MAID_OF_LIDIA = 31532;
+	private static final int BROKEN_BOOKSHELF_1 = 31533;
+	private static final int BROKEN_BOOKSHELF_2 = 31534;
+	private static final int BROKEN_BOOKSHELF_3 = 31535;
+	private static final int COFFIN = 31536;
+	
+	// Monsters
+	private static final int TRIOL_PAWN = 27218;
+	
+	// Spawns
+	private static final Map&lt;Integer, SpawnLocation&gt; TRIOL_SPAWNS = HashMap.newHashMap(3);
+	
+	// Sound
+	private static final String SOUND_HORROR_1 = &quot;SkillSound5.horror_01&quot;;
+	private static final String SOUND_HORROR_2 = &quot;AmdSound.dd_horror_02&quot;;
+	private static final String SOUND_CRY = &quot;ChrSound.FDElf_Cry&quot;;
+	
+	public Q025_HidingBehindTheTruth()
+	{
+		super(25, &quot;Hiding Behind the Truth&quot;);
+		
+		TRIOL_SPAWNS.put(BROKEN_BOOKSHELF_1, new SpawnLocation(47142, -35941, -1623, 0));
+		TRIOL_SPAWNS.put(BROKEN_BOOKSHELF_2, new SpawnLocation(50055, -47020, -3396, 0));
+		TRIOL_SPAWNS.put(BROKEN_BOOKSHELF_3, new SpawnLocation(59712, -47568, -2720, 0));
+		
+		// Note: FOREST_OF_DEADMAN_MAP and SUSPICIOUS_TOTEM_DOLL_2 are items from previous quests, should not be added.
+		setItemsIds(CONTRACT, LIDIA_DRESS, GEMSTONE_KEY, SUSPICIOUS_TOTEM_DOLL_3);
+		
+		addQuestStart(BENEDICT);
+		addTalkId(AGRIPEL, BENEDICT, MYSTERIOUS_WIZARD, TOMBSTONE, MAID_OF_LIDIA, BROKEN_BOOKSHELF_1, BROKEN_BOOKSHELF_2, BROKEN_BOOKSHELF_3, COFFIN);
+		addFirstTalkId(MAID_OF_LIDIA);
+		
+		addAttacked(TRIOL_PAWN);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		// Benedict
+		if (event.equalsIgnoreCase(&quot;31349-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.set(&quot;state&quot;, 1);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31349-04.htm&quot;))
+		{
+			// Suspicious Totem is lost, redirect to Mysterious Wizard to obtain it again
+			if (!player.getInventory().hasItem(SUSPICIOUS_TOTEM_DOLL_2))
+			{
+				htmltext = &quot;31349-05.htm&quot;;
+				if (st.getCond() == 1)
+				{
+					st.setCond(2);
+					playSound(player, SOUND_MIDDLE);
+				}
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;31349-10.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 2);
+			st.setCond(4);
+			playSound(player, SOUND_MIDDLE);
+		}
+		// Agripel
+		else if (event.equalsIgnoreCase(&quot;31348-02.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 3);
+			takeItems(player, SUSPICIOUS_TOTEM_DOLL_2, -1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31348-08.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 6);
+			st.setCond(5);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, GEMSTONE_KEY, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31348-10.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 21);
+			takeItems(player, SUSPICIOUS_TOTEM_DOLL_3, -1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31348-13.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 22);
+		}
+		else if (event.equalsIgnoreCase(&quot;31348-16.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 23);
+			st.setCond(17);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31348-17.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 24);
+			st.setCond(18);
+			playSound(player, SOUND_MIDDLE);
+		}
+		// Mysterious Wizard
+		else if (event.equalsIgnoreCase(&quot;31522-04.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 7);
+			st.setCond(6);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31522-10.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 19);
+		}
+		else if (event.equalsIgnoreCase(&quot;31522-13.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 20);
+			st.setCond(16);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31522-16.htm&quot;))
+		{
+			takeItems(player, FOREST_OF_DEADMAN_MAP, -1);
+			giveItems(player, EARRING_OF_BLESSING, 1);
+			giveItems(player, NECKLACE_OF_BLESSING, 1);
+			rewardExpAndSp(player, 1607062, 0);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		// Broken Bookshelf 1, 2 and 3
+		else if (event.equalsIgnoreCase(&quot;3153x-05.htm&quot;))
+		{
+			// Get bookshelf flags.
+			final String npcId = String.valueOf(npc.getNpcId());
+			st.set(npcId, 1);
+			
+			// Check bookshelves.
+			if (st.getInteger(&quot;31533&quot;) + st.getInteger(&quot;31534&quot;) + st.getInteger(&quot;31535&quot;) == 3)
+			{
+				// All are open, clear bookshelf identifier, mark gem box location.
+				st.unset(&quot;31533&quot;);
+				st.unset(&quot;31534&quot;);
+				st.unset(&quot;31535&quot;);
+				st.set(&quot;bookshelf&quot;, npcId);
+				st.set(&quot;state&quot;, 8);
+				playSound(player, SOUND_HORROR_2);
+			}
+			else
+				// Not all bookshelves are opened yet.
+				htmltext = &quot;3153x-03.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;3153x-07.htm&quot;))
+		{
+			if (!player.getInventory().hasItem(SUSPICIOUS_TOTEM_DOLL_3))
+			{
+				if (npc.getMinions().isEmpty())
+				{
+					Npc triolPawn = createOnePrivateEx(npc, TRIOL_PAWN, TRIOL_SPAWNS.get(npc.getNpcId()), 120000, true);
+					triolPawn.broadcastNpcSay(NpcStringId.ID_2550, player.getName());
+					triolPawn.setScriptValue(player.getObjectId());
+					
+					st.setCond(7);
+					playSound(player, SOUND_MIDDLE);
+				}
+				else if (npc.getMinions().iterator().next().getScriptValue() == player.getObjectId())
+					htmltext = &quot;3153x-08.htm&quot;;
+				else
+					htmltext = &quot;3153x-09.htm&quot;;
+			}
+			else
+				htmltext = &quot;3153x-10.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;3153x-11.htm&quot;))
+		{
+			st.unset(&quot;bookshelf&quot;);
+			st.set(&quot;state&quot;, 9);
+			st.setCond(9);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, GEMSTONE_KEY, -1);
+			giveItems(player, CONTRACT, 1);
+		}
+		// Maid of Lidia
+		else if (event.equalsIgnoreCase(&quot;31532-02.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 10);
+			takeItems(player, CONTRACT, -1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-07.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 11);
+			st.setCond(11);
+			playSound(player, SOUND_HORROR_1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-12.htm&quot;))
+		{
+			final int sorrow = st.getInteger(&quot;sorrow&quot;);
+			if (sorrow &gt; 0)
+			{
+				htmltext = &quot;31532-11.htm&quot;;
+				st.set(&quot;sorrow&quot;, sorrow - 1);
+				playSound(player, SOUND_CRY);
+			}
+			else
+			{
+				st.unset(&quot;sorrow&quot;);
+				st.set(&quot;state&quot;, 14);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-17.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 15);
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-21.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 16);
+			st.setCond(15);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-25.htm&quot;))
+		{
+			takeItems(player, FOREST_OF_DEADMAN_MAP, -1);
+			giveItems(player, EARRING_OF_BLESSING, 1);
+			giveItems(player, RING_OF_BLESSING, 2);
+			rewardExpAndSp(player, 1607062, 0);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		// Tombstone
+		else if (event.equalsIgnoreCase(&quot;31531-02.htm&quot;))
+		{
+			st.setCond(12);
+			playSound(player, SOUND_MIDDLE);
+			
+			if (npc.getMinions().isEmpty())
+				createOnePrivateEx(npc, COFFIN, 60104, -35820, -681, 0, 20000, true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		final Player player = attacker.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 7);
+		if (st == null)
+			return;
+		
+		if (player.getObjectId() == npc.getScriptValue() &amp;&amp; npc.getStatus().getHpRatio() &lt; 0.3 &amp;&amp; dropItemsAlways(player, SUSPICIOUS_TOTEM_DOLL_3, 1, 1))
+		{
+			st.setCond(8);
+			
+			npc.broadcastNpcSay(NpcStringId.ID_2551);
+			npc.deleteMe();
+		}
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		final QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st != null &amp;&amp; st.getInteger(&quot;state&quot;) == 11)
+		{
+			playSound(player, SOUND_HORROR_1);
+			return &quot;31532-08.htm&quot;;
+		}
+		
+		npc.showChatWindow(player);
+		return null;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				QuestState st2 = player.getQuestList().getQuestState(&quot;Q024_InhabitantsOfTheForestOfTheDead&quot;);
+				htmltext = (st2 != null &amp;&amp; st2.isCompleted() &amp;&amp; player.getStatus().getLevel() &gt;= 66) ? &quot;31349-01.htm&quot; : &quot;31349-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int state = st.getInteger(&quot;state&quot;);
+				switch (npc.getNpcId())
+				{
+					case BENEDICT:
+						if (state == 1)
+							htmltext = &quot;31349-03a.htm&quot;;
+						else if (state &gt; 1)
+							htmltext = &quot;31349-10.htm&quot;;
+						break;
+					
+					case AGRIPEL:
+						if (state == 2)
+							htmltext = &quot;31348-01.htm&quot;;
+						else if (state &gt; 2 &amp;&amp; state &lt; 6)
+							htmltext = &quot;31348-02.htm&quot;;
+						else if (state &gt; 5 &amp;&amp; state &lt; 20)
+							htmltext = &quot;31348-08a.htm&quot;;
+						else if (state == 20)
+							htmltext = &quot;31348-09.htm&quot;;
+						else if (state == 21)
+							htmltext = &quot;31348-10a.htm&quot;;
+						else if (state == 22)
+							htmltext = &quot;31348-15.htm&quot;;
+						else if (state == 23)
+							htmltext = &quot;31348-18.htm&quot;;
+						else if (state == 24)
+							htmltext = &quot;31348-19.htm&quot;;
+						break;
+					
+					case MYSTERIOUS_WIZARD:
+						if (state == 1)
+						{
+							if (!player.getInventory().hasItem(SUSPICIOUS_TOTEM_DOLL_2))
+							{
+								htmltext = &quot;31522-01.htm&quot;;
+								st.setCond(3);
+								playSound(player, SOUND_MIDDLE);
+								giveItems(player, SUSPICIOUS_TOTEM_DOLL_2, 1);
+							}
+							else
+								htmltext = &quot;31522-02.htm&quot;;
+						}
+						else if (state &gt; 1 &amp;&amp; state &lt; 6)
+							htmltext = &quot;31522-02.htm&quot;;
+						else if (state == 6)
+							htmltext = &quot;31522-03.htm&quot;;
+						else if (state &gt; 6 &amp;&amp; state &lt; 9)
+							htmltext = &quot;31522-04.htm&quot;;
+						else if (state == 9)
+						{
+							htmltext = &quot;31522-06.htm&quot;;
+							
+							if (st.getCond() != 10 &amp;&amp; player.getInventory().hasItem(CONTRACT))
+							{
+								st.setCond(10);
+								playSound(player, SOUND_MIDDLE);
+							}
+						}
+						else if (state &gt; 9 &amp;&amp; state &lt; 16)
+							htmltext = &quot;31522-06.htm&quot;;
+						else if (state == 16)
+							htmltext = &quot;31522-06a.htm&quot;;
+						else if (state == 19)
+							htmltext = &quot;31522-11.htm&quot;;
+						else if (state &gt; 19 &amp;&amp; state &lt; 23)
+							htmltext = &quot;31522-14.htm&quot;;
+						else if (state == 23)
+							htmltext = &quot;31522-15a.htm&quot;;
+						else if (state == 24)
+							htmltext = &quot;31522-15.htm&quot;;
+						break;
+					
+					case BROKEN_BOOKSHELF_1, BROKEN_BOOKSHELF_2, BROKEN_BOOKSHELF_3:
+						if (state == 7)
+						{
+							// Investigating bookshelves, check if current one has been opened.
+							if (st.getInteger(String.valueOf(npc.getNpcId())) == 0)
+								htmltext = &quot;3153x-01.htm&quot;;
+							else
+								htmltext = &quot;3153x-03.htm&quot;;
+						}
+						else if (state == 8)
+						{
+							// Gem box has been found. Check if in this bookshelf.
+							if (st.getInteger(&quot;bookshelf&quot;) == npc.getNpcId())
+								htmltext = &quot;3153x-05.htm&quot;;
+							else
+								htmltext = &quot;3153x-03.htm&quot;;
+						}
+						else if (state &gt; 8)
+							htmltext = &quot;3153x-02.htm&quot;;
+						break;
+					
+					case MAID_OF_LIDIA:
+						if (state == 9)
+							htmltext = &quot;31532-01.htm&quot;;
+						else if (state &gt; 9 &amp;&amp; state &lt; 12)
+							htmltext = &quot;31532-03.htm&quot;;
+						else if (state == 12)
+						{
+							htmltext = &quot;31532-09.htm&quot;;
+							st.set(&quot;sorrow&quot;, 4);
+							st.set(&quot;state&quot;, 13);
+							st.setCond(14);
+							playSound(player, SOUND_MIDDLE);
+							takeItems(player, LIDIA_DRESS, -1);
+						}
+						else if (state == 13)
+						{
+							htmltext = &quot;31532-10.htm&quot;;
+							playSound(player, SOUND_CRY);
+						}
+						else if (state == 14)
+							htmltext = &quot;31532-12.htm&quot;;
+						else if (state == 15)
+							htmltext = &quot;31532-17.htm&quot;;
+						else if (state &gt; 15 &amp;&amp; state &lt; 23)
+							htmltext = &quot;31532-21.htm&quot;;
+						else if (state == 23)
+							htmltext = &quot;31532-23.htm&quot;;
+						else if (state == 24)
+							htmltext = &quot;31532-24.htm&quot;;
+						break;
+					
+					case TOMBSTONE:
+						if (state == 11)
+							htmltext = (npc.getMinions().isEmpty()) ? &quot;31531-01.htm&quot; : &quot;31531-02.htm&quot;;
+						else if (state &gt; 11)
+							htmltext = &quot;31531-03.htm&quot;;
+						break;
+					
+					case COFFIN:
+						if (state == 11)
+						{
+							htmltext = &quot;31536-01.htm&quot;;
+							st.set(&quot;state&quot;, 12);
+							st.setCond(13);
+							playSound(player, SOUND_MIDDLE);
+							giveItems(player, LIDIA_DRESS, 1);
+							
+							npc.deleteMe();
+						}
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

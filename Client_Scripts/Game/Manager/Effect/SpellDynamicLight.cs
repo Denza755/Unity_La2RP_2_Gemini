@@ -118,6 +118,30 @@ public class SpellDynamicLight : MonoBehaviour
         RegisterConfig(darkConfig, "vampiric_touch", "death_spike", "dark");
         _configsBySkillId[1147] = darkConfig; // Vampiric Touch (1147)
 
+        // Template 3b. Life Drain (Skill ID 1090) - Crimson-ruby glow for cast, drain return flight, and hit flash
+        SpellLightConfig lifeDrainConfig = new SpellLightConfig
+        {
+            SkillId = 1090,
+            SkillName = "Life Drain",
+            CastLightColor = new Color(0.72f, 0.08f, 0.08f), // Deep crimson-ruby glow at feet
+            CastLightRange = 5.0f,
+            CastMaxIntensity = 4.2f,
+            CastHeightOffset = 0.3f, // Near ground/feet to illuminate pentagram
+
+            ProjectileLightColor = new Color(0.85f, 0.12f, 0.12f), // Vivid ruby blood flight
+            ProjectileLightRange = 6.0f,
+            ProjectileIntensity = 5.0f,
+
+            HitFlashColor = new Color(0.92f, 0.18f, 0.18f), // Intense blood burst on target / golden-crimson on return
+            HitFlashRange = 7.0f,
+            HitFlashPeakIntensity = 7.5f,
+            HitFlashHoldTime = 0.08f,
+            HitFlashFadeTime = 0.25f
+        };
+        RegisterConfig(lifeDrainConfig, "life_drain", "vampiric", "m_u003");
+        _configsBySkillId[1090] = lifeDrainConfig; // Life Drain (1090)
+        _configsBySkillId[70] = lifeDrainConfig;   // Drain Health (70)
+
         // 4. Self Heal (Skill ID 1216) & Healing skills - Warm golden-peach cast light, golden-white heal flash
         SpellLightConfig healConfig = new SpellLightConfig
         {

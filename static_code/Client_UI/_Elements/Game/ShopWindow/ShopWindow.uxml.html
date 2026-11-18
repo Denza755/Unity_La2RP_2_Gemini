@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/ShopWindow/ShopWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/ShopWindow/ShopWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; xmlns=&quot;UnityEngine.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;WindowTemplate&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;amp;type=3#WindowTemplate&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;ui:Template name=&quot;L2TabView&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2TabView/L2TabView.uxml?fileID=9197481963319205126&amp;amp;guid=df1c3d52e66191742a30ae9bd4520b5a&amp;amp;type=3#L2TabView&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ShopWindow/ShopStyle.uss?fileID=7433441132597879392&amp;amp;guid=9e85dc28fcf6a6f4fa0432707a81e0fd&amp;amp;type=3#ShopStyle&quot; /&gt;
+    &lt;ui:Instance template=&quot;WindowTemplate&quot; name=&quot;WindowTemplate&quot; class=&quot;shop-window&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Content&quot; class=&quot;shop-window-content-container&quot;&gt;
+            &lt;ui:VisualElement name=&quot;InventoryContent&quot; class=&quot;shop-item-container&quot; style=&quot;flex-grow: 1;&quot;&gt;
+                &lt;ui:Instance template=&quot;L2TabView&quot; name=&quot;ShopTabView&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                &lt;ui:VisualElement name=&quot;ButtonBar&quot; class=&quot;shop-button-bar&quot;&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;BuyButton&quot; class=&quot;shop-button&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Buy&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                    &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;CancelButton&quot; class=&quot;shop-button&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Cancel&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:Instance&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

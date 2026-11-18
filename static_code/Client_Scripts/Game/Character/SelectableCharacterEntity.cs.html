@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Character/SelectableCharacterEntity.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Character/SelectableCharacterEntity.cs</h1>
+            <pre>using UnityEngine;
+
+public class SelectableCharacterEntity : Entity
+{
+    private NewHumanoidAnimationController _AnimationController { get { return (NewHumanoidAnimationController)_referenceHolder.NewAnimationController; } }
+
+    [SerializeField] private CharacterController _characterController;
+
+    [Header(&quot;Attributes&quot;)]
+    [SerializeField] private Vector3 _destination;
+    [SerializeField] private Vector3 _destEulerAngles;
+    [SerializeField] private CharSelectionInfoPackage _characterInfo;
+    [SerializeField] private bool _walking = false;
+
+    private float _walkSpeed = 1.5f;
+
+    public CharSelectionInfoPackage CharacterInfo { get { return _characterInfo; } set { _characterInfo = value; } }
+
+
+    private void Awake()
+    {
+        if (_characterController == null)
+        {
+            _characterController = GetComponent&lt;CharacterController&gt;();
+            Debug.LogWarning($&quot;[{transform.name}] CharacterController was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+        }
+
+        if (_referenceHolder == null)
+        {
+            _referenceHolder = GetComponent&lt;EntityReferenceHolder&gt;();
+            Debug.LogWarning($&quot;[{transform.name}] EntityReferenceHolder was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+        }
+
+        _destination = transform.position;
+    }
+
+    private void Update()
+    {
+        float ditanceToDestination = Vector3.Distance(_destination, transform.position);
+        if (ditanceToDestination &gt; 0.05f)
+        {
+            if (!_walking)
+            {
+                StartWalking();
+            }
+
+            transform.LookAt(new Vector3(_destination.x, transform.position.y, _destination.z));
+            _characterController.Move(transform.forward.normalized * Time.deltaTime * _walkSpeed);
+        }
+        else if (_walking)
+        {
+            StopWalking();
+        }
+    }
+
+    private void StartWalking()
+    {
+        _walking = true;
+
+        UpdateWaitType(ChangeWaitTypePacket.WaitType.WT_STANDING);
+
+        _AnimationController.Walk();
+    }
+
+    private void StopWalking()
+    {
+        _walking = false;
+
+        if (CharacterInfo.DeleteTimer &gt; 0)
+        {
+            _AnimationController.SitWait();
+            UpdateWaitType(ChangeWaitTypePacket.WaitType.WT_SITTING);
+        }
+        else
+        {
+            _AnimationController.Wait();
+        }
+
+        transform.eulerAngles = _destEulerAngles;
+    }
+
+    public void SetDestination(Logongrp destination)
+    {
+        Vector3 pawnPosition = new Vector3(destination.X, destination.Y, destination.Z);
+        _destination = VectorUtils.ConvertPosToUnity(pawnPosition);
+        _destEulerAngles = new Vector3(0, 360.00f * destination.Yaw / 65536, 0);
+    }
+}
+</pre>
+            
+</body>
+</html>

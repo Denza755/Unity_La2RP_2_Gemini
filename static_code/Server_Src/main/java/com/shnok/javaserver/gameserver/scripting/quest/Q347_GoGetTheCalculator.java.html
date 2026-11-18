@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q347_GoGetTheCalculator.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q347_GoGetTheCalculator.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q347_GoGetTheCalculator extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q347_GoGetTheCalculator&quot;;
+	
+	// NPCs
+	private static final int BRUNON = 30526;
+	private static final int SILVERA = 30527;
+	private static final int SPIRON = 30532;
+	private static final int BALANKI = 30533;
+	
+	// Items
+	private static final int GEMSTONE_BEAST_CRYSTAL = 4286;
+	private static final int CALCULATOR_QUEST = 4285;
+	private static final int CALCULATOR_REAL = 4393;
+	
+	public Q347_GoGetTheCalculator()
+	{
+		super(347, &quot;Go Get the Calculator&quot;);
+		
+		setItemsIds(GEMSTONE_BEAST_CRYSTAL, CALCULATOR_QUEST);
+		
+		addQuestStart(BRUNON);
+		addTalkId(BRUNON, SILVERA, SPIRON, BALANKI);
+		
+		addMyDying(20540);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30526-05.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30533-03.htm&quot;))
+		{
+			if (player.getAdena() &gt;= 100)
+			{
+				htmltext = &quot;30533-02.htm&quot;;
+				takeItems(player, 57, 100);
+				
+				if (st.getCond() == 3)
+					st.setCond(4);
+				else
+					st.setCond(2);
+				
+				playSound(player, SOUND_MIDDLE);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;30532-02.htm&quot;))
+		{
+			if (st.getCond() == 2)
+				st.setCond(4);
+			else
+				st.setCond(3);
+			
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;30526-08.htm&quot;))
+		{
+			takeItems(player, CALCULATOR_QUEST, -1);
+			giveItems(player, CALCULATOR_REAL, 1);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		else if (event.equalsIgnoreCase(&quot;30526-09.htm&quot;))
+		{
+			takeItems(player, CALCULATOR_QUEST, -1);
+			rewardItems(player, 57, 1000);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 12) ? &quot;30526-00.htm&quot; : &quot;30526-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case BRUNON:
+						htmltext = (!player.getInventory().hasItem(CALCULATOR_QUEST)) ? &quot;30526-06.htm&quot; : &quot;30526-07.htm&quot;;
+						break;
+					
+					case SPIRON:
+						htmltext = (cond &lt; 4) ? &quot;30532-01.htm&quot; : &quot;30532-05.htm&quot;;
+						break;
+					
+					case BALANKI:
+						htmltext = (cond &lt; 4) ? &quot;30533-01.htm&quot; : &quot;30533-04.htm&quot;;
+						break;
+					
+					case SILVERA:
+						if (cond &lt; 4)
+							htmltext = &quot;30527-00.htm&quot;;
+						else if (cond == 4)
+						{
+							htmltext = &quot;30527-01.htm&quot;;
+							st.setCond(5);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else if (cond == 5)
+						{
+							if (player.getInventory().getItemCount(GEMSTONE_BEAST_CRYSTAL) &lt; 10)
+								htmltext = &quot;30527-02.htm&quot;;
+							else
+							{
+								htmltext = &quot;30527-03.htm&quot;;
+								st.setCond(6);
+								takeItems(player, GEMSTONE_BEAST_CRYSTAL, -1);
+								giveItems(player, CALCULATOR_QUEST, 1);
+								playSound(player, SOUND_MIDDLE);
+							}
+						}
+						else if (cond == 6)
+							htmltext = &quot;30527-04.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 5);
+		if (st == null)
+			return;
+		
+		dropItems(player, GEMSTONE_BEAST_CRYSTAL, 1, 10, 500000);
+	}
+}</pre>
+            
+</body>
+</html>

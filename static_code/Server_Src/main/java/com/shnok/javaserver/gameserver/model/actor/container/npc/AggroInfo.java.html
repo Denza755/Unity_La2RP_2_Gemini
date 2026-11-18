@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/container/npc/AggroInfo.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/container/npc/AggroInfo.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.container.npc;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+
+/**
+ * This class contains all aggro informations (damage and hate) against a {@link Creature}.&lt;br&gt;
+ * &lt;br&gt;
+ * Values are limited to 999999999.
+ */
+public final class AggroInfo
+{
+	private final Creature _attacker;
+	
+	private double _damage;
+	private double _hate;
+	private long _timestamp;
+	
+	public AggroInfo(Creature attacker)
+	{
+		_attacker = attacker;
+	}
+	
+	@Override
+	public final boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		
+		if (obj instanceof AggroInfo ai)
+			return ai.getAttacker() == _attacker;
+		
+		return false;
+	}
+	
+	@Override
+	public final int hashCode()
+	{
+		return _attacker.getObjectId();
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;AggroInfo [attacker=&quot; + _attacker + &quot;, damage=&quot; + _damage + &quot;, hate=&quot; + _hate + &quot;]&quot;;
+	}
+	
+	public Creature getAttacker()
+	{
+		return _attacker;
+	}
+	
+	public double getDamage()
+	{
+		return _damage;
+	}
+	
+	public void addDamage(double value)
+	{
+		_damage = Math.min(_damage + value, 999999999);
+	}
+	
+	public double getHate()
+	{
+		return _hate;
+	}
+	
+	public void addHate(double value)
+	{
+		_hate = Math.min(_hate + value, 999999999);
+	}
+	
+	public void stopHate()
+	{
+		_hate = 0;
+	}
+	
+	public long getTimestamp()
+	{
+		return _timestamp;
+	}
+	
+	public void setTimestamp(long timestamp)
+	{
+		_timestamp = timestamp;
+	}
+}</pre>
+            
+</body>
+</html>

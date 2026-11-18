@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminPledge.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminPledge.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.pledge.ClanMember;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.GMViewPledgeInfo;
+
+public class AdminPledge implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_pledge&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		final Player targetPlayer = getTargetPlayer(player, true);
+		
+		if (command.startsWith(&quot;admin_pledge&quot;))
+		{
+			final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+			st.nextToken();
+			
+			try
+			{
+				final String action = st.nextToken();
+				
+				if (action.equals(&quot;create&quot;))
+				{
+					try
+					{
+						final String parameter = st.nextToken();
+						final long cet = targetPlayer.getClanCreateExpiryTime();
+						
+						targetPlayer.setClanCreateExpiryTime(0);
+						
+						final Clan clan = ClanTable.getInstance().createClan(targetPlayer, parameter);
+						if (clan != null)
+							player.sendMessage(&quot;Clan &quot; + parameter + &quot; have been created. Clan leader is &quot; + targetPlayer.getName() + &quot;.&quot;);
+						else
+						{
+							targetPlayer.setClanCreateExpiryTime(cet);
+							player.sendMessage(&quot;There was a problem while creating the clan.&quot;);
+						}
+					}
+					catch (Exception e)
+					{
+						player.sendMessage(&quot;Invalid string parameter for //pledge create.&quot;);
+					}
+				}
+				else
+				{
+					final Clan targetClan = targetPlayer.getClan();
+					if (targetClan == null)
+					{
+						player.sendPacket(SystemMessageId.TARGET_MUST_BE_IN_CLAN);
+						sendFile(player, &quot;game_menu.htm&quot;);
+						return;
+					}
+					
+					if (action.equals(&quot;dismiss&quot;))
+					{
+						ClanTable.getInstance().destroyClan(targetClan);
+						player.sendMessage(&quot;The clan is now disbanded.&quot;);
+					}
+					else if (action.equals(&quot;info&quot;))
+						player.sendPacket(new GMViewPledgeInfo(targetClan, targetPlayer));
+					else if (action.equals(&quot;level&quot;))
+					{
+						try
+						{
+							final int level = Integer.parseInt(st.nextToken());
+							if (level &gt;= 0 &amp;&amp; level &lt; 9)
+							{
+								targetClan.changeLevel(level);
+								player.sendMessage(&quot;You have set clan &quot; + targetClan.getName() + &quot; to level &quot; + level);
+							}
+							else
+								player.sendMessage(&quot;This clan level is incorrect. Put a number between 0 and 8.&quot;);
+						}
+						catch (Exception e)
+						{
+							player.sendMessage(&quot;Invalid number parameter for //pledge setlevel.&quot;);
+						}
+					}
+					else if (action.startsWith(&quot;rep&quot;))
+					{
+						try
+						{
+							final int points = Integer.parseInt(st.nextToken());
+							
+							if (targetClan.getLevel() &lt; 5)
+							{
+								player.sendMessage(&quot;Only clans of level 5 or above may receive reputation points.&quot;);
+								sendFile(player, &quot;game_menu.htm&quot;);
+								return;
+							}
+							
+							targetClan.addReputationScore(points);
+							player.sendMessage(&quot;You &quot; + (points &gt; 0 ? &quot;added &quot; : &quot;removed &quot;) + Math.abs(points) + &quot; points &quot; + (points &gt; 0 ? &quot;to &quot; : &quot;from &quot;) + targetClan.getName() + &quot;&#x27;s reputation. Their current score is: &quot; + targetClan.getReputationScore());
+						}
+						catch (Exception e)
+						{
+							player.sendMessage(&quot;Invalid number parameter for //pledge rep.&quot;);
+						}
+					}
+					else if (action.startsWith(&quot;transfer&quot;))
+					{
+						final ClanMember member = targetClan.getClanMember(targetPlayer.getObjectId());
+						if (member == null)
+						{
+							player.sendMessage(targetPlayer.getName() + &quot; can&#x27;t be set as the new Clan leader of &quot; + targetClan.getName() + &quot;.&quot;);
+							return;
+						}
+						
+						if (targetClan.getLeader() == member)
+						{
+							player.sendMessage(targetPlayer.getName() + &quot; is already the Clan leader of &quot; + targetClan.getName() + &quot;.&quot;);
+							return;
+						}
+						
+						targetClan.setNewLeader(member);
+						player.sendMessage(&quot;You set &quot; + member.getName() + &quot; as the new Clan leader of &quot; + targetClan.getName() + &quot;.&quot;);
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Usage: //pledge create|dismiss|info|level|rep|transfer&quot;);
+			}
+		}
+		sendFile(player, &quot;game_menu.htm&quot;);
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

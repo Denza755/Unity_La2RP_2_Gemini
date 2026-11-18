@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Entity/Entity.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Entity/Entity.cs</h1>
+            <pre>using System;
+using UnityEngine;
+
+[System.Serializable]
+public abstract class Entity : MonoBehaviour
+{
+    [SerializeField] protected EntityReferenceHolder _referenceHolder;
+
+    [Header(&quot;Entity&quot;)]
+    [SerializeField] private bool _entityLoaded;
+    [SerializeField] private NetworkIdentity _identity;
+    [SerializeField] private Status _status;
+    [SerializeField] private Stats _stats;
+    [SerializeField] protected Appearance _appearance;
+    [SerializeField] private CharacterRace _race;
+    [SerializeField] private CharacterModelType _raceId;
+    [SerializeField] private bool _running = true;
+    [SerializeField] private bool _sitting;
+
+    public Status Status { get =&gt; _status; set =&gt; _status = value; }
+    public Stats Stats { get =&gt; _stats; set =&gt; _stats = value; }
+    public Appearance Appearance { get =&gt; _appearance; private set { _appearance = value; } }
+    public NetworkIdentity Identity { get =&gt; _identity; set =&gt; _identity = value; }
+
+    public CharacterRace Race { get { return _race; } set { _race = value; } }
+    public CharacterModelType RaceId { get { return _raceId; } set { _raceId = value; } }
+    public bool EntityLoaded { get { return _entityLoaded; } set { _entityLoaded = value; } }
+    public bool Running { get { return _running; } set { _running = value; } }
+    public NewBaseAnimationController AnimationController { get { return _referenceHolder.NewAnimationController; } }
+    public EntityReferenceHolder ReferenceHolder { get { return _referenceHolder; } }
+    public Gear Gear { get { return _referenceHolder.Gear; } }
+    public Combat Combat { get { return _referenceHolder.Combat; } }
+    public bool IsDead { get { return Status.IsDead; } }
+    public bool IsSitting { get { return _sitting; } }
+
+    private void Awake()
+    {
+        if (_referenceHolder == null)
+        {
+            Debug.LogWarning($&quot;[{transform.name}] EntityReferenceHolder was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+            _referenceHolder = GetComponent&lt;EntityReferenceHolder&gt;();
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        LookAtTarget();
+    }
+
+    protected virtual void LookAtTarget() { }
+
+    public virtual void Initialize()
+    {
+        if (_referenceHolder == null)
+        {
+            Debug.LogWarning($&quot;[{transform.name}] EntityReferenceHolder was not assigned, please pre-assign it to avoid unecessary load.&quot;);
+            _referenceHolder = GetComponent&lt;EntityReferenceHolder&gt;();
+        }
+
+        // UpdatePAtkSpeed(_stats.PAtkSpd);
+        // UpdateMAtkSpeed(_stats.MAtkSpd);
+        // UpdateRunSpeed(_stats.RunSpeed);
+        // UpdateWalkSpeed(_stats.WalkSpeed);
+
+        // EquipAllWeapons();
+        // EquipAllArmors();
+    }
+
+    // public void EquipAllWeapons() { Gear.EquipAllWeapons(Appearance); }
+    // public void EquipAllArmors() { Gear.EquipAllArmors(Appearance); }
+
+    public virtual void OnStopMoving()
+    {
+        // Debug.LogWarning(&quot;On stop moving base&quot;);
+        AnimationController.Wait();
+    }
+
+    public virtual void OnStartMoving(bool walking)
+    {
+        UpdateMoveType(!walking);
+    }
+
+    public virtual float UpdatePAtkSpeed(int pAtkSpd)
+    {
+        if (_stats.PAtkSpd == pAtkSpd)
+        {
+            return 0;
+        }
+
+        _stats.PAtkSpd = pAtkSpd;
+
+        float stat = StatsConverter.Instance.ConvertStat(Stat.PHYS_ATTACK_SPEED, pAtkSpd);
+
+        AnimationController.SetPAtkSpd(stat);
+
+        return stat;
+    }
+
+    public virtual float UpdateMAtkSpeed(int mAtkSpd)
+    {
+        if (_stats.MAtkSpd == mAtkSpd)
+        {
+            return 0;
+        }
+
+        _stats.MAtkSpd = mAtkSpd;
+
+        float stat = StatsConverter.Instance.ConvertStat(Stat.MAGIC_ATTACK_SPEED, mAtkSpd);
+        // AnimationController.SetMAtkSpd(stat, 1000);
+
+        return stat;
+    }
+
+    public virtual float UpdateRunSpeed(int speed)
+    {
+        if (speed == _stats.RunSpeed)
+        {
+            return _stats.ScaledRunSpeed;
+        }
+
+        float scaled = StatsConverter.Instance.ConvertStat(Stat.SPEED, speed);
+        _stats.RunSpeed = speed;
+        _stats.ScaledRunSpeed = scaled;
+
+        AnimationController.SetRunSpeed(scaled);
+
+        return scaled;
+    }
+
+    public virtual float UpdateWalkSpeed(int speed)
+    {
+        if (speed == _stats.WalkSpeed)
+        {
+            return _stats.ScaledWalkSpeed;
+        }
+
+        float scaled = StatsConverter.Instance.ConvertStat(Stat.SPEED, speed);
+        _stats.WalkSpeed = speed;
+        _stats.ScaledWalkSpeed = scaled;
+
+        AnimationController.SetWalkSpeed(scaled);
+
+        return scaled;
+    }
+
+    public virtual void UpdateWaitType(ChangeWaitTypePacket.WaitType moveType)
+    {
+        if (moveType == ChangeWaitTypePacket.WaitType.WT_SITTING)
+        {
+            _sitting = true;
+        }
+        else if (moveType == ChangeWaitTypePacket.WaitType.WT_STANDING)
+        {
+            _sitting = false;
+        }
+    }
+
+    public virtual void UpdateMoveType(bool running)
+    {
+        Running = running;
+    }
+
+    public void CastSkill(Skill skill, Entity target, int hitTime, int reuseDelay, PooledEffect[] castEffects)
+    {
+        Combat.CastSkill(skill, target, hitTime, reuseDelay, castEffects);
+    }
+
+    public void LaunchSkill()
+    {
+        Combat.ThrowSkill();
+    }
+
+    public virtual void UpdateAppearance(Appearance newAppearance)
+    {
+        Gear.UpdateAppearance(Appearance, newAppearance);
+        Appearance = newAppearance;
+    }
+}
+</pre>
+            
+</body>
+</html>

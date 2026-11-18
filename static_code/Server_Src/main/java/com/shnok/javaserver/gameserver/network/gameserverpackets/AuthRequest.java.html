@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/gameserverpackets/AuthRequest.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/gameserverpackets/AuthRequest.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.gameserverpackets;
+
+public class AuthRequest extends GameServerBasePacket
+{
+	public AuthRequest(int id, boolean acceptAlternate, byte[] hexid, String host, int port, boolean reserveHost, int maxplayer)
+	{
+		writeC(0x01);
+		writeC(id);
+		writeC(acceptAlternate ? 0x01 : 0x00);
+		writeC(reserveHost ? 0x01 : 0x00);
+		writeS(host);
+		writeH(port);
+		writeD(maxplayer);
+		writeD(hexid.length);
+		writeB(hexid);
+	}
+	
+	@Override
+	public byte[] getContent()
+	{
+		return getBytes();
+	}
+}</pre>
+            
+</body>
+</html>

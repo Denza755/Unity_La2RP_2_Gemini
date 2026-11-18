@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/StatusWindow/StatusWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/StatusWindow/StatusWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;Frame_DF_Ver&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/Frame_DF_Ver.uxml?fileID=9197481963319205126&amp;amp;guid=af155183079e5194eb28f9cf0305ecbb&amp;amp;type=3#Frame_DF_Ver&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Bar&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Bar/L2Bar.uxml?fileID=9197481963319205126&amp;amp;guid=e7da9ee05d38b14459d91eca9fc49926&amp;amp;type=3#L2Bar&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/StatusWindow/StatusWindow.uss?fileID=7433441132597879392&amp;amp;guid=c3937ba47fc202d49921ef21838f11c8&amp;amp;type=3#StatusWindow&quot; /&gt;
+    &lt;ui:GroupBox name=&quot;StatusWindow&quot; class=&quot;status-window&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Frame_DF_Ver&quot; template=&quot;Frame_DF_Ver&quot; class=&quot;drag-area status-window-drag&quot;&gt;
+            &lt;ui:Instance template=&quot;Frame_DF_Ver&quot; name=&quot;Frame_DF_Ver&quot; class=&quot;frame_df_ver drag-area&quot; /&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:GroupBox name=&quot;CenterContainer&quot; class=&quot;status-window-bg&quot;&gt;
+            &lt;ui:VisualElement name=&quot;LevelContainer&quot; class=&quot;status-window-row-1&quot;&gt;
+                &lt;ui:GroupBox name=&quot;LevelContainer&quot; class=&quot;level-container&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 3px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Status/ps_levelback.png?fileID=2800000&amp;amp;guid=a6577a69848b54348847defd32813d5e&amp;amp;type=3#ps_levelback&amp;quot;); flex-basis: auto; flex-grow: 0; flex-shrink: 0; -unity-font-definition: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Font/tahoma.ttf?fileID=12800000&amp;amp;guid=96fb7a735e76e0742bf125e2d4734bf3&amp;amp;type=3#tahoma&amp;quot;); color: rgb(171, 138, 85); -unity-text-align: upper-center; font-size: 11px; flex-direction: column; -unity-slice-right: 10; -unity-slice-bottom: 12; -unity-slice-scale: 0; -unity-text-outline-width: 0; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 1px 1px 0.5px rgba(0, 0, 0, 0.65); letter-spacing: 0;&quot;&gt;
+                    &lt;ui:Label text=&quot;1&quot; name=&quot;LevelText&quot; class=&quot;l2-color-2&quot; style=&quot;font-size: 12px; -unity-text-outline-width: 0.1px; padding-bottom: 2px; -unity-font-style: normal; text-shadow: 0.8px 0.8px 3px rgb(0, 0, 0);&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+                &lt;ui:Label text=&quot;Shnok&quot; name=&quot;PlayerNameText&quot; class=&quot;l2-color-4&quot; style=&quot;align-items: auto; margin-top: 2px; margin-right: 0; margin-bottom: 0; margin-left: 5px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-text-align: upper-center; -unity-font-definition: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Font/tahoma.ttf?fileID=12800000&amp;amp;guid=96fb7a735e76e0742bf125e2d4734bf3&amp;amp;type=3#tahoma&amp;quot;); -unity-text-outline-width: 0.3px; text-shadow: 0.5px 0.5px 0 rgb(0, 0, 0); letter-spacing: 3px; font-size: 11px; width: auto; scale: 1 1;&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:GroupBox name=&quot;BarGroup&quot; class=&quot;status-window-row-2&quot;&gt;
+                &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;HPBar&quot; class=&quot;l2-bar status&quot; /&gt;
+                &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;MPBar&quot; class=&quot;l2-bar mp status&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;StatusLabel&quot; text=&quot;MP&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;EXPBar&quot; class=&quot;l2-bar exp&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;Text&quot; text=&quot;00.00%&quot; /&gt;
+                &lt;/ui:Instance&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:VisualElement name=&quot;SizeControl&quot; class=&quot;status-window-size-control&quot;&gt;
+            &lt;ui:VisualElement name=&quot;SizeControl&quot; class=&quot;status-window-resize-handle resize-hor&quot; /&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:GroupBox&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Login/LicenseWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Login/LicenseWindow.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class LicenseWindow : L2Window
+{
+    private static LicenseWindow _instance;
+    public static LicenseWindow Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    private void Update()
+    {
+        if (!_isWindowHidden)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                AudioManager.Instance.PlayUISound(&quot;click_01&quot;);
+                DisagreeButtonPressed();
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
+            {
+                AudioManager.Instance.PlayUISound(&quot;click_01&quot;);
+                AgreeButtonPressed();
+            }
+        }
+    }
+
+    protected override void LoadAssets()
+    {
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Login/LicenseWindow/LicenseWindow&quot;);
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        VisualElement agreeBtnContainer = GetElementById(&quot;AgreeButton&quot;);
+        Button agreeButton = (Button)agreeBtnContainer.Q&lt;Button&gt;(&quot;L2Button&quot;);
+        agreeButton.Query&lt;VisualElement&gt;().ForEach(child =&gt; child.pickingMode = PickingMode.Ignore);
+        agreeButton.pickingMode = PickingMode.Position;
+        agreeButton.AddManipulator(new ButtonClickSoundManipulator(agreeButton));
+        agreeButton.clicked += AgreeButtonPressed;
+        agreeButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; AgreeButtonPressed());
+        agreeBtnContainer.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; AgreeButtonPressed());
+
+        VisualElement disagreeBtnContainer = GetElementById(&quot;DisagreeButton&quot;);
+        Button disagreeButton = (Button)disagreeBtnContainer.Q&lt;Button&gt;(&quot;L2Button&quot;);
+        disagreeButton.Query&lt;VisualElement&gt;().ForEach(child =&gt; child.pickingMode = PickingMode.Ignore);
+        disagreeButton.pickingMode = PickingMode.Position;
+        disagreeButton.AddManipulator(new ButtonClickSoundManipulator(disagreeButton));
+        disagreeButton.clicked += DisagreeButtonPressed;
+        disagreeButton.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; DisagreeButtonPressed());
+        disagreeBtnContainer.RegisterCallback&lt;ClickEvent&gt;(evt =&gt; DisagreeButtonPressed());
+
+        var highBtn = (RepeatButton)GetElementById(&quot;unity-high-button&quot;);
+        var lowBtn = (RepeatButton)GetElementById(&quot;unity-low-button&quot;);
+        highBtn.AddManipulator(new ButtonClickSoundManipulator(highBtn));
+        lowBtn.AddManipulator(new ButtonClickSoundManipulator(lowBtn));
+
+        L2LoginUI.Instance.WindowLoadComplete();
+    }
+
+    private bool _agreePending = false;
+
+    private void AgreeButtonPressed()
+    {
+        if (_agreePending)
+        {
+            return;
+        }
+
+        if (LoginClient.Instance == null || !LoginClient.Instance.IsConnected || LoginClient.Instance.ClientPacketHandler == null)
+        {
+            Debug.LogWarning(&quot;Cannot request server list: LoginClient is not connected.&quot;);
+            return;
+        }
+
+        _agreePending = true;
+        LoginClient.Instance.ClientPacketHandler.SendRequestServerList();
+    }
+
+    private void DisagreeButtonPressed()
+    {
+        _agreePending = false;
+        LoginClient.Instance.Disconnect();
+    }
+
+    public override void ShowWindow()
+    {
+        _agreePending = false;
+        base.ShowWindow();
+
+        if (GameManager.Instance.AutoLogin)
+        {
+            StartCoroutine(AutoLogin());
+        }
+    }
+
+    private IEnumerator AutoLogin()
+    {
+        yield return new WaitForSeconds(1f);
+        AgreeButtonPressed();
+
+    }
+}
+</pre>
+            
+</body>
+</html>

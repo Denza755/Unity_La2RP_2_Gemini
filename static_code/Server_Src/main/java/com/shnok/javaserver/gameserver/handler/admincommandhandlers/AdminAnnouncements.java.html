@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminAnnouncements.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminAnnouncements.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import com.shnok.javaserver.gameserver.data.xml.AdminData;
+import com.shnok.javaserver.gameserver.data.xml.AnnouncementData;
+import com.shnok.javaserver.gameserver.enums.SayType;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.CreatureSay;
+
+public class AdminAnnouncements implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_announce&quot;,
+		&quot;admin_ann&quot;,
+		&quot;admin_say&quot;,
+		&quot;admin_gmchat&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		if (command.startsWith(&quot;admin_announce&quot;))
+		{
+			try
+			{
+				final String[] tokens = command.split(&quot; &quot;, 3);
+				switch (tokens[1])
+				{
+					case &quot;list&quot;:
+						AnnouncementData.getInstance().listAnnouncements(player);
+						break;
+					
+					case &quot;all&quot;, &quot;all_auto&quot;:
+						final boolean isAuto = tokens[1].equalsIgnoreCase(&quot;all_auto&quot;);
+						World.getInstance().getPlayers().forEach(p -&gt; AnnouncementData.getInstance().showAnnouncements(p, isAuto));
+						
+						AnnouncementData.getInstance().listAnnouncements(player);
+						break;
+					
+					case &quot;add&quot;:
+						String[] split = tokens[2].split(&quot; &quot;, 2); // boolean string
+						boolean crit = Boolean.parseBoolean(split[0]);
+						
+						if (!AnnouncementData.getInstance().addAnnouncement(split[1], crit, false, -1, -1, -1))
+							player.sendMessage(&quot;Invalid //announce message content ; can&#x27;t be null or empty.&quot;);
+						
+						AnnouncementData.getInstance().listAnnouncements(player);
+						break;
+					
+					case &quot;add_auto&quot;:
+						split = tokens[2].split(&quot; &quot;, 6); // boolean boolean int int int string
+						crit = Boolean.parseBoolean(split[0]);
+						final boolean auto = Boolean.parseBoolean(split[1]);
+						final int idelay = Integer.parseInt(split[2]);
+						final int delay = Integer.parseInt(split[3]);
+						final int limit = Integer.parseInt(split[4]);
+						final String msg = split[5];
+						
+						if (!AnnouncementData.getInstance().addAnnouncement(msg, crit, auto, idelay, delay, limit))
+							player.sendMessage(&quot;Invalid //announce message content ; can&#x27;t be null or empty.&quot;);
+						
+						AnnouncementData.getInstance().listAnnouncements(player);
+						break;
+					
+					case &quot;del&quot;:
+						AnnouncementData.getInstance().delAnnouncement(Integer.parseInt(tokens[2]));
+						AnnouncementData.getInstance().listAnnouncements(player);
+						break;
+					
+					default:
+						player.sendMessage(&quot;Possible //announce parameters : &lt;list|all|add|add_auto|del&gt;&quot;);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				sendFile(player, &quot;announce.htm&quot;);
+			}
+		}
+		else if (command.startsWith(&quot;admin_ann&quot;) || command.startsWith(&quot;admin_say&quot;))
+			AnnouncementData.getInstance().handleAnnounce(command, 10, command.startsWith(&quot;admin_say&quot;));
+		else if (command.startsWith(&quot;admin_gmchat&quot;))
+		{
+			try
+			{
+				AdminData.getInstance().broadcastToGMs(new CreatureSay(player, SayType.ALLIANCE, command.substring(13)));
+			}
+			catch (Exception e)
+			{
+				player.sendMessage(&quot;Invalid //gmchat message content ; can&#x27;t be null or empty.&quot;);
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

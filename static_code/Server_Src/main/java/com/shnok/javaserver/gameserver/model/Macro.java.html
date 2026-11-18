@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/Macro.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/Macro.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model;
+
+import java.util.Arrays;
+
+import com.shnok.javaserver.gameserver.model.records.MacroCmd;
+
+/**
+ * Macros are used to automate some processes, to perform a series of actions or to use several skills at once.
+ */
+public class Macro
+{
+	public static final int CMD_TYPE_SKILL = 1;
+	public static final int CMD_TYPE_ACTION = 3;
+	public static final int CMD_TYPE_SHORTCUT = 4;
+	
+	public int id;
+	public final int icon;
+	public final String name;
+	public final String descr;
+	public final String acronym;
+	public final MacroCmd[] commands;
+	
+	public Macro(int pId, int pIcon, String pName, String pDescr, String pAcronym, MacroCmd[] pCommands)
+	{
+		id = pId;
+		icon = pIcon;
+		name = pName;
+		descr = pDescr;
+		acronym = pAcronym;
+		commands = pCommands;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;Macro [id=&quot; + id + &quot;, icon=&quot; + icon + &quot;, name=&quot; + name + &quot;, descr=&quot; + descr + &quot;, acronym=&quot; + acronym + &quot;, commands=&quot; + Arrays.toString(commands) + &quot;]&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

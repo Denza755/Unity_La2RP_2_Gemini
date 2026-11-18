@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestBuyProcure.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestBuyProcure.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public class RequestBuyProcure extends L2GameClientPacket
+{
+	private static final int BATCH_LENGTH = 8;
+	
+	private int _manorId;
+	private List&lt;IntIntHolder&gt; _items;
+	
+	@Override
+	protected void readImpl()
+	{
+		_manorId = readD();
+		
+		final int count = readD();
+		if (count &lt;= 0 || count &gt; Config.MAX_ITEM_IN_PACKET || count * BATCH_LENGTH != _buf.remaining() - 4)
+			return;
+		
+		_items = new ArrayList&lt;&gt;(count);
+		for (int i = 0; i &lt; count; i++)
+		{
+			readD(); // service
+			final int itemId = readD();
+			final int cnt = readD();
+			
+			if (itemId &lt; 1 || cnt &lt; 1)
+			{
+				_items = null;
+				return;
+			}
+			
+			_items.add(new IntIntHolder(itemId, cnt));
+		}
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		LOGGER.warn(&quot;RequestBuyProcure: normally unused, but found {} infos for manorId {}.&quot;, _items.size(), _manorId);
+	}
+}
+</pre>
+            
+</body>
+</html>

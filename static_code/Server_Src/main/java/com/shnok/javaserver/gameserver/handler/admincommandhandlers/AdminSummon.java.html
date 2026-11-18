@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminSummon.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/admincommandhandlers/AdminSummon.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.admincommandhandlers;
+
+import java.util.StringTokenizer;
+
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.Summon;
+import com.shnok.javaserver.gameserver.model.actor.instance.Pet;
+import com.shnok.javaserver.gameserver.model.records.PetDataEntry;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.GMViewItemList;
+
+public class AdminSummon implements IAdminCommandHandler
+{
+	private static final String[] ADMIN_COMMANDS =
+	{
+		&quot;admin_ride&quot;,
+		&quot;admin_unride&quot;,
+		&quot;admin_unsummon&quot;,
+		&quot;admin_summon&quot;
+	};
+	
+	@Override
+	public void useAdminCommand(String command, Player player)
+	{
+		if (command.startsWith(&quot;admin_ride&quot;))
+		{
+			if (player.isCursedWeaponEquipped())
+			{
+				player.sendMessage(&quot;You can&#x27;t use //ride owning a Cursed Weapon.&quot;);
+				return;
+			}
+			
+			final StringTokenizer st = new StringTokenizer(command, &quot; &quot;);
+			st.nextToken();
+			
+			if (!st.hasMoreTokens())
+			{
+				player.sendMessage(&quot;You must enter a parameter for that command.&quot;);
+				return;
+			}
+			
+			final String mount = st.nextToken();
+			
+			int npcId;
+			if (mount.equals(&quot;wyvern&quot;) || mount.equals(&quot;2&quot;))
+				npcId = 12621;
+			else if (mount.equals(&quot;strider&quot;) || mount.equals(&quot;1&quot;))
+				npcId = 12526;
+			else
+			{
+				player.sendMessage(&quot;Parameter &#x27;&quot; + mount + &quot;&#x27; isn&#x27;t recognized for that command.&quot;);
+				return;
+			}
+			
+			if (player.isMounted())
+				player.dismount();
+			else if (player.getSummon() != null)
+				player.getSummon().unSummon(player);
+			
+			player.mount(npcId, 0);
+		}
+		else if (command.equals(&quot;admin_unride&quot;))
+		{
+			player.dismount();
+		}
+		else
+		{
+			final Player targetPlayer = getTarget(Playable.class, player, true).getActingPlayer();
+			if (targetPlayer == null)
+			{
+				player.sendPacket(SystemMessageId.INVALID_TARGET);
+				return;
+			}
+			
+			final Summon summon = targetPlayer.getSummon();
+			
+			if (command.startsWith(&quot;admin_unsummon&quot;))
+			{
+				if (summon == null)
+				{
+					player.sendPacket(SystemMessageId.INVALID_TARGET);
+					return;
+				}
+				
+				summon.unSummon(targetPlayer);
+			}
+			else if (command.startsWith(&quot;admin_summon&quot;))
+			{
+				if (!(summon instanceof Pet pet))
+				{
+					player.sendPacket(SystemMessageId.INVALID_TARGET);
+					return;
+				}
+				
+				final StringTokenizer st = new StringTokenizer(command);
+				st.nextToken();
+				
+				try
+				{
+					switch (st.nextToken())
+					{
+						case &quot;food&quot;:
+							pet.setCurrentFed(pet.getPetData().maxMeal());
+							break;
+						
+						case &quot;inventory&quot;:
+							player.sendPacket(new GMViewItemList(pet));
+							break;
+						
+						case &quot;level&quot;:
+							final int level = Integer.parseInt(st.nextToken());
+							
+							final PetDataEntry pde = pet.getTemplate().getPetDataEntry(level);
+							if (pde == null)
+							{
+								player.sendMessage(&quot;Invalid level for //summon level.&quot;);
+								return;
+							}
+							
+							final long oldExp = pet.getStatus().getExp();
+							final long newExp = pde.maxExp();
+							
+							if (oldExp &gt; newExp)
+								pet.getStatus().removeExp(oldExp - newExp);
+							else if (oldExp &lt; newExp)
+								pet.getStatus().addExp(newExp - oldExp);
+							break;
+						
+						default:
+							player.sendMessage(&quot;Usage: //summon food|inventory|level&gt;&quot;);
+							break;
+					}
+				}
+				catch (Exception e)
+				{
+					player.sendMessage(&quot;Usage: //summon food|inventory|level&gt;&quot;);
+				}
+			}
+		}
+	}
+	
+	@Override
+	public String[] getAdminCommandList()
+	{
+		return ADMIN_COMMANDS;
+	}
+}</pre>
+            
+</body>
+</html>

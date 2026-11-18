@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/AbnormalStatusUpdate.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/unused/AbnormalStatusUpdate.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
+import com.shnok.javaserver.gameserver.model.records.EffectHolder;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class AbnormalStatusUpdate extends L2GameServerPacket
+{
+	private final List&lt;EffectHolder&gt; _effects = new ArrayList&lt;&gt;();
+	private final Set&lt;EffectHolder&gt; _toggles = new TreeSet&lt;&gt;(Comparator.comparing(EffectHolder::id));
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0x7f);
+		
+		writeH(_effects.size() + _toggles.size());
+		
+		for (EffectHolder effect : _effects)
+			writeEffect(effect, effect.duration() == -1);
+		
+		for (EffectHolder effect : _toggles)
+			writeEffect(effect, true);
+	}
+	
+	public void addEffect(L2Skill skill, int duration)
+	{
+		final EffectHolder eh = new EffectHolder(skill, duration);
+		
+		if (skill.isToggle())
+			_toggles.add(eh);
+		else
+			_effects.add(eh);
+	}
+}</pre>
+            
+</body>
+</html>

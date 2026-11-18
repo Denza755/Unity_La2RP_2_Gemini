@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Parse/ViewerEmitterData.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Parse/ViewerEmitterData.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public enum ViewerEmitterKind
+{
+    Sprite,
+    Mesh,
+    Beam,
+    Spark,
+    Trail,
+    Unknown
+}
+
+[Serializable]
+public struct ViewerRange
+{
+    public float Min;
+    public float Max;
+
+    public static ViewerRange One =&gt; new ViewerRange { Min = 1f, Max = 1f };
+    public static ViewerRange Zero =&gt; new ViewerRange { Min = 0f, Max = 0f };
+
+    public ViewerRange(float min, float max)
+    {
+        Min = min;
+        Max = max;
+    }
+
+    public Vector2 ToVector2() =&gt; new Vector2(Min, Max);
+}
+
+[Serializable]
+public struct ViewerColorKey
+{
+    public float RelativeTime;
+    public Color Color;
+}
+
+[Serializable]
+public struct ViewerSizeKey
+{
+    public float RelativeTime;
+    public float RelativeSize;
+}
+
+[Serializable]
+public class ViewerEmitterData
+{
+    public ViewerEmitterKind Kind;
+    public string ObjectName;
+    public string DisplayName;
+    public string StaticMesh;
+    public string Texture;
+    public int MaxParticles = 1;
+    public float InitialParticlesPerSecond = 0f;
+    public bool AutomaticInitialSpawning = true;
+    public bool RespawnDeadParticles = true;
+    public ViewerRange Lifetime = new ViewerRange(1f, 1f);
+    public ViewerRange InitialDelay;
+    public ViewerRange StartSizeX = ViewerRange.One;
+    public ViewerRange StartSizeY = ViewerRange.One;
+    public ViewerRange StartSizeZ = ViewerRange.One;
+    public bool UniformSize;
+    public bool UseSizeScale;
+    public bool UseRegularSizeScale = true;
+    public float SizeScaleRepeats;
+    public List&lt;ViewerSizeKey&gt; SizeScale = new List&lt;ViewerSizeKey&gt;();
+    public ViewerRange StartLocationX;
+    public ViewerRange StartLocationY;
+    public ViewerRange StartLocationZ;
+    public Vector3 StartLocationOffset;
+    public string StartLocationShape = &quot;&quot;;
+    public ViewerRange PolarTheta;
+    public ViewerRange PolarPhi;
+    public ViewerRange PolarRadius;
+    public ViewerRange StartVelocityX;
+    public ViewerRange StartVelocityY;
+    public ViewerRange StartVelocityZ;
+    public Vector3 Acceleration;
+    public string GetVelocityDirectionFrom = &quot;&quot;;
+    /// &lt;summary&gt;UC UseDirectionAs (e.g. PTDU_Normal, PTDU_Up). Empty = face camera.&lt;/summary&gt;
+    public string UseDirectionAs = &quot;&quot;;
+    public bool SpinParticles;
+    public ViewerRange StartSpinX;
+    public ViewerRange StartSpinY;
+    public ViewerRange StartSpinZ;
+    public ViewerRange SpinsPerSecondX;
+    public ViewerRange SpinsPerSecondY;
+    public ViewerRange SpinsPerSecondZ;
+    public Vector3 SpinCCWorCW = Vector3.one;
+    public string UseRotationFrom = &quot;&quot;;
+    public bool FadeIn;
+    public bool FadeOut;
+    public float FadeInEndTime;
+    public float FadeOutStartTime;
+    public float Opacity = 1f;
+    public Vector3 ColorMulMin = Vector3.one;
+    public Vector3 ColorMulMax = Vector3.one;
+    public bool UseColorScale;
+    public float ColorScaleRepeats;
+    public List&lt;ViewerColorKey&gt; ColorScale = new List&lt;ViewerColorKey&gt;();
+    public string DrawStyle = &quot;PTDS_Translucent&quot;;
+    public bool RenderTwoSided = true;
+    public int TextureUSubdivisions = 1;
+    public int TextureVSubdivisions = 1;
+    public int SubdivisionStart;
+    public int SubdivisionEnd;
+    public bool UseRandomSubdivision;
+    public bool BlendBetweenSubdivisions;
+    public float SpawnDeltaTime = 0.012f;
+
+    // BeamEmitter (MVP: PTEP_Offset + LF/HF strip, no noise/branching yet).
+    public string DetermineEndPointBy = &quot;PTEP_Offset&quot;;
+    public int LowFrequencyPoints = 3;
+    public int HighFrequencyPoints = 10;
+    public float BeamTextureUScale = 1f;
+    public float BeamTextureVScale = 1f;
+    public ViewerRange BeamEndOffsetX;
+    public ViewerRange BeamEndOffsetY;
+    public ViewerRange BeamEndOffsetZ;
+    public ViewerRange BeamDistanceRange;
+
+    public bool IsPolar =&gt;
+        StartLocationShape.IndexOf(&quot;Polar&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0;
+
+    public bool IsBeamOffsetEnd =&gt;
+        DetermineEndPointBy.IndexOf(&quot;Offset&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0 &amp;&amp;
+        DetermineEndPointBy.IndexOf(&quot;Absolute&quot;, StringComparison.OrdinalIgnoreCase) &lt; 0 &amp;&amp;
+        DetermineEndPointBy.IndexOf(&quot;Trace&quot;, StringComparison.OrdinalIgnoreCase) &lt; 0;
+
+    public bool IsBurst =&gt;
+        !AutomaticInitialSpawning || InitialParticlesPerSecond &gt;= 1000f;
+
+    public float MaxLifetime =&gt; Mathf.Max(Lifetime.Max, Lifetime.Min, 0.05f);
+}
+
+[Serializable]
+public class ViewerEffectData
+{
+    public string ClassName;
+    public string SourcePath;
+    public float DrawScale = 1f;
+    public List&lt;ViewerEmitterData&gt; Emitters = new List&lt;ViewerEmitterData&gt;();
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/TO_IMPLEMENT/Quest/Button/ButtonQuest.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/TO_IMPLEMENT/Quest/Button/ButtonQuest.cs</h1>
+            <pre>#if FALSE
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class ButtonQuest
+{
+    private QuestWindow _quest;
+    public ButtonQuest(QuestWindow _quest)
+    {
+        this._quest = _quest;
+    }
+
+
+    public void RegisterButtonCloseWindow(VisualElement rootWindows, string buttonId)
+    {
+        var btn = rootWindows.Q&lt;Button&gt;(className: buttonId);
+        if (btn == null) { Debug.LogError(buttonId + &quot; can&#x27;t be found.&quot;); return; }
+        btn.RegisterCallback&lt;MouseUpEvent&gt;(evt =&gt; _quest.HideWindow(), TrickleDown.TrickleDown);
+    }
+
+    public void RegisterClickWindow(VisualElement contentId, VisualElement headerId)
+    {
+
+        if (contentId == null | headerId == null)
+        {
+            Debug.LogError(contentId + &quot; can&#x27;t be found.&quot;);
+            return;
+        }
+
+        contentId.RegisterCallback&lt;MouseDownEvent&gt;(evt =&gt;
+        {
+            Debug.Log(&quot;Evennt cliiikkk 1&quot;);
+            _quest.BringToFront();
+
+        }, TrickleDown.TrickleDown);
+
+        headerId.RegisterCallback&lt;MouseDownEvent&gt;(evt =&gt;
+        {
+            Debug.Log(&quot;Evennt cliiikkk 2&quot;);
+            _quest.BringToFront();
+        }, TrickleDown.TrickleDown);
+    }
+}
+#endif
+</pre>
+            
+</body>
+</html>

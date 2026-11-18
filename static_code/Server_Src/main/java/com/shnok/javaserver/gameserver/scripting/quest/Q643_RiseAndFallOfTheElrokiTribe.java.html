@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q643_RiseAndFallOfTheElrokiTribe.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q643_RiseAndFallOfTheElrokiTribe.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q643_RiseAndFallOfTheElrokiTribe extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q643_RiseAndFallOfTheElrokiTribe&quot;;
+	
+	// NPCs
+	private static final int SINGSING = 32106;
+	private static final int KARAKAWEI = 32117;
+	
+	// Items
+	private static final int BONES = 8776;
+	
+	public Q643_RiseAndFallOfTheElrokiTribe()
+	{
+		super(643, &quot;Rise and Fall of the Elroki Tribe&quot;);
+		
+		setItemsIds(BONES);
+		
+		addQuestStart(SINGSING);
+		addTalkId(SINGSING, KARAKAWEI);
+		
+		addMyDying(22208, 22209, 22210, 22211, 22212, 22213, 22221, 22222, 22226, 22227);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;32106-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;32106-07.htm&quot;))
+		{
+			final int count = player.getInventory().getItemCount(BONES);
+			
+			takeItems(player, BONES, count);
+			rewardItems(player, 57, count * 1374);
+		}
+		else if (event.equalsIgnoreCase(&quot;32106-09.htm&quot;))
+		{
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		else if (event.equalsIgnoreCase(&quot;32117-03.htm&quot;))
+		{
+			final int count = player.getInventory().getItemCount(BONES);
+			if (count &gt;= 300)
+			{
+				takeItems(player, BONES, 300);
+				rewardItems(player, Rnd.get(8712, 8722), 5);
+			}
+			else
+				htmltext = &quot;32117-04.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 75) ? &quot;32106-00.htm&quot; : &quot;32106-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				switch (npc.getNpcId())
+				{
+					case SINGSING:
+						htmltext = (player.getInventory().hasItem(BONES)) ? &quot;32106-06.htm&quot; : &quot;32106-05.htm&quot;;
+						break;
+					
+					case KARAKAWEI:
+						htmltext = &quot;32117-01.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(st.getPlayer(), BONES, 1, 0, 750000);
+	}
+}</pre>
+            
+</body>
+</html>

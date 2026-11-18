@@ -240,9 +240,15 @@ public class World : MonoBehaviour
                 NetworkEntityReferenceHolder holder = e.ReferenceHolder as NetworkEntityReferenceHolder;
                 if (holder != null)
                 {
-                    holder.NetworkTransformReceive?.SetFinalRotation(rotation);
-                    holder.NetworkTransformReceive?.SetNewPosition(position);
-                    holder.NetworkCharacterControllerReceive?.ResetDestination();
+                    if (holder.NetworkCharacterControllerReceive != null)
+                    {
+                        holder.NetworkCharacterControllerReceive.OnServerStopMove(position, rotation);
+                    }
+                    else
+                    {
+                        holder.NetworkTransformReceive?.SetFinalRotation(rotation);
+                        holder.NetworkTransformReceive?.SetNewPosition(position);
+                    }
                 }
             }
         });

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Common/Decompile_Common/Essence/L2FxHE_LocationShape.hlsl</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Common/Decompile_Common/Essence/L2FxHE_LocationShape.hlsl</h1>
+            <pre>#ifndef L2_FX_HE_LOCATION_SHAPE_INCLUDED
+#define L2_FX_HE_LOCATION_SHAPE_INCLUDED
+
+// High Elf StartLocationShape — Engine_essens_high_elves.dll
+// UParticleEmitter::SpawnParticle loc_208EA217, emitter+0x17C:
+//   0 = box GetRand(+0x160)
+//   1 = sphere radius GetRand(+0x180)
+//   2 = polar GetRand(+0x188)  ← live PTLS_Polar
+//   3 = box AND sphere AND polar (do not treat as polar-only)
+// Polar Cartesian stays in ../L2FxSpritePolar.hlsl (HE uses GMath sin table,
+// same mapping). PolarRange alone does not spawn polar.
+//
+// 1147 fire_dust_out: shape=2, Polar Z=15. SphereRadiusRange is unused.
+
+#include &quot;../L2FxSpritePolar.hlsl&quot;
+#include &quot;../L2FxStartLocationRange.hlsl&quot;
+
+static const float L2FX_HE_SHAPE_BOX = 0.0;
+static const float L2FX_HE_SHAPE_SPHERE = 1.0;
+static const float L2FX_HE_SHAPE_POLAR = 2.0;
+
+float L2FxHE_LocationShape_IsPolar(float shape)
+{
+    return (shape &gt; 1.5 &amp;&amp; shape &lt; 2.5) ? 1.0 : 0.0;
+}
+
+float L2FxHE_LocationShape_IsBox(float shape)
+{
+    return (shape &gt; -0.5 &amp;&amp; shape &lt; 0.5) ? 1.0 : 0.0;
+}
+
+// Offset + Polar GetRand. Use when IsPolar(shape).
+float3 L2FxHE_LocationShape_PolarStartUe(
+    float3 startLocationOffsetUe,
+    float2 thetaDegreesMinMax,
+    float2 phiDegreesMinMax,
+    float2 radiusUuMinMax,
+    inout uint appRandState)
+{
+    return L2Fx_SpritePolar_StartLocationUe(
+        startLocationOffsetUe,
+        thetaDegreesMinMax,
+        phiDegreesMinMax,
+        radiusUuMinMax,
+        appRandState);
+}
+
+// Offset + StartLocationRange box. Use when IsBox(shape).
+float3 L2FxHE_LocationShape_BoxStartUe(
+    float3 startLocationOffsetUe,
+    float2 rangeXUu,
+    float2 rangeYUu,
+    float2 rangeZUu,
+    inout uint appRandState)
+{
+    return L2Fx_StartLocationRange_ApplyUe(
+        startLocationOffsetUe,
+        rangeXUu,
+        rangeYUu,
+        rangeZUu,
+        appRandState);
+}
+
+#endif
+</pre>
+            
+</body>
+</html>

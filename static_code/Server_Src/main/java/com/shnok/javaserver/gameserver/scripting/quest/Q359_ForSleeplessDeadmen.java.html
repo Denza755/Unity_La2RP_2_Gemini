@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q359_ForSleeplessDeadmen.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q359_ForSleeplessDeadmen.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q359_ForSleeplessDeadmen extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q359_ForSleeplessDeadmen&quot;;
+	
+	// Item
+	private static final int REMAINS = 5869;
+	
+	// Monsters
+	private static final int DOOM_SERVANT = 21006;
+	private static final int DOOM_GUARD = 21007;
+	private static final int DOOM_ARCHER = 21008;
+	
+	// Reward
+	private static final int[] REWARDS =
+	{
+		6341,
+		6342,
+		6343,
+		6344,
+		6345,
+		6346,
+		5494,
+		5495
+	};
+	
+	// Drop chances
+	private static final Map&lt;Integer, Integer&gt; CHANCES = new HashMap&lt;&gt;();
+	static
+	{
+		CHANCES.put(DOOM_SERVANT, 320000);
+		CHANCES.put(DOOM_GUARD, 340000);
+		CHANCES.put(DOOM_ARCHER, 420000);
+	}
+	
+	public Q359_ForSleeplessDeadmen()
+	{
+		super(359, &quot;For Sleepless Deadmen&quot;);
+		
+		setItemsIds(REMAINS);
+		
+		addQuestStart(30857); // Orven
+		addTalkId(30857);
+		
+		addMyDying(DOOM_SERVANT, DOOM_GUARD, DOOM_ARCHER);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30857-06.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30857-10.htm&quot;))
+		{
+			giveItems(player, Rnd.get(REWARDS), 4);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 60) ? &quot;30857-01.htm&quot; : &quot;30857-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				if (cond == 1)
+					htmltext = &quot;30857-07.htm&quot;;
+				else if (cond == 2)
+				{
+					htmltext = &quot;30857-08.htm&quot;;
+					st.setCond(3);
+					playSound(player, SOUND_MIDDLE);
+					takeItems(player, REMAINS, -1);
+				}
+				else if (cond == 3)
+					htmltext = &quot;30857-09.htm&quot;;
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (dropItems(player, REMAINS, 1, 60, CHANCES.get(npc.getNpcId())))
+			st.setCond(2);
+	}
+}</pre>
+            
+</body>
+</html>

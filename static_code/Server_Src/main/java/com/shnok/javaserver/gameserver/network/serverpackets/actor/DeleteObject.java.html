@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/actor/DeleteObject.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/serverpackets/actor/DeleteObject.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.serverpackets.actor;
+
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+
+public class DeleteObject extends L2GameServerPacket
+{
+	private final int _objectId;
+	private final boolean _isSeated;
+	
+	public DeleteObject(WorldObject obj)
+	{
+		_objectId = obj.getObjectId();
+		_isSeated = false;
+	}
+	
+	public DeleteObject(WorldObject obj, boolean sit)
+	{
+		_objectId = obj.getObjectId();
+		_isSeated = sit;
+	}
+	
+	@Override
+	protected final void writeImpl()
+	{
+		writeC(0x12);
+		writeD(_objectId);
+		writeD(_isSeated ? 0x00 : 0x01); // 0 - stand up and delete, 1 - delete
+	}
+}</pre>
+            
+</body>
+</html>

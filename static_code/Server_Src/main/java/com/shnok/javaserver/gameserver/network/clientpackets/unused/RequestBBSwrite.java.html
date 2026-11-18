@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestBBSwrite.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestBBSwrite.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import com.shnok.javaserver.gameserver.communitybbs.CommunityBoard;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public class RequestBBSwrite extends L2GameClientPacket
+{
+	private String _url;
+	private String _arg1;
+	private String _arg2;
+	private String _arg3;
+	private String _arg4;
+	private String _arg5;
+	
+	@Override
+	protected void readImpl()
+	{
+		_url = readS();
+		_arg1 = readS();
+		_arg2 = readS();
+		_arg3 = readS();
+		_arg4 = readS();
+		_arg5 = readS();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		CommunityBoard.getInstance().handleWriteCommands(getClient(), _url, _arg1, _arg2, _arg3, _arg4, _arg5);
+	}
+}</pre>
+            
+</body>
+</html>

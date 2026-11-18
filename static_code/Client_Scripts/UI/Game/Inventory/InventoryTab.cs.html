@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Inventory/InventoryTab.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Inventory/InventoryTab.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class InventoryTab : L2Tab
+{
+    private int _itemCount = 0;
+
+    public List&lt;ItemType1&gt; _filteredCategories;
+    private L2SlotContainer _slotContainer;
+    [SerializeField] private bool _mainTab;
+
+    public override void Initialize(L2TabView tabView, VisualElement tabContainer, VisualElement tabHeader)
+    {
+        base.Initialize(tabView, tabContainer, tabHeader);
+
+        // _contentContainer = tabContainer.Q&lt;VisualElement&gt;(&quot;Content&quot;);
+        _slotContainer = new L2SlotContainer();
+        _slotContainer.Initialize(tabContainer, 9, PlayerInventory.Instance.InventorySize);
+    }
+
+    public void UpdateItemList(List&lt;ItemInstance&gt; items)
+    {
+        L2Slot.SlotType slotType = _mainTab ? slotType = L2Slot.SlotType.Inventory : L2Slot.SlotType.InventoryBis;
+        _slotContainer.UpdateSlots(PlayerInventory.Instance.InventorySize, InventoryWindow.Instance.Expanded ? 12 : 9, slotType);
+
+        // _slotContainer.AssignItemsToSlots(items);
+
+        // Assign items to slots
+        _itemCount = 0;
+        items.ForEach(item =&gt;
+        {
+            if (item.Location == ItemLocation.Inventory)
+            {
+                if (_filteredCategories == null || _filteredCategories.Count == 0)
+                {
+                    if (item.Slot &gt;= 0 &amp;&amp; item.Slot &lt; _slotContainer.Slots.Length)
+                    {
+                        ((InventorySlot)_slotContainer.Slots[item.Slot]).AssignItem(item);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($&quot;InventoryTab: item {item.ItemId} has invalid slot {item.Slot} (available slots: {_slotContainer.Slots.Length}).&quot;);
+                    }
+                }
+                else if (_filteredCategories.Contains(item.Type1))
+                {
+                    if (_itemCount &lt; _slotContainer.Slots.Length)
+                    {
+                        ((InventorySlot)_slotContainer.Slots[_itemCount++]).AssignItem(item);
+                    }
+                }
+            }
+        });
+    }
+
+    public override void SelectSlot(int slotPosition)
+    {
+        _slotContainer.SelectSlot(slotPosition);
+    }
+
+    protected override void OnTabHeaderClicked()
+    {
+        base.OnTabHeaderClicked();
+    }
+}
+</pre>
+            
+</body>
+</html>

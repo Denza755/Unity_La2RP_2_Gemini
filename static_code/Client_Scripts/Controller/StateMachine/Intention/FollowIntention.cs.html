@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Controller/StateMachine/Intention/FollowIntention.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Controller/StateMachine/Intention/FollowIntention.cs</h1>
+            <pre>using UnityEngine;
+
+public class FollowIntention : IntentionBase
+{
+    public static MoveReason MoveReason { get; private set; }
+
+    public FollowIntention(PlayerStateMachine stateMachine) : base(stateMachine) { }
+
+    public override void Enter(object arg0)
+    {
+        if (_stateMachine.State == PlayerState.SITTING || _stateMachine.State == PlayerState.SIT_WAIT || _stateMachine.State == PlayerState.STANDING)
+        {
+            _stateMachine.ChangeIntention(Intention.INTENTION_STAND);
+            return;
+        }
+
+        MoveReason = (MoveReason)arg0;
+
+        // If following to attack, check if we are ALREADY within attack range of the target
+        if (MoveReason == MoveReason.ATTACK &amp;&amp; TargetManager.Instance != null &amp;&amp; TargetManager.Instance.HasTarget())
+        {
+            Entity targetEntity = TargetManager.Instance.Target;
+            if (targetEntity != null &amp;&amp; !targetEntity.IsDead)
+            {
+                float attackRange = WorldCombat.Instance.GetRealAttackRange(PlayerEntity.Instance, targetEntity);
+                float distance2D = VectorUtils.Distance2D(PlayerEntity.Instance.transform.position, targetEntity.transform.position);
+                float deltaY = Mathf.Abs(PlayerEntity.Instance.transform.position.y - targetEntity.transform.position.y);
+
+                if (distance2D &lt;= (attackRange + 0.1f) &amp;&amp; deltaY &lt;= 3.0f)
+                {
+                    PlayerController.Instance.StopMoving();
+                    PlayerController.Instance.ResetDestination(false);
+                    _stateMachine.ChangeIntention(Intention.INTENTION_ATTACK);
+                    return;
+                }
+            }
+        }
+
+        // If player is NOT running to destination and has no movement input, do not enter moving state!
+        if (PlayerController.Instance != null &amp;&amp; !PlayerController.Instance.RunningToDestination &amp;&amp; !InputManager.Instance.Move)
+        {
+            PlayerController.Instance.IntentionToRun = false;
+            if (MoveReason == MoveReason.ATTACK)
+            {
+                _stateMachine.ChangeIntention(Intention.INTENTION_ATTACK);
+            }
+            else
+            {
+                _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+            }
+            return;
+        }
+
+        PlayerController.Instance.IntentionToRun = true;
+
+        if (_stateMachine.IsInMovableState())
+        {
+            RunOrWalk(MoveReason);
+        }
+        else if (!_stateMachine.WaitingForServerReply)
+        {
+            _stateMachine.SetWaitingForServerReply(true);
+            NetworkCharacterControllerShare.Instance.ForceShareMoveDirection();
+        }
+        else
+        {
+            PlayerController.Instance.StopMoving();
+        }
+    }
+
+    public void RunOrWalk(MoveReason moveReason)
+    {
+        _stateMachine.ChangeState(PlayerState.MOVING, moveReason);
+    }
+
+    public override void Exit() { }
+
+    public override void Update()
+    {
+        if (MoveReason == MoveReason.ATTACK)
+        {
+            if (TargetManager.Instance == null || !TargetManager.Instance.HasTarget())
+            {
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(false);
+                _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+                return;
+            }
+
+            Entity targetEntity = TargetManager.Instance.Target;
+            if (targetEntity == null || targetEntity.IsDead)
+            {
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(false);
+                _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+                return;
+            }
+
+            float attackRange = WorldCombat.Instance.GetRealAttackRange(PlayerEntity.Instance, targetEntity);
+            float distance2D = VectorUtils.Distance2D(PlayerEntity.Instance.transform.position, targetEntity.transform.position);
+            float deltaY = Mathf.Abs(PlayerEntity.Instance.transform.position.y - targetEntity.transform.position.y);
+
+            // Reached attack range during movement:
+            if (distance2D &lt;= (attackRange + 0.05f) &amp;&amp; deltaY &lt;= 3.0f)
+            {
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(true);
+                _stateMachine.ChangeIntention(Intention.INTENTION_ATTACK);
+                return;
+            }
+        }
+    }
+}</pre>
+            
+</body>
+</html>

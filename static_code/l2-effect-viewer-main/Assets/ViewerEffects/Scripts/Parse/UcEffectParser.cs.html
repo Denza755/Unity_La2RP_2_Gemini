@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Parse/UcEffectParser.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Parse/UcEffectParser.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text.RegularExpressions;
+using UnityEngine;
+
+public static class UcEffectParser
+{
+    static readonly Regex BeginObject = new Regex(
+        @&quot;Begin Object Class=(?&lt;class&gt;\w+)\s+Name=(?&lt;name&gt;\w+)&quot;,
+        RegexOptions.Compiled);
+    static readonly Regex AssetRef = new Regex(
+        @&quot;(?:StaticMesh|Mesh|Texture)\s*=\s*(?:StaticMesh|Mesh|Texture)?&#x27;(?&lt;ref&gt;[^&#x27;]+)&#x27;&quot;,
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    static readonly Regex ColorScale = new Regex(
+        @&quot;ColorScale\((?&lt;i&gt;\d+)\)\s*=\s*\((?&lt;body&gt;(?:[^()]|\([^()]*\))*)\)&quot;,
+        RegexOptions.Compiled);
+    static readonly Regex SizeScale = new Regex(
+        @&quot;SizeScale\((?&lt;i&gt;\d+)\)\s*=\s*\((?&lt;body&gt;(?:[^()]|\([^()]*\))*)\)&quot;,
+        RegexOptions.Compiled);
+    static readonly Regex AxisRange = new Regex(
+        @&quot;(?&lt;axis&gt;[XYZ])\s*=\s*\((?&lt;body&gt;[^)]*)\)&quot;,
+        RegexOptions.Compiled);
+
+    public static ViewerEffectData ParseFile(string path)
+    {
+        string text = File.ReadAllText(path);
+        var effect = new ViewerEffectData
+        {
+            ClassName = Path.GetFileNameWithoutExtension(path),
+            SourcePath = path
+        };
+
+        Match drawScale = Regex.Match(text, @&quot;DrawScale\s*=\s*([0-9.\-]+)&quot;);
+        if (drawScale.Success)
+            effect.DrawScale = ParseFloat(drawScale.Groups[1].Value, 1f);
+
+        foreach (Match begin in BeginObject.Matches(text))
+        {
+            int start = begin.Index;
+            int end = text.IndexOf(&quot;End Object&quot;, start, StringComparison.Ordinal);
+            if (end &lt; 0)
+                end = text.Length;
+            string block = text.Substring(start, end - start);
+            ViewerEmitterData emitter = ParseEmitter(begin.Groups[&quot;class&quot;].Value, begin.Groups[&quot;name&quot;].Value, block);
+            if (emitter != null)
+                effect.Emitters.Add(emitter);
+        }
+
+        return effect;
+    }
+
+    static ViewerEmitterData ParseEmitter(string className, string objectName, string block)
+    {
+        var kind = className switch
+        {
+            &quot;SpriteEmitter&quot; =&gt; ViewerEmitterKind.Sprite,
+            &quot;MeshEmitter&quot; =&gt; ViewerEmitterKind.Mesh,
+            &quot;BeamEmitter&quot; =&gt; ViewerEmitterKind.Beam,
+            &quot;SparkEmitter&quot; =&gt; ViewerEmitterKind.Spark,
+            &quot;TrailEmitter&quot; =&gt; ViewerEmitterKind.Trail,
+            _ =&gt; ViewerEmitterKind.Unknown
+        };
+        if (kind == ViewerEmitterKind.Unknown)
+            return null;
+
+        var e = new ViewerEmitterData
+        {
+            Kind = kind,
+            ObjectName = objectName,
+            DisplayName = ReadString(block, &quot;Name&quot;) ?? objectName
+        };
+
+        foreach (Match asset in AssetRef.Matches(block))
+        {
+            string full = asset.Value;
+            string value = asset.Groups[&quot;ref&quot;].Value;
+            if (full.IndexOf(&quot;StaticMesh&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0 ||
+                (full.StartsWith(&quot;Mesh&quot;, StringComparison.OrdinalIgnoreCase) &amp;&amp; kind == ViewerEmitterKind.Mesh))
+                e.StaticMesh = value;
+            else
+                e.Texture = value;
+        }
+
+        e.MaxParticles = ReadInt(block, &quot;MaxParticles&quot;, 1);
+        e.InitialParticlesPerSecond = ReadFloat(block, &quot;InitialParticlesPerSecond&quot;, 0f);
+        e.AutomaticInitialSpawning = ReadBool(block, &quot;AutomaticInitialSpawning&quot;, true);
+        e.RespawnDeadParticles = ReadBool(block, &quot;RespawnDeadParticles&quot;, true);
+        e.UniformSize = ReadBool(block, &quot;UniformSize&quot;, false);
+        e.UseSizeScale = ReadBool(block, &quot;UseSizeScale&quot;, false);
+        e.UseRegularSizeScale = ReadBool(block, &quot;UseRegularSizeScale&quot;, true);
+        e.SizeScaleRepeats = ReadFloat(block, &quot;SizeScaleRepeats&quot;, 0f);
+        e.SpinParticles = ReadBool(block, &quot;SpinParticles&quot;, false);
+        e.FadeIn = ReadBool(block, &quot;FadeIn&quot;, false);
+        e.FadeOut = ReadBool(block, &quot;FadeOut&quot;, false);
+        e.FadeInEndTime = ReadFloat(block, &quot;FadeInEndTime&quot;, 0f);
+        e.FadeOutStartTime = ReadFloat(block, &quot;FadeOutStartTime&quot;, 0f);
+        e.Opacity = ReadFloat(block, &quot;Opacity&quot;, 1f);
+        e.UseColorScale = ReadBool(block, &quot;UseColorScale&quot;, false);
+        e.ColorScaleRepeats = ReadFloat(block, &quot;ColorScaleRepeats&quot;, 0f);
+        e.RenderTwoSided = ReadBool(block, &quot;RenderTwoSided&quot;, true);
+        e.UseRandomSubdivision = ReadBool(block, &quot;UseRandomSubdivision&quot;, false);
+        e.BlendBetweenSubdivisions = ReadBool(block, &quot;BlendBetweenSubdivisions&quot;, false);
+        e.TextureUSubdivisions = ReadInt(block, &quot;TextureUSubdivisions&quot;, 1);
+        e.TextureVSubdivisions = ReadInt(block, &quot;TextureVSubdivisions&quot;, 1);
+        e.SubdivisionStart = ReadInt(block, &quot;SubdivisionStart&quot;, 0);
+        e.SubdivisionEnd = ReadInt(block, &quot;SubdivisionEnd&quot;, Math.Max(0, e.TextureUSubdivisions * e.TextureVSubdivisions - 1));
+        e.DrawStyle = ReadIdent(block, &quot;DrawStyle&quot;) ?? &quot;PTDS_Translucent&quot;;
+        e.UseRotationFrom = ReadIdent(block, &quot;UseRotationFrom&quot;) ?? &quot;&quot;;
+        e.GetVelocityDirectionFrom = ReadIdent(block, &quot;GetVelocityDirectionFrom&quot;) ?? &quot;&quot;;
+        e.UseDirectionAs = ReadIdent(block, &quot;UseDirectionAs&quot;) ?? &quot;&quot;;
+        e.StartLocationShape = ReadIdent(block, &quot;StartLocationShape&quot;) ?? &quot;&quot;;
+        e.DetermineEndPointBy = ReadIdent(block, &quot;DetermineEndPointBy&quot;) ?? e.DetermineEndPointBy;
+        e.LowFrequencyPoints = ReadInt(block, &quot;LowFrequencyPoints&quot;, e.LowFrequencyPoints);
+        e.HighFrequencyPoints = ReadInt(block, &quot;HighFrequencyPoints&quot;, e.HighFrequencyPoints);
+        e.BeamTextureUScale = ReadFloat(block, &quot;BeamTextureUScale&quot;, 1f);
+        e.BeamTextureVScale = ReadFloat(block, &quot;BeamTextureVScale&quot;, 1f);
+
+        ReadRange(block, &quot;LifetimeRange&quot;, ref e.Lifetime);
+        ReadRange(block, &quot;BeamDistanceRange&quot;, ref e.BeamDistanceRange);
+        ReadRange(block, &quot;InitialDelayRange&quot;, ref e.InitialDelay);
+        ReadVectorRange(block, &quot;StartSizeRange&quot;, ref e.StartSizeX, ref e.StartSizeY, ref e.StartSizeZ);
+        ReadVectorRange(block, &quot;StartLocationRange&quot;, ref e.StartLocationX, ref e.StartLocationY, ref e.StartLocationZ);
+        ReadVectorRange(block, &quot;StartLocationPolarRange&quot;, ref e.PolarTheta, ref e.PolarPhi, ref e.PolarRadius);
+        ReadVectorRange(block, &quot;StartVelocityRange&quot;, ref e.StartVelocityX, ref e.StartVelocityY, ref e.StartVelocityZ);
+        ReadVectorRange(block, &quot;StartSpinRange&quot;, ref e.StartSpinX, ref e.StartSpinY, ref e.StartSpinZ);
+        ReadVectorRange(block, &quot;SpinsPerSecondRange&quot;, ref e.SpinsPerSecondX, ref e.SpinsPerSecondY, ref e.SpinsPerSecondZ);
+        ReadColorMul(block, ref e.ColorMulMin, ref e.ColorMulMax);
+        e.SpinCCWorCW = ReadXYZ(block, &quot;SpinCCWorCW&quot;, Vector3.one);
+        e.Acceleration = ReadXYZ(block, &quot;Acceleration&quot;, Vector3.zero);
+        e.StartLocationOffset = ReadXYZ(block, &quot;StartLocationOffset&quot;, Vector3.zero);
+
+        foreach (Match m in ColorScale.Matches(block))
+        {
+            e.ColorScale.Add(new ViewerColorKey
+            {
+                RelativeTime = ReadKeyedFloat(m.Groups[&quot;body&quot;].Value, &quot;RelativeTime&quot;, 0f),
+                Color = ReadColor(m.Groups[&quot;body&quot;].Value)
+            });
+        }
+        foreach (Match m in SizeScale.Matches(block))
+        {
+            e.SizeScale.Add(new ViewerSizeKey
+            {
+                RelativeTime = ReadKeyedFloat(m.Groups[&quot;body&quot;].Value, &quot;RelativeTime&quot;, 0f),
+                RelativeSize = ReadKeyedFloat(m.Groups[&quot;body&quot;].Value, &quot;RelativeSize&quot;, 1f)
+            });
+        }
+
+        // First BeamEndPoints entry drives MVP PTEP_Offset (weighted pick later).
+        if (TryExtractBeamEndPointOffset(block, out string offsetBody))
+        {
+            ReadVectorRangeBody(offsetBody,
+                ref e.BeamEndOffsetX, ref e.BeamEndOffsetY, ref e.BeamEndOffsetZ);
+        }
+
+        if (e.ColorScale.Count == 0)
+        {
+            e.ColorScale.Add(new ViewerColorKey { RelativeTime = 0f, Color = Color.white });
+            e.ColorScale.Add(new ViewerColorKey { RelativeTime = 1f, Color = Color.white });
+        }
+
+        return e;
+    }
+
+    static bool TryExtractBeamEndPointOffset(string block, out string offsetBody)
+    {
+        offsetBody = null;
+        Match head = Regex.Match(block, @&quot;BeamEndPoints\(\d+\)\s*=\s*\(&quot;, RegexOptions.IgnoreCase);
+        if (!head.Success)
+            return false;
+
+        string epBody = ExtractBalanced(block, head.Index + head.Length - 1);
+        if (epBody == null)
+            return false;
+
+        Match offsetHead = Regex.Match(epBody, @&quot;offset\s*=\s*\(&quot;, RegexOptions.IgnoreCase);
+        if (!offsetHead.Success)
+            return false;
+
+        offsetBody = ExtractBalanced(epBody, offsetHead.Index + offsetHead.Length - 1);
+        return offsetBody != null;
+    }
+
+    // Extract contents inside the &#x27;(&#x27; at openParenIndex (exclusive of the surrounding parens).
+    static string ExtractBalanced(string text, int openParenIndex)
+    {
+        if (openParenIndex &lt; 0 || openParenIndex &gt;= text.Length || text[openParenIndex] != &#x27;(&#x27;)
+            return null;
+        int depth = 0;
+        for (int i = openParenIndex; i &lt; text.Length; i++)
+        {
+            char c = text[i];
+            if (c == &#x27;(&#x27;)
+                depth++;
+            else if (c == &#x27;)&#x27;)
+            {
+                depth--;
+                if (depth == 0)
+                    return text.Substring(openParenIndex + 1, i - openParenIndex - 1);
+            }
+        }
+        return null;
+    }
+
+    static void ReadRange(string block, string name, ref ViewerRange range)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*\((?&lt;body&gt;[^)]*)\)&quot;);
+        if (!m.Success)
+            return;
+        range = ParseMinMax(m.Groups[&quot;body&quot;].Value, range.Min, range.Max);
+    }
+
+    static void ReadVectorRange(string block, string name, ref ViewerRange x, ref ViewerRange y, ref ViewerRange z)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*\((?&lt;body&gt;(?:[^()]|\([^()]*\))*)\)&quot;);
+        if (!m.Success)
+            return;
+        ReadVectorRangeBody(m.Groups[&quot;body&quot;].Value, ref x, ref y, ref z);
+    }
+
+    static void ReadVectorRangeBody(string body, ref ViewerRange x, ref ViewerRange y, ref ViewerRange z)
+    {
+        foreach (Match axis in AxisRange.Matches(body))
+        {
+            ViewerRange parsed = ParseMinMax(axis.Groups[&quot;body&quot;].Value, 0f, 0f);
+            switch (axis.Groups[&quot;axis&quot;].Value)
+            {
+                case &quot;X&quot;: x = parsed; break;
+                case &quot;Y&quot;: y = parsed; break;
+                case &quot;Z&quot;: z = parsed; break;
+            }
+        }
+    }
+
+    // ColorMultiplierRange is FRangeVector: X=R, Y=G, Z=B. Not FColor BGRA.
+    static void ReadColorMul(string block, ref Vector3 min, ref Vector3 max)
+    {
+        Match m = Regex.Match(block, @&quot;ColorMultiplierRange\s*=\s*\((?&lt;body&gt;(?:[^()]|\([^()]*\))*)\)&quot;);
+        if (!m.Success)
+            return;
+        min = Vector3.one;
+        max = Vector3.one;
+        foreach (Match axis in AxisRange.Matches(m.Groups[&quot;body&quot;].Value))
+        {
+            ViewerRange r = ParseMinMax(axis.Groups[&quot;body&quot;].Value, 1f, 1f);
+            switch (axis.Groups[&quot;axis&quot;].Value)
+            {
+                case &quot;X&quot;: min.x = r.Min; max.x = r.Max; break;
+                case &quot;Y&quot;: min.y = r.Min; max.y = r.Max; break;
+                case &quot;Z&quot;: min.z = r.Min; max.z = r.Max; break;
+            }
+        }
+    }
+
+    static ViewerRange ParseMinMax(string body, float defaultMin, float defaultMax)
+    {
+        float min = ReadKeyedFloat(body, &quot;Min&quot;, defaultMin);
+        float max = ReadKeyedFloat(body, &quot;Max&quot;, defaultMax);
+        if (!body.Contains(&quot;Min&quot;) &amp;&amp; body.Contains(&quot;Max&quot;))
+            min = defaultMin;
+        if (!body.Contains(&quot;Max&quot;) &amp;&amp; body.Contains(&quot;Min&quot;))
+            max = min;
+        return new ViewerRange(min, max);
+    }
+
+    static Vector3 ReadXYZ(string block, string name, Vector3 fallback)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*\((?&lt;body&gt;[^)]*)\)&quot;);
+        if (!m.Success)
+            return fallback;
+        string body = m.Groups[&quot;body&quot;].Value;
+        float x = ReadKeyedFloat(body, &quot;X&quot;, fallback.x);
+        float y = ReadKeyedFloat(body, &quot;Y&quot;, fallback.y);
+        float z = ReadKeyedFloat(body, &quot;Z&quot;, fallback.z);
+        return new Vector3(x, y, z);
+    }
+
+    // Unreal FColor in .uc is struct field order B,G,R,A (BGRA in text).
+    // Unity Color is RGBA — map by field name, never by list position.
+    // Missing Color= → (0,0,0,0). Present Color= with omitted A → opaque 255.
+    // ColorMultiplierRange X/Y/Z stays RGB (X=R,Y=G,Z=B); do not swap to BGR.
+    static Color ReadColor(string body)
+    {
+        Match inner = Regex.Match(body, @&quot;Color\s*=\s*\((?&lt;c&gt;[^)]*)\)&quot;);
+        if (!inner.Success)
+            return new Color(0f, 0f, 0f, 0f);
+
+        string c = inner.Groups[&quot;c&quot;].Value;
+        float r = ReadByteChannel(c, &quot;R&quot;, 0f);
+        float g = ReadByteChannel(c, &quot;G&quot;, 0f);
+        float b = ReadByteChannel(c, &quot;B&quot;, 0f);
+        float a = ReadByteChannel(c, &quot;A&quot;, 255f);
+        return new Color(r / 255f, g / 255f, b / 255f, a / 255f);
+    }
+
+    static float ReadByteChannel(string body, string channel, float fallback)
+    {
+        Match m = Regex.Match(body, @&quot;(?&lt;![A-Za-z])&quot; + channel + @&quot;\s*=\s*([+\-0-9.]+)&quot;);
+        return m.Success ? ParseFloat(m.Groups[1].Value, fallback) : fallback;
+    }
+
+    static float ReadKeyedFloat(string body, string key, float fallback)
+    {
+        Match m = Regex.Match(body, @&quot;(?&lt;![A-Za-z_])&quot; + key + @&quot;\s*=\s*([+\-0-9.]+)&quot;);
+        return m.Success ? ParseFloat(m.Groups[1].Value, fallback) : fallback;
+    }
+
+    static string ReadString(string block, string name)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*&quot;&quot;([^&quot;&quot;]*)&quot;&quot;&quot;);
+        if (m.Success)
+            return m.Groups[1].Value;
+        return null;
+    }
+
+    static string ReadIdent(string block, string name)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*([A-Za-z0-9_]+)&quot;);
+        return m.Success ? m.Groups[1].Value : null;
+    }
+
+    static bool ReadBool(string block, string name, bool fallback)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*(True|False)&quot;, RegexOptions.IgnoreCase);
+        if (!m.Success)
+            return fallback;
+        return m.Groups[1].Value.Equals(&quot;True&quot;, StringComparison.OrdinalIgnoreCase);
+    }
+
+    static int ReadInt(string block, string name, int fallback)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*([+\-0-9]+)&quot;);
+        return m.Success &amp;&amp; int.TryParse(m.Groups[1].Value, out int v) ? v : fallback;
+    }
+
+    static float ReadFloat(string block, string name, float fallback)
+    {
+        Match m = Regex.Match(block, name + @&quot;\s*=\s*([+\-0-9.]+)&quot;);
+        return m.Success ? ParseFloat(m.Groups[1].Value, fallback) : fallback;
+    }
+
+    static float ParseFloat(string s, float fallback)
+    {
+        return float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : fallback;
+    }
+}
+</pre>
+            
+</body>
+</html>

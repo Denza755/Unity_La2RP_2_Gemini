@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/items/EtcItemType.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/items/EtcItemType.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums.items;
+
+public enum EtcItemType implements ItemType
+{
+	NONE,
+	ARROW,
+	POTION,
+	SCRL_ENCHANT_WP,
+	SCRL_ENCHANT_AM,
+	SCROLL,
+	RECIPE,
+	MATERIAL,
+	PET_COLLAR,
+	CASTLE_GUARD,
+	LOTTO,
+	RACE_TICKET,
+	DYE,
+	SEED,
+	CROP,
+	MATURECROP,
+	HARVEST,
+	SEED2,
+	TICKET_OF_LORD,
+	LURE,
+	BLESS_SCRL_ENCHANT_WP,
+	BLESS_SCRL_ENCHANT_AM,
+	COUPON,
+	ELIXIR,
+	
+	// L2J CUSTOM, BACKWARD COMPATIBILITY
+	SHOT,
+	HERB,
+	QUEST;
+	
+	/**
+	 * Returns the ID of the item after applying the mask.
+	 * @return int : ID of the item
+	 */
+	@Override
+	public int mask()
+	{
+		return 0;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q652_AnAgedExAdventurer.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q652_AnAgedExAdventurer.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q652_AnAgedExAdventurer extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q652_AnAgedExAdventurer&quot;;
+	
+	// NPCs
+	private static final int TANTAN = 32012;
+	private static final int SARA = 30180;
+	
+	// Item
+	private static final int SOULSHOT_C = 1464;
+	
+	// Reward
+	private static final int ENCHANT_ARMOR_D = 956;
+	
+	// Table of possible spawns
+	private static final SpawnLocation[] SPAWNS =
+	{
+		new SpawnLocation(78355, -1325, -3659, 0),
+		new SpawnLocation(79890, -6132, -2922, 0),
+		new SpawnLocation(90012, -7217, -3085, 0),
+		new SpawnLocation(94500, -10129, -3290, 0),
+		new SpawnLocation(96534, -1237, -3677, 0)
+	};
+	
+	// Current position
+	private int _currentPosition = 0;
+	
+	public Q652_AnAgedExAdventurer()
+	{
+		super(652, &quot;An Aged Ex-Adventurer&quot;);
+		
+		addQuestStart(TANTAN);
+		addTalkId(TANTAN, SARA);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;32012-02.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(SOULSHOT_C) &gt;= 100)
+			{
+				st.setState(QuestStatus.STARTED);
+				st.setCond(1);
+				playSound(player, SOUND_ACCEPT);
+				takeItems(player, SOULSHOT_C, 100);
+				
+				startQuestTimer(&quot;65201&quot;, npc, null, 3000);
+			}
+			else
+			{
+				htmltext = &quot;32012-02a.htm&quot;;
+				st.exitQuest(true);
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;65201&quot;))
+		{
+			int chance = Rnd.get(5);
+			
+			// Loop to avoid to spawn to the same place.
+			while (chance == _currentPosition)
+				chance = Rnd.get(5);
+			
+			// Register new position.
+			_currentPosition = chance;
+			
+			npc.deleteMe();
+			addSpawn(TANTAN, SPAWNS[chance], false, 0, false);
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 46) ? &quot;32012-00.htm&quot; : &quot;32012-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				switch (npc.getNpcId())
+				{
+					case SARA:
+						if (Rnd.get(100) &lt; 50)
+						{
+							htmltext = &quot;30180-01.htm&quot;;
+							rewardItems(player, 57, 5026);
+							giveItems(player, ENCHANT_ARMOR_D, 1);
+						}
+						else
+						{
+							htmltext = &quot;30180-02.htm&quot;;
+							rewardItems(player, 57, 10000);
+						}
+						playSound(player, SOUND_FINISH);
+						st.exitQuest(true);
+						break;
+					
+					case TANTAN:
+						htmltext = &quot;32012-04a.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

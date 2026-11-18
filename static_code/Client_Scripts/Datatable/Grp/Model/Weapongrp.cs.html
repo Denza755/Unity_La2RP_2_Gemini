@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/Model/Weapongrp.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/Model/Weapongrp.cs</h1>
+            <pre>﻿using UnityEngine;
+
+[System.Serializable]
+public class Weapongrp : Abstractgrp
+{
+    [SerializeField] private WeaponType _weaponType;
+    [SerializeField] private ItemSlot _bodyPart;
+    [SerializeField] private byte _soulshot;
+    [SerializeField] private byte _spiritshot;
+    [SerializeField] private int _mpConsume;
+    [SerializeField] private string[] _models;
+    [SerializeField] private string[] _textures;
+    [SerializeField] private string[] _itemSounds;
+
+    public ItemSlot BodyPart { get { return _bodyPart; } set { _bodyPart = value; } }
+    public WeaponType WeaponType { get { return _weaponType; } set { _weaponType = value; } }
+    public byte Soulshot { get { return _soulshot; } set { _soulshot = value; } }
+    public byte Spiritshot { get { return _spiritshot; } set { _spiritshot = value; } }
+    public int MpConsume { get { return _mpConsume; } set { _mpConsume = value; } }
+    public string[] Models { get { return _models; } set { _models = value; } }
+    public string[] Textures { get { return _textures; } set { _textures = value; } }
+    public string[] ItemSounds { get { return _itemSounds; } set { _itemSounds = value; } }
+}
+</pre>
+            
+</body>
+</html>

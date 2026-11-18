@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/L2PackageDecryptor.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/L2PackageDecryptor.cs</h1>
+            <pre>using System;
+using System.IO;
+using System.Text;
+
+public static class L2PackageDecryptor
+{
+    public static string DecryptToCache(string inputPath)
+    {
+        if (string.IsNullOrEmpty(inputPath) || !File.Exists(inputPath))
+            throw new FileNotFoundException(&quot;Package not found&quot;, inputPath);
+
+        string dest = Path.Combine(ViewerPaths.DecryptedDir, Path.GetFileName(inputPath));
+        if (File.Exists(dest) &amp;&amp; File.GetLastWriteTimeUtc(dest) &gt;= File.GetLastWriteTimeUtc(inputPath))
+            return dest;
+
+        byte[] bytes = File.ReadAllBytes(inputPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+        if (bytes.Length &lt; 28)
+        {
+            File.WriteAllBytes(dest, bytes);
+            return dest;
+        }
+
+        string header = Encoding.Unicode.GetString(bytes, 0, 28);
+        if (header.Length &lt; 14 || !header.StartsWith(&quot;Lineage2Ver&quot;, StringComparison.Ordinal)
+            || !int.TryParse(header.AsSpan(11, 3), out int version))
+        {
+            File.Copy(inputPath, dest, true);
+            return dest;
+        }
+
+        int key = version switch
+        {
+            111 =&gt; 0xAC,
+            121 =&gt; XorKey121(Path.GetFileName(inputPath)),
+            _ =&gt; -1
+        };
+        if (key &lt; 0)
+            throw new NotSupportedException(&quot;Lineage2Ver&quot; + version + &quot; needs Blowfish/RSA (Java engine).&quot;);
+
+        byte[] body = new byte[bytes.Length - 28];
+        for (int i = 0; i &lt; body.Length; i++)
+            body[i] = (byte)(bytes[i + 28] ^ key);
+        File.WriteAllBytes(dest, body);
+        return dest;
+    }
+
+    static int XorKey121(string fileName)
+    {
+        int sum = 0;
+        foreach (char c in fileName.ToLowerInvariant())
+            sum += c;
+        return sum &amp; 0xFF;
+    }
+}
+</pre>
+            
+</body>
+</html>

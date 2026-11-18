@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Gatekeeper.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/Gatekeeper.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+
+/**
+ * An instance type extending {@link Folk}, used for teleporters.&lt;br&gt;
+ * &lt;br&gt;
+ * A teleporter allows {@link Player}s to teleport to a specific location, for a fee.
+ */
+public final class Gatekeeper extends Folk
+{
+	public Gatekeeper(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public String getHtmlPath(int npcId, int val)
+	{
+		String filename = &quot;&quot;;
+		if (val == 0)
+			filename = &quot;&quot; + npcId;
+		else
+			filename = npcId + &quot;-&quot; + val;
+		
+		return &quot;data/html/gatekeeper/&quot; + filename + &quot;.htm&quot;;
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		// Generic PK check. Send back the HTM if found and cancel current action.
+		if (!Config.KARMA_PLAYER_CAN_USE_GK &amp;&amp; player.getKarma() &gt; 0 &amp;&amp; showPkDenyChatWindow(player, &quot;gatekeeper&quot;))
+			return;
+		
+		super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player, int val)
+	{
+		// Generic PK check. Send back the HTM if found and cancel current action.
+		if (!Config.KARMA_PLAYER_CAN_USE_GK &amp;&amp; player.getKarma() &gt; 0 &amp;&amp; showPkDenyChatWindow(player, &quot;gatekeeper&quot;))
+			return;
+		
+		showChatWindow(player, getHtmlPath(getNpcId(), val));
+	}
+}</pre>
+            
+</body>
+</html>

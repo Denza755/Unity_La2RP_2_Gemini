@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Controller/StateMachine/Intention/InteractIntention.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Controller/StateMachine/Intention/InteractIntention.cs</h1>
+            <pre>using UnityEngine;
+
+public class InteractIntention : IntentionBase
+{
+    public InteractIntention(PlayerStateMachine stateMachine) : base(stateMachine) { }
+
+    public override void Enter(object arg0)
+    {
+        Transform target = TargetManager.Instance.Target.transform;
+
+        if (target == null)
+        {
+            return;
+        }
+
+        Entity targetEntity = TargetManager.Instance.Target;
+        float interactRange = WorldCombat.Instance.GetInteractRange(PlayerEntity.Instance, targetEntity);
+        Vector3 targetPos = targetEntity.transform.position;
+        float distance = VectorUtils.Distance2D(PlayerEntity.Instance.transform.position, targetPos);
+
+        // Debug.Log($&quot;target: {target} distance: {distance} range: {attackRange}&quot;);
+
+        if (distance &lt;= interactRange * 0.95f)
+        {
+            PlayerController.Instance.UpdateFinalAngleToLookAt(targetEntity.transform);
+            _stateMachine.ChangeState(PlayerState.IDLE);
+            _stateMachine.NotifyEvent(Event.READY_TO_INTERACT);
+        }
+        else
+        {
+            // Move to target with a 5% error margin
+            PathFinderController.Instance.MoveTo(targetPos, interactRange * 0.95f, () =&gt;
+            {
+                _stateMachine.ChangeIntention(Intention.INTENTION_FOLLOW, MoveReason.INTERACT);
+            });
+        }
+    }
+
+    public override void Exit() { }
+    public override void Update() { }
+}</pre>
+            
+</body>
+</html>

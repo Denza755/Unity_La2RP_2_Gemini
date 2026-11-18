@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/StateMachine/State/EnteringWorldState.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/StateMachine/State/EnteringWorldState.cs</h1>
+            <pre>using UnityEngine;
+using static CharSelectedPacket;
+
+public class EnteringWorldState : GameStateBase
+{
+    public EnteringWorldState(GameManager stateMachine) : base(stateMachine) { }
+
+    public override void Enter(object arg0)
+    {
+        MusicManager.Instance.Clear();
+        _stateMachine.StartLoading();
+
+        SceneLoader.Instance.LoadGame();
+    }
+
+    public override void Update()
+    {
+
+    }
+
+    public override void HandleEvent(GameEvent evt, object arg0)
+    {
+        switch (evt)
+        {
+            case GameEvent.UI_LOADED:
+            case GameEvent.WORLD_LOADED:
+                base.HandleEvent(evt, arg0);
+                break;
+            case GameEvent.LOADING_COMPLETE:
+                GameObject.Destroy(L2LoginUI.Instance.gameObject);
+
+                PlayerInfo playerInfo = GameClient.Instance.PlayerInfo;
+
+                if (WorldClock.Instance != null)
+                {
+                    WorldClock.Instance.SynchronizeClock(playerInfo.CurrentGameTime);
+                }
+
+                // Ensure sector under player&#x27;s feet is loaded before spawning!
+                SceneLoader.Instance.EnsureSectorsLoaded(playerInfo.Identity.Position, () =&gt;
+                {
+                    // Only spawn player once we loaded the world
+                    WorldSpawner.Instance.OnReceivePlayerInfo(playerInfo.Identity, playerInfo.Status, playerInfo.Stats, playerInfo.Appearance, playerInfo.EntityActionInfo);
+
+                    PlayerStateMachine.Instance.enabled = true;
+
+                    _stateMachine.ChangeState(GameState.IN_GAME, false);
+                });
+                break;
+            case GameEvent.GAME_DISCONNECTED:
+                _stateMachine.ChangeState(GameState.DISONNECTING);
+                break;
+            case GameEvent.LOADING_STARTED:
+                // Expected: scene loading fires this during world transition
+                break;
+            default:
+                Debug.LogWarning($&quot;[GameStateMachine] Unhandled event {evt} for state {_stateMachine.State}&quot;);
+                break;
+        }
+    }
+}</pre>
+            
+</body>
+</html>

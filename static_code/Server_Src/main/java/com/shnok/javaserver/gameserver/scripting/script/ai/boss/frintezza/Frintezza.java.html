@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/Frintezza.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/Frintezza.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.frintezza;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.memo.GlobalMemo;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.taskmanager.GameTimeTaskManager;
+
+public class Frintezza extends DefaultNpc
+{
+	private static final L2Skill MUSIC = SkillTable.getInstance().getInfo(5006, 1);
+	private static final L2Skill MUSIC_OF_HEAL = SkillTable.getInstance().getInfo(5007, 1);
+	private static final L2Skill MUSIC_OF_RAMPAGE = SkillTable.getInstance().getInfo(5007, 2);
+	private static final L2Skill MUSIC_OF_POWER = SkillTable.getInstance().getInfo(5007, 3);
+	private static final L2Skill MUSIC_OF_PLAGUE = SkillTable.getInstance().getInfo(5007, 4);
+	private static final L2Skill MUSIC_OF_PSYCHO = SkillTable.getInstance().getInfo(5007, 5);
+	
+	// private static final String areadata_heal1 = &quot;25_15_frintessa_01_01&quot;;
+	// private static final String areadata_heal2 = &quot;25_15_frintessa_02_01&quot;;
+	// private static final String areadata_power1 = &quot;25_15_frintessa_01_02&quot;;
+	// private static final String areadata_power2 = &quot;25_15_frintessa_02_02&quot;;
+	// private static final String areadata_psycho1 = &quot;25_15_frintessa_01_03&quot;;
+	// private static final String areadata_psycho2 = &quot;25_15_frintessa_02_03&quot;;
+	// private static final String areadata_rampage1 = &quot;25_15_frintessa_01_04&quot;;
+	// private static final String areadata_rampage2 = &quot;25_15_frintessa_02_04&quot;;
+	// private static final String areadata_plague1 = &quot;25_15_frintessa_01_05&quot;;
+	// private static final String areadata_plague2 = &quot;25_15_frintessa_02_05&quot;;
+	
+	private static final String T_DOOR_NAME_1 = &quot;grave_pathway_1&quot;;
+	private static final String T_DOOR_NAME_2 = &quot;grave_pathway_2&quot;;
+	private static final String T_DOOR_NAME_3 = &quot;grave_pathway_3&quot;;
+	private static final String T_DOOR_NAME_4 = &quot;grave_pathway_4&quot;;
+	private static final String WALL_DOOR_NAME_1A = &quot;wall_door_a_center_1&quot;;
+	private static final String WALL_DOOR_NAME_2A = &quot;wall_door_a_center_2&quot;;
+	private static final String WALL_DOOR_NAME_3A = &quot;wall_door_a_center_3&quot;;
+	private static final String WALL_DOOR_NAME_4A = &quot;wall_door_a_center_4&quot;;
+	private static final String WALL_DOOR_NAME_5A = &quot;wall_door_a_center_5&quot;;
+	private static final String WALL_DOOR_NAME_6A = &quot;wall_door_a_center_6&quot;;
+	private static final String WALL_DOOR_NAME_7A = &quot;wall_door_a_center_7&quot;;
+	private static final String WALL_DOOR_NAME_8A = &quot;wall_door_a_center_8&quot;;
+	private static final String WALL_DOOR_NAME_1B = &quot;wall_door_b_left_1&quot;;
+	private static final String WALL_DOOR_NAME_2B = &quot;wall_door_b_left_2&quot;;
+	private static final String WALL_DOOR_NAME_3B = &quot;wall_door_b_left_3&quot;;
+	private static final String WALL_DOOR_NAME_4B = &quot;wall_door_b_left_4&quot;;
+	private static final String WALL_DOOR_NAME_5B = &quot;wall_door_b_left_5&quot;;
+	private static final String WALL_DOOR_NAME_6B = &quot;wall_door_b_right_1&quot;;
+	private static final String WALL_DOOR_NAME_7B = &quot;wall_door_b_right_2&quot;;
+	private static final String WALL_DOOR_NAME_8B = &quot;wall_door_b_right_3&quot;;
+	private static final String WALL_DOOR_NAME_9B = &quot;wall_door_b_right_4&quot;;
+	private static final String WALL_DOOR_NAME_10B = &quot;wall_door_b_right_5&quot;;
+	
+	private static final int GM_ID = 4;
+	
+	public Frintezza()
+	{
+		super(&quot;ai/boss/frintezza&quot;);
+	}
+	
+	public Frintezza(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		29045 // frintessa
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		int i_ai1 = npc._i_ai1;
+		
+		final Creature c0 = GlobalMemo.getInstance().getCreature(String.valueOf(GM_ID));
+		if (c0 == null)
+			GlobalMemo.getInstance().set(String.valueOf(GM_ID), npc.getObjectId());
+		
+		if (!npc.getSpawn().getDBLoaded())
+		{
+			npc.getSpawn().getSpawnData().setDBValue(0);
+			
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			// TODO Zones
+			// gg::Area_SetOnOff(areadata_heal1,0);
+			// gg::Area_SetOnOff(areadata_heal2,0);
+			// gg::Area_SetOnOff(areadata_power1,0);
+			// gg::Area_SetOnOff(areadata_power2,0);
+			// gg::Area_SetOnOff(areadata_psycho1,0);
+			// gg::Area_SetOnOff(areadata_psycho2,0);
+			// gg::Area_SetOnOff(areadata_rampage1,0);
+			// gg::Area_SetOnOff(areadata_rampage2,0);
+			// gg::Area_SetOnOff(areadata_plague1,0);
+			// gg::Area_SetOnOff(areadata_plague2,0);
+			
+			openCloseDoor(T_DOOR_NAME_1, 1);
+			openCloseDoor(T_DOOR_NAME_2, 1);
+			openCloseDoor(T_DOOR_NAME_3, 0);
+			openCloseDoor(T_DOOR_NAME_4, 0);
+			openCloseDoor(WALL_DOOR_NAME_1A, 1);
+			openCloseDoor(WALL_DOOR_NAME_2A, 1);
+			openCloseDoor(WALL_DOOR_NAME_3A, 1);
+			openCloseDoor(WALL_DOOR_NAME_4A, 1);
+			openCloseDoor(WALL_DOOR_NAME_5A, 1);
+			openCloseDoor(WALL_DOOR_NAME_6A, 1);
+			openCloseDoor(WALL_DOOR_NAME_7A, 1);
+			openCloseDoor(WALL_DOOR_NAME_8A, 1);
+			openCloseDoor(WALL_DOOR_NAME_1B, 1);
+			openCloseDoor(WALL_DOOR_NAME_2B, 1);
+			openCloseDoor(WALL_DOOR_NAME_3B, 1);
+			openCloseDoor(WALL_DOOR_NAME_4B, 1);
+			openCloseDoor(WALL_DOOR_NAME_5B, 1);
+			openCloseDoor(WALL_DOOR_NAME_6B, 1);
+			openCloseDoor(WALL_DOOR_NAME_7B, 1);
+			openCloseDoor(WALL_DOOR_NAME_8B, 1);
+			openCloseDoor(WALL_DOOR_NAME_9B, 1);
+			openCloseDoor(WALL_DOOR_NAME_10B, 1);
+			
+			Npc c1 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			if (c1 != null)
+				c1.sendScriptEvent(npc.getObjectId(), 0, 0);
+			
+			c1 = (Npc) GlobalMemo.getInstance().getCreature(&quot;6&quot;);
+			if (c1 != null)
+				c1.sendScriptEvent(npc.getObjectId(), 0, 0);
+		}
+		else if (npc.getSpawn().getSpawnData().getDBValue() == 1)
+		{
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+		}
+		else if (npc.getSpawn().getSpawnData().getDBValue() == 2)
+		{
+			startQuestTimer(&quot;1001&quot;, npc, null, 600000);
+			
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		}
+		else if (npc.getSpawn().getSpawnData().getDBValue() &gt; 2 &amp;&amp; npc.getSpawn().getSpawnData().getDBValue() &lt; 8)
+		{
+			openCloseDoor(T_DOOR_NAME_1, 1);
+			openCloseDoor(T_DOOR_NAME_2, 1);
+			openCloseDoor(T_DOOR_NAME_3, 1);
+			openCloseDoor(T_DOOR_NAME_4, 1);
+			openCloseDoor(WALL_DOOR_NAME_1A, 1);
+			openCloseDoor(WALL_DOOR_NAME_2A, 1);
+			openCloseDoor(WALL_DOOR_NAME_3A, 1);
+			openCloseDoor(WALL_DOOR_NAME_4A, 1);
+			openCloseDoor(WALL_DOOR_NAME_5A, 1);
+			openCloseDoor(WALL_DOOR_NAME_6A, 1);
+			openCloseDoor(WALL_DOOR_NAME_7A, 1);
+			openCloseDoor(WALL_DOOR_NAME_8A, 1);
+			openCloseDoor(WALL_DOOR_NAME_1B, 1);
+			openCloseDoor(WALL_DOOR_NAME_2B, 1);
+			openCloseDoor(WALL_DOOR_NAME_3B, 1);
+			openCloseDoor(WALL_DOOR_NAME_4B, 1);
+			openCloseDoor(WALL_DOOR_NAME_5B, 1);
+			openCloseDoor(WALL_DOOR_NAME_6B, 1);
+			openCloseDoor(WALL_DOOR_NAME_7B, 1);
+			openCloseDoor(WALL_DOOR_NAME_8B, 1);
+			openCloseDoor(WALL_DOOR_NAME_9B, 1);
+			openCloseDoor(WALL_DOOR_NAME_10B, 1);
+			
+			createOnePrivateEx(npc, 29052, 174239, -89809, -5016, 16384, 0, false);
+			
+			if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+				frintezzaPlaySong(npc, 2000, 2000, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 1500, 1500, 1000, 2000, 0);
+				else if (i_ai1 == 30010)
+					frintezzaPlaySong(npc, 1000, 2000, 1000, 2000, 0);
+			}
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+				else if (i_ai1 == 30021)
+					frintezzaPlaySong(npc, 1500, 0, 625, 3000, 0);
+				else if (i_ai1 == 30022)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1500, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30023)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 1500, 0, 625, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1500, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30024)
+					frintezzaPlaySong(npc, 1500, 1500, 0, 3000, 0);
+			}
+			
+			startQuestTimer(&quot;3000&quot;, npc, null, 1000);
+			
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		}
+		
+		npc._i_ai0 = 0;
+		npc._i_ai1 = 0;
+		npc._i_ai2 = 0;
+		npc._i_ai3 = 0;
+		npc._i_ai4 = 0;
+		npc._i_quest0 = 0;
+		npc._i_quest1 = 0;
+		npc._i_quest2 = 0;
+		npc._i_quest3 = 0;
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		int i_ai1 = npc._i_ai1;
+		
+		if (name.equalsIgnoreCase(&quot;1000&quot;))
+		{
+			createOnePrivateEx(npc, 29052, 174239, -89809, -5016, 16384, 0, false);
+			
+			startQuestTimer(&quot;1001&quot;, npc, null, 4000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1001&quot;))
+		{
+			npc.getPosition().setHeading(16384);
+			
+			npc.teleportTo(174239, -89808, -5016, 0);
+			
+			openCloseDoor(T_DOOR_NAME_1, 1);
+			openCloseDoor(T_DOOR_NAME_2, 1);
+			openCloseDoor(T_DOOR_NAME_3, 1);
+			openCloseDoor(T_DOOR_NAME_4, 1);
+			openCloseDoor(WALL_DOOR_NAME_1A, 1);
+			openCloseDoor(WALL_DOOR_NAME_2A, 1);
+			openCloseDoor(WALL_DOOR_NAME_3A, 1);
+			openCloseDoor(WALL_DOOR_NAME_4A, 1);
+			openCloseDoor(WALL_DOOR_NAME_5A, 1);
+			openCloseDoor(WALL_DOOR_NAME_6A, 1);
+			openCloseDoor(WALL_DOOR_NAME_7A, 1);
+			openCloseDoor(WALL_DOOR_NAME_8A, 1);
+			openCloseDoor(WALL_DOOR_NAME_1B, 1);
+			openCloseDoor(WALL_DOOR_NAME_2B, 1);
+			openCloseDoor(WALL_DOOR_NAME_3B, 1);
+			openCloseDoor(WALL_DOOR_NAME_4B, 1);
+			openCloseDoor(WALL_DOOR_NAME_5B, 1);
+			openCloseDoor(WALL_DOOR_NAME_6B, 1);
+			openCloseDoor(WALL_DOOR_NAME_7B, 1);
+			openCloseDoor(WALL_DOOR_NAME_8B, 1);
+			openCloseDoor(WALL_DOOR_NAME_9B, 1);
+			openCloseDoor(WALL_DOOR_NAME_10B, 1);
+			
+			npc._i_quest1 = GameTimeTaskManager.getInstance().getCurrentTick();
+			
+			startQuestTimer(&quot;1002&quot;, npc, null, 6000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1002&quot;))
+		{
+			startQuestTimer(&quot;1003&quot;, npc, null, 2000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1003&quot;))
+		{
+			npc.getAI().addSocialDesire(1, 7000, 1000);
+			
+			startQuestTimer(&quot;1004&quot;, npc, null, 7000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1004&quot;))
+		{
+			startQuestTimer(&quot;1005&quot;, npc, null, 1500);
+		}
+		else if (name.equalsIgnoreCase(&quot;1005&quot;))
+		{
+			final NpcMaker nm = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_evilate_maker1&quot;);
+			if (nm != null)
+				nm.getMaker().onMakerScriptEvent(&quot;1001&quot;, nm, 0, 0);
+			
+			startQuestTimer(&quot;1006&quot;, npc, null, 500);
+		}
+		else if (name.equalsIgnoreCase(&quot;1006&quot;))
+		{
+			final NpcMaker nm = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_evilate_maker2&quot;);
+			if (nm != null)
+				nm.getMaker().onMakerScriptEvent(&quot;1001&quot;, nm, 0, 0);
+			
+			startQuestTimer(&quot;1007&quot;, npc, null, 500);
+		}
+		else if (name.equalsIgnoreCase(&quot;1007&quot;))
+		{
+			npc.getAI().addSocialDesire(3, 6600, 1000);
+			
+			startQuestTimer(&quot;1008&quot;, npc, null, 6600);
+		}
+		else if (name.equalsIgnoreCase(&quot;1008&quot;))
+		{
+			startQuestTimer(&quot;1009&quot;, npc, null, 1000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1009&quot;))
+		{
+			npc._i_quest1 = GameTimeTaskManager.getInstance().getCurrentTick();
+			
+			if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+				frintezzaPlaySong(npc, 2000, 2000, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 1500, 1500, 1000, 2000, 0);
+				else if (i_ai1 == 30010)
+					frintezzaPlaySong(npc, 1000, 2000, 1000, 2000, 0);
+			}
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+				else if (i_ai1 == 30021)
+					frintezzaPlaySong(npc, 1500, 0, 625, 3000, 0);
+				else if (i_ai1 == 30022)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1500, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30023)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 1500, 0, 625, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1500, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30024)
+					frintezzaPlaySong(npc, 1500, 1500, 0, 3000, 0);
+			}
+			
+			startQuestTimer(&quot;1010&quot;, npc, null, 10000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1010&quot;))
+		{
+			startQuestTimer(&quot;1011&quot;, npc, null, 3500);
+		}
+		else if (name.equalsIgnoreCase(&quot;1011&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			if (c0 != null)
+			{
+				c0.sendScriptEvent(npc.getObjectId(), 4, 0);
+				
+				npc.getSpawn().getSpawnData().setDBValue(4);
+			}
+			
+			startQuestTimer(&quot;1012&quot;, npc, null, 1000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1012&quot;))
+		{
+			npc._i_quest1 = GameTimeTaskManager.getInstance().getCurrentTick();
+			
+			if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+				frintezzaPlaySong(npc, 2000, 2000, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 1500, 1500, 1000, 2000, 0);
+				else if (i_ai1 == 30010)
+					frintezzaPlaySong(npc, 1000, 2000, 1000, 2000, 0);
+			}
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+				else if (i_ai1 == 30021)
+					frintezzaPlaySong(npc, 1500, 0, 625, 3000, 0);
+				else if (i_ai1 == 30022)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1500, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30023)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 1500, 0, 625, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1500, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30024)
+					frintezzaPlaySong(npc, 1500, 1500, 0, 3000, 0);
+			}
+			
+			startQuestTimer(&quot;1013&quot;, npc, null, 3000);
+		}
+		else if (name.equalsIgnoreCase(&quot;1500&quot;))
+		{
+			npc.sendScriptEvent(npc.getObjectId(), 3, 0);
+			
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			if (c0 != null)
+				c0.sendScriptEvent(npc.getObjectId(), 3, 0);
+		}
+		else if (name.equalsIgnoreCase(&quot;2000&quot;))
+		{
+			npc.removeAllDesire();
+			
+			npc.getAI().addSocialDesire(4, 7000, 10000000);
+			
+			startQuestTimer(&quot;2001&quot;, npc, null, 7000);
+		}
+		else if (name.equalsIgnoreCase(&quot;2001&quot;))
+		{
+			startQuestTimer(&quot;2002&quot;, npc, null, 1000);
+		}
+		else if (name.equalsIgnoreCase(&quot;2002&quot;))
+		{
+			npc.removeAllDesire();
+			
+			frintezzaPlaySong(npc, 0, 0, 0, 10000, 0);
+			
+			startQuestTimer(&quot;2003&quot;, npc, null, 4000);
+		}
+		else if (name.equalsIgnoreCase(&quot;5000&quot;))
+		{
+			npc.getAI().addSocialDesire(3, 100, 50);
+		}
+		else if (name.equalsIgnoreCase(&quot;6000&quot;))
+		{
+			npc.sendScriptEvent(npc.getObjectId(), 3, 0);
+		}
+		else if (name.equalsIgnoreCase(&quot;7000&quot;))
+		{
+			npc.doDie(npc);
+		}
+		else if (name.equalsIgnoreCase(&quot;8000&quot;))
+		{
+			npc.getSpawn().getSpawnData().setDBValue(0);
+			
+			npc.getPosition().setHeading(16384);
+			npc.teleportTo(-105200, -253104, -15264, 0);
+			
+			openCloseDoor(T_DOOR_NAME_1, 1);
+			openCloseDoor(T_DOOR_NAME_2, 1);
+			openCloseDoor(T_DOOR_NAME_3, 0);
+			openCloseDoor(T_DOOR_NAME_4, 0);
+			openCloseDoor(WALL_DOOR_NAME_1A, 1);
+			openCloseDoor(WALL_DOOR_NAME_2A, 1);
+			openCloseDoor(WALL_DOOR_NAME_3A, 1);
+			openCloseDoor(WALL_DOOR_NAME_4A, 1);
+			openCloseDoor(WALL_DOOR_NAME_5A, 1);
+			openCloseDoor(WALL_DOOR_NAME_6A, 1);
+			openCloseDoor(WALL_DOOR_NAME_7A, 1);
+			openCloseDoor(WALL_DOOR_NAME_8A, 1);
+			openCloseDoor(WALL_DOOR_NAME_1B, 1);
+			openCloseDoor(WALL_DOOR_NAME_2B, 1);
+			openCloseDoor(WALL_DOOR_NAME_3B, 1);
+			openCloseDoor(WALL_DOOR_NAME_4B, 1);
+			openCloseDoor(WALL_DOOR_NAME_5B, 1);
+			openCloseDoor(WALL_DOOR_NAME_6B, 1);
+			openCloseDoor(WALL_DOOR_NAME_7B, 1);
+			openCloseDoor(WALL_DOOR_NAME_8B, 1);
+			openCloseDoor(WALL_DOOR_NAME_9B, 1);
+			openCloseDoor(WALL_DOOR_NAME_10B, 1);
+			
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		}
+		else if (name.equalsIgnoreCase(&quot;3000&quot;))
+		{
+			npc._i_ai4 = 0;
+			
+			if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+				frintezzaPlaySong(npc, 2, 2000, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 1, 1500, 1000, 2000, 0);
+				else if (i_ai1 == 30010)
+					frintezzaPlaySong(npc, 1, 2000, 1000, 2000, 0);
+			}
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+				else if (i_ai1 == 30021)
+					frintezzaPlaySong(npc, 1, 0, 625, 3000, 0);
+				else if (i_ai1 == 30022)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30023)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 1, 0, 625, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30024)
+					frintezzaPlaySong(npc, 1, 1500, 0, 3000, 0);
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;3001&quot;))
+		{
+			npc._i_ai4 = 0;
+			
+			if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+				frintezzaPlaySong(npc, 2, 2000, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 1, 1500, 1000, 2000, 0);
+				else if (i_ai1 == 30010)
+					frintezzaPlaySong(npc, 1, 2000, 1000, 2000, 0);
+			}
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+				else if (i_ai1 == 30021)
+					frintezzaPlaySong(npc, 1, 0, 625, 3000, 0);
+				else if (i_ai1 == 30022)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30023)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 1, 0, 625, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30024)
+					frintezzaPlaySong(npc, 1, 1500, 0, 3000, 0);
+			}
+		}
+		
+		npc._i_ai1 = 0;
+		
+		return super.onTimer(name, npc, null);
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+		
+		if (c0 != null &amp;&amp; eventId == c0.getObjectId())
+		{
+			if (arg1 == 5)
+			{
+				npc.getSpawn().getSpawnData().setDBValue(5);
+				
+				npc._i_ai0 = 5;
+				npc._i_ai1 = 0;
+			}
+			else if (arg1 == 30000)
+			{
+				npc._i_ai1 = 30000;
+			}
+			else if (arg1 == 6)
+			{
+				npc.getSpawn().getSpawnData().setDBValue(6);
+				
+				npc._i_ai0 = 6;
+				npc._i_ai1 = 0;
+			}
+			else if (arg1 == 30010)
+			{
+				npc._i_ai1 = 30010;
+			}
+		}
+		else if (arg1 == 7)
+		{
+			npc.getSpawn().getSpawnData().setDBValue(7);
+			
+			npc._i_ai0 = 7;
+			npc._i_ai1 = 0;
+			
+			npc._i_quest2 = GameTimeTaskManager.getInstance().getCurrentTick();
+			
+			startQuestTimer(&quot;5000&quot;, npc, null, 1000);
+		}
+		else if (arg1 == 30021 || arg1 == 30022 || arg1 == 30023 || arg1 == 30024 || arg1 == 30025)
+		{
+			npc._i_ai1 = arg1;
+		}
+		
+		if (arg1 == 0)
+		{
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			final Npc c3 = (Npc) GlobalMemo.getInstance().getCreature(&quot;6&quot;);
+			
+			if (c2 == null || c3 == null)
+				return;
+			
+			openCloseDoor(T_DOOR_NAME_1, 1);
+			openCloseDoor(T_DOOR_NAME_2, 1);
+			openCloseDoor(T_DOOR_NAME_3, 0);
+			openCloseDoor(T_DOOR_NAME_4, 0);
+			openCloseDoor(WALL_DOOR_NAME_1A, 1);
+			openCloseDoor(WALL_DOOR_NAME_2A, 1);
+			openCloseDoor(WALL_DOOR_NAME_3A, 1);
+			openCloseDoor(WALL_DOOR_NAME_4A, 1);
+			openCloseDoor(WALL_DOOR_NAME_5A, 1);
+			openCloseDoor(WALL_DOOR_NAME_6A, 1);
+			openCloseDoor(WALL_DOOR_NAME_7A, 1);
+			openCloseDoor(WALL_DOOR_NAME_8A, 1);
+			openCloseDoor(WALL_DOOR_NAME_1B, 1);
+			openCloseDoor(WALL_DOOR_NAME_2B, 1);
+			openCloseDoor(WALL_DOOR_NAME_3B, 1);
+			openCloseDoor(WALL_DOOR_NAME_4B, 1);
+			openCloseDoor(WALL_DOOR_NAME_5B, 1);
+			openCloseDoor(WALL_DOOR_NAME_6B, 1);
+			openCloseDoor(WALL_DOOR_NAME_7B, 1);
+			openCloseDoor(WALL_DOOR_NAME_8B, 1);
+			openCloseDoor(WALL_DOOR_NAME_9B, 1);
+			openCloseDoor(WALL_DOOR_NAME_10B, 1);
+			
+			// gg::Area_SetOnOff(areadata_heal1,0);
+			// gg::Area_SetOnOff(areadata_heal2,0);
+			// gg::Area_SetOnOff(areadata_power1,0);
+			// gg::Area_SetOnOff(areadata_power2,0);
+			// gg::Area_SetOnOff(areadata_psycho1,0);
+			// gg::Area_SetOnOff(areadata_psycho2,0);
+			// gg::Area_SetOnOff(areadata_rampage1,0);
+			// gg::Area_SetOnOff(areadata_rampage2,0);
+			// gg::Area_SetOnOff(areadata_plague1,0);
+			// gg::Area_SetOnOff(areadata_plague2,0);
+			
+			npc.getSpawn().getSpawnData().setDBValue(0);
+			
+			npc.getPosition().setHeading(16384);
+			npc.teleportTo(-105200, -253104, -15264, 0);
+			
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+			
+		}
+		else if (arg1 == 1)
+		{
+			npc.getSpawn().getSpawnData().setDBValue(1);
+			
+			c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			if (c0 != null)
+				c0.sendScriptEvent(npc.getObjectId(), 1, 0);
+		}
+		else if (arg1 == 2)
+		{
+			npc.getSpawn().getSpawnData().setDBValue(2);
+			
+			c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			if (c0 != null)
+				c0.sendScriptEvent(npc.getObjectId(), 2, 0);
+			
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_2515_m01&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			startQuestTimer(&quot;1500&quot;, npc, null, Config.WAIT_TIME_FRINTEZZA);
+		}
+		else if (arg1 == 3)
+		{
+			npc.getSpawn().getSpawnData().setDBValue(3);
+			
+			startQuestTimer(&quot;1000&quot;, npc, null, 4000);
+		}
+		else if (arg1 == 8)
+		{
+			startQuestTimer(&quot;7000&quot;, npc, null, 7500);
+		}
+		else if (arg1 == 50000)
+		{
+			startQuestTimer(&quot;2000&quot;, npc, null, 500);
+		}
+		super.onScriptEvent(npc, eventId, arg1, arg2);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (skill != null &amp;&amp; skill.getId() == 2234)
+		{
+			npc._i_ai4 = 1;
+			
+			npc.removeAllDesire();
+			
+			startQuestTimer(&quot;3000&quot;, npc, null, 30000);
+		}
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (npc._i_ai4 == 0)
+		{
+			if (!success)
+			{
+				// TODO Zones
+				// gg::Area_SetOnOff(areadata_heal1,0);
+				// gg::Area_SetOnOff(areadata_heal2,0);
+				// gg::Area_SetOnOff(areadata_power1,0);
+				// gg::Area_SetOnOff(areadata_power2,0);
+				// gg::Area_SetOnOff(areadata_psycho1,0);
+				// gg::Area_SetOnOff(areadata_psycho2,0);
+				// gg::Area_SetOnOff(areadata_rampage1,0);
+				// gg::Area_SetOnOff(areadata_rampage2,0);
+				// gg::Area_SetOnOff(areadata_plague1,0);
+				// gg::Area_SetOnOff(areadata_plague2,0);
+				
+				npc._i_ai4 = 1;
+				
+				npc.removeAllDesire();
+				
+				startQuestTimer(&quot;3001&quot;, npc, null, 30000);
+			}
+			else
+			{
+				int i_ai1 = npc._i_ai1;
+				
+				// gg::Area_SetOnOff(areadata_heal1,0);
+				// gg::Area_SetOnOff(areadata_heal2,0);
+				// gg::Area_SetOnOff(areadata_power1,0);
+				// gg::Area_SetOnOff(areadata_power2,0);
+				// gg::Area_SetOnOff(areadata_psycho1,0);
+				// gg::Area_SetOnOff(areadata_psycho2,0);
+				// gg::Area_SetOnOff(areadata_rampage1,0);
+				// gg::Area_SetOnOff(areadata_rampage2,0);
+				// gg::Area_SetOnOff(areadata_plague1,0);
+				// gg::Area_SetOnOff(areadata_plague2,0);
+				
+				if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+					frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+				else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+					frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+				else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+					frintezzaPlaySong(npc, 2, 2000, 0, 0, 0);
+				else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+				{
+					if (i_ai1 == 0)
+						frintezzaPlaySong(npc, 1, 1500, 1000, 2000, 0);
+					else if (i_ai1 == 30010)
+						frintezzaPlaySong(npc, 1, 2000, 1000, 2000, 0);
+				}
+				else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+				{
+					if (i_ai1 == 0)
+						frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+					else if (i_ai1 == 30021)
+						frintezzaPlaySong(npc, 1, 0, 625, 3000, 0);
+					else if (i_ai1 == 30022)
+					{
+						if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+							frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+						else
+							frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+					}
+					else if (i_ai1 == 30023)
+					{
+						if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+							frintezzaPlaySong(npc, 1, 0, 625, 3000, 1500);
+						else
+							frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+					}
+					else if (i_ai1 == 30024)
+						frintezzaPlaySong(npc, 1, 1500, 0, 3000, 0);
+				}
+			}
+		}
+		else
+		{
+			frintezzaPlaySong(npc, 0, 0, 0, 10000, 0);
+			
+			npc._i_ai4 = 0;
+		}
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		GlobalMemo.getInstance().remove(String.valueOf(GM_ID));
+		// TODO Zones
+		// gg::Area_SetOnOff(areadata_heal1,0);
+		// gg::Area_SetOnOff(areadata_heal2,0);
+		// gg::Area_SetOnOff(areadata_power1,0);
+		// gg::Area_SetOnOff(areadata_power2,0);
+		// gg::Area_SetOnOff(areadata_psycho1,0);
+		// gg::Area_SetOnOff(areadata_psycho2,0);
+		// gg::Area_SetOnOff(areadata_rampage1,0);
+		// gg::Area_SetOnOff(areadata_rampage2,0);
+		// gg::Area_SetOnOff(areadata_plague1,0);
+		// gg::Area_SetOnOff(areadata_plague2,0);
+		
+		openCloseDoor(T_DOOR_NAME_1, 1);
+		openCloseDoor(T_DOOR_NAME_2, 1);
+		openCloseDoor(T_DOOR_NAME_3, 0);
+		openCloseDoor(T_DOOR_NAME_4, 0);
+		openCloseDoor(WALL_DOOR_NAME_1A, 1);
+		openCloseDoor(WALL_DOOR_NAME_2A, 1);
+		openCloseDoor(WALL_DOOR_NAME_3A, 1);
+		openCloseDoor(WALL_DOOR_NAME_4A, 1);
+		openCloseDoor(WALL_DOOR_NAME_5A, 1);
+		openCloseDoor(WALL_DOOR_NAME_6A, 1);
+		openCloseDoor(WALL_DOOR_NAME_7A, 1);
+		openCloseDoor(WALL_DOOR_NAME_8A, 1);
+		openCloseDoor(WALL_DOOR_NAME_1B, 1);
+		openCloseDoor(WALL_DOOR_NAME_2B, 1);
+		openCloseDoor(WALL_DOOR_NAME_3B, 1);
+		openCloseDoor(WALL_DOOR_NAME_4B, 1);
+		openCloseDoor(WALL_DOOR_NAME_5B, 1);
+		openCloseDoor(WALL_DOOR_NAME_6B, 1);
+		openCloseDoor(WALL_DOOR_NAME_7B, 1);
+		openCloseDoor(WALL_DOOR_NAME_8B, 1);
+		openCloseDoor(WALL_DOOR_NAME_9B, 1);
+		openCloseDoor(WALL_DOOR_NAME_10B, 1);
+		
+		npc.getSpawn().getSpawnData().setDBValue(0);
+		
+		final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;frintessa_teleportcuve&quot;);
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+	}
+	
+	@Override
+	public void onNoDesire(Npc npc)
+	{
+		int i_ai1 = npc._i_ai1;
+		
+		if (npc.getSpawn().getSpawnData().getDBValue() &lt; 4)
+			return;
+		
+		if (npc._i_ai4 == 0)
+		{
+			if (npc.getSpawn().getSpawnData().getDBValue() == 3)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 4)
+				frintezzaPlaySong(npc, 0, 0, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 5)
+				frintezzaPlaySong(npc, 2, 2000, 0, 0, 0);
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 6)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 1, 1500, 1000, 2000, 0);
+				else if (i_ai1 == 30010)
+					frintezzaPlaySong(npc, 1, 2000, 1000, 2000, 0);
+			}
+			else if (npc.getSpawn().getSpawnData().getDBValue() == 7)
+			{
+				if (i_ai1 == 0)
+					frintezzaPlaySong(npc, 0, 1500, 625, 2500, 0);
+				else if (i_ai1 == 30021)
+					frintezzaPlaySong(npc, 1, 0, 625, 3000, 0);
+				else if (i_ai1 == 30022)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 0, 1500, 0, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30023)
+				{
+					if (getElapsedTicks(npc._i_quest2) &gt; (15 * 60))
+						frintezzaPlaySong(npc, 1, 0, 625, 3000, 1500);
+					else
+						frintezzaPlaySong(npc, 1, 0, 1500, 3000, 0);
+				}
+				else if (i_ai1 == 30024)
+					frintezzaPlaySong(npc, 1, 1500, 0, 3000, 0);
+			}
+		}
+	}
+	
+	private static void frintezzaPlaySong(Npc npc, int chance1, int chance2, int chance3, int chance4, int chance5)
+	{
+		if (Rnd.get(10000) &lt; chance1)
+		{
+			npc.getAI().addCastDesire(npc, MUSIC_OF_HEAL, 10000, false);
+			npc.broadcastOnScreen(3000, NpcStringId.ID_1000522);
+			// TODO Zones
+			// gg::Area_SetOnOff(areadata_heal1,1);
+			// gg::Area_SetOnOff(areadata_heal2,1);
+		}
+		else if (Rnd.get(10000) &lt; chance2)
+		{
+			npc.getAI().addCastDesire(npc, MUSIC_OF_POWER, 10000, false);
+			npc.broadcastOnScreen(3000, NpcStringId.ID_1000523);
+			// TODO Zones
+			// gg::Area_SetOnOff(areadata_power1,1);
+			// gg::Area_SetOnOff(areadata_power2,1);
+		}
+		else if (Rnd.get(10000) &lt; chance3)
+		{
+			npc.getAI().addCastDesire(npc, MUSIC_OF_PSYCHO, 10000, false);
+			npc.broadcastOnScreen(3000, NpcStringId.ID_1000525);
+			// TODO Zones
+			// gg::Area_SetOnOff(areadata_psycho1,1);
+			// gg::Area_SetOnOff(areadata_psycho2,1);
+		}
+		else if (Rnd.get(10000) &lt; chance4)
+		{
+			npc.getAI().addCastDesire(npc, MUSIC_OF_RAMPAGE, 10000, false);
+			npc.broadcastOnScreen(3000, NpcStringId.ID_1000524);
+			// TODO Zones
+			// gg::Area_SetOnOff(areadata_rampage1,1);
+			// gg::Area_SetOnOff(areadata_rampage2,1);
+		}
+		else if (Rnd.get(10000) &lt; chance5)
+		{
+			npc.getAI().addCastDesire(npc, MUSIC_OF_PLAGUE, 10000, false);
+			npc.broadcastOnScreen(3000, NpcStringId.ID_1000526);
+			// TODO Zones
+			// gg::Area_SetOnOff(areadata_plague1,1);
+			// gg::Area_SetOnOff(areadata_plague2,1);
+		}
+		else
+		{
+			npc.getAI().addCastDesire(npc, MUSIC, 10000, false);
+			npc.broadcastOnScreen(3000, NpcStringId.ID_1000527);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

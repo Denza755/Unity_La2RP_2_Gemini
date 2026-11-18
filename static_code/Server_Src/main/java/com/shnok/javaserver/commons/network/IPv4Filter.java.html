@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/network/IPv4Filter.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/network/IPv4Filter.java</h1>
+            <pre>package com.shnok.javaserver.commons.network;
+
+import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.shnok.javaserver.commons.mmocore.IAcceptFilter;
+
+public class IPv4Filter implements IAcceptFilter, Runnable
+{
+	private static final long SLEEP_TIME = 5000;
+	
+	private final Map&lt;Integer, FloodHolder&gt; _floods = new ConcurrentHashMap&lt;&gt;();
+	
+	public IPv4Filter()
+	{
+		final Thread t = new Thread(this);
+		t.setName(getClass().getSimpleName());
+		t.setDaemon(true);
+		t.start();
+	}
+	
+	@Override
+	public boolean accept(Socket socket)
+	{
+		final int hash = hash(socket.getInetAddress().getAddress());
+		
+		final FloodHolder flood = _floods.get(hash);
+		if (flood != null)
+		{
+			final long currentTime = System.currentTimeMillis();
+			
+			if (flood.tries == -1)
+			{
+				flood.lastAccess = currentTime;
+				return false;
+			}
+			
+			if (flood.lastAccess + 1000 &gt; currentTime)
+			{
+				flood.lastAccess = currentTime;
+				
+				if (flood.tries &gt;= 3)
+				{
+					flood.tries = -1;
+					return false;
+				}
+				
+				flood.tries++;
+			}
+			else
+				flood.lastAccess = currentTime;
+		}
+		else
+			_floods.put(hash, new FloodHolder());
+		
+		return true;
+	}
+	
+	@Override
+	public void run()
+	{
+		while (true)
+		{
+			final long referenceTime = System.currentTimeMillis() - (1000 * 300);
+			
+			_floods.values().removeIf(f -&gt; f.lastAccess &lt; referenceTime);
+			
+			try
+			{
+				Thread.sleep(SLEEP_TIME);
+			}
+			catch (InterruptedException e)
+			{
+				return;
+			}
+		}
+	}
+	
+	protected final class FloodHolder
+	{
+		protected long lastAccess = System.currentTimeMillis();
+		protected int tries;
+	}
+	
+	private static final int hash(byte[] ip)
+	{
+		return ip[0] &amp; 0xFF | ip[1] &lt;&lt; 8 &amp; 0xFF00 | ip[2] &lt;&lt; 16 &amp; 0xFF0000 | ip[3] &lt;&lt; 24 &amp; 0xFF000000;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Chat/MessageTypes/SystemMessage.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Chat/MessageTypes/SystemMessage.cs</h1>
+            <pre>using System;
+using UnityEngine;
+using static SMParam;
+
+public class SystemMessage
+{
+
+    private SMParam[] _params;
+    public SystemMessageDat MessageData;
+
+    public SystemMessage(SMParam[] smParams, SystemMessageDat messageData)
+    {
+        _params = smParams;
+        MessageData = messageData;
+    }
+
+    public override string ToString()
+    {
+        return PrintMessage(true);
+    }
+
+    public string PrintMessage(bool colored)
+    {
+        string value = String.Copy(MessageData.Message);
+
+        if (_params != null &amp;&amp; _params.Length &gt; 0)
+        {
+            for (int i = 1; i &lt;= _params.Length; i++)
+            {
+                SMParam param = _params[i - 1];
+
+                // Debug.LogWarning($&quot;{i}: {param.Type}&quot;);
+
+                switch (param.Type)
+                {
+                    case SMParamType.TYPE_TEXT:
+                        value = value.Replace($&quot;$s{i}&quot;, param.GetStringValue());
+                        value = value.Replace($&quot;$c{i}&quot;, param.GetStringValue());
+                        break;
+                    case SMParamType.TYPE_PLAYER_NAME:
+                        value = value.Replace($&quot;$c{i}&quot;, param.GetStringValue());
+                        break;
+                    case SMParamType.TYPE_ITEM_NAME:
+                        AbstractItem item = ItemTable.Instance.GetItem(param.GetIntValue());
+                        string itemName = &quot;Unknown&quot;;
+                        if (item != null)
+                        {
+                            itemName = item.ItemName.Name;
+                        }
+                        value = value.Replace($&quot;$s{i}&quot;, itemName);
+                        break;
+                    case SMParamType.TYPE_ITEM_NUMBER:
+                    case SMParamType.TYPE_CASTLE_NAME:
+                    case SMParamType.TYPE_INT_NUMBER:
+                    case SMParamType.TYPE_NPC_NAME:
+                    case SMParamType.TYPE_ELEMENT_NAME:
+                    case SMParamType.TYPE_SYSTEM_STRING:
+                    case SMParamType.TYPE_INSTANCE_NAME:
+                    case SMParamType.TYPE_DOOR_NAME:
+                        value = value.Replace($&quot;$s{i}&quot;, param.GetIntValue().ToString());
+                        break;
+                    case SMParamType.TYPE_SKILL_NAME:
+                        int[] array = param.GetIntArrayValue();
+                        if (array.Length &gt; 0)
+                        {
+                            int skillId = array[0];
+                            SkillNameData skillNameData = SkillTable.Instance.GetSkill(skillId)?.SkillNameDatas?[0];
+                            string skillName = $&quot;[{skillId}]&quot;;
+                            if (skillNameData != null)
+                            {
+                                skillName = skillNameData.Name;
+                            }
+                            value = value.Replace($&quot;$s{i}&quot;, skillName);
+                        }
+                        else
+                        {
+                            Debug.LogWarning(&quot;SPParam TYPE_SKILL_NAME is missing values.&quot;);
+                        }
+                        break;
+                    case SMParamType.TYPE_ZONE_NAME:
+                        float[] array2 = param.GetFloatArrayValue();
+                        if (array2.Length &gt;= 3)
+                        {
+                            value = $&quot;X={array2[1]} Y={array2[3]} Z={array2[0]}&quot;;
+                        }
+                        else
+                        {
+                            Debug.LogWarning(&quot;SPParam TYPE_ZONE_NAME is missing values.&quot;);
+                        }
+                        break;
+                }
+            }
+        }
+
+        if (colored)
+            return $&quot;&lt;color=#{MessageData.Color}&gt;{value}&lt;/color&gt;&quot;;
+        else
+            return value;
+    }
+}</pre>
+            
+</body>
+</html>

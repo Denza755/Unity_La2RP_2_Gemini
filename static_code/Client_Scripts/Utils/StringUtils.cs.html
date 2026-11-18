@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Utils/StringUtils.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Utils/StringUtils.cs</h1>
+            <pre>using System;
+using System.Text;
+using UnityEngine;
+
+public class StringUtils
+{
+    public static string GenerateRandomString()
+    {
+        var chars = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&quot;;
+        var stringChars = new char[8];
+        var random = new System.Random();
+
+        for (int i = 0; i &lt; stringChars.Length; i++)
+        {
+            stringChars[i] = chars[random.Next(chars.Length)];
+        }
+
+        var finalString = new String(stringChars);
+        return finalString;
+    }
+
+    public static string ByteArrayToString(byte[] array)
+    {
+        if (array == null || array.Length == 0)
+            return &quot;[]&quot;;
+
+        StringBuilder sb = new StringBuilder();
+        sb.Append(&quot;[&quot;);
+        for (int i = 0; i &lt; array.Length; i++)
+        {
+            if (i &gt; 0)
+                sb.Append(&quot;, &quot;);
+
+            // Convert byte value to string representation
+            sbyte value = (sbyte)array[i];
+            sb.Append(value.ToString());
+        }
+        sb.Append(&quot;]&quot;);
+
+        return sb.ToString();
+    }
+
+    public static string ByteArrayToIpAddress(byte[] ipArray)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i &lt; ipArray.Length; i++)
+        {
+            sb.Append(ipArray[i]);
+            if (i &lt; ipArray.Length - 1)
+            {
+                sb.Append(&quot;.&quot;);
+            }
+        }
+        return sb.ToString();
+    }
+
+    public static string Base64Encode(string plainText)
+    {
+        if (plainText == null)
+        {
+            return &quot;&quot;;
+        }
+
+        var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+        return System.Convert.ToBase64String(plainTextBytes);
+    }
+}
+</pre>
+            
+</body>
+</html>

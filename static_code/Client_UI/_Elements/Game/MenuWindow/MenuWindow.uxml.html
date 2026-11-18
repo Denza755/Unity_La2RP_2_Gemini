@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/MenuWindow/MenuWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/MenuWindow/MenuWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/MenuWindow/MenuWindow.uss?fileID=7433441132597879392&amp;amp;guid=4993d0b30d020034db13cb53c66ef619&amp;amp;type=3#MenuWindow&quot; /&gt;
+    &lt;ui:GroupBox name=&quot;MenuWindow&quot; class=&quot;drag-area menu-window&quot;&gt;
+        &lt;ui:GroupBox name=&quot;Container&quot; class=&quot;ui-bg menu-window-container&quot;&gt;
+            &lt;ui:VisualElement name=&quot;Bg&quot; class=&quot;menu-window-bg&quot; style=&quot;background-color: rgba(0, 0, 0, 0.47); background-position-x: left -1px; background-position-y: top -2px; background-size: 1030px 125px; -unity-slice-scale: 0; -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0;&quot; /&gt;
+            &lt;ui:GroupBox name=&quot;ButtonGroup&quot; class=&quot;bar-container menu-btn-grp&quot;&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;false&quot; display-tooltip-when-elided=&quot;false&quot; name=&quot;CharacterButton&quot; selectable=&quot;true&quot; triple-click-selects-line=&quot;false&quot; double-click-selects-word=&quot;false&quot; emoji-fallback-support=&quot;false&quot; enable-rich-text=&quot;false&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;InventoryButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ActionButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;SkillButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;QuestButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ClanButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;MapButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;SystemMenuButton&quot; class=&quot;menu-btn&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBG&quot; class=&quot;menu-button-bg&quot; style=&quot;flex-grow: 0; width: 64px; height: 64px; flex-shrink: 0;&quot; /&gt;
+                &lt;/ui:Button&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+    &lt;/ui:GroupBox&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

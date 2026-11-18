@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Inventory/InventoryGearTab.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Inventory/InventoryGearTab.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class InventoryGearTab : L2Tab
+{
+    private Dictionary&lt;Paperdoll, GearSlot&gt; _gearSlots;
+    private Dictionary&lt;Paperdoll, VisualElement&gt; _gearAnchors;
+    [SerializeField] private int _selectedSlot = -1;
+
+    public override void Initialize(L2TabView tabView, VisualElement tabContainer, VisualElement tabHeader)
+    {
+        base.Initialize(null, tabContainer, tabHeader);
+
+        _selectedSlot = -1;
+
+        _gearAnchors?.Clear();
+
+        _gearAnchors = new Dictionary&lt;Paperdoll, VisualElement&gt;
+        {
+            { Paperdoll.HEAD, _tabContainer.Q&lt;VisualElement&gt;(&quot;Helmet&quot;) },
+            { Paperdoll.GLOVES, _tabContainer.Q&lt;VisualElement&gt;(&quot;Gloves&quot;) },
+            { Paperdoll.CHEST, _tabContainer.Q&lt;VisualElement&gt;(&quot;Torso&quot;) },
+            { Paperdoll.FEET, _tabContainer.Q&lt;VisualElement&gt;(&quot;Boots&quot;) },
+            { Paperdoll.LEGS, _tabContainer.Q&lt;VisualElement&gt;(&quot;Legs&quot;) },
+            { Paperdoll.RHAND, _tabContainer.Q&lt;VisualElement&gt;(&quot;Rhand&quot;) },
+            { Paperdoll.LHAND, _tabContainer.Q&lt;VisualElement&gt;(&quot;Lhand&quot;) },
+            { Paperdoll.NECK, _tabContainer.Q&lt;VisualElement&gt;(&quot;Neck&quot;) },
+            { Paperdoll.REAR, _tabContainer.Q&lt;VisualElement&gt;(&quot;Rear&quot;) },
+            { Paperdoll.LEAR, _tabContainer.Q&lt;VisualElement&gt;(&quot;Lear&quot;) },
+            { Paperdoll.RFINGER, _tabContainer.Q&lt;VisualElement&gt;(&quot;Rring&quot;) },
+            { Paperdoll.LFINGER, _tabContainer.Q&lt;VisualElement&gt;(&quot;Lring&quot;) }
+        };
+    }
+
+    public void UpdateItemList(List&lt;ItemInstance&gt; items)
+    {
+        //Debug.Log(&quot;Update gear slots&quot;);
+
+        // Clean up slot callbacks and manipulators
+        if (_gearSlots != null)
+        {
+            foreach (KeyValuePair&lt;Paperdoll, GearSlot&gt; kvp in _gearSlots)
+            {
+                if (kvp.Value != null)
+                {
+                    kvp.Value.UnregisterClickableCallback();
+                    kvp.Value.ClearManipulators();
+                }
+            }
+            _gearSlots.Clear();
+        }
+
+        _gearSlots = new Dictionary&lt;Paperdoll, GearSlot&gt;();
+        // Clean up gear anchors from any child visual element
+        foreach (KeyValuePair&lt;Paperdoll, VisualElement&gt; kvp in _gearAnchors)
+        {
+            if (kvp.Value == null)
+            {
+                Debug.LogWarning($&quot;Inventory gear slot {kvp.Key} is null.&quot;);
+                continue;
+            }
+
+            // Clear gear slots
+            kvp.Value.Clear();
+
+            // Create gear slots
+            VisualElement slotElement = L2SlotManager.Instance.InventorySlotTemplate.Instantiate()[0];
+            kvp.Value.Add(slotElement);
+
+            GearSlot slot = new GearSlot((int)kvp.Key, slotElement, null, L2Slot.SlotType.Gear);
+            _gearSlots.Add(kvp.Key, slot);
+        }
+
+        items.ForEach(item =&gt;
+        {
+            if (item != null &amp;&amp; item.Equipped)
+            {
+                if (item.BodyPart == ItemSlot.SLOT_LR_HAND &amp;&amp; item.Type1 == ItemType1.TYPE1_ITEM_QUESTITEM_ADENA)
+                {
+                    if (_gearSlots.TryGetValue((Paperdoll)item.Slot, out GearSlot arrowSlot))
+                    {
+                        arrowSlot.AssignItem(item); // Arrows
+                    }
+                }
+                else if (item.Type2 == ItemType2.TYPE2_WEAPON &amp;&amp; item.ItemData?.Itemgrp is Weapongrp bowgrp &amp;&amp;
+                    bowgrp.WeaponType == WeaponType.bow)
+                {
+                    if (_gearSlots.TryGetValue(Paperdoll.RHAND, out GearSlot rSlot)) rSlot.AssignItem(item);
+                }
+                else if (item.Type2 == ItemType2.TYPE2_WEAPON &amp;&amp; item.ItemData?.Itemgrp is Weapongrp weapongrp &amp;&amp;
+                    (weapongrp.WeaponType == WeaponType.bigblunt
+                    || weapongrp.WeaponType == WeaponType.bigword
+                    || weapongrp.WeaponType == WeaponType.dual
+                    || weapongrp.WeaponType == WeaponType.pole
+                    || weapongrp.WeaponType == WeaponType.fist))
+                {
+                    if (_gearSlots.TryGetValue(Paperdoll.RHAND, out GearSlot rSlot)) rSlot.AssignItem(item);
+                    if (_gearSlots.TryGetValue(Paperdoll.LHAND, out GearSlot lSlot)) lSlot.AssignItem(item);
+                }
+                else if (item.Slot == (int)Paperdoll.CHEST &amp;&amp; item.BodyPart == ItemSlot.SLOT_FULL_ARMOR)
+                {
+                    if (_gearSlots.TryGetValue(Paperdoll.CHEST, out GearSlot cSlot)) cSlot.AssignItem(item);
+                    if (_gearSlots.TryGetValue(Paperdoll.LEGS, out GearSlot legSlot)) legSlot.AssignItem(item);
+                }
+                else
+                {
+                    Paperdoll slot = (Paperdoll)item.Slot;
+                    if (item.BodyPart == ItemSlot.SLOT_LR_HAND)
+                    {
+                        if (item.ItemData?.Itemgrp is Weapongrp wg &amp;&amp; wg.WeaponType == WeaponType.bow)
+                        {
+                            if (_gearSlots.TryGetValue(Paperdoll.RHAND, out GearSlot rSlot)) rSlot.AssignItem(item);
+                        }
+                        else
+                        {
+                            if (_gearSlots.TryGetValue(Paperdoll.RHAND, out GearSlot rSlot)) rSlot.AssignItem(item);
+                            if (_gearSlots.TryGetValue(Paperdoll.LHAND, out GearSlot lSlot)) lSlot.AssignItem(item);
+                        }
+                    }
+                    else if (slot != Paperdoll.NULL &amp;&amp; _gearSlots.TryGetValue(slot, out GearSlot targetSlot))
+                    {
+                        targetSlot.AssignItem(item);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($&quot;Can&#x27;t equip item into slot {slot}&quot;);
+                    }
+                }
+            }
+        });
+
+        if (_selectedSlot != -1)
+        {
+            SelectSlot(_selectedSlot);
+        }
+    }
+
+    public override void SelectSlot(int slotPosition)
+    {
+        if (_selectedSlot != -1 &amp;&amp; _gearSlots != null &amp;&amp; _gearSlots.TryGetValue((Paperdoll)_selectedSlot, out GearSlot oldSlot))
+        {
+            oldSlot.UnSelect();
+        }
+        if (_gearSlots != null &amp;&amp; _gearSlots.TryGetValue((Paperdoll)slotPosition, out GearSlot newSlot))
+        {
+            newSlot.SetSelected();
+            _selectedSlot = slotPosition;
+        }
+        else
+        {
+            _selectedSlot = -1;
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

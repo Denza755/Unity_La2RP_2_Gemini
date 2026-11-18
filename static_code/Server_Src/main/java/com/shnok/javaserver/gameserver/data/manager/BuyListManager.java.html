@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/BuyListManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/BuyListManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.manager;
+
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.model.buylist.NpcBuyList;
+import com.shnok.javaserver.gameserver.model.buylist.Product;
+import com.shnok.javaserver.gameserver.taskmanager.BuyListTaskManager;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+
+/**
+ * Loads and stores {@link NpcBuyList}, which is the most common way to show/sell items, with multisell.&lt;br&gt;
+ * &lt;br&gt;
+ * NpcBuyList owns a list of {@link Product}. Each of them can have a count, making the item acquisition impossible until the next restock timer (stored as SQL data). The count timer is stored on a global task, called {@link BuyListTaskManager}.
+ */
+public class BuyListManager implements IXmlReader
+{
+	private final Map&lt;Integer, NpcBuyList&gt; _buyLists = new HashMap&lt;&gt;();
+	
+	protected BuyListManager()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/buyLists.xml&quot;);
+		LOGGER.info(&quot;Loaded {} buyLists.&quot;, _buyLists.size());
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(&quot;SELECT * FROM `buylists`&quot;);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+			{
+				final NpcBuyList buyList = _buyLists.get(rs.getInt(&quot;buylist_id&quot;));
+				if (buyList == null)
+					continue;
+				
+				final Product product = buyList.get(rs.getInt(&quot;item_id&quot;));
+				if (product == null)
+					continue;
+				
+				BuyListTaskManager.getInstance().test(product, rs.getInt(&quot;count&quot;), rs.getLong(&quot;next_restock_time&quot;));
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Failed to load buyList data from database.&quot;, e);
+		}
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;buyList&quot;, buyListNode -&gt;
+		{
+			final NamedNodeMap attrs = buyListNode.getAttributes();
+			final int buyListId = parseInteger(attrs, &quot;id&quot;);
+			final NpcBuyList buyList = new NpcBuyList(buyListId);
+			buyList.setNpcId(parseInteger(attrs, &quot;npcId&quot;));
+			forEach(buyListNode, &quot;product&quot;, productNode -&gt;
+			{
+				final Product product = new Product(buyListId, parseAttributes(productNode));
+				if (product.getItem() != null)
+					buyList.addProduct(product);
+			});
+			_buyLists.put(buyListId, buyList);
+		}));
+	}
+	
+	public void reload()
+	{
+		_buyLists.clear();
+		load();
+	}
+	
+	public NpcBuyList getBuyList(int listId)
+	{
+		return _buyLists.get(listId);
+	}
+	
+	public List&lt;NpcBuyList&gt; getBuyListsByNpcId(int npcId)
+	{
+		return _buyLists.values().stream().filter(b -&gt; b.isNpcAllowed(npcId)).toList();
+	}
+	
+	public static BuyListManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final BuyListManager INSTANCE = new BuyListManager();
+	}
+}</pre>
+            
+</body>
+</html>

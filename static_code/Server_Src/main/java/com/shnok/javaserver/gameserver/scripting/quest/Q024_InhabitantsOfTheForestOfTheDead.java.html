@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q024_InhabitantsOfTheForestOfTheDead.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q024_InhabitantsOfTheForestOfTheDead.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q024_InhabitantsOfTheForestOfTheDead extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q024_InhabitantsOfTheForestOfTheDead&quot;;
+	
+	// NPCs
+	private static final int NIGHT_DORIAN = 25332;
+	private static final int DORIAN = 31389;
+	private static final int MYSTERIOUS_WIZARD = 31522;
+	private static final int TOMBSTONE = 31531;
+	private static final int LIDIA_MAID = 31532;
+	
+	// MOBs
+	private static final int BONE_SNATCHER = 21557;
+	private static final int BONE_SNATCHER_A = 21558;
+	private static final int BONE_SHAPER = 21560;
+	private static final int BONE_COLLECTOR = 21563;
+	private static final int SKULL_COLLECTOR = 21564;
+	private static final int BONE_ANIMATOR = 21565;
+	private static final int SKULL_ANIMATOR = 21566;
+	private static final int BONE_SLAYER = 21567;
+	
+	// Items
+	private static final int LIDIAS_LETTER = 7065;
+	private static final int LIDIAS_HAIRPIN = 7148;
+	private static final int SUSPICIOUS_TOTEM_DOLL = 7151;
+	private static final int FLOWER_BOUQUET = 7152;
+	private static final int SILVER_CROSS_OF_EINHASAD = 7153;
+	private static final int BROKEN_SILVER_CROSS_OF_EINHASAD = 7154;
+	private static final int SUSPICIOUS_TOTEM_DOLL_2 = 7156;
+	
+	public Q024_InhabitantsOfTheForestOfTheDead()
+	{
+		super(24, &quot;Inhabitants of the Forest of the Dead&quot;);
+		
+		setItemsIds(LIDIAS_LETTER, LIDIAS_HAIRPIN, SUSPICIOUS_TOTEM_DOLL, FLOWER_BOUQUET, SILVER_CROSS_OF_EINHASAD, BROKEN_SILVER_CROSS_OF_EINHASAD);
+		
+		addQuestStart(DORIAN);
+		addTalkId(DORIAN, MYSTERIOUS_WIZARD, LIDIA_MAID, TOMBSTONE);
+		
+		addMyDying(BONE_SNATCHER, BONE_SNATCHER_A, BONE_SHAPER, BONE_COLLECTOR, SKULL_COLLECTOR, BONE_ANIMATOR, SKULL_ANIMATOR, BONE_SLAYER);
+		addSeeCreature(NIGHT_DORIAN);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31389-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			st.set(&quot;state&quot;, 1);
+			playSound(player, SOUND_ACCEPT);
+			giveItems(player, FLOWER_BOUQUET, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31389-08.htm&quot;))
+			st.set(&quot;state&quot;, 3);
+		else if (event.equalsIgnoreCase(&quot;31389-13.htm&quot;))
+		{
+			st.setCond(3);
+			st.set(&quot;state&quot;, 4);
+			playSound(player, SOUND_MIDDLE);
+			giveItems(player, SILVER_CROSS_OF_EINHASAD, 1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31389-18.htm&quot;))
+			playSound(player, &quot;InterfaceSound.charstat_open_01&quot;);
+		else if (event.equalsIgnoreCase(&quot;31389-19.htm&quot;))
+		{
+			st.setCond(5);
+			st.set(&quot;state&quot;, 5);
+			takeItems(player, BROKEN_SILVER_CROSS_OF_EINHASAD, -1);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31522-03.htm&quot;))
+		{
+			st.set(&quot;state&quot;, 12);
+			takeItems(player, SUSPICIOUS_TOTEM_DOLL, -1);
+		}
+		else if (event.equalsIgnoreCase(&quot;31522-08.htm&quot;))
+		{
+			st.setCond(11);
+			st.set(&quot;state&quot;, 13);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31522-17.htm&quot;))
+			st.set(&quot;state&quot;, 14);
+		else if (event.equalsIgnoreCase(&quot;31522-21.htm&quot;))
+		{
+			giveItems(player, SUSPICIOUS_TOTEM_DOLL_2, 1);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-04.htm&quot;))
+		{
+			st.setCond(6);
+			st.set(&quot;state&quot;, 6);
+			giveItems(player, LIDIAS_LETTER, 1);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-06.htm&quot;))
+		{
+			if (player.getInventory().hasItem(LIDIAS_HAIRPIN))
+			{
+				st.set(&quot;state&quot;, 8);
+				takeItems(player, LIDIAS_LETTER, -1);
+				takeItems(player, LIDIAS_HAIRPIN, -1);
+			}
+			else
+			{
+				st.setCond(7);
+				st.set(&quot;state&quot;, 7);
+				htmltext = &quot;31532-07.htm&quot;;
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;31532-10.htm&quot;))
+			st.set(&quot;state&quot;, 9);
+		else if (event.equalsIgnoreCase(&quot;31532-14.htm&quot;))
+			st.set(&quot;state&quot;, 10);
+		else if (event.equalsIgnoreCase(&quot;31532-19.htm&quot;))
+		{
+			st.setCond(9);
+			st.set(&quot;state&quot;, 11);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31531-02.htm&quot;))
+		{
+			st.setCond(2);
+			st.set(&quot;state&quot;, 2);
+			takeItems(player, FLOWER_BOUQUET, -1);
+			playSound(player, SOUND_MIDDLE);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				QuestState st2 = player.getQuestList().getQuestState(&quot;Q023_LidiasHeart&quot;);
+				if (st2 == null || !st2.isCompleted() || player.getStatus().getLevel() &lt; 65)
+					htmltext = &quot;31389-02.htm&quot;;
+				else
+					htmltext = &quot;31389-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int state = st.getInteger(&quot;state&quot;);
+				switch (npc.getNpcId())
+				{
+					case DORIAN:
+						if (state == 1)
+							htmltext = &quot;31389-04.htm&quot;;
+						else if (state == 2)
+							htmltext = &quot;31389-05.htm&quot;;
+						else if (state == 3)
+							htmltext = &quot;31389-09.htm&quot;;
+						else if (state == 4)
+						{
+							if (player.getInventory().hasItem(SILVER_CROSS_OF_EINHASAD))
+								htmltext = &quot;31389-14.htm&quot;;
+							else if (player.getInventory().hasItem(BROKEN_SILVER_CROSS_OF_EINHASAD))
+								htmltext = &quot;31389-15.htm&quot;;
+						}
+						else if (state == 5)
+							htmltext = &quot;31389-20.htm&quot;;
+						else if (state == 7 &amp;&amp; !player.getInventory().hasItem(LIDIAS_HAIRPIN))
+						{
+							htmltext = &quot;31389-21.htm&quot;;
+							st.setCond(8);
+							giveItems(player, LIDIAS_HAIRPIN, 1);
+							playSound(player, SOUND_MIDDLE);
+						}
+						else if ((state == 7 &amp;&amp; player.getInventory().hasItem(LIDIAS_HAIRPIN)) || state == 6)
+							htmltext = &quot;31389-22.htm&quot;;
+						break;
+					
+					case MYSTERIOUS_WIZARD:
+						if (state == 11 &amp;&amp; player.getInventory().hasItem(SUSPICIOUS_TOTEM_DOLL))
+							htmltext = &quot;31522-01.htm&quot;;
+						else if (state == 12)
+							htmltext = &quot;31522-04.htm&quot;;
+						else if (state == 13)
+							htmltext = &quot;31522-09.htm&quot;;
+						else if (state == 14)
+							htmltext = &quot;31522-18.htm&quot;;
+						break;
+					
+					case LIDIA_MAID:
+						if (state == 5)
+							htmltext = &quot;31532-01.htm&quot;;
+						else if (state == 6 &amp;&amp; player.getInventory().hasItem(LIDIAS_LETTER))
+							htmltext = &quot;31532-05.htm&quot;;
+						else if (state == 7)
+							htmltext = &quot;31532-07a.htm&quot;;
+						else if (state == 8)
+							htmltext = &quot;31532-08.htm&quot;;
+						else if (state == 9)
+							htmltext = &quot;31532-11.htm&quot;;
+						else if (state == 10)
+							htmltext = &quot;31532-15.htm&quot;;
+						else if (state == 11)
+							htmltext = &quot;31532-20.htm&quot;;
+						break;
+					
+					case TOMBSTONE:
+						if (state == 1 &amp;&amp; player.getInventory().hasItem(FLOWER_BOUQUET))
+						{
+							htmltext = &quot;31531-01.htm&quot;;
+							playSound(player, &quot;AmdSound.d_wind_loot_02&quot;);
+						}
+						else if (state == 2)
+							htmltext = &quot;31531-03.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				if (npc.getNpcId() == MYSTERIOUS_WIZARD)
+					htmltext = &quot;31522-22.htm&quot;;
+				else
+					htmltext = getAlreadyCompletedMsg();
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 9);
+		if (st == null)
+			return;
+		
+		if (dropItems(player, SUSPICIOUS_TOTEM_DOLL, 1, 1, 100000))
+			st.setCond(10);
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (creature instanceof Player player)
+		{
+			final QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+			if (st == null)
+				return;
+			
+			if (st.getCond() == 3)
+			{
+				st.setCond(4);
+				takeItems(player, SILVER_CROSS_OF_EINHASAD, -1);
+				giveItems(player, BROKEN_SILVER_CROSS_OF_EINHASAD, 1);
+				playSound(player, SOUND_MIDDLE);
+				npc.broadcastNpcSay(NpcStringId.ID_2450);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

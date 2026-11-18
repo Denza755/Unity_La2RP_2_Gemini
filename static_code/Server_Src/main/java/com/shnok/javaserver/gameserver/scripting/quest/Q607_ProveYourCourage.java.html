@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q607_ProveYourCourage.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q607_ProveYourCourage.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q607_ProveYourCourage extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q607_ProveYourCourage&quot;;
+	
+	// Items
+	private static final int HEAD_OF_SHADITH = 7235;
+	private static final int TOTEM_OF_VALOR = 7219;
+	private static final int KETRA_ALLIANCE_3 = 7213;
+	
+	public Q607_ProveYourCourage()
+	{
+		super(607, &quot;Prove your courage!&quot;);
+		
+		setItemsIds(HEAD_OF_SHADITH);
+		
+		addQuestStart(31370); // Kadun Zu Ketra
+		addTalkId(31370);
+		
+		addMyDying(25309); // Shadith
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31370-04.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31370-07.htm&quot;))
+		{
+			if (player.getInventory().hasItem(HEAD_OF_SHADITH))
+			{
+				takeItems(player, HEAD_OF_SHADITH, -1);
+				giveItems(player, TOTEM_OF_VALOR, 1);
+				rewardExpAndSp(player, 10000, 0);
+				playSound(player, SOUND_FINISH);
+				st.exitQuest(true);
+			}
+			else
+			{
+				htmltext = &quot;31370-06.htm&quot;;
+				st.setCond(1);
+				playSound(player, SOUND_ACCEPT);
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getStatus().getLevel() &lt; 75)
+					htmltext = &quot;31370-03.htm&quot;;
+				else if (player.getAllianceWithVarkaKetra() &gt;= 3 &amp;&amp; player.getInventory().hasItem(KETRA_ALLIANCE_3) &amp;&amp; !player.getInventory().hasItem(TOTEM_OF_VALOR))
+					htmltext = &quot;31370-01.htm&quot;;
+				else
+					htmltext = &quot;31370-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				htmltext = (player.getInventory().hasItem(HEAD_OF_SHADITH)) ? &quot;31370-05.htm&quot; : &quot;31370-06.htm&quot;;
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		for (QuestState st : getPartyMembers(player, npc, 1))
+		{
+			Player pm = st.getPlayer();
+			if (pm.getAllianceWithVarkaKetra() &gt;= 3 &amp;&amp; pm.getInventory().hasItem(KETRA_ALLIANCE_3))
+			{
+				st.setCond(2);
+				playSound(pm, SOUND_MIDDLE);
+				giveItems(pm, HEAD_OF_SHADITH, 1);
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

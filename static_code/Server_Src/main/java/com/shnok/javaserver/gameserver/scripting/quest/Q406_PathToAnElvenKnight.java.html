@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q406_PathToAnElvenKnight.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q406_PathToAnElvenKnight.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.enums.actors.ClassId;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.serverpackets.SocialAction;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q406_PathToAnElvenKnight extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q406_PathToAnElvenKnight&quot;;
+	
+	// Items
+	private static final int SORIUS_LETTER = 1202;
+	private static final int KLUTO_BOX = 1203;
+	private static final int ELVEN_KNIGHT_BROOCH = 1204;
+	private static final int TOPAZ_PIECE = 1205;
+	private static final int EMERALD_PIECE = 1206;
+	private static final int KLUTO_MEMO = 1276;
+	
+	// NPCs
+	private static final int SORIUS = 30327;
+	private static final int KLUTO = 30317;
+	
+	public Q406_PathToAnElvenKnight()
+	{
+		super(406, &quot;Path to an Elven Knight&quot;);
+		
+		setItemsIds(SORIUS_LETTER, KLUTO_BOX, TOPAZ_PIECE, EMERALD_PIECE, KLUTO_MEMO);
+		
+		addQuestStart(SORIUS);
+		addTalkId(SORIUS, KLUTO);
+		
+		addMyDying(20035, 20042, 20045, 20051, 20054, 20060, 20782);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30327-05.htm&quot;))
+		{
+			if (player.getClassId() != ClassId.ELVEN_FIGHTER)
+				htmltext = (player.getClassId() == ClassId.ELVEN_KNIGHT) ? &quot;30327-02a.htm&quot; : &quot;30327-02.htm&quot;;
+			else if (player.getStatus().getLevel() &lt; 19)
+				htmltext = &quot;30327-03.htm&quot;;
+			else if (player.getInventory().hasItem(ELVEN_KNIGHT_BROOCH))
+				htmltext = &quot;30327-04.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30327-06.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30317-02.htm&quot;))
+		{
+			st.setCond(4);
+			playSound(player, SOUND_MIDDLE);
+			takeItems(player, SORIUS_LETTER, 1);
+			giveItems(player, KLUTO_MEMO, 1);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = &quot;30327-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case SORIUS:
+						if (cond == 1)
+							htmltext = (!player.getInventory().hasItem(TOPAZ_PIECE)) ? &quot;30327-07.htm&quot; : &quot;30327-08.htm&quot;;
+						else if (cond == 2)
+						{
+							htmltext = &quot;30327-09.htm&quot;;
+							st.setCond(3);
+							playSound(player, SOUND_MIDDLE);
+							giveItems(player, SORIUS_LETTER, 1);
+						}
+						else if (cond &gt; 2 &amp;&amp; cond &lt; 6)
+							htmltext = &quot;30327-11.htm&quot;;
+						else if (cond == 6)
+						{
+							htmltext = &quot;30327-10.htm&quot;;
+							takeItems(player, KLUTO_BOX, 1);
+							takeItems(player, KLUTO_MEMO, 1);
+							giveItems(player, ELVEN_KNIGHT_BROOCH, 1);
+							rewardExpAndSp(player, 3200, 2280);
+							player.broadcastPacket(new SocialAction(player, 3));
+							playSound(player, SOUND_FINISH);
+							st.exitQuest(true);
+						}
+						break;
+					
+					case KLUTO:
+						if (cond == 3)
+							htmltext = &quot;30317-01.htm&quot;;
+						else if (cond == 4)
+							htmltext = (!player.getInventory().hasItem(EMERALD_PIECE)) ? &quot;30317-03.htm&quot; : &quot;30317-04.htm&quot;;
+						else if (cond == 5)
+						{
+							htmltext = &quot;30317-05.htm&quot;;
+							st.setCond(6);
+							playSound(player, SOUND_MIDDLE);
+							takeItems(player, EMERALD_PIECE, -1);
+							takeItems(player, TOPAZ_PIECE, -1);
+							giveItems(player, KLUTO_BOX, 1);
+						}
+						else if (cond == 6)
+							htmltext = &quot;30317-06.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		switch (npc.getNpcId())
+		{
+			case 20035, 20042, 20045, 20051, 20054, 20060:
+				if (st.getCond() == 1 &amp;&amp; dropItems(player, TOPAZ_PIECE, 1, 20, 700000))
+					st.setCond(2);
+				break;
+			
+			case 20782:
+				if (st.getCond() == 4 &amp;&amp; dropItems(player, EMERALD_PIECE, 1, 20, 500000))
+					st.setCond(5);
+				break;
+		}
+	}
+}</pre>
+            
+</body>
+</html>

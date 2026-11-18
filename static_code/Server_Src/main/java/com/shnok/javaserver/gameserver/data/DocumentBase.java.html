@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/DocumentBase.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/DocumentBase.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.logging.CLogger;
+
+import com.shnok.javaserver.gameserver.enums.actors.ClassRace;
+import com.shnok.javaserver.gameserver.enums.items.ArmorType;
+import com.shnok.javaserver.gameserver.enums.items.WeaponType;
+import com.shnok.javaserver.gameserver.enums.skills.AbnormalEffect;
+import com.shnok.javaserver.gameserver.enums.skills.PlayerState;
+import com.shnok.javaserver.gameserver.enums.skills.SkillType;
+import com.shnok.javaserver.gameserver.enums.skills.Stats;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.model.item.kind.Item;
+import com.shnok.javaserver.gameserver.model.zone.form.ZoneNPoly;
+import com.shnok.javaserver.gameserver.skills.ChanceCondition;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.skills.basefuncs.FuncTemplate;
+import com.shnok.javaserver.gameserver.skills.conditions.Condition;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionElementSeed;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionForceBuff;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionGameTime;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionLogicAnd;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionLogicNot;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionLogicOr;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerActiveEffectId;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerActiveSkillId;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerCharges;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerHasCastle;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerHasClanHall;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerHp;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerInsidePoly;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerInvSize;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerIsHero;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerLevel;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerMp;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerPkCount;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerPledgeClass;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerRace;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerSex;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerState;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionPlayerWeight;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionSkillStats;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionTargetActiveSkillId;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionTargetHpMinMax;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionTargetNpcId;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionTargetRaceId;
+import com.shnok.javaserver.gameserver.skills.conditions.ConditionUsingItemType;
+import com.shnok.javaserver.gameserver.skills.effects.EffectChanceSkillTrigger;
+import com.shnok.javaserver.gameserver.skills.effects.EffectTemplate;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+abstract class DocumentBase
+{
+	protected static final CLogger LOGGER = new CLogger(DocumentBase.class.getName());
+	
+	private final File _file;
+	protected Map&lt;String, String[]&gt; _tables;
+	
+	DocumentBase(File pFile)
+	{
+		_file = pFile;
+		_tables = new HashMap&lt;&gt;();
+	}
+	
+	public Document parse()
+	{
+		Document doc = null;
+		try
+		{
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, &quot;&quot;);
+			dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, &quot;&quot;);
+			dbf.setValidating(false);
+			dbf.setIgnoringComments(true);
+			
+			doc = dbf.newDocumentBuilder().parse(_file);
+			
+			parseDocument(doc);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Error loading file {}.&quot;, e, _file);
+		}
+		return doc;
+	}
+	
+	protected abstract void parseDocument(Document doc);
+	
+	protected abstract StatSet getStatSet();
+	
+	protected abstract String getTableValue(String name);
+	
+	protected abstract String getTableValue(String name, int idx);
+	
+	protected void resetTable()
+	{
+		_tables = new HashMap&lt;&gt;();
+	}
+	
+	protected void setTable(String name, String[] table)
+	{
+		_tables.put(name, table);
+	}
+	
+	protected void parseTemplate(Node n, Object template)
+	{
+		n = n.getFirstChild();
+		if (n == null)
+			return;
+		
+		Condition condition = null;
+		if (&quot;cond&quot;.equalsIgnoreCase(n.getNodeName()))
+		{
+			condition = parseCondition(n.getFirstChild(), template);
+			Node msg = n.getAttributes().getNamedItem(&quot;msg&quot;);
+			Node msgId = n.getAttributes().getNamedItem(&quot;msgId&quot;);
+			if (condition != null &amp;&amp; msg != null)
+				condition.setMessage(msg.getNodeValue());
+			else if (condition != null &amp;&amp; msgId != null)
+			{
+				condition.setMessageId(Integer.decode(getValue(msgId.getNodeValue(), null)));
+				Node addName = n.getAttributes().getNamedItem(&quot;addName&quot;);
+				if (addName != null &amp;&amp; Integer.decode(getValue(msgId.getNodeValue(), null)) &gt; 0)
+					condition.addName();
+			}
+			n = n.getNextSibling();
+		}
+		
+		for (; n != null; n = n.getNextSibling())
+		{
+			if (&quot;add&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;Add&quot;, condition);
+			else if (&quot;addMul&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;AddMul&quot;, condition);
+			else if (&quot;sub&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;Sub&quot;, condition);
+			else if (&quot;subDiv&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;SubDiv&quot;, condition);
+			else if (&quot;mul&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;Mul&quot;, condition);
+			else if (&quot;basemul&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;BaseMul&quot;, condition);
+			else if (&quot;div&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;Div&quot;, condition);
+			else if (&quot;set&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;Set&quot;, condition);
+			else if (&quot;enchant&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;Enchant&quot;, condition);
+			else if (&quot;baseadd&quot;.equalsIgnoreCase(n.getNodeName()))
+				attachFunc(n, template, &quot;BaseAdd&quot;, condition);
+			else if (&quot;effect&quot;.equalsIgnoreCase(n.getNodeName()))
+			{
+				if (template instanceof EffectTemplate)
+					throw new RuntimeException(&quot;Nested effects&quot;);
+				
+				attachEffect(n, template, condition);
+			}
+		}
+	}
+	
+	protected void attachFunc(Node n, Object template, String function, Condition attachCond)
+	{
+		Stats stat = Stats.valueOfXml(n.getAttributes().getNamedItem(&quot;stat&quot;).getNodeValue());
+		
+		String valueString = n.getAttributes().getNamedItem(&quot;val&quot;).getNodeValue();
+		double value;
+		if (valueString.charAt(0) == &#x27;#&#x27;)
+			value = Double.parseDouble(getTableValue(valueString));
+		else
+			value = Double.parseDouble(valueString);
+		
+		final Condition applyCond = parseCondition(n.getFirstChild(), template);
+		final FuncTemplate ft = new FuncTemplate(attachCond, applyCond, function, stat, value);
+		
+		if (template instanceof Item item)
+			item.attach(ft);
+		else if (template instanceof L2Skill skill)
+			skill.attach(ft);
+		else if (template instanceof EffectTemplate effect)
+			effect.attach(ft);
+		else
+			throw new RuntimeException(&quot;Attaching stat to a non-effect template!!!&quot;);
+	}
+	
+	protected void attachEffect(Node n, Object template, Condition attachCond)
+	{
+		NamedNodeMap attrs = n.getAttributes();
+		String name = getValue(attrs.getNamedItem(&quot;name&quot;).getNodeValue().intern(), template);
+		
+		// Keep this values as default ones, DP needs it
+		int time = 1;
+		int count = 1;
+		
+		if (attrs.getNamedItem(&quot;count&quot;) != null)
+			count = Integer.decode(getValue(attrs.getNamedItem(&quot;count&quot;).getNodeValue(), template));
+		
+		if (attrs.getNamedItem(&quot;time&quot;) != null)
+			time = Integer.decode(getValue(attrs.getNamedItem(&quot;time&quot;).getNodeValue(), template));
+		
+		boolean self = false;
+		if (attrs.getNamedItem(&quot;self&quot;) != null &amp;&amp; Integer.decode(getValue(attrs.getNamedItem(&quot;self&quot;).getNodeValue(), template)) == 1)
+			self = true;
+		
+		boolean icon = true;
+		if (attrs.getNamedItem(&quot;noicon&quot;) != null &amp;&amp; Integer.decode(getValue(attrs.getNamedItem(&quot;noicon&quot;).getNodeValue(), template)) == 1)
+			icon = false;
+		
+		String valueString = n.getAttributes().getNamedItem(&quot;val&quot;).getNodeValue();
+		double value;
+		if (valueString.charAt(0) == &#x27;#&#x27;)
+			value = Double.parseDouble(getTableValue(valueString));
+		else
+			value = Double.parseDouble(valueString);
+		
+		AbnormalEffect abnormal = AbnormalEffect.NULL;
+		if (attrs.getNamedItem(&quot;abnormal&quot;) != null)
+		{
+			String abn = attrs.getNamedItem(&quot;abnormal&quot;).getNodeValue();
+			
+			if (abn.charAt(0) == &#x27;#&#x27;)
+				abnormal = AbnormalEffect.getByName(getTableValue(abn));
+			else
+				abnormal = AbnormalEffect.getByName(abn);
+		}
+		
+		String stackType = &quot;none&quot;;
+		if (attrs.getNamedItem(&quot;stackType&quot;) != null)
+			stackType = attrs.getNamedItem(&quot;stackType&quot;).getNodeValue();
+		
+		float stackOrder = 0;
+		if (attrs.getNamedItem(&quot;stackOrder&quot;) != null)
+			stackOrder = Float.parseFloat(getValue(attrs.getNamedItem(&quot;stackOrder&quot;).getNodeValue(), template));
+		
+		double effectPower = -1;
+		if (attrs.getNamedItem(&quot;effectPower&quot;) != null)
+			effectPower = Double.parseDouble(getValue(attrs.getNamedItem(&quot;effectPower&quot;).getNodeValue(), template));
+		
+		SkillType type = null;
+		if (attrs.getNamedItem(&quot;effectType&quot;) != null)
+		{
+			String typeName = getValue(attrs.getNamedItem(&quot;effectType&quot;).getNodeValue(), template);
+			
+			try
+			{
+				type = Enum.valueOf(SkillType.class, typeName);
+			}
+			catch (Exception e)
+			{
+				throw new IllegalArgumentException(&quot;Not skilltype found for: &quot; + typeName);
+			}
+		}
+		
+		EffectTemplate lt;
+		
+		final boolean isChanceSkillTrigger = (name.equals(EffectChanceSkillTrigger.class.getName()));
+		int trigId = 0;
+		if (attrs.getNamedItem(&quot;triggeredId&quot;) != null)
+			trigId = Integer.parseInt(getValue(attrs.getNamedItem(&quot;triggeredId&quot;).getNodeValue(), template));
+		else if (isChanceSkillTrigger)
+			throw new NoSuchElementException(name + &quot; requires triggerId&quot;);
+		
+		int trigLvl = 1;
+		if (attrs.getNamedItem(&quot;triggeredLevel&quot;) != null)
+			trigLvl = Integer.parseInt(getValue(attrs.getNamedItem(&quot;triggeredLevel&quot;).getNodeValue(), template));
+		
+		String chanceCond = null;
+		if (attrs.getNamedItem(&quot;chanceType&quot;) != null)
+			chanceCond = getValue(attrs.getNamedItem(&quot;chanceType&quot;).getNodeValue(), template);
+		else if (isChanceSkillTrigger)
+			throw new NoSuchElementException(name + &quot; requires chanceType&quot;);
+		
+		int activationChance = -1;
+		if (attrs.getNamedItem(&quot;activationChance&quot;) != null)
+			activationChance = Integer.parseInt(getValue(attrs.getNamedItem(&quot;activationChance&quot;).getNodeValue(), template));
+		
+		ChanceCondition chance = ChanceCondition.parse(chanceCond, activationChance);
+		
+		if (chance == null &amp;&amp; isChanceSkillTrigger)
+			throw new NoSuchElementException(&quot;Invalid chance condition: &quot; + chanceCond + &quot; &quot; + activationChance);
+		
+		lt = new EffectTemplate(attachCond, name, value, count, time, abnormal, stackType, stackOrder, icon, effectPower, type, trigId, trigLvl, chance);
+		
+		parseTemplate(n, lt);
+		if (template instanceof L2Skill skill)
+		{
+			if (self)
+				skill.attachSelf(lt);
+			else
+				skill.attach(lt);
+		}
+	}
+	
+	protected Condition parseCondition(Node n, Object template)
+	{
+		while (n != null &amp;&amp; n.getNodeType() != Node.ELEMENT_NODE)
+			n = n.getNextSibling();
+		
+		if (n == null)
+			return null;
+		
+		if (&quot;and&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseLogicAnd(n, template);
+		
+		if (&quot;or&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseLogicOr(n, template);
+		
+		if (&quot;not&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseLogicNot(n, template);
+		
+		if (&quot;player&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parsePlayerCondition(n, template);
+		
+		if (&quot;target&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseTargetCondition(n, template);
+		
+		if (&quot;skill&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseSkillCondition(n);
+		
+		if (&quot;using&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseUsingCondition(n);
+		
+		if (&quot;game&quot;.equalsIgnoreCase(n.getNodeName()))
+			return parseGameCondition(n);
+		
+		return null;
+	}
+	
+	protected Condition parseLogicAnd(Node n, Object template)
+	{
+		ConditionLogicAnd cond = new ConditionLogicAnd();
+		for (n = n.getFirstChild(); n != null; n = n.getNextSibling())
+			if (n.getNodeType() == Node.ELEMENT_NODE)
+				cond.add(parseCondition(n, template));
+			
+		if (cond.conditions == null || cond.conditions.length == 0)
+			LOGGER.error(&quot;Empty &lt;and&gt; condition in {}.&quot;, _file);
+		
+		return cond;
+	}
+	
+	protected Condition parseLogicOr(Node n, Object template)
+	{
+		ConditionLogicOr cond = new ConditionLogicOr();
+		for (n = n.getFirstChild(); n != null; n = n.getNextSibling())
+			if (n.getNodeType() == Node.ELEMENT_NODE)
+				cond.add(parseCondition(n, template));
+			
+		if (cond.conditions == null || cond.conditions.length == 0)
+			LOGGER.error(&quot;Empty &lt;or&gt; condition in {}.&quot;, _file);
+		
+		return cond;
+	}
+	
+	protected Condition parseLogicNot(Node n, Object template)
+	{
+		for (n = n.getFirstChild(); n != null; n = n.getNextSibling())
+			if (n.getNodeType() == Node.ELEMENT_NODE)
+				return new ConditionLogicNot(parseCondition(n, template));
+			
+		LOGGER.error(&quot;Empty &lt;not&gt; condition in {}.&quot;, _file);
+		return null;
+	}
+	
+	protected Condition parsePlayerCondition(Node n, Object template)
+	{
+		Condition cond = null;
+		int[] ElementSeeds = new int[5];
+		byte[] forces = new byte[2];
+		NamedNodeMap attrs = n.getAttributes();
+		
+		for (int i = 0; i &lt; attrs.getLength(); i++)
+		{
+			Node a = attrs.item(i);
+			if (&quot;race&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				ClassRace race = ClassRace.valueOf(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerRace(race));
+			}
+			else if (&quot;level&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int lvl = Integer.decode(getValue(a.getNodeValue(), template));
+				cond = joinAnd(cond, new ConditionPlayerLevel(lvl));
+			}
+			else if (&quot;resting&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.RESTING, val));
+			}
+			else if (&quot;riding&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.RIDING, val));
+			}
+			else if (&quot;flying&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.FLYING, val));
+			}
+			else if (&quot;moving&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.MOVING, val));
+			}
+			else if (&quot;running&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.RUNNING, val));
+			}
+			else if (&quot;behind&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.BEHIND, val));
+			}
+			else if (&quot;front&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.FRONT, val));
+			}
+			else if (&quot;olympiad&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerState(PlayerState.OLYMPIAD, val));
+			}
+			else if (&quot;ishero&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionPlayerIsHero(val));
+			}
+			else if (&quot;hp&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int hp = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerHp(hp));
+			}
+			else if (&quot;mp&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int hp = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerMp(hp));
+			}
+			else if (&quot;pkCount&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int expIndex = Integer.decode(getValue(a.getNodeValue(), template));
+				cond = joinAnd(cond, new ConditionPlayerPkCount(expIndex));
+			}
+			else if (&quot;battle_force&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				forces[0] = Byte.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;spell_force&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				forces[1] = Byte.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;charges&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int value = Integer.decode(getValue(a.getNodeValue(), template));
+				cond = joinAnd(cond, new ConditionPlayerCharges(value));
+			}
+			else if (&quot;weight&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int weight = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerWeight(weight));
+			}
+			else if (&quot;invSize&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int size = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerInvSize(size));
+			}
+			else if (&quot;pledgeClass&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int pledgeClass = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerPledgeClass(pledgeClass));
+			}
+			else if (&quot;clanHall&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				StringTokenizer st = new StringTokenizer(a.getNodeValue(), &quot;,&quot;);
+				ArrayList&lt;Integer&gt; array = new ArrayList&lt;&gt;(st.countTokens());
+				while (st.hasMoreTokens())
+				{
+					String item = st.nextToken().trim();
+					array.add(Integer.decode(getValue(item, null)));
+				}
+				cond = joinAnd(cond, new ConditionPlayerHasClanHall(array));
+			}
+			else if (&quot;castle&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int castle = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerHasCastle(castle));
+			}
+			else if (&quot;sex&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int sex = Integer.decode(getValue(a.getNodeValue(), null));
+				cond = joinAnd(cond, new ConditionPlayerSex(sex));
+			}
+			else if (&quot;active_effect_id&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int effect_id = Integer.decode(getValue(a.getNodeValue(), template));
+				cond = joinAnd(cond, new ConditionPlayerActiveEffectId(effect_id));
+			}
+			else if (&quot;active_effect_id_lvl&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				String val = getValue(a.getNodeValue(), template);
+				int effect_id = Integer.decode(getValue(val.split(&quot;,&quot;)[0], template));
+				int effect_lvl = Integer.decode(getValue(val.split(&quot;,&quot;)[1], template));
+				cond = joinAnd(cond, new ConditionPlayerActiveEffectId(effect_id, effect_lvl));
+			}
+			else if (&quot;active_skill_id&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int skill_id = Integer.decode(getValue(a.getNodeValue(), template));
+				cond = joinAnd(cond, new ConditionPlayerActiveSkillId(skill_id));
+			}
+			else if (&quot;active_skill_id_lvl&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				String val = getValue(a.getNodeValue(), template);
+				int skill_id = Integer.decode(getValue(val.split(&quot;,&quot;)[0], template));
+				int skill_lvl = Integer.decode(getValue(val.split(&quot;,&quot;)[1], template));
+				cond = joinAnd(cond, new ConditionPlayerActiveSkillId(skill_id, skill_lvl));
+			}
+			else if (&quot;seed_fire&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				ElementSeeds[0] = Integer.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;seed_water&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				ElementSeeds[1] = Integer.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;seed_wind&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				ElementSeeds[2] = Integer.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;seed_various&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				ElementSeeds[3] = Integer.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;seed_any&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				ElementSeeds[4] = Integer.decode(getValue(a.getNodeValue(), null));
+			}
+			else if (&quot;insidePoly&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				final Node zoneNode = n.getFirstChild().getNextSibling();
+				final NamedNodeMap pAttrs = zoneNode.getAttributes();
+				
+				final int minZ = Integer.decode(getValue(pAttrs.getNamedItem(&quot;minZ&quot;).getNodeValue(), null));
+				final int maxZ = Integer.decode(getValue(pAttrs.getNamedItem(&quot;maxZ&quot;).getNodeValue(), null));
+				final boolean checkInside = Boolean.parseBoolean(getValue(a.getNodeValue(), null));
+				
+				final NodeList nNodes = zoneNode.getChildNodes();
+				
+				final List&lt;IntIntHolder&gt; pNodes = new ArrayList&lt;&gt;();
+				
+				for (int j = 0; j &lt; nNodes.getLength(); j++)
+					if (nNodes.item(j).getNodeType() == Node.ELEMENT_NODE)
+					{
+						final NamedNodeMap nodeAttrs = nNodes.item(j).getAttributes();
+						final int xCoord = Integer.decode(getValue(nodeAttrs.getNamedItem(&quot;x&quot;).getNodeValue(), null));
+						final int yCoord = Integer.decode(getValue(nodeAttrs.getNamedItem(&quot;y&quot;).getNodeValue(), null));
+						
+						pNodes.add(new IntIntHolder(xCoord, yCoord));
+					}
+				
+				final int[] aX = new int[pNodes.size()];
+				final int[] aY = new int[pNodes.size()];
+				
+				for (int k = 0; k &lt; pNodes.size(); k++)
+				{
+					aX[k] = pNodes.get(k).getId();
+					aY[k] = pNodes.get(k).getValue();
+				}
+				
+				cond = joinAnd(cond, new ConditionPlayerInsidePoly(new ZoneNPoly(aX, aY, minZ, maxZ), checkInside));
+			}
+		}
+		
+		// Elemental seed condition processing
+		for (int elementSeed : ElementSeeds)
+		{
+			if (elementSeed &gt; 0)
+			{
+				cond = joinAnd(cond, new ConditionElementSeed(ElementSeeds));
+				break;
+			}
+		}
+		
+		if (forces[0] + forces[1] &gt; 0)
+			cond = joinAnd(cond, new ConditionForceBuff(forces));
+		
+		if (cond == null)
+			LOGGER.error(&quot;Unrecognized &lt;player&gt; condition in {}.&quot;, _file);
+		
+		return cond;
+	}
+	
+	protected Condition parseTargetCondition(Node n, Object template)
+	{
+		Condition cond = null;
+		NamedNodeMap attrs = n.getAttributes();
+		for (int i = 0; i &lt; attrs.getLength(); i++)
+		{
+			Node a = attrs.item(i);
+			if (&quot;hp_min_max&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				String val = getValue(a.getNodeValue(), template);
+				int hpMin = Integer.decode(getValue(val.split(&quot;,&quot;)[0], template));
+				int hpMax = Integer.decode(getValue(val.split(&quot;,&quot;)[1], template));
+				cond = joinAnd(cond, new ConditionTargetHpMinMax(hpMin, hpMax));
+			}
+			else if (&quot;active_skill_id&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int skill_id = Integer.decode(getValue(a.getNodeValue(), template));
+				cond = joinAnd(cond, new ConditionTargetActiveSkillId(skill_id));
+			}
+			else if (&quot;race_id&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				List&lt;Integer&gt; array = new ArrayList&lt;&gt;();
+				StringTokenizer st = new StringTokenizer(a.getNodeValue(), &quot;,&quot;);
+				while (st.hasMoreTokens())
+				{
+					String item = st.nextToken().trim();
+					array.add(Integer.decode(getValue(item, null)));
+				}
+				cond = joinAnd(cond, new ConditionTargetRaceId(array));
+			}
+			else if (&quot;npcId&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				StringTokenizer st = new StringTokenizer(a.getNodeValue(), &quot;,&quot;);
+				ArrayList&lt;Integer&gt; array = new ArrayList&lt;&gt;(st.countTokens());
+				while (st.hasMoreTokens())
+				{
+					String item = st.nextToken().trim();
+					array.add(Integer.decode(getValue(item, null)));
+				}
+				cond = joinAnd(cond, new ConditionTargetNpcId(array));
+			}
+		}
+		
+		if (cond == null)
+			LOGGER.error(&quot;Unrecognized &lt;target&gt; condition in {}.&quot;, _file);
+		
+		return cond;
+	}
+	
+	protected Condition parseSkillCondition(Node n)
+	{
+		NamedNodeMap attrs = n.getAttributes();
+		Stats stat = Stats.valueOfXml(attrs.getNamedItem(&quot;stat&quot;).getNodeValue());
+		return new ConditionSkillStats(stat);
+	}
+	
+	protected Condition parseUsingCondition(Node n)
+	{
+		Condition cond = null;
+		NamedNodeMap attrs = n.getAttributes();
+		for (int i = 0; i &lt; attrs.getLength(); i++)
+		{
+			Node a = attrs.item(i);
+			if (&quot;kind&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				int mask = 0;
+				StringTokenizer st = new StringTokenizer(a.getNodeValue(), &quot;,&quot;);
+				while (st.hasMoreTokens())
+				{
+					int old = mask;
+					String item = st.nextToken();
+					for (WeaponType wt : WeaponType.VALUES)
+					{
+						if (wt.name().equals(item))
+						{
+							mask |= wt.mask();
+							break;
+						}
+					}
+					
+					for (ArmorType at : ArmorType.VALUES)
+					{
+						if (at.name().equals(item))
+						{
+							mask |= at.mask();
+							break;
+						}
+					}
+					
+					if (old == mask)
+						LOGGER.error(&quot;[parseUsingCondition=\&quot;kind\&quot;] Unknown item type name: {}.&quot;, item);
+				}
+				cond = joinAnd(cond, new ConditionUsingItemType(mask));
+			}
+		}
+		
+		if (cond == null)
+			LOGGER.error(&quot;Unrecognized &lt;using&gt; condition in {}.&quot;, _file);
+		
+		return cond;
+	}
+	
+	protected Condition parseGameCondition(Node n)
+	{
+		Condition cond = null;
+		NamedNodeMap attrs = n.getAttributes();
+		for (int i = 0; i &lt; attrs.getLength(); i++)
+		{
+			Node a = attrs.item(i);
+			if (&quot;night&quot;.equalsIgnoreCase(a.getNodeName()))
+			{
+				boolean val = Boolean.parseBoolean(a.getNodeValue());
+				cond = joinAnd(cond, new ConditionGameTime(val));
+			}
+		}
+		
+		if (cond == null)
+			LOGGER.error(&quot;Unrecognized &lt;game&gt; condition in {}.&quot;, _file);
+		
+		return cond;
+	}
+	
+	protected void parseTable(Node n)
+	{
+		NamedNodeMap attrs = n.getAttributes();
+		String name = attrs.getNamedItem(&quot;name&quot;).getNodeValue();
+		
+		if (name.charAt(0) != &#x27;#&#x27;)
+			throw new IllegalArgumentException(&quot;Table name must start with #&quot;);
+		
+		StringTokenizer data = new StringTokenizer(n.getFirstChild().getNodeValue());
+		List&lt;String&gt; array = new ArrayList&lt;&gt;(data.countTokens());
+		
+		while (data.hasMoreTokens())
+			array.add(data.nextToken());
+		
+		setTable(name, array.toArray(new String[array.size()]));
+	}
+	
+	protected void parseBeanSet(Node n, StatSet set, Integer level)
+	{
+		String name = n.getAttributes().getNamedItem(&quot;name&quot;).getNodeValue().trim();
+		String value = n.getAttributes().getNamedItem(&quot;val&quot;).getNodeValue().trim();
+		char ch = value.length() == 0 ? &#x27; &#x27; : value.charAt(0);
+		
+		if (ch == &#x27;#&#x27; || ch == &#x27;-&#x27; || Character.isDigit(ch))
+			set.set(name, String.valueOf(getValue(value, level)));
+		else
+			set.set(name, value);
+	}
+	
+	protected String getValue(String value, Object template)
+	{
+		// is it a table?
+		if (value.charAt(0) == &#x27;#&#x27;)
+		{
+			if (template instanceof L2Skill)
+				return getTableValue(value);
+			
+			if (template instanceof Integer intTemplate)
+				return getTableValue(value, intTemplate.intValue());
+			
+			throw new IllegalStateException();
+		}
+		return value;
+	}
+	
+	protected Condition joinAnd(Condition cond, Condition c)
+	{
+		if (cond == null)
+			return c;
+		
+		if (cond instanceof ConditionLogicAnd cla)
+		{
+			cla.add(c);
+			return cond;
+		}
+		
+		final ConditionLogicAnd cla = new ConditionLogicAnd();
+		cla.add(cond);
+		cla.add(c);
+		return cla;
+	}
+}</pre>
+            
+</body>
+</html>

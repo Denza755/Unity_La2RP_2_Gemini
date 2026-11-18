@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/Nameplate/Nameplate.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/Nameplate/Nameplate.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/Nameplate/Nameplate.uss?fileID=7433441132597879392&amp;amp;guid=610f407baa5809b45bfd81a28ca613f9&amp;amp;type=3#Nameplate&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;Nameplate&quot; class=&quot;nameplate&quot; style=&quot;flex-grow: 1; position: absolute;&quot;&gt;
+        &lt;ui:Label text=&quot;&quot; name=&quot;EntityTitle&quot; class=&quot;target-title&quot; style=&quot;-unity-font-style: bold; -unity-text-outline-width: 1px; text-shadow: 0 0 1px rgb(0, 0, 0); font-size: 12px;&quot; /&gt;
+        &lt;ui:GroupBox name=&quot;NameContainer&quot; class=&quot;nameplate-name-container&quot;&gt;
+            &lt;ui:VisualElement name=&quot;TargetBubbleLeft&quot; class=&quot;target-bubble&quot; /&gt;
+            &lt;ui:Label text=&quot;Shnok&quot; name=&quot;EntityName&quot; class=&quot;target-name&quot; style=&quot;-unity-font-style: bold; -unity-font-definition: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Font/tahoma.ttf?fileID=12800000&amp;amp;guid=96fb7a735e76e0742bf125e2d4734bf3&amp;amp;type=3#tahoma&amp;quot;); font-size: 12px;&quot; /&gt;
+            &lt;ui:Label text=&quot;Shnok&quot; name=&quot;DeleteTimer&quot; class=&quot;target-name delete-timer-label&quot; /&gt;
+            &lt;ui:VisualElement name=&quot;TargetBubbleRight&quot; class=&quot;target-bubble&quot; style=&quot;flex-grow: 0;&quot; /&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:VisualElement name=&quot;GaugeContainer&quot; template=&quot;HpBar&quot; class=&quot;bar-container nameplate-gauge&quot; style=&quot;margin-top: 5px;&quot;&gt;
+            &lt;ui:GroupBox name=&quot;GaugeBG&quot; class=&quot;nameplace-gauge-inner&quot;&gt;
+                &lt;ui:VisualElement name=&quot;BGLeft&quot; class=&quot;left bar-height nameplate-left&quot; /&gt;
+                &lt;ui:VisualElement name=&quot;BGCenter&quot; class=&quot;center bar-height nameplate-center&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                &lt;ui:VisualElement name=&quot;BGRight&quot; class=&quot;right bar-height nameplate-right&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;Gauge&quot; class=&quot;nameplace-gauge-inner&quot;&gt;
+                &lt;ui:VisualElement name=&quot;BGLeft&quot; class=&quot;left bar-height nameplate-left&quot; /&gt;
+                &lt;ui:VisualElement name=&quot;BGCenter&quot; class=&quot;center bar-height nameplate-center&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+                &lt;ui:VisualElement name=&quot;BGRight&quot; class=&quot;right bar-height nameplate-right&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

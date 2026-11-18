@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/LoginServerPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/LoginServerPacket.cs</h1>
+            <pre>﻿using System;
+using System.Text;
+using UnityEngine;
+
+public abstract class LoginServerPacket : ServerPacket
+{
+    public LoginServerPacket(byte[] d) : base(d)
+    {
+    }
+
+    protected override string ReadS()
+    {
+        int start = _iterator;
+
+        // Find the null terminator in UTF-16LE encoding.
+        int end = start;
+        while (end &lt; _packetData.Length - 1 &amp;&amp; (_packetData[end] != 0 || _packetData[end + 1] != 0))
+            end += 2;
+
+        // Move the offset past the string and the null terminator.
+        int strLen = end - start;
+
+        _iterator += strLen + 2;
+
+        // Create a string from the bytes between start and end.
+        byte[] data = new byte[strLen];
+        Array.Copy(_packetData, _iterator, data, 0, strLen);
+
+        string s = Encoding.GetEncoding(&quot;UTF-8&quot;).GetString(data);
+
+        Debug.Log(&quot;Read string: &quot; + s + &quot; : [&quot; + strLen + &quot;]: &quot; + StringUtils.ByteArrayToString(data));
+        return s;
+    }
+
+    protected override int ReadI()
+    {
+        byte[] data = new byte[4];
+        Array.Copy(_packetData, _iterator, data, 0, 4);
+        // Array.Reverse(data);
+        int value = BitConverter.ToInt32(data, 0);
+        _iterator += 4;
+        return value;
+    }
+
+    protected override long ReadL()
+    {
+        byte[] data = new byte[8];
+        Array.Copy(_packetData, _iterator, data, 0, 8);
+        // Array.Reverse(data);
+        long value = BitConverter.ToInt64(data, 0);
+        _iterator += 8;
+        return value;
+    }
+
+    protected override float ReadF()
+    {
+        byte[] data = new byte[4];
+        Array.Copy(_packetData, _iterator, data, 0, 4);
+        // Array.Reverse(data);
+        float value = BitConverter.ToSingle(data, 0);
+        _iterator += 4;
+        return value;
+    }
+}
+</pre>
+            
+</body>
+</html>

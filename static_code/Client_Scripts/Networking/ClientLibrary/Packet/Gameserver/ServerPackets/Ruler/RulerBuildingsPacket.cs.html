@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Ruler/RulerBuildingsPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Ruler/RulerBuildingsPacket.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ServerBuildingEntry
+{
+    public int Id;
+    public string PrefabName;
+    public Vector3 Position;
+    public float RotY;
+    public float Scale;
+    public string OwnerName;
+}
+
+public class RulerBuildingsPacket : ServerPacket
+{
+    public byte Mode { get; private set; }
+    public List&lt;ServerBuildingEntry&gt; Buildings { get; private set; } = new List&lt;ServerBuildingEntry&gt;();
+    public int DemolishedBuildingId { get; private set; }
+
+    public RulerBuildingsPacket(byte[] d) : base(d)
+    {
+        Parse();
+    }
+
+    public override void Parse()
+    {
+        try
+        {
+            Mode = ReadB();
+
+            if (Mode == 0) // Chunk list of buildings
+            {
+                int count = ReadH();
+                for (int i = 0; i &lt; count; i++)
+                {
+                    ServerBuildingEntry entry = new ServerBuildingEntry
+                    {
+                        Id = ReadI(),
+                        PrefabName = ReadS(),
+                        Position = new Vector3((float)ReadD(), (float)ReadD(), (float)ReadD()),
+                        RotY = (float)ReadD(),
+                        Scale = (float)ReadD(),
+                        OwnerName = ReadS()
+                    };
+                    Buildings.Add(entry);
+                }
+            }
+            else if (Mode == 1) // Single building added
+            {
+                ServerBuildingEntry entry = new ServerBuildingEntry
+                {
+                    Id = ReadI(),
+                    PrefabName = ReadS(),
+                    Position = new Vector3((float)ReadD(), (float)ReadD(), (float)ReadD()),
+                    RotY = (float)ReadD(),
+                    Scale = (float)ReadD(),
+                    OwnerName = ReadS()
+                };
+                Buildings.Add(entry);
+            }
+            else if (Mode == 2) // Single building demolished
+            {
+                DemolishedBuildingId = ReadI();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($&quot;[RulerBuildingsPacket] Error parsing packet mode {Mode}: {ex}&quot;);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

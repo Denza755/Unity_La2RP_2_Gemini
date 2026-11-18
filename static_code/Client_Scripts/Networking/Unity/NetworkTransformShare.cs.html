@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/Unity/NetworkTransformShare.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/Unity/NetworkTransformShare.cs</h1>
+            <pre>using UnityEngine;
+
+[RequireComponent(typeof(CharacterController))]
+public class NetworkTransformShare : MonoBehaviour
+{
+    private CharacterController _characterController;
+    private Vector3 _lastPos, _lastRot;
+    private float _lastSharedPosTime;
+
+    [SerializeField] public Vector3 _serverPosition;
+    // [SerializeField] public bool _shouldShareRotation;
+    public bool _rotationShareEnabled;
+
+    // public bool ShouldShareRotation { get { return _shouldShareRotation; } set { _shouldShareRotation = value; } }
+
+    private static NetworkTransformShare _instance;
+    public static NetworkTransformShare Instance { get { return _instance; } }
+
+    public void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    void Start()
+    {
+        if (World.Instance.OfflineMode)
+        {
+            enabled = false;
+            return;
+        }
+
+        _characterController = GetComponent&lt;CharacterController&gt;();
+        _lastPos = transform.position;
+        _lastRot = transform.forward;
+        _lastSharedPosTime = Time.time;
+        _rotationShareEnabled = false; //rotation is now calculated based on movedirection
+    }
+
+    void Update()
+    {
+        if (ShouldSharePosition())
+        {
+            SharePosition();
+        }
+    }
+
+    // Share position every 0.25f and based on delay
+    public bool ShouldSharePosition()
+    {
+        if (Vector3.Distance(transform.position, _lastPos) &gt;= 1f || Time.time - _lastSharedPosTime &gt;= 10f)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public void SharePosition()
+    {
+        GameClient.Instance.ClientPacketHandler.ValidatePosition(transform.position, NetworkCharacterControllerShare.Instance.Heading);
+
+        _lastSharedPosTime = Time.time;
+        _lastPos = transform.position;
+    }
+}</pre>
+            
+</body>
+</html>

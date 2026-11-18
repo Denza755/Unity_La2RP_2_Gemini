@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Shop/ShopTab.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Shop/ShopTab.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[System.Serializable]
+public class ShopTab : L2Tab
+{
+    public enum ShopTabType
+    {
+        BUY, SELL
+    }
+
+    private VisualElement _containerLeft;
+    private VisualElement _containerRight;
+    private Label _weightLabel;
+    private Label _adenaCountLabel;
+    private Label _priceLabel;
+    private VisualElement _weightBarContainer;
+    private VisualElement _weightBar;
+    private VisualElement _weightBarBg;
+    private int _rowLength = 6;
+    // private int _minimumRows = 7;
+    private int _listId = 0;
+
+    [SerializeField] private ShopTabType _shopTabType;
+    [SerializeField] private List&lt;ShopSlotContainer&gt; _slotContainers;
+
+    public bool MainTab { get; internal set; }
+    public ShopTabType TabType { get =&gt; _shopTabType; set { _shopTabType = value; } }
+
+    public override void Initialize(L2TabView tabView, VisualElement tabContainer, VisualElement tabHeader)
+    {
+        base.Initialize(tabView, tabContainer, tabHeader);
+
+        _containerLeft = tabContainer.Q&lt;VisualElement&gt;(&quot;ContainerInnerLeft&quot;);
+        _containerRight = tabContainer.Q&lt;VisualElement&gt;(&quot;ContainerInnerRight&quot;);
+
+        if (_shopTabType == ShopTabType.BUY)
+        {
+            _containerLeft.Q&lt;Label&gt;(&quot;TabLabel&quot;).text = &quot;Shop List&quot;;
+            _containerRight.Q&lt;Label&gt;(&quot;TabLabel&quot;).text = &quot;Purchase List&quot;;
+        }
+        else
+        {
+            _containerLeft.Q&lt;Label&gt;(&quot;TabLabel&quot;).text = &quot;Inventory&quot;;
+            _containerRight.Q&lt;Label&gt;(&quot;TabLabel&quot;).text = &quot;Items on Sale&quot;;
+        }
+
+        _adenaCountLabel = tabContainer.Q&lt;Label&gt;(&quot;AdenaCount&quot;);
+        _priceLabel = tabContainer.Q&lt;Label&gt;(&quot;Price&quot;);
+        _weightBarContainer = tabContainer.Q&lt;VisualElement&gt;(&quot;WeightBar&quot;);
+        _weightLabel = _weightBarContainer.Q&lt;Label&gt;(&quot;Text&quot;);
+        _weightBar = _weightBarContainer.Q&lt;VisualElement&gt;(&quot;Bar&quot;);
+        _weightBarBg = _weightBarContainer.Q&lt;VisualElement&gt;(&quot;BarBg&quot;);
+
+        _slotContainers = new List&lt;ShopSlotContainer&gt;
+        {
+            new ShopSlotContainer(),
+            new ShopSlotContainer()
+        };
+
+        _slotContainers[0].Initialize(_containerLeft, _rowLength, _shopTabType, L2Slot.SlotType.Product, 42, _slotContainers[1], () =&gt;
+        {
+
+        });
+
+        _slotContainers[1].Initialize(_containerRight, _rowLength, _shopTabType, L2Slot.SlotType.Basket, 42, _slotContainers[0], () =&gt;
+        {
+            if (_shopTabType == ShopTabType.BUY)
+            {
+                // Add weight
+                RefreshWeight(_slotContainers[1].ContentWeight);
+            }
+            else
+            {
+                // Remove weight
+                RefreshWeight(-_slotContainers[1].ContentWeight);
+            }
+
+            RefreshPrice(_slotContainers[1].ContentPrice);
+        });
+    }
+
+    public void UpdateProductList(Product[] products, int adenas, int listId)
+    {
+        _listId = listId;
+
+        _slotContainers[0].RefreshProducts(products);
+        _slotContainers[1].RefreshProducts(null);
+
+        RefreshAdenas(adenas);
+        RefreshWeight(0);
+    }
+
+    private void RefreshAdenas(int adenas)
+    {
+        _adenaCountLabel.text = $&quot;{adenas:n0}&quot;;
+    }
+
+    private void RefreshPrice(int price)
+    {
+        _priceLabel.text = $&quot;{price:n0}&quot;;
+    }
+
+    public void RefreshWeight(int difference)
+    {
+        if (PlayerEntity.Instance == null)
+        {
+            return;
+        }
+
+        int weight = ((PlayerStats)PlayerEntity.Instance.Stats).CurrWeight + difference;
+        int maxWeight = ((PlayerStats)PlayerEntity.Instance.Stats).MaxWeight;
+
+        if (_weightBarBg != null &amp;&amp; _weightBar != null)
+        {
+            float bgWidth = 128; //TODO fix resolvedStyle width = 0
+            float weightRatio = Math.Min(1, (float)weight / maxWeight);
+
+            for (int i = 1; i &lt;= 5; i++)
+            {
+                _weightBarContainer.RemoveFromClassList(&quot;weight-&quot; + i);
+            }
+
+            int weightLevel = (int)Mathf.Floor(weightRatio / 0.25f) + 1;
+            _weightBarContainer.AddToClassList(&quot;weight-&quot; + weightLevel);
+
+            float barWidth = bgWidth * weightRatio;
+            _weightBar.style.width = barWidth;
+        }
+
+        if (weight &gt; 0)
+        {
+            _weightLabel.text = $&quot;{((float)weight / maxWeight * 100f).ToString(&quot;0.00&quot;)}%&quot;;
+        }
+        else
+        {
+            _weightLabel.text = $&quot;00.00%&quot;;
+        }
+    }
+
+    protected override void OnTabHeaderClicked()
+    {
+        base.OnTabHeaderClicked();
+
+        ShopWindow.Instance.TabSwitched(_shopTabType);
+    }
+
+    public void Submit()
+    {
+        if (_shopTabType == ShopTabType.BUY)
+        {
+            GameClient.Instance.ClientPacketHandler.SendRequestBuyItem(_listId, _slotContainers[1].Products);
+        }
+        else
+        {
+            GameClient.Instance.ClientPacketHandler.SendRequestSellItem(_listId, _slotContainers[1].Products);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/kind/Armor.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/kind/Armor.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.item.kind;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.enums.items.ArmorType;
+
+/**
+ * This class is dedicated to the management of armors.
+ */
+public final class Armor extends Item
+{
+	private ArmorType _type;
+	
+	public Armor(StatSet set)
+	{
+		super(set);
+		
+		_type = set.getEnum(&quot;armor_type&quot;, ArmorType.class, ArmorType.NONE);
+		
+		if (getBodyPart() == Item.SLOT_NECK || getBodyPart() == Item.SLOT_FACE || getBodyPart() == Item.SLOT_HAIR || getBodyPart() == Item.SLOT_HAIRALL || (getBodyPart() &amp; Item.SLOT_L_EAR) != 0 || (getBodyPart() &amp; Item.SLOT_L_FINGER) != 0 || (getBodyPart() &amp; Item.SLOT_BACK) != 0)
+		{
+			_type1 = Item.TYPE1_WEAPON_RING_EARRING_NECKLACE;
+			_type2 = Item.TYPE2_ACCESSORY;
+		}
+		else
+		{
+			if (_type == ArmorType.NONE &amp;&amp; getBodyPart() == Item.SLOT_L_HAND) // retail define shield as NONE
+				_type = ArmorType.SHIELD;
+			
+			_type1 = Item.TYPE1_SHIELD_ARMOR;
+			_type2 = Item.TYPE2_SHIELD_ARMOR;
+		}
+	}
+	
+	@Override
+	public ArmorType getItemType()
+	{
+		return _type;
+	}
+	
+	@Override
+	public final int getItemMask()
+	{
+		return getItemType().mask();
+	}
+}</pre>
+            
+</body>
+</html>

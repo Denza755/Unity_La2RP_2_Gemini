@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Animation/Controller/NewPlayerAnimationController.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Animation/Controller/NewPlayerAnimationController.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+// Used by LOCAL PLAYER
+public class NewPlayerAnimationController : NewHumanoidAnimationController
+{
+    private static NewPlayerAnimationController _instance;
+    public static NewPlayerAnimationController Instance { get { return _instance; } }
+
+    public override void Initialize()
+    {
+        base.Initialize();
+
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    void OnDestroy()
+    {
+        _instance = null;
+    }
+}
+
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/RadarMarker.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/RadarMarker.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.location;
+
+import java.util.Objects;
+
+public class RadarMarker extends Location
+{
+	private int _type;
+	
+	public RadarMarker(int type, int x, int y, int z)
+	{
+		super(x, y, z);
+		
+		_type = type;
+	}
+	
+	public RadarMarker(int x, int y, int z)
+	{
+		super(x, y, z);
+		
+		_type = 1;
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + Objects.hash(_type);
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		
+		if (!super.equals(obj))
+			return false;
+		
+		if (getClass() != obj.getClass())
+			return false;
+		
+		final RadarMarker other = (RadarMarker) obj;
+		return _type == other._type;
+	}
+}</pre>
+            
+</body>
+</html>

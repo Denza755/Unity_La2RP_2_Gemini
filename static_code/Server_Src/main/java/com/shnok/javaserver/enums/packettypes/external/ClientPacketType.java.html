@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/enums/packettypes/external/ClientPacketType.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/enums/packettypes/external/ClientPacketType.java</h1>
+            <pre>package com.shnok.javaserver.enums.packettypes.external;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public enum ClientPacketType {
+    Ping((byte)0),
+    AuthRequest((byte)1),
+    RequestServerList((byte)2),
+    RequestServerLogin((byte)3);
+
+    private final byte value;
+
+    ClientPacketType(byte value) {
+        this.value = value;
+    }
+
+    public byte getValue() {
+        return value;
+    }
+
+    private static final Map&lt;Byte, ClientPacketType&gt; BY_VALUE = new HashMap&lt;&gt;();
+
+    static {
+        for (ClientPacketType type : values()) {
+            BY_VALUE.put(type.getValue(), type);
+        }
+    }
+
+    public static ClientPacketType fromByte(byte value) {
+        ClientPacketType result = BY_VALUE.get(value);
+        if (result == null) {
+            throw new IllegalArgumentException(&quot;Invalid byte value for ClientPacketType: &quot; + value);
+        }
+        return result;
+    }
+}
+</pre>
+            
+</body>
+</html>

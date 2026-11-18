@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/skills/AbnormalEffect.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/skills/AbnormalEffect.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums.skills;
+
+import java.util.NoSuchElementException;
+
+public enum AbnormalEffect
+{
+	NULL(&quot;null&quot;, 0x0),
+	BLEEDING(&quot;bleeding&quot;, 0x000001),
+	POISON(&quot;poison&quot;, 0x000002),
+	REDCIRCLE(&quot;redcircle&quot;, 0x000004),
+	ICE(&quot;ice&quot;, 0x000008),
+	WIND(&quot;wind&quot;, 0x000010),
+	FEAR(&quot;fear&quot;, 0x000020),
+	STUN(&quot;stun&quot;, 0x000040),
+	SLEEP(&quot;sleep&quot;, 0x000080),
+	MUTED(&quot;mute&quot;, 0x000100),
+	ROOT(&quot;root&quot;, 0x000200),
+	HOLD_1(&quot;hold1&quot;, 0x000400),
+	HOLD_2(&quot;hold2&quot;, 0x000800),
+	UNKNOWN_13(&quot;unknown13&quot;, 0x001000),
+	BIG_HEAD(&quot;bighead&quot;, 0x002000),
+	FLAME(&quot;flame&quot;, 0x004000),
+	CHANGE_TEXTURE(&quot;changetexture&quot;, 0x008000),
+	GROW(&quot;grow&quot;, 0x010000),
+	FLOATING_ROOT(&quot;floatroot&quot;, 0x020000),
+	DANCE_STUNNED(&quot;dancestun&quot;, 0x040000),
+	FIREROOT_STUN(&quot;firerootstun&quot;, 0x080000),
+	STEALTH(&quot;stealth&quot;, 0x100000),
+	IMPRISIONING_1(&quot;imprison1&quot;, 0x200000),
+	IMPRISIONING_2(&quot;imprison2&quot;, 0x400000),
+	MAGIC_CIRCLE(&quot;magiccircle&quot;, 0x800000);
+	
+	private final int _mask;
+	private final String _name;
+	
+	private AbnormalEffect(String name, int mask)
+	{
+		_name = name;
+		_mask = mask;
+	}
+	
+	public final int getMask()
+	{
+		return _mask;
+	}
+	
+	public final String getName()
+	{
+		return _name;
+	}
+	
+	public static AbnormalEffect getByName(String name)
+	{
+		for (AbnormalEffect eff : AbnormalEffect.values())
+		{
+			if (eff.getName().equals(name))
+				return eff;
+		}
+		throw new NoSuchElementException(&quot;AbnormalEffect not found for name: &#x27;&quot; + name + &quot;&#x27;.\n Please check &quot; + AbnormalEffect.class.getCanonicalName());
+	}
+}</pre>
+            
+</body>
+</html>

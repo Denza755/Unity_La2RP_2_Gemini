@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/RaidBoss/RaidBossParty/RaidBossType4AndreasAggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/RaidBoss/RaidBossParty/RaidBossType4AndreasAggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.RaidBoss.RaidBossParty;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.taskmanager.GameTimeTaskManager;
+
+public class RaidBossType4AndreasAggressive extends RaidBossType4
+{
+	public RaidBossType4AndreasAggressive()
+	{
+		super(&quot;ai/individual/Monster/RaidBoss/RaidBossAlone/RaidBossParty/RaidBossType4&quot;);
+	}
+	
+	public RaidBossType4AndreasAggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		29062
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai2 = 0;
+		npc._i_ai3 = 0;
+		npc._i_ai4 = 0;
+		npc._i_quest0 = 0;
+		npc._i_quest1 = 0;
+		npc._c_ai0 = npc;
+		
+		broadcastScriptEvent(npc, 0, npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;BroadcastRange&quot;, 4000) * 2);
+		
+		startQuestTimer(&quot;6008&quot;, npc, null, 5 * 60 * 60000L);
+		
+		final int private1_silhouette = getNpcIntAIParam(npc, &quot;private1_silhouette&quot;);
+		final int private2_silhouette = getNpcIntAIParam(npc, &quot;private2_silhouette&quot;);
+		final int private3_silhouette = getNpcIntAIParam(npc, &quot;private3_silhouette&quot;);
+		final int private4_silhouette = getNpcIntAIParam(npc, &quot;private4_silhouette&quot;);
+		final int private1_pos_x = getNpcIntAIParamOrDefault(npc, &quot;private1_pos_x&quot;, -91);
+		final int private2_pos_x = getNpcIntAIParamOrDefault(npc, &quot;private2_pos_x&quot;, -48);
+		final int private3_pos_x = getNpcIntAIParamOrDefault(npc, &quot;private3_pos_x&quot;, -91);
+		final int private4_pos_x = getNpcIntAIParamOrDefault(npc, &quot;private4_pos_x&quot;, -48);
+		final int private1_pos_y = getNpcIntAIParamOrDefault(npc, &quot;private1_pos_y&quot;, -95);
+		final int private2_pos_y = getNpcIntAIParamOrDefault(npc, &quot;private2_pos_y&quot;, -130);
+		final int private3_pos_y = getNpcIntAIParamOrDefault(npc, &quot;private3_pos_y&quot;, 95);
+		final int private4_pos_y = getNpcIntAIParamOrDefault(npc, &quot;private4_pos_y&quot;, 130);
+		final int Start_x = getNpcIntAIParamOrDefault(npc, &quot;Start_x&quot;, -16385);
+		final int Start_y = getNpcIntAIParamOrDefault(npc, &quot;Start_y&quot;, -53268);
+		final int Start_z = getNpcIntAIParamOrDefault(npc, &quot;Start_z&quot;, -10439);
+		
+		createOnePrivateEx(npc, private1_silhouette, Start_x + private1_pos_x, Start_y + private1_pos_y, Start_z, 0, 0, true, 0, 0, 0);
+		createOnePrivateEx(npc, private2_silhouette, Start_x + private2_pos_x, Start_y + private2_pos_y, Start_z, 0, 0, true, 0, 0, 0);
+		createOnePrivateEx(npc, private3_silhouette, Start_x + private3_pos_x, Start_y + private3_pos_y, Start_z, 0, 0, true, 0, 0, 0);
+		createOnePrivateEx(npc, private4_silhouette, Start_x + private4_pos_x, Start_y + private4_pos_y, Start_z, 0, 0, true, 0, 0, 0);
+	}
+	
+	@Override
+	public void onNoDesire(Npc npc)
+	{
+		if (npc._i_ai3 != 0 || npc._i_ai4 != 0)
+		{
+			npc._i_ai2 = 0;
+			if (npc._c_ai0 != null)
+				startQuestTimer(&quot;6005&quot;, npc, null, 5000);
+		}
+		else if (npc._i_ai3 &lt; 3 || npc._i_ai3 &gt;= 7)
+		{
+			final int Start_x = getNpcIntAIParamOrDefault(npc, &quot;Start_x&quot;, -16385);
+			final int Start_y = getNpcIntAIParamOrDefault(npc, &quot;Start_y&quot;, -53268);
+			final int Start_z = getNpcIntAIParamOrDefault(npc, &quot;Start_z&quot;, -10439);
+			npc.getAI().addMoveToDesire(new Location(Start_x, Start_y, Start_z), 30);
+		}
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		super.onAttacked(npc, attacker, damage, skill);
+		
+		final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+		
+		if (topDesireTarget != null)
+			npc._c_ai0 = topDesireTarget;
+		else
+			npc._c_ai0 = attacker;
+		
+		npc._i_quest1 = GameTimeTaskManager.getInstance().getCurrentTick();
+		
+		if (Rnd.get(100) &lt; getNpcIntAIParamOrDefault(npc, &quot;AttackPartyPointRate&quot;, 33))
+			broadcastScriptEvent(npc, 10002, npc._c_ai0.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;SeekRange&quot;, 400));
+		
+		final double hpRatio = npc.getStatus().getHpRatio();
+		if (hpRatio &lt; 0.1)
+		{
+			if (npc._i_ai4 == 2)
+			{
+				npc.removeAllAttackDesire();
+				npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.TELEPORT_EFFECT), 1000000);
+			}
+		}
+		else if (hpRatio &lt; 0.3)
+		{
+			if (npc._i_ai4 == 1)
+			{
+				npc.removeAllAttackDesire();
+				npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.TELEPORT_EFFECT), 1000000);
+			}
+		}
+		else if (hpRatio &lt; 0.6)
+		{
+			if (npc._i_ai4 == 0)
+			{
+				npc.removeAllAttackDesire();
+				npc.getAI().addCastDesire(npc, getNpcSkillByType(npc, NpcSkillType.TELEPORT_EFFECT), 1000000);
+			}
+		}
+		
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;6008&quot;))
+		{
+			if (npc._i_ai2 == 0 &amp;&amp; npc._i_ai3 == 0 &amp;&amp; npc._i_ai4 == 0 &amp;&amp; npc._c_ai0 == npc &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST)
+			{
+				NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName11&quot;, &quot;altar_combat1_01&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				}
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName12&quot;, &quot;altar_combat1_02&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				}
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName13&quot;, &quot;altar_combat1_03&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				}
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName21&quot;, &quot;altar_combat2_01&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				}
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName22&quot;, &quot;altar_combat2_02&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				}
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName23&quot;, &quot;altar_combat2_03&quot;));
+				if (maker0 != null)
+				{
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				}
+				npc._i_ai2 = 0;
+				npc._i_ai3 = 0;
+				npc._i_ai4 = 0;
+				npc._c_ai0 = npc;
+				
+				broadcastScriptEvent(npc, 6, npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;BroadcastRange&quot;, 4000) * 2);
+				
+				npc.deleteMe();
+			}
+			else
+			{
+				startQuestTimer(&quot;6008&quot;, npc, player, 30 * 60 * 1000L);
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;6007&quot;))
+		{
+			npc.removeAllDesire();
+			npc.getAI().getHateList().cleanAllHate();
+			npc._i_quest0 = 1;
+		}
+		else if (name.equalsIgnoreCase(&quot;6006&quot;))
+		{
+			final int i0 = getElapsedTicks(npc._i_quest1);
+			if (i0 &gt; (30 * 60))
+			{
+				npc.removeAllAttackDesire();
+				broadcastScriptEvent(npc, 7, 0, getNpcIntAIParamOrDefault(npc, &quot;BroadcastRange&quot;, 4000));
+			}
+			else
+			{
+				startQuestTimer(&quot;6006&quot;, npc, player, 60000);
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;6005&quot;))
+		{
+			if (npc._c_ai0 != null)
+			{
+				npc._i_quest0 = 0;
+				if (npc._c_ai0 instanceof Playable)
+				{
+					npc.getAI().addAttackDesire(npc._c_ai0, 700);
+				}
+				broadcastScriptEvent(npc, 10002, npc._c_ai0.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;SeekRange&quot;, 400));
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;6004&quot;) || name.equalsIgnoreCase(&quot;6003&quot;))
+		{
+			npc._i_quest0 = 0;
+			npc.lookNeighbor();
+		}
+		else if (name.equalsIgnoreCase(&quot;6099&quot;))
+		{
+			npc.getAI().addCastDesire(npc, 4183, 1, 1000000);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		npc._i_ai2 = 1;
+		if (creature instanceof Player)
+		{
+			if (npc._c_ai0 == npc)
+			{
+				npc.getAI().addAttackDesire(creature, 700);
+			}
+			else if (npc._c_ai0 instanceof Playable)
+			{
+				npc.getAI().addAttackDesire(npc._c_ai0, 700);
+			}
+		}
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (skill == getNpcSkillByType(npc, NpcSkillType.TELEPORT_EFFECT))
+		{
+			final int TelPosX1 = getNpcIntAIParamOrDefault(npc, &quot;TelPosX1&quot;, -16393);
+			final int TelPosY1 = getNpcIntAIParamOrDefault(npc, &quot;TelPosY1&quot;, -53433);
+			final int TelPosZ1 = getNpcIntAIParamOrDefault(npc, &quot;TelPosZ1&quot;, -10439);
+			final int TelPosX2 = getNpcIntAIParamOrDefault(npc, &quot;TelPosX2&quot;, -17150);
+			final int TelPosY2 = getNpcIntAIParamOrDefault(npc, &quot;TelPosY2&quot;, -54064);
+			final int TelPosZ2 = getNpcIntAIParamOrDefault(npc, &quot;TelPosZ2&quot;, -10439);
+			final int TelPosX3 = getNpcIntAIParamOrDefault(npc, &quot;TelPosX3&quot;, -15690);
+			final int TelPosY3 = getNpcIntAIParamOrDefault(npc, &quot;TelPosY3&quot;, -54030);
+			final int TelPosZ3 = getNpcIntAIParamOrDefault(npc, &quot;TelPosZ3&quot;, -10439);
+			
+			if (npc._i_ai4 == 2)
+			{
+				if (success)
+					npc.teleportTo(TelPosX1, TelPosY1, TelPosZ1, 0);
+				
+				npc._i_ai4 = 3;
+				startQuestTimer(&quot;6007&quot;, npc, null, 500);
+				startQuestTimer(&quot;6005&quot;, npc, null, 10000);
+			}
+			else if (npc._i_ai4 == 1)
+			{
+				if (success)
+				{
+					int i0 = Rnd.get(3);
+					if (i0 == 0)
+						npc.teleportTo(TelPosX1, TelPosY1, TelPosZ1, 0);
+					else if (i0 == 1)
+						npc.teleportTo(TelPosX2, TelPosY2, TelPosZ2, 0);
+					else
+						npc.teleportTo(TelPosX3, TelPosY3, TelPosZ3, 0);
+				}
+				
+				npc._i_ai4 = 2;
+				
+				NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName21&quot;, &quot;altar_combat2_01&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName22&quot;, &quot;altar_combat2_02&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName23&quot;, &quot;altar_combat2_03&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				startQuestTimer(&quot;6007&quot;, npc, null, 500);
+				startQuestTimer(&quot;6004&quot;, npc, null, 10000);
+			}
+			else if (npc._i_ai4 == 0)
+			{
+				if (success)
+				{
+					int i0 = Rnd.get(2);
+					if (i0 == 0)
+						npc.teleportTo(TelPosX3, TelPosY3, TelPosZ3, 0);
+					else
+						npc.teleportTo(TelPosX2, TelPosY2, TelPosZ2, 0);
+				}
+				
+				npc._i_ai4 = 1;
+				
+				NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName11&quot;, &quot;altar_combat1_01&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName12&quot;, &quot;altar_combat1_02&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName13&quot;, &quot;altar_combat1_03&quot;));
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+				
+				startQuestTimer(&quot;6007&quot;, npc, null, 500);
+				startQuestTimer(&quot;6003&quot;, npc, null, 10000);
+			}
+		}
+		
+		super.onUseSkillFinished(npc, creature, skill, success);
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		try
+		{
+			if (eventId &lt; 9)
+			{
+				npc._i_ai3 = eventId;
+				if (eventId == 1)
+					startQuestTimer(&quot;6006&quot;, npc, null, 60000);
+				if (eventId &gt; 0)
+					npc._i_quest1 = GameTimeTaskManager.getInstance().getCurrentTick();
+			}
+			if (eventId == 4)
+			{
+				if (arg1 != 0)
+				{
+					broadcastScriptEvent(npc, 10020, arg1, getNpcIntAIParamOrDefault(npc, &quot;SeekRange&quot;, 400));
+					final Creature c0 = (Creature) World.getInstance().getObject(arg1);
+					if (c0 instanceof Playable)
+						npc.getAI().addAttackDesire(c0, 700);
+				}
+			}
+			else if (eventId == 7)
+			{
+				npc._i_ai2 = 0;
+				npc._i_ai3 = 0;
+				npc._i_ai4 = 0;
+				npc._c_ai0 = npc;
+				final int Start_x = getNpcIntAIParamOrDefault(npc, &quot;Start_x&quot;, -16385);
+				final int Start_y = getNpcIntAIParamOrDefault(npc, &quot;Start_y&quot;, -53268);
+				final int Start_z = getNpcIntAIParamOrDefault(npc, &quot;Start_z&quot;, -10439);
+				npc.getAI().addMoveToDesire(new Location(Start_x, Start_y, Start_z), 30);
+			}
+			else if (eventId == 3)
+			{
+				startQuestTimer(&quot;6099&quot;, npc, null, 6700);
+			}
+		}
+		catch (NumberFormatException e)
+		{
+			// Do nothing.
+		}
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName11&quot;, &quot;altar_combat1_01&quot;));
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName12&quot;, &quot;altar_combat1_02&quot;));
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName13&quot;, &quot;altar_combat1_03&quot;));
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName21&quot;, &quot;altar_combat2_01&quot;));
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName22&quot;, &quot;altar_combat2_02&quot;));
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		maker0 = SpawnManager.getInstance().getNpcMaker(getNpcStringAIParamOrDefault(npc, &quot;MidSpawnMakerName23&quot;, &quot;altar_combat2_03&quot;));
+		if (maker0 != null)
+			maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+		
+		npc._i_ai2 = 0;
+		npc._i_ai3 = 0;
+		npc._i_ai4 = 0;
+		npc._c_ai0 = npc;
+		
+		broadcastScriptEvent(npc, 5, npc.getObjectId(), getNpcIntAIParamOrDefault(npc, &quot;BroadcastRange&quot;, 4000) * 2);
+		
+		super.onMyDying(npc, killer);
+	}
+}
+</pre>
+            
+</body>
+</html>

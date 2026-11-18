@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q276_TotemOfTheHestui.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q276_TotemOfTheHestui.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.enums.actors.ClassRace;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q276_TotemOfTheHestui extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q276_TotemOfTheHestui&quot;;
+	
+	// Items
+	private static final int KASHA_PARASITE = 1480;
+	private static final int KASHA_CRYSTAL = 1481;
+	
+	// Rewards
+	private static final int HESTUI_TOTEM = 1500;
+	private static final int LEATHER_PANTS = 29;
+	
+	public Q276_TotemOfTheHestui()
+	{
+		super(276, &quot;Totem of the Hestui&quot;);
+		
+		setItemsIds(KASHA_PARASITE, KASHA_CRYSTAL);
+		
+		addQuestStart(30571); // Tanapi
+		addTalkId(30571);
+		
+		addMyDying(20479, 27044);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30571-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				if (player.getRace() != ClassRace.ORC)
+					htmltext = &quot;30571-00.htm&quot;;
+				else if (player.getStatus().getLevel() &lt; 15)
+					htmltext = &quot;30571-01.htm&quot;;
+				else
+					htmltext = &quot;30571-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				if (st.getCond() == 1)
+					htmltext = &quot;30571-04.htm&quot;;
+				else
+				{
+					htmltext = &quot;30571-05.htm&quot;;
+					takeItems(player, KASHA_CRYSTAL, -1);
+					takeItems(player, KASHA_PARASITE, -1);
+					giveItems(player, HESTUI_TOTEM, 1);
+					giveItems(player, LEATHER_PANTS, 1);
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(true);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (!player.getInventory().hasItem(KASHA_CRYSTAL))
+		{
+			switch (npc.getNpcId())
+			{
+				case 20479:
+					final int count = player.getInventory().getItemCount(KASHA_PARASITE);
+					final int random = Rnd.get(100);
+					
+					if (count &gt;= 79 || (count &gt;= 69 &amp;&amp; random &lt;= 20) || (count &gt;= 59 &amp;&amp; random &lt;= 15) || (count &gt;= 49 &amp;&amp; random &lt;= 10) || (count &gt;= 39 &amp;&amp; random &lt; 2))
+					{
+						addSpawn(27044, npc, true, 0, true);
+						takeItems(player, KASHA_PARASITE, count);
+					}
+					else
+						dropItemsAlways(player, KASHA_PARASITE, 1, 0);
+					break;
+				
+				case 27044:
+					st.setCond(2);
+					playSound(player, SOUND_MIDDLE);
+					giveItems(player, KASHA_CRYSTAL, 1);
+					break;
+			}
+		}
+	}
+}</pre>
+            
+</body>
+</html>

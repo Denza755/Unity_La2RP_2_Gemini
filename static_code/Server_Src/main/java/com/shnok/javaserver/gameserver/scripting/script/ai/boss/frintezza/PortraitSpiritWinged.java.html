@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/PortraitSpiritWinged.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/PortraitSpiritWinged.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.frintezza;
+
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.taskmanager.GameTimeTaskManager;
+
+public class PortraitSpiritWinged extends DefaultNpc
+{
+	private static final L2Skill BOMB = SkillTable.getInstance().getInfo(5011, 1);
+	private static final L2Skill HOLD = SkillTable.getInstance().getInfo(5012, 1);
+	private static final L2Skill VAMPIRIC = SkillTable.getInstance().getInfo(5013, 1);
+	
+	public PortraitSpiritWinged()
+	{
+		super(&quot;ai/boss/frintezza&quot;);
+	}
+	
+	public PortraitSpiritWinged(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		29051
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai4 = 0;
+		npc._i_quest1 = 0;
+		npc._i_quest2 = 0;
+		
+		npc.getAI().addWanderDesire(200, 5);
+		
+		startQuestTimer(&quot;5000&quot;, npc, null, 10 * 1000L);
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (npc._i_ai4 == 0)
+		{
+			if (attacker instanceof Playable)
+			{
+				npc.getAI().addCastDesire(attacker, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+				npc.getAI().addAttackDesire(attacker, 50);
+				
+				npc._i_quest1 = GameTimeTaskManager.getInstance().getCurrentTick();
+				
+				startQuestTimer(&quot;2001&quot;, npc, null, 5000);
+			}
+		}
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if (called._i_ai4 == 0 &amp;&amp; called.getAI().getLifeTime() &gt; 7)
+		{
+			if (attacker instanceof Playable)
+			{
+				called.getAI().addCastDesire(attacker, getNpcSkillByType(called, NpcSkillType.DD_MAGIC), 1000000);
+				called.getAI().addAttackDesire(attacker, 50);
+			}
+		}
+	}
+	
+	@Override
+	public void onUseSkillFinished(Npc npc, Creature creature, L2Skill skill, boolean success)
+	{
+		if (skill == BOMB &amp;&amp; success)
+		{
+			npc.decayMe();
+			return;
+		}
+		
+		if (npc._i_ai4 == 0)
+		{
+			final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+			if (topDesireTarget instanceof Player)
+			{
+				if (getAbnormalLevel(topDesireTarget, HOLD) &gt; 0)
+				{
+					if (npc._i_quest2 &lt; 3)
+					{
+						npc._i_quest2++;
+						
+						npc.getAI().addCastDesire(topDesireTarget, VAMPIRIC, 1000000);
+					}
+				}
+				else
+					npc.getAI().addCastDesire(topDesireTarget, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+				
+				npc.getAI().addAttackDesire(topDesireTarget, 50);
+			}
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (npc._i_ai4 == 0)
+		{
+			final Creature topDesireTarget = npc.getAI().getTopDesireTarget();
+			
+			if (name.equalsIgnoreCase(&quot;2001&quot;))
+			{
+				if (topDesireTarget != null &amp;&amp; getElapsedTicks(npc._i_quest1) &gt; 5)
+					npc.getAI().addCastDesire(topDesireTarget, HOLD, 1000000);
+			}
+			else if (name.equalsIgnoreCase(&quot;2002&quot;))
+			{
+				if (topDesireTarget != null)
+				{
+					if (getAbnormalLevel(topDesireTarget, HOLD) &gt; 0)
+					{
+						if (npc._i_quest2 &lt; 3)
+						{
+							npc._i_quest2++;
+							
+							npc.getAI().addCastDesire(topDesireTarget, VAMPIRIC, 1000000);
+						}
+						
+						startQuestTimer(&quot;2002&quot;, npc, null, 5000);
+					}
+					else
+						npc.getAI().addCastDesire(topDesireTarget, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+					
+					npc.getAI().addAttackDesire(topDesireTarget, 50);
+				}
+			}
+			else if (name.equalsIgnoreCase(&quot;5000&quot;))
+			{
+				if (!npc.hasMaster() || npc.getMaster().isDead())
+				{
+					if (npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST)
+						npc.deleteMe();
+					else if (topDesireTarget != null &amp;&amp; npc.distance2D(topDesireTarget) &gt; 5000)
+						npc.deleteMe();
+					else
+						startQuestTimer(&quot;5000&quot;, npc, player, 10000);
+				}
+				else
+					startQuestTimer(&quot;5000&quot;, npc, player, 10000);
+			}
+		}
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (creature instanceof Playable)
+		{
+			if (npc._i_ai4 == 0 &amp;&amp; npc.getAI().getLifeTime() &gt; 7)
+			{
+				npc.getAI().addCastDesire(creature, getNpcSkillByType(npc, NpcSkillType.DD_MAGIC), 1000000);
+				npc.getAI().addAttackDesire(creature, 50);
+			}
+		}
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (arg1 == 20000)
+		{
+			npc.removeAllDesire();
+			
+			npc.getAI().addCastDesire(npc, BOMB, 1000000);
+		}
+		else if (arg1 == 40000)
+		{
+			npc.removeAllDesire();
+			
+			npc.deleteMe();
+		}
+		else if (arg1 == 50000)
+		{
+			npc._i_ai4 = 1;
+			
+			npc.removeAllDesire();
+		}
+	}
+}</pre>
+            
+</body>
+</html>

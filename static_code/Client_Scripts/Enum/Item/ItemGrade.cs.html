@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Enum/Item/ItemGrade.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Enum/Item/ItemGrade.cs</h1>
+            <pre>
+public enum ItemGrade : byte
+{
+    none = 0,
+    d = 1,
+    c = 2,
+    b = 3,
+    a = 4,
+    s = 5
+}
+
+public class ItemGradeParser {
+    public static ItemGrade Parse(string grade) {
+        switch (grade) {
+            case &quot;none&quot;:
+                return ItemGrade.none;
+            case &quot;d&quot;:
+                return ItemGrade.d;
+            case &quot;c&quot;:
+                return ItemGrade.c;
+            case &quot;b&quot;:
+                return ItemGrade.b;
+            case &quot;a&quot;:
+                return ItemGrade.a;
+            case &quot;s&quot;:
+                return ItemGrade.s;
+            default:
+                return ItemGrade.none;
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

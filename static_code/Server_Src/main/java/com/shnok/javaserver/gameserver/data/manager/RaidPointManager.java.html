@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/RaidPointManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/RaidPointManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.manager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+
+/**
+ * Loads and stores Raid Points.&lt;br&gt;
+ * &lt;br&gt;
+ * {@link Player}s obtain Raid Points by killing Raid Bosses within the world of Lineage 2. Each week the Top ranked players clans get rewarded with Clan Reputation Points in relation to their members ranking.
+ */
+public class RaidPointManager
+{
+	private static final CLogger LOGGER = new CLogger(RaidPointManager.class.getName());
+	
+	private static final String LOAD_DATA = &quot;SELECT * FROM character_raid_points&quot;;
+	private static final String INSERT_DATA = &quot;REPLACE INTO character_raid_points (char_id,boss_id,points) VALUES (?,?,?)&quot;;
+	private static final String TRUNCATE_DATA = &quot;TRUNCATE character_raid_points&quot;;
+	
+	private final Map&lt;Integer, Map&lt;Integer, Integer&gt;&gt; _entries = new ConcurrentHashMap&lt;&gt;();
+	
+	public RaidPointManager()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(LOAD_DATA);
+			ResultSet rs = ps.executeQuery())
+		{
+			while (rs.next())
+			{
+				final int objectId = rs.getInt(&quot;char_id&quot;);
+				final int bossId = rs.getInt(&quot;boss_id&quot;);
+				final int points = rs.getInt(&quot;points&quot;);
+				
+				final Map&lt;Integer, Integer&gt; playerData = _entries.computeIfAbsent(objectId, m -&gt; new HashMap&lt;&gt;());
+				playerData.put(bossId, points);
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load RaidPoints entries.&quot;, e);
+		}
+		LOGGER.info(&quot;Loaded {} RaidPoints entries.&quot;, _entries.size());
+	}
+	
+	public final Map&lt;Integer, Integer&gt; getList(Player player)
+	{
+		return _entries.get(player.getObjectId());
+	}
+	
+	/**
+	 * Add points for a given {@link Player} and a given boss npcId.
+	 * @param player : The {@link Player} used for objectId.
+	 * @param bossId : The boss npcId to register.
+	 * @param points : The points to add.
+	 */
+	public final void addPoints(Player player, int bossId, int points)
+	{
+		if (points &lt; 0)
+			return;
+		
+		final int objectId = player.getObjectId();
+		final Map&lt;Integer, Integer&gt; playerData = _entries.computeIfAbsent(objectId, m -&gt; new HashMap&lt;&gt;());
+		
+		points = playerData.merge(bossId, points, Integer::sum);
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(INSERT_DATA))
+		{
+			ps.setInt(1, objectId);
+			ps.setInt(2, bossId);
+			ps.setInt(3, points);
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t update RaidPoints entries.&quot;, e);
+		}
+	}
+	
+	/**
+	 * @param objectId : The objectId of the {@link Player} to check.
+	 * @return the cumulated amount of points for a player, or 0 if no entry is found.
+	 */
+	public final int getPointsByOwnerId(int objectId)
+	{
+		final Map&lt;Integer, Integer&gt; playerData = _entries.get(objectId);
+		if (playerData == null || playerData.isEmpty())
+			return 0;
+		
+		return playerData.values().stream().mapToInt(Number::intValue).sum();
+	}
+	
+	/**
+	 * Clean both database and memory from content.
+	 */
+	public final void cleanUp()
+	{
+		_entries.clear();
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(TRUNCATE_DATA))
+		{
+			ps.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t delete RaidPoints entries.&quot;, e);
+		}
+	}
+	
+	/**
+	 * @param objectId : The objectId of the {@link Player} to check.
+	 * @return the current rank of a {@link Player} based on its objectId, or 0 if no entry is found.
+	 */
+	public final int calculateRanking(int objectId)
+	{
+		// Iterate the global list, retrieve players and associated cumulated points. Store them if &gt; 0.
+		final Map&lt;Integer, Integer&gt; playersData = new HashMap&lt;&gt;();
+		for (int ownerId : _entries.keySet())
+		{
+			final int points = getPointsByOwnerId(ownerId);
+			if (points &gt; 0)
+				playersData.put(ownerId, points);
+		}
+		
+		final AtomicInteger counter = new AtomicInteger(1);
+		
+		final Map&lt;Integer, Integer&gt; rankMap = new LinkedHashMap&lt;&gt;();
+		
+		// Sort the temporary points map, then feed rankMap with objectId as key and ranking as value.
+		playersData.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).forEachOrdered(e -&gt; rankMap.put(e.getKey(), counter.getAndIncrement()));
+		
+		final Integer rank = rankMap.get(objectId);
+		return (rank == null) ? 0 : rank;
+	}
+	
+	/**
+	 * A method used to generate the ranking map. Limited to the first 100 {@link Player}s.
+	 * &lt;ul&gt;
+	 * &lt;li&gt;Retrieve {@link Player} data, compute their points and store the entry on a temporary {@link Map} if the points are &gt; 0.&lt;/li&gt;
+	 * &lt;li&gt;Sort the temporary {@link Map} based on points and feed a second {@link Map} with objectId&lt;&gt;ranking.&lt;/li&gt;
+	 * &lt;/ul&gt;
+	 * @return a {@link Map} consisting of {@link Player} objectId for the key, and ranking for the value.
+	 */
+	public Map&lt;Integer, Integer&gt; getWinners()
+	{
+		// Iterate the global list, retrieve players and associated cumulated points. Store them if &gt; 0.
+		final Map&lt;Integer, Integer&gt; playersData = new HashMap&lt;&gt;();
+		for (int objectId : _entries.keySet())
+		{
+			final int points = getPointsByOwnerId(objectId);
+			if (points &gt; 0)
+				playersData.put(objectId, points);
+		}
+		
+		final AtomicInteger counter = new AtomicInteger(1);
+		
+		final Map&lt;Integer, Integer&gt; rankMap = new LinkedHashMap&lt;&gt;();
+		
+		// Sort the temporary points map, then feed rankMap with objectId as key and ranking as value.
+		playersData.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).limit(100).forEachOrdered(e -&gt; rankMap.put(e.getKey(), counter.getAndIncrement()));
+		
+		return rankMap;
+	}
+	
+	public static final RaidPointManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final RaidPointManager INSTANCE = new RaidPointManager();
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q119_LastImperialPrince.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q119_LastImperialPrince.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q119_LastImperialPrince extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q119_LastImperialPrince&quot;;
+	
+	// NPCs
+	private static final int NAMELESS_SPIRIT = 31453;
+	private static final int DEVORIN = 32009;
+	
+	// Item
+	private static final int ANTIQUE_BROOCH = 7262;
+	
+	public Q119_LastImperialPrince()
+	{
+		super(119, &quot;Last Imperial Prince&quot;);
+		
+		setItemsIds(ANTIQUE_BROOCH);
+		
+		addQuestStart(NAMELESS_SPIRIT);
+		addTalkId(NAMELESS_SPIRIT, DEVORIN);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31453-04.htm&quot;))
+		{
+			if (player.getInventory().hasItem(ANTIQUE_BROOCH))
+			{
+				st.setState(QuestStatus.STARTED);
+				st.setCond(1);
+				playSound(player, SOUND_ACCEPT);
+			}
+			else
+			{
+				htmltext = &quot;31453-04b.htm&quot;;
+				st.exitQuest(true);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;32009-02.htm&quot;))
+		{
+			if (!player.getInventory().hasItem(ANTIQUE_BROOCH))
+			{
+				htmltext = &quot;31453-02a.htm&quot;;
+				st.exitQuest(true);
+			}
+		}
+		else if (event.equalsIgnoreCase(&quot;32009-03.htm&quot;))
+		{
+			st.setCond(2);
+			playSound(player, SOUND_MIDDLE);
+		}
+		else if (event.equalsIgnoreCase(&quot;31453-07.htm&quot;))
+		{
+			rewardItems(player, 57, 68787);
+			playSound(player, SOUND_FINISH);
+			st.exitQuest(false);
+		}
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (!player.getInventory().hasItem(ANTIQUE_BROOCH) || player.getStatus().getLevel() &lt; 74) ? &quot;31453-00a.htm&quot; : &quot;31453-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				int cond = st.getCond();
+				switch (npc.getNpcId())
+				{
+					case NAMELESS_SPIRIT:
+						if (cond == 1)
+							htmltext = &quot;31453-04a.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;31453-05.htm&quot;;
+						break;
+					
+					case DEVORIN:
+						if (cond == 1)
+							htmltext = &quot;32009-01.htm&quot;;
+						else if (cond == 2)
+							htmltext = &quot;32009-04.htm&quot;;
+						break;
+				}
+				break;
+			
+			case COMPLETED:
+				htmltext = &quot;31453-00b.htm&quot;;
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Legacy/DamageText.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Legacy/DamageText.cs</h1>
+            <pre>﻿using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class FlotatingText {
+    public string value;
+    public Color color;
+    public Vector2 offset;
+    public int fontSize;
+    public Transform master;
+
+    public FlotatingText(string value, Color color, Vector2 offset, int fontSize, Transform master) {
+        this.value = value;
+        this.color = color;
+        this.offset = offset;
+        this.fontSize = fontSize;
+        this.master = master;
+    }
+}
+
+public class DamageText : MonoBehaviour {
+
+    public FlotatingText myText;
+
+    void Start() {
+        transform.SetParent(GameObject.Find(&quot;Damages&quot;).transform);
+        StartCoroutine(&quot;FlotatingText&quot;);
+    }
+
+    public IEnumerator FlotatingText() {
+
+        while(myText == null)
+            yield return null;
+
+        float startTime = Time.time;
+        float y = 0.5f;
+        Vector3 randomPos = new Vector3(myText.offset.x + Random.Range(-20, 20f), myText.offset.y + Random.Range(-10, 10f), 0);
+        Color textColor = myText.color;
+        GetComponent&lt;Text&gt;().text = myText.value;
+        GetComponent&lt;Text&gt;().fontSize = myText.fontSize;
+
+        while(Time.time - startTime &lt; 1f) {
+            y += Time.deltaTime * 1.5f;
+            transform.position = Camera.main.WorldToScreenPoint(myText.master.position + Vector3.up * y) + randomPos;
+            if(Time.time - startTime &gt; 0.5)
+                textColor.a -= Time.deltaTime * 2f;
+            GetComponent&lt;Text&gt;().color = textColor;
+            yield return null;
+        }
+
+        Destroy(this.gameObject);
+    }
+}
+</pre>
+            
+</body>
+</html>

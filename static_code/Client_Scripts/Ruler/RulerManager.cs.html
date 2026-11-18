@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Ruler/RulerManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Ruler/RulerManager.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public enum RulerSubMode
+{
+    Observe,
+    Build
+}
+
+public class RulerManager : MonoBehaviour
+{
+    private static RulerManager _instance;
+    public static RulerManager Instance =&gt; _instance;
+
+    [Header(&quot;Permissions&quot;)]
+    [SerializeField] private bool _allowAllPlayers = true;
+    [SerializeField] private List&lt;string&gt; _allowedAccounts = new List&lt;string&gt; { &quot;ruler&quot;, &quot;admin&quot; };
+    [SerializeField] private bool _forceEnableRulerForTesting = false;
+
+    [Header(&quot;Building Settings&quot;)]
+    [SerializeField] private float _cellSize = 1.0f;
+    [SerializeField] private float _buildingScale = 0.65f;
+    [SerializeField] private LayerMask _terrainLayer = ~0;
+
+    [Header(&quot;State&quot;)]
+    [SerializeField] private bool _isRtsActive = false;
+    [SerializeField] private RulerSubMode _subMode = RulerSubMode.Observe;
+
+    public event Action&lt;bool&gt; OnRtsCameraToggled;
+    public event Action&lt;RulerSubMode&gt; OnSubModeChanged;
+    public event Action&lt;bool&gt; OnRulerAccessChanged;
+
+    public bool IsRtsActive =&gt; _isRtsActive;
+    public RulerSubMode CurrentSubMode =&gt; _subMode;
+    public float CellSize =&gt; _cellSize;
+    public float BuildingScale =&gt; _buildingScale;
+    public LayerMask TerrainLayer =&gt; _terrainLayer;
+
+    public bool AllowAllPlayers
+    {
+        get =&gt; _allowAllPlayers;
+        set =&gt; _allowAllPlayers = value;
+    }
+
+    public List&lt;string&gt; AllowedAccounts
+    {
+        get =&gt; _allowedAccounts;
+        set =&gt; _allowedAccounts = value;
+    }
+
+    public static LayerMask GetTerrainRaycastMask()
+    {
+        int ignoreRaycast = LayerMask.NameToLayer(&quot;Ignore Raycast&quot;);
+        int ui = LayerMask.NameToLayer(&quot;UI&quot;);
+        int player = LayerMask.NameToLayer(&quot;Player&quot;);
+        int entity = LayerMask.NameToLayer(&quot;Entity&quot;);
+        int entityClick = LayerMask.NameToLayer(&quot;EntityClick&quot;);
+        int water = LayerMask.NameToLayer(&quot;Water&quot;);
+        int transparentFx = LayerMask.NameToLayer(&quot;TransparentFX&quot;);
+
+        int exclude = 0;
+        if (ignoreRaycast &gt;= 0) exclude |= (1 &lt;&lt; ignoreRaycast);
+        if (ui &gt;= 0) exclude |= (1 &lt;&lt; ui);
+        if (player &gt;= 0) exclude |= (1 &lt;&lt; player);
+        if (entity &gt;= 0) exclude |= (1 &lt;&lt; entity);
+        if (entityClick &gt;= 0) exclude |= (1 &lt;&lt; entityClick);
+        if (water &gt;= 0) exclude |= (1 &lt;&lt; water);
+        if (transparentFx &gt;= 0) exclude |= (1 &lt;&lt; transparentFx);
+
+        return ~exclude;
+    }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else if (_instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _terrainLayer = GetTerrainRaycastMask();
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    public bool HasRulerAccess()
+    {
+        if (_allowAllPlayers || _forceEnableRulerForTesting)
+        {
+            return true;
+        }
+
+        string currentAccount = LoginClient.Instance != null ? LoginClient.Instance.Account : null;
+        if (string.IsNullOrEmpty(currentAccount))
+        {
+            currentAccount = PlayerPrefs.GetString(&quot;LastAccountName&quot;, &quot;&quot;);
+        }
+
+        if (string.IsNullOrEmpty(currentAccount))
+        {
+            // If the window is already opened and player is Queen or authorized
+            string charName = PlayerEntity.Instance != null &amp;&amp; PlayerEntity.Instance.Identity != null
+                ? PlayerEntity.Instance.Identity.Name
+                : null;
+            if (!string.IsNullOrEmpty(charName) &amp;&amp;
+                (string.Equals(charName, &quot;Queen&quot;, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(charName, &quot;ruler&quot;, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(charName, &quot;admin&quot;, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        currentAccount = currentAccount.Trim().ToLowerInvariant();
+        for (int i = 0; i &lt; _allowedAccounts.Count; i++)
+        {
+            if (string.Equals(_allowedAccounts[i]?.Trim(), currentAccount, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        // Also check if allowed accounts contains Queen or character name
+        if (PlayerEntity.Instance != null &amp;&amp; PlayerEntity.Instance.Identity != null)
+        {
+            string charName = PlayerEntity.Instance.Identity.Name?.Trim();
+            if (!string.IsNullOrEmpty(charName))
+            {
+                for (int i = 0; i &lt; _allowedAccounts.Count; i++)
+                {
+                    if (string.Equals(_allowedAccounts[i]?.Trim(), charName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public void SetRtsCamera(bool active)
+    {
+        _isRtsActive = active;
+
+        if (RulerCameraController.Instance == null)
+        {
+            RulerSystemBootstrapper.EnsureRulerSystemsInScene();
+        }
+
+        if (RulerCameraController.Instance != null)
+        {
+            RulerCameraController.Instance.SetActiveCamera(active);
+        }
+
+        if (CameraController.Instance != null)
+        {
+            CameraController.Instance.enabled = !active;
+        }
+
+        if (RulerGridOverlay.Instance != null)
+        {
+            RulerGridOverlay.Instance.SetVisible(active &amp;&amp; _subMode == RulerSubMode.Build);
+        }
+
+        if (BuildingPlacementSystem.Instance != null)
+        {
+            BuildingPlacementSystem.Instance.SetPlacementActive(active &amp;&amp; _subMode == RulerSubMode.Build);
+        }
+
+        OnRtsCameraToggled?.Invoke(_isRtsActive);
+    }
+
+    public void ToggleRtsCamera()
+    {
+        SetRtsCamera(!_isRtsActive);
+    }
+
+    public void SetSubMode(RulerSubMode newMode)
+    {
+        _subMode = newMode;
+
+        // If the user clicks Observe Mode or Build Mode while RTS Camera is OFF, auto-activate RTS Camera
+        if (!_isRtsActive)
+        {
+            SetRtsCamera(true);
+            return;
+        }
+
+        bool isBuild = (_isRtsActive &amp;&amp; _subMode == RulerSubMode.Build);
+
+        if (isBuild)
+        {
+            RulerSystemBootstrapper.EnsureRulerSystemsInScene();
+        }
+
+        if (RulerGridOverlay.Instance != null)
+        {
+            RulerGridOverlay.Instance.SetVisible(isBuild);
+        }
+
+        if (BuildingPlacementSystem.Instance != null)
+        {
+            BuildingPlacementSystem.Instance.SetPlacementActive(isBuild);
+        }
+
+        OnSubModeChanged?.Invoke(_subMode);
+    }
+
+    public void NotifyAccessCheck()
+    {
+        OnRulerAccessChanged?.Invoke(HasRulerAccess());
+    }
+}
+</pre>
+            
+</body>
+</html>

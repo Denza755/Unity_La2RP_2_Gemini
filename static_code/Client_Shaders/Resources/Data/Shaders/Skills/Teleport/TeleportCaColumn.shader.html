@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Teleport/TeleportCaColumn.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Teleport/TeleportCaColumn.shader</h1>
+            <pre>// e_u031_a MeshEmitter2 &quot;Column&quot;: etc_spawn00, fx_m_t0053.
+// RenderDoc: out = sample(t0) * textureFactor; blend One+One; textureFactor ≈ ColorMult * ColorScale * Opacity.
+Shader &quot;L2/Effects/TeleportCaColumn&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture (fx_m_t0053)&quot;, 2D) = &quot;white&quot; {}
+
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        [Toggle] _HasLifetime (&quot;Has Lifetime&quot;, Float) = 1
+        _InitialDelayRange (&quot;Initial Delay Range (Min,Max) sec&quot;, Vector) = (2, 2, 0, 0)
+        _LifetimeRange (&quot;Lifetime Range (Min,Max) sec&quot;, Vector) = (28, 28, 0, 0)
+        _Seed (&quot;Seed&quot;, Float) = 0
+        _Hold (&quot;Hold (0 = off, L2SkillEffect)&quot;, Range(0, 1)) = 0
+        _HoldSizeReference (&quot;Hold Size Reference (loop ref after release)&quot;, Range(0, 1)) = 0.75
+
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 1
+        _FadeInEndTime (&quot;FadeIn End Time (sec)&quot;, Float) = 1.68
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 1
+        _FadeoutStartTime (&quot;FadeOut Start Time (sec)&quot;, Float) = 28
+        _FadeOutPower (&quot;Fade Out strength (&gt;1 = faster drop)&quot;, Range(1, 4)) = 1
+
+        _ColorScale0 (&quot;ColorScale[0]&quot;, Color) = (1, 1, 1, 1)
+        _ColorScaleTime1 (&quot;ColorScale Time[1]&quot;, Range(0, 1)) = 0.685714
+        _ColorScale1 (&quot;ColorScale[1]&quot;, Color) = (0.654902, 0.654902, 0.654902, 1)
+        _ColorScaleTime2 (&quot;ColorScale Time[2]&quot;, Range(0, 1)) = 1
+        _ColorScale2 (&quot;ColorScale[2]&quot;, Color) = (1, 1, 1, 1)
+        _ColorScaleCount (&quot;ColorScale Count&quot;, Int) = 3
+        _ColorScaleRepeats (&quot;ColorScale Repeats&quot;, Float) = 300
+        [Toggle] _bAlphaBlend (&quot;AlphaBlend ColorScale&quot;, Float) = 0
+
+        _ColorMultMin (&quot;ColorMult Min&quot;, Color) = (0.2, 0.25, 0.25, 1)
+        _ColorMultMax (&quot;ColorMult Max&quot;, Color) = (0.2, 0.25, 0.25, 1)
+        _Opacity (&quot;Opacity&quot;, Range(0, 2)) = 0.39
+        _EmitterAlpha (&quot;Emitter Alpha&quot;, Range(0, 1)) = 1
+
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend (&quot;Source Blend (RenderDoc: One)&quot;, Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend (&quot;Destination Blend (RenderDoc: One)&quot;, Float) = 1
+        [Toggle] _IgnoreMainTexAlpha (&quot;Ignore texture alpha&quot;, Float) = 1
+        _RgbBoost (&quot;RGB Boost&quot;, Range(0.25, 4)) = 1
+        [Toggle] _UseAlphaTest (&quot;D3D9 alpha test&quot;, Float) = 0
+        _AlphaRef (&quot;Alpha test reference&quot;, Range(0, 1)) = 0
+
+        _StartSize (&quot;Start Size UE order (X,Y,Z from .uc)&quot;, Vector) = (0.8, 0.8, 0.6, 0)
+        [Toggle] _ApplyUuToStartSize (&quot;Also x UU-&gt;m on size (off for Unity FBX)&quot;, Float) = 0
+        _L2FxEffectScale (&quot;L2 Fx Effect Scale (runtime target)&quot;, Float) = 1
+        _L2FxMeshScale (&quot;L2 Fx Mesh Scale (per-effect tune)&quot;, Float) = 1
+        [Toggle] _UniformSize (&quot;Uniform Size&quot;, Float) = 1
+        [Toggle] _UseSizeScale (&quot;Use SizeScale&quot;, Float) = 1
+        [Toggle] _UseRegularSizeScale (&quot;Regular SizeScale&quot;, Float) = 0
+        _SizeScaleCount (&quot;SizeScale Count&quot;, Int) = 2
+        _SizeScaleRepeats (&quot;SizeScale Repeats&quot;, Float) = 1
+        _SizeScaleParam (&quot;SizeScale Param&quot;, Float) = 0
+        _SizeScaleTime0 (&quot;SizeScale Time[0]&quot;, Range(0, 1)) = 0.92
+        _SizeScaleVal0 (&quot;SizeScale Value[0]&quot;, Float) = 1
+        _SizeScaleTime1 (&quot;SizeScale Time[1]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal1 (&quot;SizeScale Value[1]&quot;, Float) = 0.1
+        _SizeScaleTime2 (&quot;SizeScale Time[2]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal2 (&quot;SizeScale Value[2]&quot;, Float) = 0.1
+        _SizeScaleTime3 (&quot;SizeScale Time[3]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal3 (&quot;SizeScale Value[3]&quot;, Float) = 0.1
+        _SizeScaleTime4 (&quot;SizeScale Time[4]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal4 (&quot;SizeScale Value[4]&quot;, Float) = 0.1
+
+        [Toggle] _SpinParticles (&quot;Spin Particles&quot;, Float) = 1
+        _StartSpinRange (&quot;Start Spin rev (Min,Max)&quot;, Vector) = (0, 0, 0, 0)
+        _SpinsPerSecond (&quot;Spins Per Second rev/s&quot;, Float) = 0.05
+        _SpinCCWorCW (&quot;Spin CCW(0) / CW(1)&quot;, Range(0, 1)) = 1
+        _L2FxMeshSpinDirection (&quot;L2 Fx Mesh Spin Direction (UC-&gt;Unity)&quot;, Float) = 1
+
+        _StartLocationOffset (&quot;StartLocationOffset UE (X,Y,Z)&quot;, Vector) = (0, 0, -6, 0)
+        _UcStartLocationOffsetScale (&quot;UC StartLocationOffset Scale&quot;, Float) = 1
+        _SpawnUnitScale (&quot;UE UU -&gt; Unity meters&quot;, Float) = 0.01
+        _UcStartSizeScale (&quot;UC StartSize Scale&quot;, Float) = 1
+
+        _MeshYOffset (&quot;Lift above ground (m)&quot;, Float) = 0
+        _ClipDepthBias (&quot;Pull toward camera (NDC z)&quot;, Range(0, 0.01)) = 0.001
+
+        [Header(Scene Debug Preview)]
+        [Toggle] _DebugMeshPreview (&quot;Debug Mesh Preview (_StartTime=0)&quot;, Float) = 0
+        [Toggle] _DebugMeshPreviewLoop (&quot;Debug Preview Loop&quot;, Float) = 0
+        _DebugMeshPreviewAge (&quot;Debug Preview Age (sec, pause)&quot;, Range(0, 32)) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot;
+            &quot;Queue&quot; = &quot;Transparent&quot;
+            &quot;RenderType&quot; = &quot;Transparent&quot;
+                    &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+
+        Blend [_SrcBlend] [_DstBlend]
+        Cull Off
+        ZWrite Off
+        ZTest LEqual
+
+        Pass
+        {
+            Name &quot;TeleportCaColumn&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+
+            #include &quot;../Common/L2FxMeshEmitterUrp.hlsl&quot;
+            #include &quot;../Common/L2FxMeshDebug.hlsl&quot;
+            #include &quot;../Common/L2FxMeshFragment.hlsl&quot;
+            #include &quot;../Common/L2FxMeshLifetimeAlpha.hlsl&quot;
+            #include &quot;../Common/L2FxHold.hlsl&quot;
+            #include &quot;../Common/L2FxUcToUnityConvert.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _StartTime;
+                float _HasLifetime;
+                float4 _InitialDelayRange;
+                float4 _LifetimeRange;
+                float _Seed;
+                float _Hold;
+                float _HoldSizeReference;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _Fadeout;
+                float _FadeoutStartTime;
+                float _FadeOutPower;
+                float4 _ColorScale0;
+                float _ColorScaleTime1;
+                float4 _ColorScale1;
+                float _ColorScaleTime2;
+                float4 _ColorScale2;
+                uint _ColorScaleCount;
+                float _ColorScaleRepeats;
+                float _bAlphaBlend;
+                float4 _ColorMultMin;
+                float4 _ColorMultMax;
+                float _Opacity;
+                float _EmitterAlpha;
+                float _IgnoreMainTexAlpha;
+                float _RgbBoost;
+                float _UseAlphaTest;
+                float _AlphaRef;
+                float4 _StartSize;
+                float _ApplyUuToStartSize;
+                float _L2FxEffectScale;
+                float _L2FxMeshScale;
+                float _UniformSize;
+                float _UseSizeScale;
+                float _UseRegularSizeScale;
+                uint _SizeScaleCount;
+                float _SizeScaleRepeats;
+                float _SizeScaleParam;
+                float _SizeScaleTime0;
+                float _SizeScaleVal0;
+                float _SizeScaleTime1;
+                float _SizeScaleVal1;
+                float _SizeScaleTime2;
+                float _SizeScaleVal2;
+                float _SizeScaleTime3;
+                float _SizeScaleVal3;
+                float _SizeScaleTime4;
+                float _SizeScaleVal4;
+                float _SpinParticles;
+                float4 _StartSpinRange;
+                float _SpinsPerSecond;
+                float _SpinCCWorCW;
+                float _L2FxMeshSpinDirection;
+                float4 _StartLocationOffset;
+                float _UcStartLocationOffsetScale;
+                float _SpawnUnitScale;
+                float _UcStartSizeScale;
+                float _MeshYOffset;
+                float _ClipDepthBias;
+                float _DebugMeshPreview;
+                float _DebugMeshPreviewLoop;
+                float _DebugMeshPreviewAge;
+            CBUFFER_END
+
+            #include &quot;../Common/L2FxInstancing.hlsl&quot;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float ageNorm : TEXCOORD1;
+                float lifeAlpha : TEXCOORD2;
+            };
+
+            L2Fx_UcToUnityMeshConvertData TeleportCaColumnConvertData()
+            {
+                L2Fx_UcToUnityMeshConvertData data;
+                data.applyUuToStartSize = _ApplyUuToStartSize;
+                data.spawnUnitScale = _SpawnUnitScale;
+                data.effectScale = _L2FxEffectScale;
+                data.meshScale = _L2FxMeshScale;
+                data.meshSpinDirection = _L2FxMeshSpinDirection;
+                return data;
+            }
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+
+                float delay, lifetime, elapsed, ageNormUnused;
+                L2Fx_MeshDebug_ComputeTiming(
+                    _DebugMeshPreview, _DebugMeshPreviewLoop, _DebugMeshPreviewAge,
+                    _HasLifetime, _Time.y,
+                    _InitialDelayRange, _LifetimeRange, _Seed, _StartTime,
+                    delay, lifetime, elapsed, ageNormUnused);
+
+                lifetime = max(lifetime, 1e-4);
+
+                float motionAge = L2Fx_HoldMotionAgeStable(elapsed, lifetime, _Hold, _HoldSizeReference);
+                float spinAge = L2Fx_HoldSpinAge(elapsed);
+                float loopAgeNorm = L2Fx_HoldLoopAgeNorm(elapsed, lifetime, _Hold);
+                float sizeAgeNorm = L2Fx_HoldSizeAgeNorm(elapsed, lifetime, _Hold, _HoldSizeReference);
+
+                OUT.ageNorm = loopAgeNorm;
+
+                float3 posOS = IN.positionOS.xyz;
+                float3 nrmOS = IN.normalOS;
+                L2Fx_UcToUnityMeshConvertData convertData = TeleportCaColumnConvertData();
+                float3 startSizeUe = L2Fx_UcToUnityApplyScale3(_StartSize.xyz, _UcStartSizeScale);
+                float3 startSizeUnity = L2Fx_UcToUnityMeshSize(startSizeUe, convertData);
+                float spinsPerSecondUnity = L2Fx_UcToUnityMeshSpinRate(_SpinsPerSecond, convertData);
+                float startSpinRev = L2Fx_RandomRange(_StartSpinRange.xy, _Seed, _StartTime, 91.0);
+                float3 startLocationOffsetUe = L2Fx_UcToUnityApplyScale3(
+                    _StartLocationOffset.xyz, _UcStartLocationOffsetScale);
+                float3 startLocationOffsetUnity = L2Fx_UcToUnityStartLocationOffset(
+                    startLocationOffsetUe, convertData);
+
+                L2Fx_MeshBuiltin_TransformVertexOS_SplitAgeUnityOffset(
+                    posOS, nrmOS,
+                    _SpinParticles,
+                    startSpinRev,
+                    spinsPerSecondUnity,
+                    _SpinCCWorCW,
+                    spinAge, sizeAgeNorm,
+                    startSizeUnity,
+                    _UseSizeScale, _UseRegularSizeScale,
+                    _SizeScaleParam, _SizeScaleRepeats, _SizeScaleCount,
+                    _SizeScaleTime0, _SizeScaleVal0,
+                    _SizeScaleTime1, _SizeScaleVal1,
+                    _SizeScaleTime2, _SizeScaleVal2,
+                    _SizeScaleTime3, _SizeScaleVal3,
+                    _SizeScaleTime4, _SizeScaleVal4,
+                    startLocationOffsetUnity, _MeshYOffset, 0.0);
+
+                OUT.positionHCS = L2Fx_MeshUrp_ObjectToHClip(posOS, _ClipDepthBias);
+                OUT.lifeAlpha = L2Fx_MeshLifetimeAlphaHold(
+                    motionAge, elapsed, lifetime,
+                    _Hold, _HasLifetime,
+                    _FadeIn, _FadeInEndTime, _Fadeout, _FadeoutStartTime);
+                if (_FadeOutPower &gt; 1.0001)
+                {
+                    OUT.lifeAlpha = pow(saturate(OUT.lifeAlpha), _FadeOutPower);
+                }
+
+                float2 uvMeshUnused;
+                L2Fx_MeshBuiltin_ResolveUv(
+                    IN.uv, IN.positionOS.xyz,
+                    0.0, 0.5, 1.0, 0.0, float4(0.5, 0.5, 0, 0),
+                    _MainTex_ST, 0.0, float4(0, 0, 1, 1),
+                    OUT.uv, uvMeshUnused);
+
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+
+                half4 factor = L2Fx_MeshBuiltin_SampleBaseTint(
+                    IN.ageNorm,
+                    _ColorScaleRepeats,
+                    _ColorScaleCount,
+                    _ColorScale0, _ColorScaleTime1, _ColorScale1,
+                    _ColorScaleTime2, _ColorScale2,
+                    _bAlphaBlend,
+                    _ColorMultMin.rgb, _ColorMultMax.rgb,
+                    _Opacity, _EmitterAlpha);
+
+                half4 outColor = texColor * factor;
+
+                if (_UseAlphaTest &gt; 0.5 &amp;&amp; outColor.a &lt; (half)_AlphaRef)
+                {
+                    discard;
+                }
+
+                if (_IgnoreMainTexAlpha &gt; 0.5)
+                {
+                    outColor.rgb = texColor.rgb * factor.rgb;
+                    outColor.a = factor.a;
+                }
+
+                half3 rgb = outColor.rgb * (half)_RgbBoost * (half)IN.lifeAlpha;
+
+                // One+One additive: dim rgb by opacity * emitter (alpha channel ignored by blend).
+                half emitterVis = (half)saturate(_Opacity * _EmitterAlpha);
+                rgb *= emitterVis;
+
+                half alpha = outColor.a * (half)IN.lifeAlpha;
+                return half4(saturate(rgb), saturate(alpha));
+            }
+
+            ENDHLSL
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

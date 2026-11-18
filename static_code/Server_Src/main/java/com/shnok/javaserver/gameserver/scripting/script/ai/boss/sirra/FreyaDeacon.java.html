@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/sirra/FreyaDeacon.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/sirra/FreyaDeacon.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.sirra;
+
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.data.manager.ZoneManager;
+import com.shnok.javaserver.gameserver.data.xml.DoorData;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.model.memo.GlobalMemo;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.model.zone.type.BossZone;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+
+public class FreyaDeacon extends DefaultNpc
+{
+	private static final String szName = &quot;freya_deacon_q0656&quot;;
+	private static final String DoorName1 = &quot;ice_barrier_001&quot;;
+	private static final String DoorName2 = &quot;ice_barrier_002&quot;;
+	private static final String fnHi = &quot;freya_deacon001.htm&quot;;
+	private static final String fnHi2 = &quot;freya_deacon002.htm&quot;;
+	
+	public FreyaDeacon()
+	{
+		super(&quot;ai/boss/sirra&quot;);
+		
+		addTalkId(32029);
+	}
+	
+	public FreyaDeacon(String descr)
+	{
+		super(descr);
+		
+		addTalkId(32029);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		32029 // freya_deacon
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai1 = 0;
+		npc._i_ai2 = 0;
+		npc._i_ai3 = 0;
+		npc._i_ai4 = 0;
+		npc._c_ai0 = null;
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		String htmltext = &quot;&quot;;
+		
+		final Party party0 = player.getParty();
+		if (npc._i_ai2 == 1)
+		{
+			if (party0 != null)
+			{
+				if (npc._i_ai1 == party0.getLeaderObjectId())
+					htmltext = fnHi2;
+				else
+					htmltext = szName + &quot;_01.htm&quot;;
+			}
+			else
+				htmltext = szName + &quot;_01.htm&quot;;
+		}
+		else if (npc._i_ai2 == 0)
+			htmltext = fnHi;
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = &quot;&quot;;
+		
+		if (event.startsWith(&quot;link_&quot;))
+		{
+			htmltext = szName + event.replace(&quot;link&quot;, &quot;&quot;) + &quot;.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;enter&quot;))
+		{
+			final Party party0 = player.getParty();
+			if (npc._i_ai2 == 0)
+			{
+				if (party0 == null)
+					htmltext = szName + &quot;_06.htm&quot;;
+				else if (npc._i_ai1 == 0 || party0.getLeaderObjectId() == npc._i_ai1)
+				{
+					if (party0.getLeader() == player)
+					{
+						for (Player partyMember : party0.getMembers())
+						{
+							if (partyMember.getInventory().getItemCount(8057) &lt; 10)
+							{
+								final NpcHtmlMessage html = new NpcHtmlMessage(npc.getObjectId());
+								html.setFile(&quot;data/html/script/&quot; + getDescr() + &quot;/&quot; + getName() + &quot;/&quot; + szName + &quot;_03.htm&quot;);
+								html.replace(&quot;%name%&quot;, partyMember.getName());
+								partyMember.sendPacket(html);
+								partyMember.sendPacket(ActionFailed.STATIC_PACKET);
+								
+								return &quot;&quot;;
+							}
+						}
+						
+						if (player.isOverweight())
+						{
+							player.sendPacket(SystemMessageId.INVENTORY_LESS_THAN_80_PERCENT);
+							return &quot;&quot;;
+						}
+						
+						for (Player partyMember : party0.getMembers())
+							takeItems(partyMember, 8057, 10);
+						
+						party0.broadcastOnScreen(100000, NpcStringId.ID_1121000);
+						
+						giveItems(player, 8379, 3);
+						
+						htmltext = szName + &quot;_05.htm&quot;;
+						npc._i_ai4 = party0.getMembersCount();
+						
+						npc.broadcastNpcShout(NpcStringId.ID_1121005);
+						
+						startQuestTimer(&quot;1005&quot;, npc, player, 120000);
+						
+						npc._i_ai2 = 1;
+						npc._i_ai1 = party0.getLeaderObjectId();
+						npc._c_ai0 = player;
+						
+					}
+					else
+						htmltext = szName + &quot;_02.htm&quot;;
+				}
+			}
+			else
+				htmltext = szName + &quot;_01.htm&quot;;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (eventId == 10005)
+		{
+			final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;schuttgart13_npc2314_3m1&quot;);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;10025&quot;, maker0, 0, 0);
+			
+			if (npc._c_ai0 != null)
+			{
+				final Party party0 = npc._c_ai0.getParty();
+				if (party0 != null)
+					party0.broadcastOnScreen(10000, NpcStringId.ID_1121003);
+			}
+			
+			broadcastScriptEvent(npc, 11039, 0, 8000);
+			
+			DoorData.getInstance().getDoor(DoorName1).openMe();
+			DoorData.getInstance().getDoor(DoorName2).openMe();
+			
+			npc._i_ai2 = 0;
+			npc._i_ai1 = 0;
+			npc._c_ai0 = null;
+		}
+		else if (eventId == 10026)
+		{
+			if (npc._c_ai0 != null)
+			{
+				final Party party0 = npc._c_ai0.getParty();
+				if (party0 != null)
+					party0.broadcastOnScreen(10000, NpcStringId.ID_1121004);
+			}
+			
+			broadcastScriptEvent(npc, 11039, 0, 8000);
+			
+			DoorData.getInstance().getDoor(DoorName1).openMe();
+			DoorData.getInstance().getDoor(DoorName2).openMe();
+			
+			npc._i_ai3 = 1;
+			npc._i_ai2 = 0;
+			npc._i_ai1 = 0;
+			npc._c_ai0 = null;
+		}
+		else if (eventId == 11037)
+		{
+			npc._i_ai3 = 0;
+		}
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;2002&quot;))
+		{
+			if (npc._c_ai0 == null)
+				return null;
+			
+			final Party party0 = npc._c_ai0.getParty();
+			if (party0 != null)
+			{
+				if (npc._i_ai4 &gt;= party0.getMembersCount())
+				{
+					for (Player partyMember : party0.getMembers())
+						if (partyMember.isIn3DRadius(npc, 1000))
+						{
+							allowPlayerEntry(npc, partyMember);
+							partyMember.teleportTo(113533, -126159, -3488, 0);
+						}
+					
+					final NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(&quot;schuttgart13_mb2314_05m1&quot;);
+					if (maker0 != null)
+						maker0.getMaker().onMakerScriptEvent(&quot;11040&quot;, maker0, npc._c_ai0.getObjectId(), 0);
+				}
+				else
+				{
+					npc.broadcastNpcShout(NpcStringId.ID_1121007);
+					
+					npc._i_ai2 = 0;
+					npc._i_ai1 = 0;
+					npc._c_ai0 = null;
+					
+					DoorData.getInstance().getDoor(DoorName1).openMe();
+					DoorData.getInstance().getDoor(DoorName2).openMe();
+				}
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;1005&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;7&quot;);
+			if (c0 != null)
+				c0.sendScriptEvent(10027, 0, 0);
+			
+			DoorData.getInstance().getDoor(DoorName1).closeMe();
+			DoorData.getInstance().getDoor(DoorName2).closeMe();
+			
+			startQuestTimer(&quot;1006&quot;, npc, null, 5000);
+			startQuestTimer(&quot;2002&quot;, npc, null, 5000);
+			
+			npc._i_ai3 = 0;
+		}
+		else if (name.equalsIgnoreCase(&quot;1006&quot;))
+		{
+			if (npc._c_ai0 == null)
+				return null;
+			
+			final Party party0 = npc._c_ai0.getParty();
+			if (party0 != null)
+				party0.broadcastOnScreen(10000, NpcStringId.ID_1121001);
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	private static void allowPlayerEntry(Npc npc, Player player)
+	{
+		final BossZone sirra1 = ZoneManager.getInstance().getZoneById(110013, BossZone.class);
+		if (sirra1 != null)
+			sirra1.allowPlayerEntry(player, 2100);
+		
+		final BossZone sirra2 = ZoneManager.getInstance().getZoneById(110014, BossZone.class);
+		if (sirra2 != null)
+			sirra2.allowPlayerEntry(player, 2100);
+		
+		final BossZone sirra3 = ZoneManager.getInstance().getZoneById(110015, BossZone.class);
+		if (sirra3 != null)
+			sirra3.allowPlayerEntry(player, 2100);
+	}
+}
+</pre>
+            
+</body>
+</html>

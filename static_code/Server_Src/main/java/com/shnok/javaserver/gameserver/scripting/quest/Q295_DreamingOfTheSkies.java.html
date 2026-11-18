@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q295_DreamingOfTheSkies.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q295_DreamingOfTheSkies.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q295_DreamingOfTheSkies extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q295_DreamingOfTheSkies&quot;;
+	
+	// Item
+	private static final int FLOATING_STONE = 1492;
+	
+	// Reward
+	private static final int RING_OF_FIREFLY = 1509;
+	
+	public Q295_DreamingOfTheSkies()
+	{
+		super(295, &quot;Dreaming of the Skies&quot;);
+		
+		setItemsIds(FLOATING_STONE);
+		
+		addQuestStart(30536); // Arin
+		addTalkId(30536);
+		
+		addMyDying(20153); // Magical Weaver
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30536-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 11) ? &quot;30536-01.htm&quot; : &quot;30536-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				if (st.getCond() == 1)
+					htmltext = &quot;30536-04.htm&quot;;
+				else
+				{
+					takeItems(player, FLOATING_STONE, -1);
+					
+					if (!player.getInventory().hasItem(RING_OF_FIREFLY))
+					{
+						htmltext = &quot;30536-05.htm&quot;;
+						giveItems(player, RING_OF_FIREFLY, 1);
+					}
+					else
+					{
+						htmltext = &quot;30536-06.htm&quot;;
+						rewardItems(player, 57, 2400);
+					}
+					
+					rewardExpAndSp(player, 0, 500);
+					playSound(player, SOUND_FINISH);
+					st.exitQuest(true);
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = checkPlayerCondition(player, npc, 1);
+		if (st == null)
+			return;
+		
+		if (dropItemsAlways(player, FLOATING_STONE, (Rnd.get(100) &gt; 25) ? 1 : 2, 50))
+			st.setCond(2);
+	}
+}</pre>
+            
+</body>
+</html>

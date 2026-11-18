@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/ai/Desire.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/ai/Desire.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.ai;
+
+/**
+ * A datatype used as a simple &quot;wish&quot; for Npc.&lt;br&gt;
+ * &lt;br&gt;
+ * The weight is used to order the priority of the related {@link Intention}.
+ */
+public class Desire extends Intention
+{
+	private double _weight;
+	private long _timeStamp;
+	
+	public Desire(double weight, long timeStamp)
+	{
+		super();
+		
+		_weight = weight;
+		_timeStamp = timeStamp;
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		return super.equals(obj);
+	}
+	
+	@Override
+	public int compareTo(Intention other)
+	{
+		if (other instanceof Desire otherDesire)
+		{
+			// Compare by weight
+			double weightCompare = Double.compare(otherDesire.getWeight(), getWeight());
+			if (weightCompare != 0.0)
+				return weightCompare &gt; 0 ? 1 : weightCompare &lt; 0 ? -1 : 0;
+		}
+		
+		return super.compareTo(other);
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return super.hashCode();
+	}
+	
+	@Override
+	public String toString()
+	{
+		return &quot;Desire [type=&quot; + _type.toString() + &quot; weight=&quot; + _weight + &quot;]&quot;;
+	}
+	
+	public double getWeight()
+	{
+		return _weight;
+	}
+	
+	public void addWeight(double value)
+	{
+		_weight = Math.min(_weight + value, Double.MAX_VALUE);
+	}
+	
+	public void reduceWeight(double value)
+	{
+		_weight -= value;
+	}
+	
+	public long getTimeStamp()
+	{
+		return _timeStamp;
+	}
+}</pre>
+            
+</body>
+</html>

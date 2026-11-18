@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/AsynchronousClient.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/AsynchronousClient.cs</h1>
+            <pre>using UnityEngine;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Collections.Concurrent;
+
+public class AsynchronousClient
+{
+    private Socket _socket;
+    private string _ipAddress;
+    private int _port;
+    private volatile bool _connected;
+    private int _disconnected;
+    private ClientPacketHandler _clientPacketHandler;
+    private ServerPacketHandler _serverPacketHandler;
+    private DefaultClient _client;
+    private bool _cryptEnabled = false;
+    private bool _initPacket = true;
+    private bool _initPacketEnabled;
+    private readonly ConcurrentQueue&lt;byte[]&gt; _packetQueue = new ConcurrentQueue&lt;byte[]&gt;();
+    private readonly SemaphoreSlim _packetSemaphore = new SemaphoreSlim(0);
+    private CancellationTokenSource _processingCancellation;
+    private Task _processingTask;
+
+    public bool InitPacket { get { return _initPacket; } set { _initPacket = value; } }
+    public bool CryptEnabled
+    {
+        get { return _cryptEnabled; }
+        set
+        {
+            Debug.Log(&quot;Crypt&quot; + (value ? &quot; enabled.&quot; : &quot; disabled.&quot;));
+            _cryptEnabled = value;
+        }
+    }
+
+    public AsynchronousClient(string ip, int port, DefaultClient client, ClientPacketHandler clientPacketHandler,
+        ServerPacketHandler serverPacketHandler, bool enableInitPacket, bool enableChecksum)
+    {
+        _ipAddress = ip;
+        _port = port;
+        _clientPacketHandler = clientPacketHandler;
+        _serverPacketHandler = serverPacketHandler;
+        _clientPacketHandler.SetClient(this);
+        _serverPacketHandler.SetClient(this, _clientPacketHandler, enableChecksum);
+        _client = client;
+        _initPacketEnabled = enableInitPacket;
+        _initPacket = enableInitPacket;
+    }
+
+    public bool Connect()
+    {
+        IPAddress ipAddress;
+        if (!IPAddress.TryParse(_ipAddress, out ipAddress))
+        {
+            try
+            {
+                IPHostEntry ipHostInfo = Dns.GetHostEntry(_ipAddress);
+                ipAddress = ipHostInfo.AddressList[0];
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($&quot;DNS resolution failed for &#x27;{_ipAddress}&#x27;: {ex.Message}&quot;);
+                EventProcessor.Instance.QueueEvent(() =&gt; _client.OnConnectionFailed());
+                return false;
+            }
+        }
+
+        try
+        {
+            _socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            if (_initPacketEnabled)
+            {
+                _initPacket = true;
+            }
+
+            Debug.Log(&quot;Connecting...&quot;);
+
+            IAsyncResult result = _socket.BeginConnect(ipAddress, _port, null, null);
+
+            bool success = result.AsyncWaitHandle.WaitOne(5000, true);
+
+            if (success &amp;&amp; _socket.Connected)
+            {
+                Debug.Log(&quot;Connection success.&quot;);
+                _socket.EndConnect(result);
+                Interlocked.Exchange(ref _disconnected, 0);
+                _connected = true;
+
+                Task.Run(StartReceiving);
+                return true;
+            }
+            else
+            {
+                Debug.Log(&quot;Connection failed.&quot;);
+                EventProcessor.Instance.QueueEvent(() =&gt; _client.OnConnectionFailed());
+                _socket.Close();
+                _socket = null;
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($&quot;Connect socket exception: {ex.Message}&quot;);
+            EventProcessor.Instance.QueueEvent(() =&gt; _client.OnConnectionFailed());
+            if (_socket != null)
+            {
+                try { _socket.Close(); } catch { }
+                _socket = null;
+            }
+            return false;
+        }
+    }
+
+    public void Disconnect()
+    {
+        if ((!_connected &amp;&amp; _socket == null) || Interlocked.Exchange(ref _disconnected, 1) != 0)
+        {
+            return;
+        }
+
+        // Cancel packet processing
+        _processingCancellation?.Cancel();
+
+        ClientCleanup();
+
+        Debug.Log(&quot;Disconnect&quot;);
+
+        EventProcessor.Instance.QueueEvent(() =&gt; _client.OnDisconnect());
+    }
+
+    public bool IsConnected()
+    {
+        if (!_connected)
+        {
+            return false;
+        }
+
+        Socket socket = _socket;
+        if (socket == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            // Avoid SelectMode.SelectRead + Available == 0: StartReceiving() reads on a background
+            // thread and can drain incoming bytes between Poll() and Available, causing false disconnects.
+            return socket.Connected &amp;&amp; !socket.Poll(0, SelectMode.SelectError);
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
+        catch (SocketException)
+        {
+            return false;
+        }
+    }
+
+    private void ClientCleanup()
+    {
+        try
+        {
+            _connected = false;
+            _serverPacketHandler?.CancelTokens();
+            if (_socket != null)
+            {
+                try
+                {
+                    if (_socket.Connected)
+                    {
+                        _socket.Shutdown(SocketShutdown.Both);
+                    }
+                }
+                catch { }
+                _socket.Close();
+                _socket.Dispose();
+                _socket = null;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    public void SendPacket(ClientPacket packet)
+    {
+        if (_socket == null || !_connected || !_socket.Connected)
+        {
+            return;
+        }
+
+        try
+        {
+            byte[] payload = packet.GetData();
+            if (payload == null) return;
+
+            int len = payload.Length + 2;
+            byte[] buffer = new byte[len];
+            buffer[0] = (byte)(len &amp; 0xff);
+            buffer[1] = (byte)((len &gt;&gt; 8) &amp; 0xff);
+            Buffer.BlockCopy(payload, 0, buffer, 2, payload.Length);
+
+            int totalSent = 0;
+            while (totalSent &lt; len)
+            {
+                int sent = _socket.Send(buffer, totalSent, len - totalSent, SocketFlags.None);
+                if (sent &lt;= 0)
+                {
+                    Disconnect();
+                    break;
+                }
+                totalSent += sent;
+            }
+        }
+        catch (SocketException ex)
+        {
+            Debug.LogWarning($&quot;SendPacket socket error: {ex.Message}&quot;);
+            Disconnect();
+        }
+        catch (ObjectDisposedException)
+        {
+            Disconnect();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($&quot;SendPacket error: {e}&quot;);
+        }
+    }
+
+    public void StartReceiving()
+    {
+        Debug.Log(&quot;Start receiving&quot;);
+
+        // Start the packet processing task
+        _processingCancellation = new CancellationTokenSource();
+        _processingTask = Task.Run(() =&gt; ProcessPacketsAsync(_processingCancellation.Token));
+
+        try
+        {
+            using (NetworkStream stream = new NetworkStream(_socket, ownsSocket: false))
+            {
+                int lengthHi;
+                int lengthLo;
+                int length;
+
+                for (; ; )
+                {
+                    if (!_connected)
+                    {
+                        Debug.LogWarning(&quot;Disconnected.&quot;);
+                        break;
+                    }
+
+                    lengthLo = stream.ReadByte();
+                    lengthHi = stream.ReadByte();
+
+                    if (lengthLo == -1 || lengthHi == -1 || !_connected)
+                    {
+                        Debug.Log(&quot;Server terminated the connection.&quot;);
+                        Disconnect();
+                        break;
+                    }
+
+                    length = (lengthHi * 256) + lengthLo;
+                    length = length - 2;
+                    if (length &lt;= 0)
+                    {
+                        continue;
+                    }
+
+                    byte[] data = new byte[length];
+
+                    int receivedBytes = 0;
+                    while (receivedBytes &lt; length)
+                    {
+                        int read = stream.Read(data, receivedBytes, length - receivedBytes);
+                        if (read &lt;= 0)
+                        {
+                            Debug.Log(&quot;Server terminated the connection during packet read.&quot;);
+                            Disconnect();
+                            return;
+                        }
+                        receivedBytes += read;
+                    }
+
+                    // Queue the packet for processing instead of processing immediately
+                    if (_serverPacketHandler.HandlePacketCrypto(data, _initPacket))
+                    {
+                        _packetQueue.Enqueue(data);
+                        _packetSemaphore.Release(); // Signal that a packet is available
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_connected)
+            {
+                Debug.LogWarning($&quot;StartReceiving exception: {ex.Message}&quot;);
+                Disconnect();
+            }
+        }
+        finally
+        {
+            // Clean shutdown of processing task
+            _processingCancellation?.Cancel();
+            try
+            {
+                _processingTask?.Wait(TimeSpan.FromSeconds(2));
+            }
+            catch { }
+        }
+    }
+
+    private async Task ProcessPacketsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                // Wait for a packet to be available
+                await _packetSemaphore.WaitAsync(cancellationToken);
+
+                // Process all available packets in order
+                while (_packetQueue.TryDequeue(out byte[] data))
+                {
+                    try
+                    {
+                        await _serverPacketHandler.HandlePacketAsync(data);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($&quot;Error processing packet: {ex}&quot;);
+                        // Continue processing other packets even if one fails
+                    }
+
+                    // Check cancellation between packets
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.Log(&quot;Packet processing cancelled&quot;);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($&quot;Packet processing task error: {ex.Message}&quot;);
+        }
+    }
+
+    public int GetQueuedPacketCount()
+    {
+        return _packetQueue.Count;
+    }
+}
+</pre>
+            
+</body>
+</html>

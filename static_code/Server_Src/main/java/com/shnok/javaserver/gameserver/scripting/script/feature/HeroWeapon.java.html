@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/HeroWeapon.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/HeroWeapon.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.feature;
+
+import com.shnok.javaserver.commons.util.ArraysUtil;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class HeroWeapon extends Quest
+{
+	private static final int[] WEAPON_IDS =
+	{
+		6611,
+		6612,
+		6613,
+		6614,
+		6615,
+		6616,
+		6617,
+		6618,
+		6619,
+		6620,
+		6621
+	};
+	
+	public HeroWeapon()
+	{
+		super(-1, &quot;feature&quot;);
+		
+		addTalkId(31690, 31769, 31770, 31771, 31772, 31773);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		int weaponId = Integer.parseInt(event);
+		if (ArraysUtil.contains(WEAPON_IDS, weaponId))
+			giveItems(player, weaponId, 1);
+		
+		return null;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		if (!player.isHero())
+			return &quot;no_hero.htm&quot;;
+		
+		if (player.getInventory().hasAtLeastOneItem(WEAPON_IDS))
+			return &quot;already_have_weapon.htm&quot;;
+		
+		return &quot;weapon_list.htm&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

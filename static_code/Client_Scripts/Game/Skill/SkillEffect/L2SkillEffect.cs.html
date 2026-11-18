@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Skill/SkillEffect/L2SkillEffect.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Skill/SkillEffect/L2SkillEffect.cs</h1>
+            <pre>using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class L2SkillEffect
+{
+    [SerializeField] private int _skillId;
+    [SerializeField] private List&lt;EffectEmitter&gt; _castingActions;
+    [SerializeField] private List&lt;EffectEmitter&gt; _shotActions;
+    [SerializeField] private List&lt;EffectEmitter&gt; _explosionActions;
+
+    public int SkillId { get { return _skillId; } set { _skillId = value; } }
+    public List&lt;EffectEmitter&gt; CastingActions { get { return _castingActions; } set { _castingActions = value; } }
+    public List&lt;EffectEmitter&gt; ShotActions { get { return _shotActions; } set { _shotActions = value; } }
+    public List&lt;EffectEmitter&gt; ExplosionActions { get { return _explosionActions; } set { _explosionActions = value; } }
+}
+</pre>
+            
+</body>
+</html>

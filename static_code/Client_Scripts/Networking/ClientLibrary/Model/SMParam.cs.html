@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Model/SMParam.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Model/SMParam.cs</h1>
+            <pre>public class SMParam
+{
+    public enum SMParamType
+    {
+        TYPE_SYSTEM_STRING = 13,
+        TYPE_PLAYER_NAME = 12,
+        TYPE_DOOR_NAME = 11,
+        TYPE_INSTANCE_NAME = 10,
+        TYPE_ELEMENT_NAME = 9,
+        // id 8 - same as 3
+        TYPE_ZONE_NAME = 7,
+        TYPE_ITEM_NUMBER = 6,
+        TYPE_CASTLE_NAME = 5,
+        TYPE_SKILL_NAME = 4,
+        TYPE_ITEM_NAME = 3,
+        TYPE_NPC_NAME = 2,
+        TYPE_INT_NUMBER = 1,
+        TYPE_TEXT = 0
+    }
+
+    private SMParamType _type;
+    private object _value;
+
+    public SMParamType Type { get { return _type; } set { _type = value; } }
+
+    public SMParam(SMParamType type, object value)
+    {
+        _type = type;
+        _value = value;
+    }
+
+    public SMParam(SMParamType type)
+    {
+        _type = type;
+    }
+
+    public void SetValue(object value)
+    {
+        this._value = value;
+    }
+
+    public string GetStringValue()
+    {
+        return (string)_value;
+    }
+
+    public int GetIntValue()
+    {
+        return (int)_value;
+    }
+
+    public long GetLongValue()
+    {
+        return (long)_value;
+    }
+
+    public int[] GetIntArrayValue()
+    {
+        return (int[])_value;
+    }
+
+    public float[] GetFloatArrayValue()
+    {
+        return (float[])_value;
+    }
+
+}
+</pre>
+            
+</body>
+</html>

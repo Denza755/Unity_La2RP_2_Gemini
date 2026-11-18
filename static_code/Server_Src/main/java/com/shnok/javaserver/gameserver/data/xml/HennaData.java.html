@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/HennaData.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/xml/HennaData.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.xml;
+
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.data.xml.IXmlReader;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.records.Henna;
+
+import org.w3c.dom.Document;
+
+/**
+ * This class loads and stores {@link Henna}s infos. Hennas are called &quot;dye&quot; ingame.
+ */
+public class HennaData implements IXmlReader
+{
+	private final Map&lt;Integer, Henna&gt; _hennas = new HashMap&lt;&gt;();
+	
+	protected HennaData()
+	{
+		load();
+	}
+	
+	@Override
+	public void load()
+	{
+		parseFile(&quot;data/xml/hennas.xml&quot;);
+		LOGGER.info(&quot;Loaded {} hennas.&quot;, _hennas.size());
+	}
+	
+	@Override
+	public void parseDocument(Document doc, Path path)
+	{
+		forEach(doc, &quot;list&quot;, listNode -&gt; forEach(listNode, &quot;henna&quot;, hennaNode -&gt;
+		{
+			final StatSet set = parseAttributes(hennaNode);
+			_hennas.put(set.getInteger(&quot;symbolId&quot;), new Henna(set));
+		}));
+	}
+	
+	public Collection&lt;Henna&gt; getHennas()
+	{
+		return _hennas.values();
+	}
+	
+	public Henna getHenna(int id)
+	{
+		return _hennas.get(id);
+	}
+	
+	/**
+	 * Retrieve all {@link Henna}s available for a {@link Player} class.
+	 * @param player : The Player used as class parameter.
+	 * @return a List of all available Hennas for this Player.
+	 */
+	public List&lt;Henna&gt; getAvailableHennasFor(Player player)
+	{
+		return _hennas.values().stream().filter(h -&gt; h.canBeUsedBy(player)).toList();
+	}
+	
+	public static HennaData getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final HennaData INSTANCE = new HennaData();
+	}
+}</pre>
+            
+</body>
+</html>

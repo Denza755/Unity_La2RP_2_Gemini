@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCast3SkillsApproach/WarriorCast3SkillsApproachAggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCast3SkillsApproach/WarriorCast3SkillsApproachAggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.WarriorCast3SkillsApproach;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WarriorCast3SkillsApproachAggressive extends WarriorCast3SkillsApproach
+{
+	public WarriorCast3SkillsApproachAggressive()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/WarriorCast3SkillsApproach&quot;);
+	}
+	
+	public WarriorCast3SkillsApproachAggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21309,
+		20814,
+		21273,
+		20674,
+		20811,
+		21061,
+		20820,
+		20816,
+		21116,
+		20629,
+		21402,
+		21034,
+		21641,
+		20829,
+		20827,
+		21649,
+		20853,
+		20854,
+		20861,
+		21087,
+		21089,
+		22010,
+		22110,
+		22114
+	};
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (!(creature instanceof Playable))
+			return;
+		
+		if (npc.getAI().getLifeTime() &gt; 7 &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.isInMyTerritory())
+		{
+			if (Rnd.get(100) &lt; 33)
+			{
+				final L2Skill physicalSpecial = getNpcSkillByType(npc, NpcSkillType.PHYSICAL_SPECIAL);
+				npc.getAI().addCastDesire(creature, physicalSpecial, 1000000);
+			}
+		}
+		
+		tryToAttack(npc, creature);
+		
+		super.onSeeCreature(npc, creature);
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/itemhandlers/BeastSoulShots.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/itemhandlers/BeastSoulShots.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.itemhandlers;
+
+import com.shnok.javaserver.gameserver.enums.items.ShotType;
+import com.shnok.javaserver.gameserver.handler.IItemHandler;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.Summon;
+import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.skill.MagicSkillUse;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+
+public class BeastSoulShots implements IItemHandler
+{
+	@Override
+	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
+	{
+		if (playable == null)
+			return;
+		
+		final Player player = playable.getActingPlayer();
+		if (player == null)
+			return;
+		
+		if (playable instanceof Summon)
+		{
+			player.sendPacket(SystemMessageId.PET_CANNOT_USE_ITEM);
+			return;
+		}
+		
+		final Summon summon = player.getSummon();
+		if (summon == null)
+		{
+			player.sendPacket(SystemMessageId.PETS_ARE_NOT_AVAILABLE_AT_THIS_TIME);
+			return;
+		}
+		
+		if (summon.isDead())
+		{
+			player.sendPacket(SystemMessageId.SOULSHOTS_AND_SPIRITSHOTS_ARE_NOT_AVAILABLE_FOR_A_DEAD_PET);
+			return;
+		}
+		
+		// SoulShots are already active.
+		if (summon.isChargedShot(ShotType.SOULSHOT))
+			return;
+		
+		// If the player doesn&#x27;t have enough beast soulshot remaining, remove any auto soulshot task.
+		if (!player.destroyItem(item.getObjectId(), summon.getSoulShotsPerHit(), false))
+		{
+			if (!player.disableAutoShot(item.getItemId()))
+				player.sendPacket(SystemMessageId.NOT_ENOUGH_SOULSHOTS_FOR_PET);
+			
+			return;
+		}
+		
+		player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.PET_USES_S1).addItemName(item.getItemId()));
+		summon.setChargedShot(ShotType.SOULSHOT, true);
+		player.broadcastPacketInRadius(new MagicSkillUse(summon, summon, 2033, 1, 0, 0), 600);
+	}
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/db/DbFactory.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/db/DbFactory.java</h1>
+            <pre>package com.shnok.javaserver.db;
+
+import com.shnok.javaserver.db.entity.*;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.model.naming.Identifier;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
+
+import static com.shnok.javaserver.config.Configuration.server;
+
+public class DbFactory {
+    private static SessionFactory sessionFactory;
+
+    public static SessionFactory buildSessionFactory() {
+        Configuration configuration = new Configuration();
+
+        // Автоматический перевод имен таблиц и колонок в нижний регистр (для Linux MySQL)
+        configuration.setPhysicalNamingStrategy(new PhysicalNamingStrategyStandardImpl() {
+            @Override
+            public Identifier toPhysicalTableName(Identifier name, JdbcEnvironment context) {
+                if (name == null) return null;
+                return Identifier.toIdentifier(name.getText().toLowerCase(), name.isQuoted());
+            }
+
+            @Override
+            public Identifier toPhysicalColumnName(Identifier name, JdbcEnvironment context) {
+                if (name == null) return null;
+                return Identifier.toIdentifier(name.getText().toLowerCase(), name.isQuoted());
+            }
+        });
+
+        // Hibernate and HikariCP Configuration
+        configuration.setProperty(&quot;hibernate.connection.provider_class&quot;, &quot;org.hibernate.hikaricp.internal.HikariCPConnectionProvider&quot;);
+        configuration.setProperty(&quot;hibernate.hbm2ddl.auto&quot;, &quot;none&quot;);
+        configuration.setProperty(&quot;hibernate.show_sql&quot;, &quot;false&quot;);
+        configuration.setProperty(&quot;hibernate.format_sql&quot;, &quot;true&quot;);
+
+        // HikariCP properties
+        configuration.setProperty(&quot;hibernate.hikari.jdbcUrl&quot;, server.jdbcUrl());
+        configuration.setProperty(&quot;hibernate.hikari.username&quot;, server.jdbcUsername());
+        configuration.setProperty(&quot;hibernate.hikari.password&quot;, server.jdbcPassword());
+
+        // Connection pool properties
+        configuration.setProperty(&quot;hibernate.hikari.maximumPoolSize&quot;, &quot;5&quot;);
+        configuration.setProperty(&quot;hibernate.hikari.minimumIdle&quot;, &quot;2&quot;);
+
+        // Timeout-related properties
+        configuration.setProperty(&quot;hibernate.hikari.connectionTimeout&quot;, &quot;2000&quot;); // in milliseconds
+        configuration.setProperty(&quot;hibernate.hikari.idleTimeout&quot;, &quot;30000&quot;); // in milliseconds
+        configuration.setProperty(&quot;hibernate.hikari.maxLifetime&quot;, &quot;60000&quot;); // in milliseconds
+
+        // Add entity classes to configuration
+        configuration.addAnnotatedClass(DBAccountInfo.class);
+        configuration.addAnnotatedClass(DBGameServer.class);
+
+        return configuration.buildSessionFactory();
+    }
+
+    public static SessionFactory getSessionFactory() {
+        if (sessionFactory == null) {
+            sessionFactory = buildSessionFactory();
+        }
+
+        return sessionFactory;
+    }
+
+    /*public static HikariDataSource buildDataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(&quot;jdbc:mysql://localhost:3306/your_database&quot;);
+        config.setUsername(&quot;your_username&quot;);
+        config.setPassword(&quot;your_password&quot;);
+        config.addDataSourceProperty(&quot;cachePrepStmts&quot;, &quot;true&quot;);
+        config.addDataSourceProperty(&quot;prepStmtCacheSize&quot;, &quot;250&quot;);
+        config.addDataSourceProperty(&quot;prepStmtCacheSqlLimit&quot;, &quot;2048&quot;);
+
+        return new HikariDataSource(config);
+    }
+
+    public static HikariDataSource getDataSource() {
+        if (dataSource == null) {
+            dataSource = buildDataSource();
+        }
+
+        return dataSource;
+    }*/
+
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/UpgradeTransparentMaterials.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/UpgradeTransparentMaterials.cs</h1>
+            <pre>#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+
+public class UpgradeTransparentMaterials : MonoBehaviour
+{
+    public static string oldShaderName = &quot;Universal Render Pipeline/Nature/SpeedTree8_PBRLit&quot;;
+    public static string newShaderName = &quot;Universal Render Pipeline/Lit&quot;;
+
+    [MenuItem(&quot;Shnok/[Debug] Upgrade unity2022 transparent mats&quot;)]
+    public static void ReplaceShaders()
+    {
+        if (string.IsNullOrEmpty(oldShaderName) || string.IsNullOrEmpty(newShaderName))
+        {
+            Debug.LogError(&quot;Please provide both old and new shader names before running.&quot;);
+            return;
+        }
+
+        Shader newShader = Shader.Find(newShaderName);
+        if (newShader == null)
+        {
+            Debug.LogError($&quot;Could not find shader with name: {newShaderName}&quot;);
+            return;
+        }
+
+        string[] materialGuids = AssetDatabase.FindAssets(&quot;t:Material&quot;);
+        int replacedCount = 0;
+
+        foreach (string guid in materialGuids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            Material material = AssetDatabase.LoadAssetAtPath&lt;Material&gt;(path);
+
+            if (material.shader.name == oldShaderName)
+            {
+                Texture t = material.mainTexture;
+                Debug.Log(t);
+
+                material.shader = Shader.Find(newShaderName);
+                // Set the Cull Mode to Off (which means double-sided rendering)
+                material.SetFloat(&quot;_Cull&quot;, (float)UnityEngine.Rendering.CullMode.Off);
+
+                // Ensure the shader knows we want two-sided rendering
+                material.SetFloat(&quot;_DoubleSidedEnable&quot;, 1);
+
+                // If your shader uses the _DoubleSidedGIMode property, you might want to set it as well
+                // 0 = Flip Backfaces, 1 = Mirror, 2 = None
+                material.SetFloat(&quot;_DoubleSidedGIMode&quot;, 0);
+                material.SetColor(&quot;_BaseColor&quot;, Color.white);
+                material.SetFloat(&quot;_Smoothness&quot;, 0);
+                material.SetFloat(&quot;_EnvironmentReflections&quot;, 0f);
+                material.SetFloat(&quot;_SpecularHighlights&quot;, 0f);
+                // Enable alpha clipping
+                material.SetFloat(&quot;_AlphaClip&quot;, 1); // or true, depending on the shader
+                material.mainTexture = t;
+                material.SetTexture(&quot;_BaseMap&quot;, t);
+                // Set the alpha clip threshold
+                material.SetFloat(&quot;_Cutoff&quot;, 0.5f);
+
+                material.EnableKeyword(&quot;_ALPHATEST_ON&quot;);
+
+                // material.shader = newShader;
+                // EditorUtility.SetDirty(material);
+                replacedCount++;
+            }
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        Debug.Log($&quot;Replaced shader on {replacedCount} materials.&quot;);
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

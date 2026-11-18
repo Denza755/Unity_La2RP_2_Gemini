@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Enum/Item/WeaponType.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Enum/Item/WeaponType.cs</h1>
+            <pre>public enum WeaponType : byte
+{
+    none, //shield
+    hand,
+    sword,
+    bigword,
+    blunt,
+    bigblunt,
+    bow,
+    dagger,
+    fist,
+    dual,
+    dualfist,
+    pole
+}
+
+// hands: 244 Elven fighter fists
+
+
+public class WeaponTypeParser
+{
+    public static WeaponType Parse(string type)
+    {
+        switch (type)
+        {
+            case &quot;sword&quot;: // For 2H sword check at handness
+                return WeaponType.sword;
+            case &quot;twohandsword&quot;:
+                return WeaponType.blunt;
+            case &quot;blunt&quot;:
+                return WeaponType.pole;
+            case &quot;buster&quot;:
+                return WeaponType.dagger;
+            case &quot;dagger&quot;:
+                return WeaponType.dual;
+            case &quot;staff&quot;:
+                return WeaponType.bow;
+            case &quot;fist&quot;: // shield or hand check at handness
+                return WeaponType.hand;
+            case &quot;twohandblunt&quot;:
+                return WeaponType.fist;
+            case &quot;bow&quot;:
+                return WeaponType.bow;
+            default:
+                return WeaponType.hand;
+        }
+    }
+
+    public static WeaponType ParseByHandness(int handness)
+    {
+        switch (handness)
+        {
+            case 0:
+                return WeaponType.none;
+            case 1:
+                return WeaponType.sword;
+            case 2:
+                return WeaponType.bigword;
+            case 3:
+                return WeaponType.hand;
+            case 4:
+                return WeaponType.pole;
+            case 5:
+                return WeaponType.bow;
+            case 6: // special
+                return WeaponType.hand;
+            case 7:
+                return WeaponType.fist;
+            case 8: // arbalet
+                return WeaponType.hand;
+            case 9: // rapier
+                return WeaponType.hand;
+            case 10: // dualdagger
+                return WeaponType.hand;
+            case 12:
+                return WeaponType.dagger;
+            case 14: //staff
+                return WeaponType.pole;
+            default:
+                return WeaponType.hand;
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

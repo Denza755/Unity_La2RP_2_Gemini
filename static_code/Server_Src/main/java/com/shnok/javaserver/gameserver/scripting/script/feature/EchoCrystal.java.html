@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/EchoCrystal.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/feature/EchoCrystal.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.feature;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.records.ScoreData;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+
+public class EchoCrystal extends Quest
+{
+	private static final int ADENA = 57;
+	private static final int COST = 200;
+	
+	private static final Map&lt;Integer, ScoreData&gt; SCORES = new HashMap&lt;&gt;();
+	{
+		SCORES.put(4410, new ScoreData(4411, &quot;01&quot;, &quot;02&quot;, &quot;03&quot;));
+		SCORES.put(4409, new ScoreData(4412, &quot;04&quot;, &quot;05&quot;, &quot;06&quot;));
+		SCORES.put(4408, new ScoreData(4413, &quot;07&quot;, &quot;08&quot;, &quot;09&quot;));
+		SCORES.put(4420, new ScoreData(4414, &quot;10&quot;, &quot;11&quot;, &quot;12&quot;));
+		SCORES.put(4421, new ScoreData(4415, &quot;13&quot;, &quot;14&quot;, &quot;15&quot;));
+		SCORES.put(4419, new ScoreData(4417, &quot;16&quot;, &quot;05&quot;, &quot;06&quot;));
+		SCORES.put(4418, new ScoreData(4416, &quot;17&quot;, &quot;05&quot;, &quot;06&quot;));
+	}
+	
+	public EchoCrystal()
+	{
+		super(-1, &quot;feature&quot;);
+		
+		addTalkId(31042, 31043);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = &quot;&quot;;
+		
+		if (StringUtil.isDigit(event))
+		{
+			final int score = Integer.parseInt(event);
+			
+			final ScoreData sd = SCORES.get(score);
+			if (sd != null)
+			{
+				if (!player.getInventory().hasItem(score))
+					htmltext = npc.getNpcId() + &quot;-&quot; + sd.noScoreMsg() + &quot;.htm&quot;;
+				else if (player.getInventory().getItemCount(ADENA) &lt; COST)
+					htmltext = npc.getNpcId() + &quot;-&quot; + sd.noAdenaMsg() + &quot;.htm&quot;;
+				else
+				{
+					htmltext = npc.getNpcId() + &quot;-&quot; + sd.okMsg() + &quot;.htm&quot;;
+					
+					takeItems(player, ADENA, COST);
+					giveItems(player, sd.crystalId(), 1);
+				}
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		return &quot;1.htm&quot;;
+	}
+}</pre>
+            
+</body>
+</html>

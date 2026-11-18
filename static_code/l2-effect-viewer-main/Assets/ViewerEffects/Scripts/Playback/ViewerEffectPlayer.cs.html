@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Playback/ViewerEffectPlayer.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Playback/ViewerEffectPlayer.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public sealed class ViewerPreparedEmitter
+{
+    public ViewerEmitterData Data;
+    public Mesh Mesh;
+    public Material Material;
+    public string Warning;
+}
+
+public sealed class ViewerEffectPlayer : MonoBehaviour
+{
+    public ViewerEffectData Current { get; private set; }
+    public readonly List&lt;ViewerPreparedEmitter&gt; Prepared = new List&lt;ViewerPreparedEmitter&gt;();
+    public bool IsReady =&gt; Prepared.Count &gt; 0 &amp;&amp; !ViewerStatus.Instance.Busy;
+    GameObject _activeRoot;
+
+    public IEnumerator Prepare(string effectName)
+    {
+        ViewerStatus.Instance.Busy = true;
+        ViewerStatus.Instance.SelectedEffect = effectName;
+        ViewerStatus.Instance.Set(&quot;создание&quot;, effectName);
+        Prepared.Clear();
+        Current = null;
+
+        if (!UcEffectCatalog.TryGetPath(effectName, out string path))
+        {
+            ViewerStatus.Instance.Set(&quot;ошибка&quot;, &quot;UC не найден: &quot; + effectName);
+            ViewerStatus.Instance.Busy = false;
+            yield break;
+        }
+
+        Debug.Log(&quot;[ViewerEffects] UC source: &quot; + path);
+
+        ViewerEffectData effect;
+        try
+        {
+            effect = UcEffectParser.ParseFile(path);
+        }
+        catch (Exception ex)
+        {
+            ViewerStatus.Instance.Set(&quot;ошибка&quot;, ex.Message);
+            ViewerStatus.Instance.Busy = false;
+            yield break;
+        }
+
+        Current = effect;
+        ViewerDiagnostics.Begin(effect);
+        if (effect.Emitters.Count == 0)
+        {
+            ViewerStatus.Instance.Set(&quot;ошибка&quot;, &quot;В UC нет Emitter блоков&quot;);
+            ViewerStatus.Instance.Busy = false;
+            yield break;
+        }
+
+        foreach (ViewerEmitterData emitter in effect.Emitters)
+        {
+            ViewerDiagnostics.Emitter(emitter);
+            ViewerStatus.Instance.Set(&quot;создание&quot;, emitter.Kind + &quot; &quot; + emitter.DisplayName);
+            yield return null;
+            var prepared = new ViewerPreparedEmitter { Data = emitter };
+            try
+            {
+                if (emitter.Kind == ViewerEmitterKind.Trail ||
+                    emitter.Kind == ViewerEmitterKind.Spark)
+                {
+                    prepared.Warning = emitter.Kind + &quot; пока играется как sprite, если есть Texture&quot;;
+                    if (string.IsNullOrEmpty(emitter.Texture))
+                    {
+                        prepared.Warning = emitter.Kind + &quot; пропущен — нет Texture&quot;;
+                        Prepared.Add(prepared);
+                        continue;
+                    }
+                    emitter.Kind = ViewerEmitterKind.Sprite;
+                }
+
+                if (emitter.Kind == ViewerEmitterKind.Beam &amp;&amp; string.IsNullOrEmpty(emitter.Texture))
+                {
+                    prepared.Warning = &quot;Beam пропущен — нет Texture&quot;;
+                    Prepared.Add(prepared);
+                    continue;
+                }
+
+                ViewerStatus.Instance.Set(&quot;конвертация&quot;, emitter.DisplayName);
+                ViewerResolvedAssets assets = ViewerAssetResolver.Resolve(effect, emitter);
+                if (emitter.Kind == ViewerEmitterKind.Beam)
+                {
+                    prepared.Mesh = ViewerBeamBuilder.BuildStripMesh(emitter);
+                    prepared.Warning = &quot;beam HF=&quot; + emitter.HighFrequencyPoints +
+                                       &quot; &quot; + emitter.DetermineEndPointBy;
+                }
+                else
+                {
+                    prepared.Mesh = assets.Mesh;
+                    if (!string.IsNullOrEmpty(assets.MeshSource))
+                        prepared.Warning = &quot;mesh &quot; + assets.MeshSource;
+                }
+                ViewerDiagnostics.Assets(emitter, assets);
+                prepared.Material = ViewerMaterialFactory.Create(effect, emitter, assets.Texture);
+            }
+            catch (Exception ex)
+            {
+                prepared.Warning = ex.Message;
+                ViewerDiagnostics.Error(emitter.DisplayName, ex);
+                Debug.LogWarning(&quot;[ViewerEffects] &quot; + emitter.DisplayName + &quot;: &quot; + ex);
+            }
+            Prepared.Add(prepared);
+            yield return null;
+        }
+
+        int ok = 0;
+        foreach (var p in Prepared)
+        {
+            if (p.Material != null)
+                ok++;
+        }
+        ViewerStatus.Instance.Busy = false;
+        ViewerStatus.Instance.Set(&quot;запуск&quot;,
+            ok + &quot;/&quot; + Prepared.Count + &quot; слоёв готовы. Клик по земле — проиграть.&quot;);
+    }
+
+    const float FloorLiftMeters = 0.2f;
+
+    public void PlayAt(Vector3 worldPos)
+    {
+        if (Prepared.Count == 0)
+            return;
+
+        Vector3 spawnPos = new Vector3(worldPos.x, worldPos.y + FloorLiftMeters, worldPos.z);
+        ViewerDiagnostics.Play(spawnPos);
+        if (_activeRoot != null)
+            Destroy(_activeRoot);
+        var root = new GameObject(Current != null ? Current.ClassName : &quot;Effect&quot;);
+        _activeRoot = root;
+        root.transform.position = spawnPos;
+        float maxLife = 0.2f;
+        foreach (ViewerPreparedEmitter prepared in Prepared)
+        {
+            if (prepared.Material == null)
+                continue;
+            ViewerParticleGroup.Spawn(
+                root.transform,
+                prepared.Data.DisplayName,
+                prepared.Data,
+                prepared.Mesh,
+                prepared.Material,
+                spawnPos);
+            maxLife = Mathf.Max(maxLife, prepared.Data.MaxLifetime);
+        }
+        Destroy(root, maxLife + 2f);
+        ViewerStatus.Instance.Set(&quot;запуск&quot;,
+            (Current != null ? Current.ClassName : &quot;effect&quot;) + &quot; @ &quot; + spawnPos.ToString(&quot;F2&quot;));
+    }
+}
+</pre>
+            
+</body>
+</html>

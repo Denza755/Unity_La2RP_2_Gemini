@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/FrintezzaTeleporter.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/FrintezzaTeleporter.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.frintezza;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.SpawnManager;
+import com.shnok.javaserver.gameserver.data.manager.ZoneManager;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.group.CommandChannel;
+import com.shnok.javaserver.gameserver.model.group.Party;
+import com.shnok.javaserver.gameserver.model.location.SpawnLocation;
+import com.shnok.javaserver.gameserver.model.memo.GlobalMemo;
+import com.shnok.javaserver.gameserver.model.spawn.NpcMaker;
+import com.shnok.javaserver.gameserver.model.zone.type.BossZone;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowScreenMessage;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+
+public class FrintezzaTeleporter extends DefaultNpc
+{
+	private static final SpawnLocation[] TELE_LOCS =
+	{
+		new SpawnLocation(173247, -76979, -5104, 0),
+		new SpawnLocation(174985, -75161, -5104, 0),
+		new SpawnLocation(173917, -76109, -5104, 0),
+		new SpawnLocation(174037, -76321, -5104, 0),
+		new SpawnLocation(173249, -75154, -5104, 0)
+	};
+	
+	private static final String MAKER_NAME_PATROL = &quot;godard32_2515_05m1&quot;;
+	private static final String MAKER_NAME_WIZARD_1 = &quot;godard32_2515_01m1&quot;;
+	private static final String MAKER_NAME_WIZARD_2 = &quot;godard32_2515_02m1&quot;;
+	private static final String MAKER_NAME_WIZARD_3 = &quot;godard32_2515_03m1&quot;;
+	private static final String MAKER_NAME_WIZARD_4 = &quot;godard32_2515_04m1&quot;;
+	private static final String MAKER_NAME_WIZARD_5 = &quot;godard32_2515_08m1&quot;;
+	private static final String MAKER_NAME_ALARM_1 = &quot;godard32_2515_22m1&quot;;
+	private static final String MAKER_NAME_ALARM_2 = &quot;godard32_2515_19m1&quot;;
+	private static final String MAKER_NAME_ALARM_3 = &quot;godard32_2515_20m1&quot;;
+	private static final String MAKER_NAME_ALARM_4 = &quot;godard32_2515_21m1&quot;;
+	
+	private static final String T_DOOR_NAME_1 = &quot;grave_pathway_1&quot;;
+	private static final String T_DOOR_NAME_2 = &quot;grave_pathway_2&quot;;
+	private static final String T_DOOR_NAME_3 = &quot;grave_pathway_3&quot;;
+	private static final String T_DOOR_NAME_4 = &quot;grave_pathway_4&quot;;
+	private static final String WALL_DOOR_NAME_1A = &quot;wall_door_a_center_1&quot;;
+	private static final String WALL_DOOR_NAME_2A = &quot;wall_door_a_center_2&quot;;
+	private static final String WALL_DOOR_NAME_3A = &quot;wall_door_a_center_3&quot;;
+	private static final String WALL_DOOR_NAME_4A = &quot;wall_door_a_center_4&quot;;
+	private static final String WALL_DOOR_NAME_5A = &quot;wall_door_a_center_5&quot;;
+	private static final String WALL_DOOR_NAME_6A = &quot;wall_door_a_center_6&quot;;
+	private static final String WALL_DOOR_NAME_7A = &quot;wall_door_a_center_7&quot;;
+	private static final String WALL_DOOR_NAME_8A = &quot;wall_door_a_center_8&quot;;
+	private static final String WALL_DOOR_NAME_1B = &quot;wall_door_b_left_1&quot;;
+	private static final String WALL_DOOR_NAME_2B = &quot;wall_door_b_left_2&quot;;
+	private static final String WALL_DOOR_NAME_3B = &quot;wall_door_b_left_3&quot;;
+	private static final String WALL_DOOR_NAME_4B = &quot;wall_door_b_left_4&quot;;
+	private static final String WALL_DOOR_NAME_5B = &quot;wall_door_b_left_5&quot;;
+	private static final String WALL_DOOR_NAME_6B = &quot;wall_door_b_right_1&quot;;
+	private static final String WALL_DOOR_NAME_7B = &quot;wall_door_b_right_2&quot;;
+	private static final String WALL_DOOR_NAME_8B = &quot;wall_door_b_right_3&quot;;
+	private static final String WALL_DOOR_NAME_9B = &quot;wall_door_b_right_4&quot;;
+	private static final String WALL_DOOR_NAME_10B = &quot;wall_door_b_right_5&quot;;
+	
+	private AtomicInteger _av_quest0 = new AtomicInteger();
+	
+	private Party _p_quest0;
+	private Party _p_quest1;
+	private Party _p_quest2;
+	private Party _p_quest3;
+	private Party _p_quest4;
+	
+	public FrintezzaTeleporter()
+	{
+		super(&quot;ai/boss/frintezza&quot;);
+		
+		addTalkId(32011);
+		addFirstTalkId(32011);
+	}
+	
+	public FrintezzaTeleporter(String descr)
+	{
+		super(descr);
+		
+		addTalkId(32011);
+		addFirstTalkId(32011);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		32011 // frintessa_teleporter
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+		
+		npc._i_ai0 = (c0 == null) ? 0 : c0.getSpawn().getSpawnData().getDBValue();
+		npc._i_ai1 = 0;
+		npc._i_quest0 = 0;
+		npc._i_quest1 = 0;
+		npc._i_quest2 = 0;
+		npc._i_quest3 = 0;
+		npc._i_quest4 = 0;
+		
+		startQuestTimer(&quot;5000&quot;, npc, null, 60000);
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public String onFirstTalk(Npc npc, Player player)
+	{
+		return &quot;frintessa_teleporter001.htm&quot;;
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = &quot;&quot;;
+		
+		if (event.equalsIgnoreCase(&quot;story&quot;))
+			htmltext = &quot;frintessa_teleporter001a.htm&quot;;
+		else if (event.equalsIgnoreCase(&quot;enter&quot;))
+		{
+			if (player.isOverweight())
+			{
+				player.sendPacket(SystemMessageId.INVENTORY_LESS_THAN_80_PERCENT);
+				return htmltext;
+			}
+			
+			final Npc c1 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			final Npc c3 = (Npc) GlobalMemo.getInstance().getCreature(&quot;6&quot;);
+			
+			if (npc._i_ai0 != 0)
+			{
+				if (c1 == null || c3 == null)
+					htmltext = &quot;frintessa_teleporter002.htm&quot;;
+				else
+					htmltext = &quot;frintessa_teleporter007.htm&quot;;
+				
+				return htmltext;
+			}
+			
+			if (c1 == null || c2 == null || c3 == null)
+				return &quot;frintessa_teleporter002.htm&quot;;
+			
+			final Party playerParty = player.getParty();
+			
+			final CommandChannel commandChannel = (playerParty == null) ? null : playerParty.getCommandChannel();
+			if (commandChannel == null)
+				return &quot;frintessa_teleporter003.htm&quot;;
+			
+			final Player c0 = commandChannel.getLeader();
+			if (player != c0)
+				htmltext = &quot;frintessa_teleporter003.htm&quot;;
+			else if (!player.getInventory().hasItem(8073))
+				htmltext = &quot;frintessa_teleporter004.htm&quot;;
+			else
+			{
+				final int ccSize = commandChannel.getParties().size();
+				if (ccSize &lt; 4)
+					htmltext = &quot;frintessa_teleporter005.htm&quot;;
+				else if (ccSize &gt; 5)
+					htmltext = &quot;frintessa_teleporter006.htm&quot;;
+				else
+				{
+					if (commandChannel.getMembers().stream().anyMatch(p -&gt; !p.isIn3DRadius(npc, Config.PARTY_RANGE)))
+						return &quot;frintessa_teleporter008.htm&quot;;
+					
+					if (_av_quest0.compareAndExchange(1, 0) == 1)
+						htmltext = &quot;frintessa_teleporter007.htm&quot;;
+					else
+					{
+						NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_PATROL);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_1);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_2);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_3);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_4);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_1);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_2);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_3);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_4);
+						if (maker0 != null)
+							maker0.getMaker().onMakerScriptEvent(&quot;1001&quot;, maker0, 0, 0);
+						
+						takeItems(player, 8073, 1);
+						
+						// TODO Remove this after zone rework
+						final BossZone frintezzaTomb = ZoneManager.getInstance().getZoneById(110012, BossZone.class);
+						
+						int i = 0;
+						
+						for (Party party : commandChannel.getParties())
+						{
+							if (i == 0)
+								_p_quest0 = party;
+							else if (i == 1)
+								_p_quest1 = party;
+							else if (i == 2)
+								_p_quest2 = party;
+							else if (i == 3)
+								_p_quest3 = party;
+							else if (i == 4)
+								_p_quest4 = party;
+							
+							final SpawnLocation teleLoc = TELE_LOCS[i];
+							
+							for (Player member : party.getMembers())
+							{
+								frintezzaTomb.allowPlayerEntry(member, 30);
+								
+								member.teleportTo(teleLoc, teleLoc.getHeading());
+								
+								takeItems(member, 8192, -1);
+								takeItems(member, 8556, -1);
+							}
+							
+							// Check next Party.
+							i++;
+						}
+						
+						npc._i_ai0 = 1;
+						
+						c1.sendScriptEvent(npc.getObjectId(), 1, 0);
+						
+						if (c1.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+							return &quot;&quot;;
+						
+						commandChannel.broadcastOnScreen(10000, NpcStringId.ID_1010643, 35);
+						
+						startQuestTimer(&quot;4030&quot;, npc, null, 300000);
+					}
+				}
+			}
+		}
+		return htmltext;
+	}
+	
+	@Override
+	public String onTimer(String name, Npc npc, Player player)
+	{
+		if (name.equalsIgnoreCase(&quot;2006&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2 &amp;&amp; c2.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_PATROL);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_1);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_2);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_3);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_4);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_5);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_1);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_2);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_3);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_4);
+			if (maker0 != null)
+				maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+			
+			openCloseDoor(T_DOOR_NAME_1, 1);
+			openCloseDoor(T_DOOR_NAME_2, 1);
+			openCloseDoor(T_DOOR_NAME_3, 0);
+			openCloseDoor(T_DOOR_NAME_4, 0);
+			openCloseDoor(WALL_DOOR_NAME_1A, 1);
+			openCloseDoor(WALL_DOOR_NAME_2A, 1);
+			openCloseDoor(WALL_DOOR_NAME_3A, 1);
+			openCloseDoor(WALL_DOOR_NAME_4A, 1);
+			openCloseDoor(WALL_DOOR_NAME_5A, 1);
+			openCloseDoor(WALL_DOOR_NAME_6A, 1);
+			openCloseDoor(WALL_DOOR_NAME_7A, 1);
+			openCloseDoor(WALL_DOOR_NAME_8A, 1);
+			openCloseDoor(WALL_DOOR_NAME_1B, 1);
+			openCloseDoor(WALL_DOOR_NAME_2B, 1);
+			openCloseDoor(WALL_DOOR_NAME_3B, 1);
+			openCloseDoor(WALL_DOOR_NAME_4B, 1);
+			openCloseDoor(WALL_DOOR_NAME_5B, 1);
+			openCloseDoor(WALL_DOOR_NAME_6B, 1);
+			openCloseDoor(WALL_DOOR_NAME_7B, 1);
+			openCloseDoor(WALL_DOOR_NAME_8B, 1);
+			openCloseDoor(WALL_DOOR_NAME_9B, 1);
+			openCloseDoor(WALL_DOOR_NAME_10B, 1);
+			
+			npc.getSpawn().instantTeleportInMyTerritory(150037, -57255, -2976, 150);
+		}
+		else if (name.equalsIgnoreCase(&quot;2001&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			
+			if (c0 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &lt; 2)
+			{
+				npc._i_ai0 = 0;
+				
+				npc.getSpawn().instantTeleportInMyTerritory(150037, -57255, -2976, 150);
+				
+				c0.sendScriptEvent(npc.getObjectId(), 0, 0);
+				
+				_av_quest0.set(0);
+				
+				NpcMaker maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_PATROL);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_1);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_2);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_3);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_4);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_WIZARD_5);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_1);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_2);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_3);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				maker0 = SpawnManager.getInstance().getNpcMaker(MAKER_NAME_ALARM_4);
+				if (maker0 != null)
+					maker0.getMaker().onMakerScriptEvent(&quot;1000&quot;, maker0, 0, 0);
+				
+				openCloseDoor(T_DOOR_NAME_1, 1);
+				openCloseDoor(T_DOOR_NAME_2, 1);
+				openCloseDoor(T_DOOR_NAME_3, 0);
+				openCloseDoor(T_DOOR_NAME_4, 0);
+				openCloseDoor(WALL_DOOR_NAME_1A, 1);
+				openCloseDoor(WALL_DOOR_NAME_2A, 1);
+				openCloseDoor(WALL_DOOR_NAME_3A, 1);
+				openCloseDoor(WALL_DOOR_NAME_4A, 1);
+				openCloseDoor(WALL_DOOR_NAME_5A, 1);
+				openCloseDoor(WALL_DOOR_NAME_6A, 1);
+				openCloseDoor(WALL_DOOR_NAME_7A, 1);
+				openCloseDoor(WALL_DOOR_NAME_8A, 1);
+				openCloseDoor(WALL_DOOR_NAME_1B, 1);
+				openCloseDoor(WALL_DOOR_NAME_2B, 1);
+				openCloseDoor(WALL_DOOR_NAME_3B, 1);
+				openCloseDoor(WALL_DOOR_NAME_4B, 1);
+				openCloseDoor(WALL_DOOR_NAME_5B, 1);
+				openCloseDoor(WALL_DOOR_NAME_6B, 1);
+				openCloseDoor(WALL_DOOR_NAME_7B, 1);
+				openCloseDoor(WALL_DOOR_NAME_8B, 1);
+				openCloseDoor(WALL_DOOR_NAME_9B, 1);
+				openCloseDoor(WALL_DOOR_NAME_10B, 1);
+				
+				final Npc c1 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+				if (c1 != null)
+					c1.sendScriptEvent(npc.getObjectId(), 0, 0);
+				
+				startQuestTimer(&quot;5000&quot;, npc, null, ((30 * 60) * 1000));
+			}
+		}
+		else if (name.equalsIgnoreCase(&quot;5000&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null)
+			{
+				if (c0.getSpawn().getSpawnData().getDBValue() == 0 &amp;&amp; c2.getSpawn().getSpawnData().getDBValue() == 0)
+				{
+					npc._i_ai0 = 0;
+					_av_quest0.set(0);
+					
+					npc.getSpawn().instantTeleportInMyTerritory(150037, -57255, -2976, 150);
+				}
+				else if (c0.getSpawn().getSpawnData().getDBValue() &gt;= 3)
+					npc.getSpawn().instantTeleportInMyTerritory(150037, -57255, -2976, 150);
+			}
+			startQuestTimer(&quot;5000&quot;, npc, null, (60 * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4030&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(30);
+			
+			startQuestTimer(&quot;4025&quot;, npc, null, ((5 * 60) * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4025&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(25);
+			
+			startQuestTimer(&quot;4020&quot;, npc, null, ((5 * 60) * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4020&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(20);
+			
+			startQuestTimer(&quot;4015&quot;, npc, null, ((5 * 60) * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4015&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(15);
+			
+			startQuestTimer(&quot;4010&quot;, npc, null, ((5 * 60) * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4010&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(10);
+			
+			startQuestTimer(&quot;4005&quot;, npc, null, ((5 * 60) * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4005&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(5);
+			
+			startQuestTimer(&quot;4004&quot;, npc, null, (60 * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4004&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(4);
+			
+			startQuestTimer(&quot;4003&quot;, npc, null, (60 * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4003&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(3);
+			
+			startQuestTimer(&quot;4002&quot;, npc, null, (60 * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4002&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(2);
+			
+			startQuestTimer(&quot;4001&quot;, npc, null, (60 * 1000));
+		}
+		else if (name.equalsIgnoreCase(&quot;4001&quot;))
+		{
+			final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+			final Npc c2 = (Npc) GlobalMemo.getInstance().getCreature(&quot;5&quot;);
+			
+			if (c0 != null &amp;&amp; c2 != null &amp;&amp; c0.getSpawn().getSpawnData().getDBValue() &gt;= 2)
+				return super.onTimer(name, npc, player);
+			
+			notifyRemainingTime(1);
+			
+			startQuestTimer(&quot;2001&quot;, npc, null, (60 * 1000));
+		}
+		
+		return super.onTimer(name, npc, player);
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		final Npc c0 = (Npc) GlobalMemo.getInstance().getCreature(&quot;4&quot;);
+		if (c0 != null &amp;&amp; eventId == c0.getObjectId())
+		{
+			if (arg1 == 0)
+			{
+				npc._i_ai0 = 0;
+				
+				_av_quest0.set(0);
+			}
+			else if (arg1 == 8)
+				npc._i_ai0 = 8;
+		}
+	}
+	
+	private void notifyRemainingTime(int leftMinutes)
+	{
+		final ExShowScreenMessage essm = new ExShowScreenMessage(NpcStringId.ID_1010643.getMessage(leftMinutes), 10000);
+		
+		if (_p_quest0 != null)
+			_p_quest0.broadcastPacket(essm);
+		
+		if (_p_quest1 != null)
+			_p_quest1.broadcastPacket(essm);
+		
+		if (_p_quest2 != null)
+			_p_quest2.broadcastPacket(essm);
+		
+		if (_p_quest3 != null)
+			_p_quest3.broadcastPacket(essm);
+		
+		if (_p_quest4 != null)
+			_p_quest4.broadcastPacket(essm);
+	}
+}</pre>
+            
+</body>
+</html>

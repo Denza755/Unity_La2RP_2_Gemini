@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/skills/Stats.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/enums/skills/Stats.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.enums.skills;
+
+import java.util.NoSuchElementException;
+
+public enum Stats
+{
+	// HP &amp; MP
+	MAX_HP(&quot;maxHp&quot;, true),
+	MAX_MP(&quot;maxMp&quot;, true),
+	MAX_CP(&quot;maxCp&quot;, true),
+	REGENERATE_HP_RATE(&quot;regHp&quot;, false),
+	REGENERATE_CP_RATE(&quot;regCp&quot;, false),
+	REGENERATE_MP_RATE(&quot;regMp&quot;, false),
+	RECHARGE_MP_RATE(&quot;gainMp&quot;, false),
+	HEAL_EFFECTIVNESS(&quot;gainHp&quot;, false),
+	HEAL_PROFICIENCY(&quot;giveHp&quot;, false),
+	
+	// Atk &amp; Def
+	POWER_DEFENCE(&quot;pDef&quot;, true),
+	MAGIC_DEFENCE(&quot;mDef&quot;, true),
+	POWER_ATTACK(&quot;pAtk&quot;, true),
+	MAGIC_ATTACK(&quot;mAtk&quot;, true),
+	POWER_ATTACK_SPEED(&quot;pAtkSpd&quot;, true),
+	MAGIC_ATTACK_SPEED(&quot;mAtkSpd&quot;, true),
+	MAGIC_REUSE_RATE(&quot;mReuse&quot;, false),
+	P_REUSE(&quot;pReuse&quot;, false),
+	SHIELD_DEFENCE(&quot;sDef&quot;, true),
+	SHIELD_DEFENCE_ANGLE(&quot;shieldDefAngle&quot;, false),
+	SHIELD_RATE(&quot;rShld&quot;, false),
+	
+	CRITICAL_DAMAGE(&quot;cAtk&quot;, false),
+	CRITICAL_DAMAGE_POS(&quot;cAtkPos&quot;, false),
+	CRITICAL_DAMAGE_ADD(&quot;cAtkAdd&quot;, false),
+	
+	PVP_PHYSICAL_DMG(&quot;pvpPhysDmg&quot;, false),
+	PVP_MAGICAL_DMG(&quot;pvpMagicalDmg&quot;, false),
+	PVP_PHYS_SKILL_DMG(&quot;pvpPhysSkillsDmg&quot;, false),
+	PVP_PHYS_SKILL_DEF(&quot;pvpPhysSkillsDef&quot;, false),
+	
+	// Atk &amp; Def rates
+	EVASION_RATE(&quot;rEvas&quot;, false),
+	P_SKILL_EVASION(&quot;pSkillEvas&quot;, false),
+	CRITICAL_RATE(&quot;rCrit&quot;, false),
+	BLOW_RATE(&quot;blowRate&quot;, false),
+	LETHAL_RATE(&quot;lethalRate&quot;, false),
+	MCRITICAL_RATE(&quot;mCritRate&quot;, false),
+	ATTACK_CANCEL(&quot;cancel&quot;, false),
+	
+	// Accuracy and range
+	ACCURACY_COMBAT(&quot;accCombat&quot;, false),
+	POWER_ATTACK_RANGE(&quot;pAtkRange&quot;, false),
+	POWER_ATTACK_ANGLE(&quot;pAtkAngle&quot;, false),
+	ATTACK_COUNT_MAX(&quot;atkCountMax&quot;, false),
+	
+	// Run speed
+	RUN_SPEED(&quot;runSpd&quot;, false),
+	
+	// Player-only stats
+	STAT_STR(&quot;STR&quot;, true),
+	STAT_CON(&quot;CON&quot;, true),
+	STAT_DEX(&quot;DEX&quot;, true),
+	STAT_INT(&quot;INT&quot;, true),
+	STAT_WIT(&quot;WIT&quot;, true),
+	STAT_MEN(&quot;MEN&quot;, true),
+	
+	// stats of various abilities
+	BREATH(&quot;breath&quot;, false),
+	FALL(&quot;fall&quot;, false),
+	
+	// Abnormal effects
+	AGGRESSION(&quot;aggression&quot;, false),
+	BLEED(&quot;bleed&quot;, false),
+	POISON(&quot;poison&quot;, false),
+	STUN(&quot;stun&quot;, false),
+	ROOT(&quot;root&quot;, false),
+	MOVEMENT(&quot;movement&quot;, false),
+	CONFUSION(&quot;confusion&quot;, false),
+	SLEEP(&quot;sleep&quot;, false),
+	
+	// Elemental resistances/vulnerabilities
+	FIRE_RES(&quot;fireRes&quot;, false),
+	WATER_RES(&quot;waterRes&quot;, false),
+	WIND_RES(&quot;windRes&quot;, false),
+	EARTH_RES(&quot;earthRes&quot;, false),
+	HOLY_RES(&quot;holyRes&quot;, false),
+	DARK_RES(&quot;darkRes&quot;, false),
+	VALAKAS_RES(&quot;valakasRes&quot;, false),
+	
+	// Elemental power (used for skills such as Holy blade)
+	FIRE_POWER(&quot;firePower&quot;, false),
+	WATER_POWER(&quot;waterPower&quot;, false),
+	WIND_POWER(&quot;windPower&quot;, false),
+	EARTH_POWER(&quot;earthPower&quot;, false),
+	HOLY_POWER(&quot;holyPower&quot;, false),
+	DARK_POWER(&quot;darkPower&quot;, false),
+	VALAKAS_POWER(&quot;valakasPower&quot;, false),
+	
+	// Vulnerabilities
+	BLEED_VULN(&quot;bleedVuln&quot;, false),
+	POISON_VULN(&quot;poisonVuln&quot;, false),
+	STUN_VULN(&quot;stunVuln&quot;, false),
+	PARALYZE_VULN(&quot;paralyzeVuln&quot;, false),
+	ROOT_VULN(&quot;rootVuln&quot;, false),
+	SLEEP_VULN(&quot;sleepVuln&quot;, false),
+	DAMAGE_ZONE_VULN(&quot;damageZoneVuln&quot;, false),
+	CRIT_VULN(&quot;critVuln&quot;, false), // Resistance to Crit DMG.
+	CANCEL_VULN(&quot;cancelVuln&quot;, false),
+	DERANGEMENT_VULN(&quot;derangementVuln&quot;, false),
+	DEBUFF_VULN(&quot;debuffVuln&quot;, false),
+	
+	// Weapons vuln
+	SWORD_WPN_VULN(&quot;swordWpnVuln&quot;, false),
+	BLUNT_WPN_VULN(&quot;bluntWpnVuln&quot;, false),
+	DAGGER_WPN_VULN(&quot;daggerWpnVuln&quot;, false),
+	BOW_WPN_VULN(&quot;bowWpnVuln&quot;, false),
+	POLE_WPN_VULN(&quot;poleWpnVuln&quot;, false),
+	DUAL_WPN_VULN(&quot;dualWpnVuln&quot;, false),
+	DUALFIST_WPN_VULN(&quot;dualFistWpnVuln&quot;, false),
+	BIGSWORD_WPN_VULN(&quot;bigSwordWpnVuln&quot;, false),
+	BIGBLUNT_WPN_VULN(&quot;bigBluntWpnVuln&quot;, false),
+	
+	REFLECT_DAMAGE_PERCENT(&quot;reflectDam&quot;, false),
+	REFLECT_SKILL_MAGIC(&quot;reflectSkillMagic&quot;, false),
+	REFLECT_SKILL_PHYSIC(&quot;reflectSkillPhysic&quot;, false),
+	COUNTER_SKILL_PHYSICAL(&quot;counterSkill&quot;, false),
+	ABSORB_DAMAGE_PERCENT(&quot;absorbDam&quot;, false),
+	TRANSFER_DAMAGE_PERCENT(&quot;transDam&quot;, false),
+	
+	PATK_PLANTS(&quot;pAtk-plants&quot;, false),
+	PATK_INSECTS(&quot;pAtk-insects&quot;, false),
+	PATK_ANIMALS(&quot;pAtk-animals&quot;, false),
+	PATK_BEASTS(&quot;pAtk-beasts&quot;, false),
+	PATK_DRAGONS(&quot;pAtk-dragons&quot;, false),
+	PATK_GIANTS(&quot;pAtk-giants&quot;, false),
+	PATK_MCREATURES(&quot;pAtk-magicCreature&quot;, false),
+	
+	PDEF_PLANTS(&quot;pDef-plants&quot;, false),
+	PDEF_INSECTS(&quot;pDef-insects&quot;, false),
+	PDEF_ANIMALS(&quot;pDef-animals&quot;, false),
+	PDEF_BEASTS(&quot;pDef-beasts&quot;, false),
+	PDEF_DRAGONS(&quot;pDef-dragons&quot;, false),
+	PDEF_GIANTS(&quot;pDef-giants&quot;, false),
+	PDEF_MCREATURES(&quot;pDef-magicCreature&quot;, false),
+	
+	// ExSkill :)
+	WEIGHT_LIMIT(&quot;weightLimit&quot;, false),
+	WEIGHT_PENALTY(&quot;weightPenalty&quot;, false),
+	INV_LIM(&quot;inventoryLimit&quot;, false),
+	WH_LIM(&quot;whLimit&quot;, false),
+	FREIGHT_LIM(&quot;FreightLimit&quot;, false),
+	P_SELL_LIM(&quot;PrivateSellLimit&quot;, false),
+	P_BUY_LIM(&quot;PrivateBuyLimit&quot;, false),
+	REC_D_LIM(&quot;DwarfRecipeLimit&quot;, false),
+	REC_C_LIM(&quot;CommonRecipeLimit&quot;, false),
+	
+	// C4 Stats
+	PHYSICAL_MP_CONSUME_RATE(&quot;PhysicalMpConsumeRate&quot;, false),
+	MAGICAL_MP_CONSUME_RATE(&quot;MagicalMpConsumeRate&quot;, false),
+	DANCE_MP_CONSUME_RATE(&quot;DanceMpConsumeRate&quot;, false),
+	
+	// Skill mastery
+	SKILL_MASTERY(&quot;skillMastery&quot;, false);
+	
+	public static final Stats[] VALUES = values();
+	
+	public static final int NUM_STATS = VALUES.length;
+	
+	private Stats(String name, boolean cantBeNegative)
+	{
+		_name = name;
+		_cantBeNegative = cantBeNegative;
+	}
+	
+	private String _name;
+	
+	private boolean _cantBeNegative;
+	
+	public String getName()
+	{
+		return _name;
+	}
+	
+	public boolean cantBeNegative()
+	{
+		return _cantBeNegative;
+	}
+	
+	public static Stats valueOfXml(String name)
+	{
+		name = name.intern();
+		for (Stats stat : VALUES)
+		{
+			if (stat.getName().equals(name))
+				return stat;
+		}
+		throw new NoSuchElementException(&quot;Unknown name &#x27;&quot; + name + &quot;&#x27; for enum Stats&quot;);
+	}
+}</pre>
+            
+</body>
+</html>

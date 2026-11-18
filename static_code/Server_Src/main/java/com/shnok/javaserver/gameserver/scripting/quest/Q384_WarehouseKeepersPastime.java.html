@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q384_WarehouseKeepersPastime.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q384_WarehouseKeepersPastime.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.lang.StringUtil;
+import com.shnok.javaserver.commons.math.MathUtil;
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q384_WarehouseKeepersPastime extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q384_WarehouseKeepersPastime&quot;;
+	
+	// NPCs
+	private static final int CLIFF = 30182;
+	private static final int BAXT = 30685;
+	
+	// Items
+	private static final int MEDAL = 5964;
+	
+	private static final Map&lt;Integer, Integer&gt; CHANCES = HashMap.newHashMap(26);
+	
+	private static final IntIntHolder[] REWARDS_10_WIN =
+	{
+		new IntIntHolder(16, 1888), // Synthetic Cokes
+		new IntIntHolder(32, 1887), // Varnish of Purity
+		new IntIntHolder(50, 1894), // Crafted Leather
+		new IntIntHolder(80, 952), // Scroll: Enchant Armor (C)
+		new IntIntHolder(89, 1890), // Mithril Alloy
+		new IntIntHolder(98, 1893), // Oriharukon
+		new IntIntHolder(100, 951)
+		// Scroll: Enchant Weapon (C)
+	};
+	
+	private static final IntIntHolder[] REWARDS_10_LOSE =
+	{
+		new IntIntHolder(50, 4041), // Mold Hardener
+		new IntIntHolder(80, 952), // Scroll: Enchant Armor (C)
+		new IntIntHolder(98, 1892), // Blacksmith&#x27;s Frame
+		new IntIntHolder(100, 917)
+		// Necklace of Mermaid
+	};
+	
+	private static final IntIntHolder[] REWARDS_100_WIN =
+	{
+		new IntIntHolder(50, 883), // Aquastone Ring
+		new IntIntHolder(80, 951), // Scroll: Enchant Weapon (C)
+		new IntIntHolder(98, 852), // Moonstone Earring
+		new IntIntHolder(100, 401)
+		// Drake Leather Armor
+	};
+	
+	private static final IntIntHolder[] REWARDS_100_LOSE =
+	{
+		new IntIntHolder(50, 951), // Scroll: Enchant Weapon (C)
+		new IntIntHolder(80, 500), // Great Helmet
+		new IntIntHolder(98, 2437), // Drake Leather Boots
+		new IntIntHolder(100, 135)
+		// Samurai Longsword
+	};
+	
+	public Q384_WarehouseKeepersPastime()
+	{
+		super(384, &quot;Warehouse Keeper&#x27;s Pastime&quot;);
+		
+		CHANCES.put(20947, 160000); // Connabi
+		CHANCES.put(20948, 180000); // Bartal
+		CHANCES.put(20945, 120000); // Cadeine
+		CHANCES.put(20946, 150000); // Sanhidro
+		CHANCES.put(20635, 150000); // Carinkain
+		CHANCES.put(20773, 610000); // Conjurer Bat Lord
+		CHANCES.put(20774, 600000); // Conjurer Bat
+		CHANCES.put(20760, 240000); // Dragon Bearer Archer
+		CHANCES.put(20758, 240000); // Dragon Bearer Chief
+		CHANCES.put(20759, 230000); // Dragon Bearer Warrior
+		CHANCES.put(20242, 220000); // Dustwind Gargoyle
+		CHANCES.put(20281, 220000); // Dustwind Gargoyle (2)
+		CHANCES.put(20556, 140000); // Giant Monstereye
+		CHANCES.put(20668, 210000); // Grave Guard
+		CHANCES.put(20241, 220000); // Hunter Gargoyle
+		CHANCES.put(20286, 220000); // Hunter Gargoyle (2)
+		CHANCES.put(20949, 190000); // Luminun
+		CHANCES.put(20950, 200000); // Innersen
+		CHANCES.put(20942, 90000); // Nightmare Guide
+		CHANCES.put(20943, 120000); // Nightmare Keeper
+		CHANCES.put(20944, 110000); // Nightmare Lord
+		CHANCES.put(20559, 140000); // Rotting Golem
+		CHANCES.put(20243, 210000); // Thunder Wyrm
+		CHANCES.put(20282, 210000); // Thunder Wyrm (2)
+		CHANCES.put(20677, 340000); // Tulben
+		CHANCES.put(20605, 150000); // Weird Drake
+		
+		addQuestStart(CLIFF);
+		addTalkId(CLIFF, BAXT);
+		
+		for (int npcId : CHANCES.keySet())
+			addMyDying(npcId);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		final int npcId = npc.getNpcId();
+		if (event.equalsIgnoreCase(&quot;30182-05.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(npcId + &quot;-08.htm&quot;))
+		{
+			playSound(player, SOUND_GIVEUP);
+			st.exitQuest(true);
+		}
+		else if (event.equalsIgnoreCase(npcId + &quot;-11.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(MEDAL) &lt; 10)
+				htmltext = npcId + &quot;-12.htm&quot;;
+			else
+			{
+				st.set(&quot;bet&quot;, 10);
+				st.set(&quot;board&quot;, StringUtil.scrambleString(&quot;123456789&quot;));
+				takeItems(player, MEDAL, 10);
+			}
+		}
+		else if (event.equalsIgnoreCase(npcId + &quot;-13.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(MEDAL) &lt; 100)
+				htmltext = npcId + &quot;-12.htm&quot;;
+			else
+			{
+				st.set(&quot;bet&quot;, 100);
+				st.set(&quot;board&quot;, StringUtil.scrambleString(&quot;123456789&quot;));
+				takeItems(player, MEDAL, 100);
+			}
+		}
+		else if (event.startsWith(&quot;select_1-&quot;)) // first pick
+		{
+			// Register the first char.
+			st.set(&quot;playerArray&quot;, event.substring(9));
+			
+			// Send back the finalized HTM with dynamic content.
+			htmltext = fillBoard(st, getHtmlText(npcId + &quot;-14.htm&quot;));
+		}
+		else if (event.startsWith(&quot;select_2-&quot;)) // pick #2-5
+		{
+			// Stores the current event for future use.
+			String number = event.substring(9);
+			
+			// Restore the player array.
+			String playerArray = st.get(&quot;playerArray&quot;);
+			
+			// Verify if the given number is already on the player array, if yes, it&#x27;s invalid, otherwise register it.
+			if (playerArray.contains(number))
+				htmltext = fillBoard(st, getHtmlText(npcId + &quot;-&quot; + (14 + 2 * playerArray.length()) + &quot;.htm&quot;));
+			else
+			{
+				// Stores the final String.
+				st.set(&quot;playerArray&quot;, playerArray.concat(number));
+				
+				htmltext = fillBoard(st, getHtmlText(npcId + &quot;-&quot; + (13 + 2 * playerArray.length()) + &quot;.htm&quot;));
+			}
+		}
+		else if (event.startsWith(&quot;select_3-&quot;)) // pick #6
+		{
+			// Stores the current event for future use.
+			String number = event.substring(9);
+			
+			// Restore the player array.
+			String playerArray = st.get(&quot;playerArray&quot;);
+			
+			// Verify if the given number is already on the player array, if yes, it&#x27;s invalid, otherwise calculate reward.
+			if (playerArray.contains(number))
+				htmltext = fillBoard(st, getHtmlText(npcId + &quot;-26.htm&quot;));
+			else
+			{
+				// No need to store the String on player db, but still need to update it.
+				final String playerChoice = playerArray.concat(number);
+				
+				// Transform the generated board (9 string length) into a 2d matrice (3x3 int).
+				final String[] board = st.get(&quot;board&quot;).split(&quot;&quot;);
+				
+				// test for all line combination
+				int winningLines = 0;
+				
+				for (int[] map : MathUtil.MATRICE_3X3_LINES)
+				{
+					// test line combination
+					boolean won = true;
+					for (int index : map)
+						won &amp;= playerChoice.contains(board[index - 1]);
+					
+					// cut the loop, when you won
+					if (won)
+						winningLines++;
+				}
+				
+				switch (winningLines)
+				{
+					case 3:
+						htmltext = getHtmlText(npcId + &quot;-23.htm&quot;);
+						
+						int chance = Rnd.get(100);
+						for (IntIntHolder reward : ((st.getInteger(&quot;bet&quot;) == 10) ? REWARDS_10_WIN : REWARDS_100_WIN))
+						{
+							if (chance &lt; reward.getId())
+							{
+								giveItems(player, reward.getValue(), 1);
+								if (reward.getValue() == 2437)
+									giveItems(player, 2463, 1);
+								
+								break;
+							}
+						}
+						break;
+					
+					case 0:
+						htmltext = getHtmlText(npcId + &quot;-25.htm&quot;);
+						
+						chance = Rnd.get(100);
+						for (IntIntHolder reward : ((st.getInteger(&quot;bet&quot;) == 10) ? REWARDS_10_LOSE : REWARDS_100_LOSE))
+						{
+							if (chance &lt; reward.getId())
+							{
+								giveItems(player, reward.getValue(), 1);
+								break;
+							}
+						}
+						break;
+					
+					default:
+						htmltext = getHtmlText(npcId + &quot;-24.htm&quot;);
+						break;
+				}
+				
+				for (int i = 1; i &lt; 10; i++)
+				{
+					htmltext = htmltext.replace(&quot;&lt;?Cell&quot; + i + &quot;?&gt;&quot;, board[i - 1]);
+					htmltext = htmltext.replace(&quot;&lt;?FontColor&quot; + i + &quot;?&gt;&quot;, (playerChoice.contains(board[i - 1])) ? &quot;ff0000&quot; : &quot;ffffff&quot;);
+				}
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 40) ? &quot;30182-04.htm&quot; : &quot;30182-01.htm&quot;;
+				break;
+			
+			case STARTED:
+				switch (npc.getNpcId())
+				{
+					case CLIFF:
+						htmltext = (player.getInventory().getItemCount(MEDAL) &lt; 10) ? &quot;30182-06.htm&quot; : &quot;30182-07.htm&quot;;
+						break;
+					
+					case BAXT:
+						htmltext = (player.getInventory().getItemCount(MEDAL) &lt; 10) ? &quot;30685-01.htm&quot; : &quot;30685-02.htm&quot;;
+						break;
+				}
+				break;
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		final Player player = killer.getActingPlayer();
+		
+		final QuestState st = getRandomPartyMemberState(player, npc, QuestStatus.STARTED);
+		if (st == null)
+			return;
+		
+		dropItems(st.getPlayer(), MEDAL, 1, 0, CHANCES.get(npc.getNpcId()));
+	}
+	
+	private static final String fillBoard(QuestState st, String htmltext)
+	{
+		final String playerArray = st.get(&quot;playerArray&quot;);
+		final String[] board = st.get(&quot;board&quot;).split(&quot;&quot;);
+		
+		for (int i = 1; i &lt; 10; i++)
+			htmltext = htmltext.replace(&quot;&lt;?Cell&quot; + i + &quot;?&gt;&quot;, (playerArray.contains(board[i - 1])) ? board[i - 1] : &quot;?&quot;);
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

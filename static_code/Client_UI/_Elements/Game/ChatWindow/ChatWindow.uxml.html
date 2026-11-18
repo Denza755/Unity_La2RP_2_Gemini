@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/ChatWindow/ChatWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/ChatWindow/ChatWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2TabView&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2TabView/L2TabView.uxml?fileID=9197481963319205126&amp;amp;guid=df1c3d52e66191742a30ae9bd4520b5a&amp;amp;type=3#L2TabView&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ChatWindow/ChatWindow.uss?fileID=7433441132597879392&amp;amp;guid=0f1fc063049f5064a9a2f798c3ecd11f&amp;amp;type=3#ChatWindow&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;ChatWindow&quot; focusable=&quot;true&quot; class=&quot;chat-window&quot;&gt;
+        &lt;ui:GroupBox name=&quot;BGContainer&quot; class=&quot;chat-bg-container&quot;&gt;
+            &lt;ui:VisualElement name=&quot;TopBar&quot; style=&quot;flex-grow: 0; position: relative; width: 100%; height: 0; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Chat/chatting_back2.png?fileID=2800000&amp;amp;guid=228dcb20d42da2745a4d74a92874cc16&amp;amp;type=3#chatting_back2&amp;quot;); -unity-slice-scale: 2px; -unity-slice-left: 190; -unity-slice-top: 14; -unity-slice-bottom: -2;&quot; /&gt;
+            &lt;ui:VisualElement name=&quot;TextBG&quot; style=&quot;flex-grow: 1; border-left-color: rgba(71, 71, 70, 0); border-right-color: rgba(71, 71, 70, 0); border-top-color: rgba(71, 71, 70, 0); border-bottom-color: rgba(71, 71, 70, 0); background-color: rgba(0, 0, 0, 0.36); margin-top: 0; color: rgb(27, 27, 27);&quot; /&gt;
+            &lt;ui:GroupBox name=&quot;BtmBar&quot; style=&quot;margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; height: 46px; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Chat/chatting_back1.png?fileID=2800000&amp;amp;guid=f478343996323a34f906cb00111ec867&amp;amp;type=3#chatting_back1&amp;quot;); -unity-slice-right: 164; -unity-slice-left: 0; -unity-slice-scale: 0; -unity-slice-top: -2; -unity-slice-bottom: 19; position: relative; bottom: 0; width: 100%;&quot;&gt;
+                &lt;ui:VisualElement style=&quot;flex-grow: 1; width: auto; height: auto; background-image: url(&amp;quot;project://database/Assets/Resources/Data/UI/Assets/Chat/chatting_tab3.png?fileID=2800000&amp;amp;guid=aa71fa816d2652c49a59ca8f1701034a&amp;amp;type=3#chatting_tab3&amp;quot;); background-color: rgba(0, 0, 0, 0); -unity-background-image-tint-color: rgb(255, 255, 255);&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+        &lt;ui:GroupBox name=&quot;Container&quot; focusable=&quot;true&quot; class=&quot;chat-window-wrapper&quot;&gt;
+            &lt;ui:Instance template=&quot;L2TabView&quot; name=&quot;ChatTabView&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+            &lt;ui:GroupBox name=&quot;ChatBar&quot; focusable=&quot;true&quot; class=&quot;chatbar-container&quot;&gt;
+                &lt;ui:GroupBox name=&quot;InnerBar&quot; focusable=&quot;true&quot; class=&quot;chatbar-container-wrapper&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;InputIcon&quot; tabindex=&quot;0&quot; class=&quot;chatbar-input-icon&quot; /&gt;
+                    &lt;ui:TextField name=&quot;ChatInputField&quot; password=&quot;false&quot; max-length=&quot;100&quot; class=&quot;chat-input-field&quot; /&gt;
+                &lt;/ui:GroupBox&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;ChatOptions&quot; class=&quot;chat-options-box&quot; style=&quot;justify-content: center;&quot;&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; name=&quot;EnlargeTextBtn&quot; class=&quot;chatting-fontsize&quot; /&gt;
+                &lt;ui:Button text=&quot;&amp;#10;&quot; name=&quot;ChatOptionsBtn&quot; class=&quot;chatting-option&quot; /&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:VisualElement name=&quot;ChatResizeBtn&quot; class=&quot;resize-diag chat-resize-btn&quot; /&gt;
+        &lt;/ui:GroupBox&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

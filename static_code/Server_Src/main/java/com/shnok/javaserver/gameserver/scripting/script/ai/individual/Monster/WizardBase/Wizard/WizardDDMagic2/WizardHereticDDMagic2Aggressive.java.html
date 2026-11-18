@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WizardBase/Wizard/WizardDDMagic2/WizardHereticDDMagic2Aggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WizardBase/Wizard/WizardDDMagic2/WizardHereticDDMagic2Aggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WizardBase.Wizard.WizardDDMagic2;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WizardHereticDDMagic2Aggressive extends WizardDDMagic2
+{
+	public WizardHereticDDMagic2Aggressive()
+	{
+		super(&quot;ai/individual/Monster/WizardBase/Wizard/WizardDDMagic2&quot;);
+	}
+	
+	public WizardHereticDDMagic2Aggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		22144,
+		22193
+	};
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (!(creature instanceof Playable))
+		{
+			super.onSeeCreature(npc, creature);
+			return;
+		}
+		if (npc.getAI().getLifeTime() &gt; 7 &amp;&amp; npc.isInMyTerritory() &amp;&amp; npc.getAI().getHateList().size() == 0)
+		{
+			if (npc.distance2D(creature) &gt; 100)
+			{
+				if (npc.getCast().meetsHpMpConditions(creature, getNpcSkillByType(npc, NpcSkillType.W_LONG_RANGE_DD_MAGIC)))
+				{
+					npc.getAI().addCastDesire(creature, getNpcSkillByType(npc, NpcSkillType.W_LONG_RANGE_DD_MAGIC), 1000000);
+				}
+				else
+				{
+					npc._i_ai0 = 1;
+					npc.getAI().addAttackDesire(creature, 1000);
+				}
+			}
+			else if (npc.getCast().meetsHpMpConditions(creature, getNpcSkillByType(npc, NpcSkillType.W_SHORT_RANGE_DD_MAGIC)))
+			{
+				npc.getAI().addCastDesire(creature, getNpcSkillByType(npc, NpcSkillType.W_SHORT_RANGE_DD_MAGIC), 1000000);
+			}
+			else
+			{
+				npc._i_ai0 = 1;
+				npc.getAI().addAttackDesire(creature, 1000);
+			}
+			
+			npc.getAI().getHateList().addDefaultHateInfo(creature);
+			
+			super.onSeeCreature(npc, creature);
+		}
+	}
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		npc._i_ai4 = 0;
+		
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if ((npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.CAST) &amp;&amp; npc._i_ai4 == 0)
+			npc._i_ai4 = 1;
+		
+		super.onAttacked(npc, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onClanAttacked(Npc caller, Npc called, Creature attacker, int damage, L2Skill skill)
+	{
+		if ((called.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; called.getAI().getCurrentIntention().getType() != IntentionType.CAST) &amp;&amp; called._i_ai4 == 0)
+			called._i_ai4 = 1;
+		
+		super.onClanAttacked(caller, called, attacker, damage, skill);
+	}
+	
+	@Override
+	public void onOutOfTerritory(Npc npc)
+	{
+		if (npc._i_ai4 == 0)
+		{
+			npc.removeAllAttackDesire();
+			npc.getAI().addMoveToDesire(npc.getSpawnLocation(), 100);
+		}
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (eventId == 10033 || eventId == 10002)
+		{
+			final Creature c0 = (Creature) World.getInstance().getObject(arg1);
+			if (c0 != null)
+			{
+				if (eventId == 10033)
+					npc._i_ai4 = 1;
+				
+				npc.removeAllAttackDesire();
+				if (npc.distance2D(c0) &gt; 100)
+				{
+					if (npc.getCast().meetsHpMpConditions(c0, getNpcSkillByType(npc, NpcSkillType.W_LONG_RANGE_DD_MAGIC)))
+					{
+						npc.getAI().addCastDesire(c0, getNpcSkillByType(npc, NpcSkillType.W_LONG_RANGE_DD_MAGIC), 1000000);
+					}
+					else
+					{
+						npc._i_ai0 = 1;
+						npc.getAI().addAttackDesire(c0, 1000);
+					}
+				}
+				else if (npc.getCast().meetsHpMpConditions(c0, getNpcSkillByType(npc, NpcSkillType.W_SHORT_RANGE_DD_MAGIC)))
+				{
+					npc.getAI().addCastDesire(c0, getNpcSkillByType(npc, NpcSkillType.W_SHORT_RANGE_DD_MAGIC), 1000000);
+				}
+				else
+				{
+					npc._i_ai0 = 1;
+					npc.getAI().addAttackDesire(c0, 1000);
+				}
+				if (c0 instanceof Playable)
+				{
+					npc.getAI().getHateList().addHateInfo(c0, 200);
+				}
+			}
+		}
+		else if (eventId == 10035)
+		{
+			npc._i_ai4 = 0;
+			npc.removeAllAttackDesire();
+			npc.getAI().addMoveToDesire(npc.getSpawnLocation(), 100);
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

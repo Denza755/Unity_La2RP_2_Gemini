@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagic/WarriorCastDDMagicAggressive.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagic/WarriorCastDDMagicAggressive.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.individual.Monster.WarriorBase.Warrior.WarriorCastDDMagic;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.IntentionType;
+import com.shnok.javaserver.gameserver.enums.actors.NpcSkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class WarriorCastDDMagicAggressive extends WarriorCastDDMagic
+{
+	public WarriorCastDDMagicAggressive()
+	{
+		super(&quot;ai/individual/Monster/WarriorBase/Warrior/WarriorCastDDMagic&quot;);
+	}
+	
+	public WarriorCastDDMagicAggressive(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		21421,
+		20635,
+		20670,
+		21569,
+		20664,
+		20137,
+		20668,
+		21239,
+		21243,
+		20146,
+		21417,
+		20656,
+		20596,
+		20680,
+		20227,
+		21223,
+		21231,
+		21227,
+		20235,
+		20279,
+		21247,
+		21255,
+		21251,
+		20110,
+		20113,
+		20115,
+		21215,
+		21219,
+		21211,
+		20935,
+		20605,
+		20176,
+		20647,
+		20194,
+		20347,
+		20354,
+		20431,
+		20453,
+		20513,
+		20546,
+		21000,
+		21143,
+		21146,
+		21155,
+		21162,
+		21235,
+		20412,
+	};
+	
+	@Override
+	public void onSeeCreature(Npc npc, Creature creature)
+	{
+		if (!(creature instanceof Playable))
+			return;
+		
+		if (npc.getAI().getLifeTime() &gt; 7 &amp;&amp; npc.getAI().getCurrentIntention().getType() != IntentionType.ATTACK &amp;&amp; npc.isInMyTerritory())
+		{
+			if (Rnd.get(100) &lt; 33 &amp;&amp; npc.distance2D(creature) &gt; 100)
+			{
+				final L2Skill DDMagic = getNpcSkillByType(npc, NpcSkillType.DD_MAGIC);
+				npc.getAI().addCastDesire(creature, DDMagic, 1000000);
+			}
+		}
+		
+		tryToAttack(npc, creature);
+		
+		super.onSeeCreature(npc, creature);
+	}
+}</pre>
+            
+</body>
+</html>

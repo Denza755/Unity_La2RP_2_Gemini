@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/targethandlers/TargetAlly.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/handler/targethandlers/TargetAlly.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.handler.targethandlers;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.enums.skills.SkillTargetType;
+import com.shnok.javaserver.gameserver.handler.ITargetHandler;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class TargetAlly implements ITargetHandler
+{
+	@Override
+	public SkillTargetType getTargetType()
+	{
+		return SkillTargetType.ALLY;
+	}
+	
+	@Override
+	public Creature[] getTargetList(Creature caster, Creature target, L2Skill skill)
+	{
+		final Player player = caster.getActingPlayer();
+		
+		if (player.isInOlympiadMode())
+			return new Creature[]
+			{
+				caster
+			};
+		
+		final List&lt;Creature&gt; list = new ArrayList&lt;&gt;();
+		list.add(player);
+		
+		for (Playable playable : player.getKnownTypeInRadius(Playable.class, skill.getSkillRadius(), p -&gt; !p.isDead()))
+		{
+			// Bypass other checks if target is Player&#x27;s Summon.
+			if (playable != player.getSummon())
+			{
+				// Target isn&#x27;t a clan or alliance member, ignore it.
+				if (!playable.isInSameClan(player) &amp;&amp; !playable.isInSameAlly(player))
+					continue;
+				
+				// Target isn&#x27;t sharing same Duel team, ignore it.
+				if (player.isInDuel() &amp;&amp; (playable.getActingPlayer().getDuelId() != player.getDuelId() || player.getTeam() != playable.getActingPlayer().getTeam()))
+					continue;
+			}
+			
+			list.add(playable);
+		}
+		
+		return list.toArray(new Creature[list.size()]);
+	}
+	
+	@Override
+	public Creature getFinalTarget(Creature caster, Creature target, L2Skill skill)
+	{
+		return caster;
+	}
+	
+	@Override
+	public boolean meetCastConditions(Playable caster, Creature target, L2Skill skill, boolean isCtrlPressed)
+	{
+		return true;
+	}
+}</pre>
+            
+</body>
+</html>

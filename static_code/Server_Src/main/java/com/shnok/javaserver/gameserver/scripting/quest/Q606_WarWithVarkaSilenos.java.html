@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q606_WarWithVarkaSilenos.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q606_WarWithVarkaSilenos.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+/**
+ * The onKill section of that quest is directly written on Q605.
+ */
+public class Q606_WarWithVarkaSilenos extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q606_WarWithVarkaSilenos&quot;;
+	
+	// Items
+	private static final int HORN_OF_BUFFALO = 7186;
+	private static final int VARKA_MANE = 7233;
+	
+	public Q606_WarWithVarkaSilenos()
+	{
+		super(606, &quot;War with Varka Silenos&quot;);
+		
+		setItemsIds(VARKA_MANE);
+		
+		addQuestStart(31370); // Kadun Zu Ketra
+		addTalkId(31370);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;31370-03.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;31370-07.htm&quot;))
+		{
+			if (player.getInventory().getItemCount(VARKA_MANE) &gt;= 100)
+			{
+				playSound(player, SOUND_ITEMGET);
+				takeItems(player, VARKA_MANE, 100);
+				giveItems(player, HORN_OF_BUFFALO, 20);
+			}
+			else
+				htmltext = &quot;31370-08.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;31370-09.htm&quot;))
+		{
+			takeItems(player, VARKA_MANE, -1);
+			st.exitQuest(true);
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		String htmltext = getNoQuestMsg();
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &gt;= 74 &amp;&amp; player.isAlliedWithKetra()) ? &quot;31370-01.htm&quot; : &quot;31370-02.htm&quot;;
+				break;
+			
+			case STARTED:
+				htmltext = (player.getInventory().hasItem(VARKA_MANE)) ? &quot;31370-04.htm&quot; : &quot;31370-05.htm&quot;;
+				break;
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

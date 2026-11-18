@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/ClanHallDoorman.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/ClanHallDoorman.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.manager.SevenSignsManager;
+import com.shnok.javaserver.gameserver.data.sql.ClanTable;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+import com.shnok.javaserver.gameserver.model.pledge.Clan;
+import com.shnok.javaserver.gameserver.model.residence.clanhall.ClanHall;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.NpcHtmlMessage;
+
+/**
+ * An instance type extending {@link Doorman}, used by clan hall doorman.&lt;br&gt;
+ * &lt;br&gt;
+ * isOwnerClan() checks if the user is part of clan owning the clan hall.
+ */
+public class ClanHallDoorman extends Doorman
+{
+	public ClanHallDoorman(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public void onBypassFeedback(Player player, String command)
+	{
+		if (command.startsWith(&quot;wyvern_info&quot;))
+		{
+			if (!canProvideWyvernService())
+				return;
+			
+			if (!isOwnerClan(player))
+				return;
+			
+			sendHtm(player, &quot;1&quot;);
+		}
+		else if (command.startsWith(&quot;wyvern_help&quot;))
+		{
+			if (!canProvideWyvernService())
+				return;
+			
+			if (!isOwnerClan(player))
+				return;
+			
+			sendHtm(player, &quot;7&quot;);
+		}
+		else if (command.startsWith(&quot;wyvern_ride&quot;))
+		{
+			if (!canProvideWyvernService())
+				return;
+			
+			if (!isOwnerClan(player))
+				return;
+			
+			if (!player.isClanLeader())
+				return;
+			
+			// Verify if Dusk owns the Seal of Strife (if true, CLs can&#x27;t mount Wyvern).
+			if (SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE) == CabalType.DUSK)
+			{
+				sendHtm(player, &quot;3&quot;);
+				return;
+			}
+			
+			// Check if the Player is mounted on a Strider.
+			if (!player.isMounted() || (player.getMountNpcId() != 12526 &amp;&amp; player.getMountNpcId() != 12527 &amp;&amp; player.getMountNpcId() != 12528))
+			{
+				if (player.getMountLevel() &lt; Config.WYVERN_REQUIRED_LEVEL)
+				{
+					sendHtm(player, &quot;8&quot;);
+					return;
+				}
+				
+				player.sendPacket(SystemMessageId.YOU_MAY_ONLY_RIDE_WYVERN_WHILE_RIDING_STRIDER);
+				sendHtm(player, &quot;1&quot;);
+				return;
+			}
+			
+			// Check for strider level.
+			if (player.getMountLevel() &lt; Config.WYVERN_REQUIRED_LEVEL)
+			{
+				sendHtm(player, &quot;6&quot;);
+				return;
+			}
+			
+			// Check for items consumption.
+			if (!player.destroyItemByItemId(1460, Config.WYVERN_REQUIRED_CRYSTALS, true))
+			{
+				sendHtm(player, &quot;5&quot;);
+				return;
+			}
+			
+			// Dismount the Strider.
+			player.dismount();
+			
+			// Mount a Wyvern. If successful, call an HTM.
+			if (player.mount(12621, 0))
+				sendHtm(player, &quot;4&quot;);
+		}
+		else
+			super.onBypassFeedback(player, command);
+	}
+	
+	@Override
+	public void showChatWindow(Player player)
+	{
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+		
+		if (getClanHall() == null)
+			return;
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		
+		final Clan owner = ClanTable.getInstance().getClan(getClanHall().getOwnerId());
+		if (isOwnerClan(player))
+		{
+			if (canProvideWyvernService())
+				html.setFile(&quot;data/html/clanHallDoormen/doormen_wyvern.htm&quot;);
+			else
+				html.setFile(&quot;data/html/clanHallDoormen/doormen.htm&quot;);
+			html.replace(&quot;%clanname%&quot;, owner.getName());
+		}
+		else
+		{
+			if (owner != null &amp;&amp; owner.getLeader() != null)
+			{
+				html.setFile(&quot;data/html/clanHallDoormen/doormen-no.htm&quot;);
+				html.replace(&quot;%leadername%&quot;, owner.getLeaderName());
+				html.replace(&quot;%clanname%&quot;, owner.getName());
+			}
+			else
+			{
+				html.setFile(&quot;data/html/clanHallDoormen/emptyowner.htm&quot;);
+				html.replace(&quot;%hallname%&quot;, getClanHall().getName());
+			}
+		}
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	public void showChatWindow(Player player, int val)
+	{
+		showChatWindow(player);
+	}
+	
+	@Override
+	protected final void openDoors(Player player, String command)
+	{
+		getClanHall().openDoors();
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/clanHallDoormen/doormen-opened.htm&quot;);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	protected final void closeDoors(Player player, String command)
+	{
+		getClanHall().closeDoors();
+		
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/clanHallDoormen/doormen-closed.htm&quot;);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		player.sendPacket(html);
+	}
+	
+	@Override
+	protected final boolean isOwnerClan(Player player)
+	{
+		return getClanHall() != null &amp;&amp; player.getClan() != null &amp;&amp; player.getClanId() == getClanHall().getOwnerId();
+	}
+	
+	private void sendHtm(Player player, String val)
+	{
+		final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
+		html.setFile(&quot;data/html/clanHallDoormen/wyvernmanager-&quot; + val + &quot;.htm&quot;);
+		html.replace(&quot;%objectId%&quot;, getObjectId());
+		html.replace(&quot;%npcname%&quot;, getName());
+		html.replace(&quot;%wyvern_level%&quot;, Config.WYVERN_REQUIRED_LEVEL);
+		html.replace(&quot;%needed_crystals%&quot;, Config.WYVERN_REQUIRED_CRYSTALS);
+		player.sendPacket(html);
+		
+		player.sendPacket(ActionFailed.STATIC_PACKET);
+	}
+	
+	private boolean canProvideWyvernService()
+	{
+		// Aden clan halls (ID 36-41) can provide wyvern services
+		final ClanHall clanHall = getClanHall();
+		return clanHall != null &amp;&amp; clanHall.getId() &gt;= 36 &amp;&amp; clanHall.getId() &lt;= 41;
+	}
+}</pre>
+            
+</body>
+</html>

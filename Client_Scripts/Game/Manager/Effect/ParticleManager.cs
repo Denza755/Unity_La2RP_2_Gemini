@@ -233,80 +233,86 @@ public class ParticleManager : MonoBehaviour
 
     #region Skill Particles
     public PooledEffect[] SpawnCastParticles(Entity caster, Skill skill, int hitTime)
+{
+    // Intercept Life Drain (Skill ID 1090) to use modern effect system
+    if (skill != null && skill.SkillId == 1090)
     {
-        List<EffectEmitter> castingActions = skill.SkillEffect.CastingActions;
-        if (castingActions == null || castingActions.Count == 0)
+        global::ModernSpellEffects.SpawnCastEffect(caster, skill);
+        return null; // No traditional pooled effects used
+    }
+    // Original implementation for other skills
+    List<EffectEmitter> castingActions = skill.SkillEffect.CastingActions;
+    if (castingActions == null || castingActions.Count == 0)
+    {
+        Debug.Log("Skill doesn't have any casting action.");
+        return null;
+    }
+
+    PooledEffect[] castEffects = new PooledEffect[castingActions.Count];
+
+    for (int i = 0; i < castingActions.Count; i++)
+    {
+        EffectEmitter action = castingActions[i];
+        AttachMethod attachOn = action.AttachOn;
+        string effectClass = action.EffectClass;
+        byte repeatCount = 1;
+
+        if (action.EtcEffect == EtcEffect.EET_SOULSHOT)
         {
-            Debug.Log("Skill doesn't have any casting action.");
-            return null;
+            if (caster.Gear?.WeaponType == WeaponType.bow)
+            {
+                attachOn = AttachMethod.AM_LH;
+            }
+
+            if (caster.Gear?.WeaponType == WeaponType.bow || caster.Gear?.WeaponType == WeaponType.fist)
+            {
+                effectClass = action.SecondaryEffectClass;
+            }
+
+            if (caster.Gear?.WeaponType == WeaponType.fist || caster.Gear?.WeaponType == WeaponType.dual)
+            {
+                repeatCount = 2;
+            }
         }
 
-        PooledEffect[] castEffects = new PooledEffect[castingActions.Count];
-
-        for (int i = 0; i < castingActions.Count; i++)
+        for (int r = 0; r < repeatCount; r++)
         {
-            EffectEmitter action = castingActions[i];
-            AttachMethod attachOn = action.AttachOn;
-            string effectClass = action.EffectClass;
-            byte repeatCount = 1;
-
-            if (action.EtcEffect == EtcEffect.EET_SOULSHOT)
+            if (repeatCount > 1)
             {
-                if (caster.Gear?.WeaponType == WeaponType.bow)
+                if (r == 0)
                 {
                     attachOn = AttachMethod.AM_LH;
                 }
-
-                if (caster.Gear?.WeaponType == WeaponType.bow || caster.Gear?.WeaponType == WeaponType.fist)
+                else
                 {
-                    effectClass = action.SecondaryEffectClass;
-                }
-
-                if (caster.Gear?.WeaponType == WeaponType.fist || caster.Gear?.WeaponType == WeaponType.dual)
-                {
-                    repeatCount = 2;
+                    attachOn = AttachMethod.AM_RH;
                 }
             }
 
-            for (int r = 0; r < repeatCount; r++)
+            PooledEffect effect = SpawnEffect(effectClass);
+            if (effect == null || effect.GameObject == null)
             {
-                if (repeatCount > 1)
-                {
-                    if (r == 0)
-                    {
-                        attachOn = AttachMethod.AM_LH;
-                    }
-                    else
-                    {
-                        attachOn = AttachMethod.AM_RH;
-                    }
-                }
-
-                PooledEffect effect = SpawnEffect(effectClass);
-                if (effect == null || effect.GameObject == null)
-                {
-                    Debug.LogWarning($"Can't spawn skill effect {effectClass} for skill {skill.SkillId}.");
-                    continue;
-                }
-
-                effect.HitTime = hitTime / 1000f; //in seconds
-
-                effect.GameObject.transform.parent = GetAttachTransform(caster, attachOn);
-
-                UpdateSkillEffectTransform(caster, action, effect.GameObject.transform, effect, attachOn);
-
-                float effectRatio = CalculateCastParticleSizeRatio(caster);
-                effect.GameObject.transform.localScale = effect.GameObject.transform.localScale * effectRatio;
-
-                ActiveEffects.Enqueue(effect);
-
-                castEffects[i] = effect;
+                Debug.LogWarning($"Can't spawn skill effect {effectClass} for skill {skill.SkillId}.");
+                continue;
             }
-        }
 
-        return castEffects;
+            effect.HitTime = hitTime / 1000f; //in seconds
+
+            effect.GameObject.transform.parent = GetAttachTransform(caster, attachOn);
+
+            UpdateSkillEffectTransform(caster, action, effect.GameObject.transform, effect, attachOn);
+
+            float effectRatio = CalculateCastParticleSizeRatio(caster);
+            effect.GameObject.transform.localScale = effect.GameObject.transform.localScale * effectRatio;
+
+            ActiveEffects.Enqueue(effect);
+
+            castEffects[i] = effect;
+        }
     }
 
+    return castEffects;
+}
     private float CalculateCastParticleSizeRatio(Entity caster)
     {
         float colRadius = caster.Appearance.CollisionRadius;
@@ -374,6 +380,13 @@ public class ParticleManager : MonoBehaviour
                 effect.GameObject.transform.parent = GetAttachTransform(target, attachOn);
 
                 PlaceHitParticle(effect, caster, target, action);
+
+                // Phase 2->3: If this is a life drain skill (e.g. Life Drain 1090, Drain Health 70),
+                // spawn a return projectile flying from target (mob) back to caster (mage)
+                if (skill.SkillId == 1090 || skill.SkillId == 70)
+                {
+                    SpawnDrainReturnProjectile(caster, target, skill);
+                }
             }
             else
             {
@@ -406,6 +419,80 @@ public class ParticleManager : MonoBehaviour
 
             ActiveEffects.Enqueue(effect);
         }
+    }
+
+    public void SpawnDrainReturnProjectile(Entity caster, Entity target, Skill skill)
+    {
+        if (caster == null || target == null || skill == null) return;
+
+        // Try to spawn return projectile effect (e.g. m_u003_c or p_u003_a)
+        string effectName = "m_u003_c";
+        PooledEffect drainProj = SpawnEffect(effectName);
+        if (drainProj == null || drainProj.GameObject == null)
+        {
+            drainProj = SpawnEffect("p_u003_a");
+        }
+
+        if (drainProj == null || drainProj.GameObject == null)
+        {
+            Debug.LogWarning($"[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}");
+            return;
+        }
+
+        if (drainProj == null || drainProj.GameObject == null)
+        {
+            Debug.LogWarning($"[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}");
+            return;
+        }
+
+        float targetCenterY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
+        float casterCenterY = caster.Appearance != null ? caster.Appearance.CollisionHeight * 0.7f : 1.0f;
+
+        Vector3 startPos = target.transform.position + Vector3.up * targetCenterY;
+        Vector3 endPos = caster.transform.position + Vector3.up * casterCenterY;
+
+        drainProj.Caster = target; // Flies FROM target
+        drainProj.Target = caster; // TO caster
+        drainProj.IsDrainReturn = true;
+        drainProj.IsArrow = false;
+        drainProj.Skill = skill;
+        drainProj.EffectClass = effectName;
+
+        drainProj.GameObject.transform.parent = _effectContainer.transform;
+        drainProj.GameObject.transform.position = startPos;
+        drainProj.GameObject.transform.localScale = Vector3.one * 0.8f;
+        drainProj.GameObject.SetActive(true);
+
+        drainProj.StartingPosition = startPos;
+        drainProj.TargetPosition = endPos;
+        drainProj.StartTime = Time.time;
+
+        float distance = Vector3.Distance(startPos, endPos);
+        float flightDuration = Mathf.Clamp(distance / 14.0f, 0.35f, 1.2f);
+        drainProj.HitTime = Time.time + flightDuration;
+        drainProj.EffectDurationSec = flightDuration + 0.5f;
+        drainProj.HitSuccess = true;
+
+        drainProj.OnArrival = () =>
+        {
+            // Trigger healing burst on caster upon blood essence reaching caster
+            PooledEffect healFx = SpawnEffect("e_u003_a");
+            if (healFx != null && healFx.GameObject != null)
+            {
+                healFx.GameObject.transform.parent = _effectContainer.transform;
+                healFx.GameObject.transform.position = caster.transform.position;
+                healFx.GameObject.transform.localScale = Vector3.one * 1.0f;
+                healFx.GameObject.SetActive(true);
+                healFx.StartTime = Time.time;
+                healFx.EffectDurationSec = 1.2f;
+                ActiveEffects.Enqueue(healFx);
+            }
+            SpellDynamicLight.TriggerSelfFlash(caster, skill);
+        };
+
+        drainProj.Restart();
+        ProjectileManager.Instance.AddProjectile(drainProj);
+        ActiveEffects.Enqueue(drainProj);
     }
 
     public void SpawnSkillExplosionParticle(Entity caster, Entity target, Skill skill)

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/service/LoginServerListenerService.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/service/LoginServerListenerService.java</h1>
+            <pre>package com.shnok.javaserver.service;
+
+import lombok.extern.log4j.Log4j2;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import static com.shnok.javaserver.config.Configuration.server;
+
+@Log4j2
+public class LoginServerListenerService extends Thread {
+    private int port;
+    private ServerSocket serverSocket;
+
+    private static LoginServerListenerService instance;
+    public static LoginServerListenerService getInstance() {
+        if (instance == null) {
+            instance = new LoginServerListenerService();
+        }
+        return instance;
+    }
+
+    public void initialize() {
+        try {
+            port = server.loginserverPort();
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            throw new RuntimeException(&quot;Could not create ServerSocket &quot;, e);
+        }
+    }
+
+    @Override
+    public void run() {
+        log.info(&quot;Login server listening on port {}. &quot;, port);
+        while (true) {
+            Socket connection = null;
+            try {
+                connection = serverSocket.accept();
+                LoginServerController.getInstance().addClient(connection);
+            } catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    if (connection != null) {
+                        connection.close();
+                    }
+                } catch (Exception e2) {
+                    e2.printStackTrace();
+                }
+
+                if (isInterrupted()) {
+                    try {
+                        serverSocket.close();
+                    } catch (IOException io) {
+                        io.printStackTrace();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

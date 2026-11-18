@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Examples/it_healing_potion_ta/MeshEmitter2_Needlelight.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Shaders/Skills/Examples/it_healing_potion_ta/MeshEmitter2_Needlelight.shader</h1>
+            <pre>// it_healing_potion_ta / MeshEmitter2 &quot;needlelight&quot;
+// UC: PTRS_Actor, SpinParticles, SizeScale, FadeIn/Out, PTDS_Brighten, UseMeshBlendMode=False
+Shader &quot;L2/Effects/it_healing_potion_ta/MeshEmitter2_Needlelight&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture&quot;, 2D) = &quot;white&quot; {}
+
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        _Seed (&quot;Seed&quot;, Float) = 0
+        _InitialDelayRange (&quot;Initial Delay Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _LifetimeRange (&quot;Lifetime Min Max&quot;, Vector) = (1.2, 1.2, 0, 0)
+        [Toggle] _UseManualAge (&quot;Use Manual Age&quot;, Float) = 0
+        _ManualAge (&quot;Manual Age sec&quot;, Range(0, 1.2)) = 0
+
+        _L2FxWorldCalibration (&quot;World Calibration K&quot;, Float) = 1.8
+        _StartSize (&quot;StartSize X/Y/Z&quot;, Float) = 0.0216
+        [Toggle] _UseSizeScale (&quot;Use SizeScale&quot;, Float) = 1
+        _SizeKey0 (&quot;SizeScale 0 Time Size&quot;, Vector) = (0.14, 6, 0, 0)
+        _SizeKey1 (&quot;SizeScale 1 Time Size&quot;, Vector) = (0.37, 8, 0, 0)
+        _SizeKey2 (&quot;SizeScale 2 Time Size&quot;, Vector) = (0.56, 8.5, 0, 0)
+        _SizeKey3 (&quot;SizeScale 3 Time Size&quot;, Vector) = (1, 9, 0, 0)
+        _SizeKey4 (&quot;SizeScale 4 Time Size&quot;, Vector) = (1, 9, 0, 0)
+
+        [Toggle] _SpinParticles (&quot;SpinParticles&quot;, Float) = 1
+        _StartSpinYawRangeUc (&quot;StartSpin X / Yaw&quot;, Vector) = (0, 1, 0, 0)
+        _StartSpinPitchRangeUc (&quot;StartSpin Y / Pitch&quot;, Vector) = (0, 1, 0, 0)
+        _StartSpinRollRangeUc (&quot;StartSpin Z / Roll&quot;, Vector) = (0, 0, 0, 0)
+        _SpsYawPitchRollUc (&quot;SpinsPerSecond Yaw Pitch Roll&quot;, Vector) = (0, 0, 0, 0)
+        _StartSpinRandStateBits (&quot;appRand TLS before StartSpin (uint bits)&quot;, Float) = 0
+
+        _ColorMultiplier (&quot;ColorMultiplier RGB&quot;, Vector) = (1, 0.412, 0.023, 0)
+        _ColorKey0 (&quot;ColorScale 0&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey1 (&quot;ColorScale 1&quot;, Color) = (1, 1, 1, 1)
+        [Toggle] _FadeIn (&quot;FadeIn&quot;, Float) = 1
+        _FadeInEndTime (&quot;FadeIn End sec&quot;, Float) = 0.03
+        [Toggle] _FadeOut (&quot;FadeOut&quot;, Float) = 1
+        _FadeOutStartTime (&quot;FadeOut Start sec&quot;, Float) = 0.28
+        _Opacity (&quot;Opacity&quot;, Range(0, 2)) = 1
+        // ON when atlas sRGB=OFF and ColorMul looks too bright in Linear.
+        // Lib: Decompile_Common/L2FxSpriteColorGammaLinear.hlsl (kirakira + this needlelight).
+        [Toggle] _L2SpriteColorGammaToLinear (&quot;L2 Color Gamma→Linear (FX + sRGB tex OFF)&quot;, Float) = 1
+    }
+
+    SubShader
+    {
+        Tags { &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot; &quot;Queue&quot; = &quot;Transparent&quot; &quot;RenderType&quot; = &quot;Transparent&quot; &quot;L2FxGpuInstancing&quot; = &quot;On&quot; }
+        // PTDS_Brighten — live D3DDrv + RenderDoc
+        Blend One OneMinusSrcColor
+        Cull Off
+        ZWrite Off
+
+        Pass
+        {
+            Name &quot;Needlelight&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 4.5
+
+            #include &quot;Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl&quot;
+            #include &quot;../../Common/L2FxCoreGeometryTest.hlsl&quot;
+            #include &quot;../../Common/Decompile_Common/L2FxMeshSizeScale.hlsl&quot;
+            #include &quot;../../Common/Decompile_Common/L2FxMeshColorFade.hlsl&quot;
+            #include &quot;../../Common/Decompile_Common/L2FxSpriteColorGammaLinear.hlsl&quot;
+            #include &quot;../../Common/Decompile_Common/L2FxMeshSpin.hlsl&quot;
+            #include &quot;../../Common/Decompile_Common/L2FxPTRS_Actor.hlsl&quot;
+            #include &quot;../../Common/Decompile_Common/L2FxPTDS_DrawStyle.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _StartTime;
+                float _Seed;
+                float4 _InitialDelayRange;
+                float4 _LifetimeRange;
+                float _UseManualAge;
+                float _ManualAge;
+                float _L2FxWorldCalibration;
+                float _StartSize;
+                float _UseSizeScale;
+                float4 _SizeKey0;
+                float4 _SizeKey1;
+                float4 _SizeKey2;
+                float4 _SizeKey3;
+                float4 _SizeKey4;
+                float _SpinParticles;
+                float4 _StartSpinYawRangeUc;
+                float4 _StartSpinPitchRangeUc;
+                float4 _StartSpinRollRangeUc;
+                float4 _SpsYawPitchRollUc;
+                float _StartSpinRandStateBits;
+                float4 _ColorMultiplier;
+                float4 _ColorKey0;
+                float4 _ColorKey1;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _FadeOut;
+                float _FadeOutStartTime;
+                float _Opacity;
+                float _L2SpriteColorGammaToLinear;
+            CBUFFER_END
+
+            #include &quot;../../Common/L2FxInstancing.hlsl&quot;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                half4 color : COLOR0;
+            };
+
+            float ResolveAgeSeconds(out float lifetime)
+            {
+                lifetime = max(L2Fx_RandomLifetime(_LifetimeRange.xy, _Seed, _StartTime, 7.0), 1e-4);
+                if (_UseManualAge &gt; 0.5)
+                {
+                    return _ManualAge;
+                }
+
+                float delay = L2Fx_RandomInitialDelay(_InitialDelayRange.xy, _Seed, _StartTime, 3.0);
+                return _StartTime &gt; 0.0
+                    ? L2Fx_AgeSeconds(_Time.y, _StartTime, delay)
+                    : max(0.0, _Time.y - delay);
+            }
+
+            float ResolveSizeScale(float ageNorm)
+            {
+                return L2Fx_MeshSizeScale_ScalarFromKeys5(
+                    ageNorm,
+                    _UseSizeScale,
+                    0.0,
+                    1.0,
+                    0.0,
+                    4,
+                    _SizeKey0.x, _SizeKey0.y,
+                    _SizeKey1.x, _SizeKey1.y,
+                    _SizeKey2.x, _SizeKey2.y,
+                    _SizeKey3.x, _SizeKey3.y,
+                    _SizeKey4.x, _SizeKey4.y);
+            }
+
+            float4 ResolveColor(float ageSeconds, float lifetime)
+            {
+                // Two white ColorScale keys (RelativeTime 0 and 1).
+                float4 color = L2Fx_MeshColorFade_FullKeys6(
+                    ageSeconds,
+                    lifetime,
+                    0.0,
+                    _ColorMultiplier.xyz,
+                    _FadeIn,
+                    _FadeInEndTime,
+                    _FadeOut,
+                    _FadeOutStartTime,
+                    _Opacity,
+                    _ColorKey0,
+                    1.0, _ColorKey1,
+                    1.0, _ColorKey1,
+                    1.0, _ColorKey1,
+                    1.0, _ColorKey1,
+                    1.0, _ColorKey1);
+                return L2Fx_SpriteColor_ApplyGammaToLinearIfEnabled(
+                    color, _L2SpriteColorGammaToLinear);
+            }
+
+            float ResolveParticleVisibility(float ageSeconds, float lifetime)
+            {
+                if (_UseManualAge &gt; 0.5)
+                {
+                    return 1.0;
+                }
+                return (ageSeconds &gt;= 0.0 &amp;&amp; ageSeconds &lt; lifetime) ? 1.0 : 0.0;
+            }
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+                float lifetime;
+                float ageSeconds = ResolveAgeSeconds(lifetime);
+                float ageNorm = saturate(ageSeconds / lifetime);
+                float sizeScale = ResolveSizeScale(ageNorm);
+                float finalScale = L2Fx_GetFinalMeshScale(_StartSize, sizeScale, _L2FxWorldCalibration);
+                float3 localMeshOS = IN.positionOS.xyz * finalScale;
+
+                if (_SpinParticles &gt; 0.5)
+                {
+                    float3 startYawPitchRollUru =
+                        L2Fx_MeshSpin_StartYawPitchRollUruFromAppRandState(
+                            _StartSpinYawRangeUc.xy,
+                            _StartSpinPitchRangeUc.xy,
+                            _StartSpinRollRangeUc.xy,
+                            asuint(_StartSpinRandStateBits));
+                    // PTRS_Actor spin uses same trunc(rate*t+start) then RotationURU(c1,c0,c2).
+                    float3 spinRateC012 = L2Fx_MeshSpin_VelocityYawPitchRollUruPerSecond(
+                        _SpsYawPitchRollUc.xyz,
+                        float3(1.0, 1.0, 1.0));
+                    // MeshSpin Evaluate expects (Yaw,Pitch,Roll); PTRS EvaluateSpin swaps for matrix.
+                    float3 yawPitchRollUru = L2Fx_MeshSpin_EvaluateYawPitchRollUru(
+                        startYawPitchRollUru,
+                        spinRateC012,
+                        ageSeconds);
+                    float3 pitchYawRollRadians = L2Fx_MeshSpin_YawPitchRollToPitchYawRoll(
+                        L2Fx_MeshSpin_YawPitchRollUruToRadians(yawPitchRollUru));
+                    localMeshOS = L2Fx_MeshSpin_RotateUnityLocalPositionPitchYawRoll(
+                        localMeshOS,
+                        pitchYawRollRadians);
+                }
+
+                float3 positionWS = TransformObjectToWorld(localMeshOS);
+                OUT.positionHCS = TransformWorldToHClip(positionWS);
+                OUT.uv = IN.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+                OUT.color = (half4)(ResolveColor(ageSeconds, lifetime) * ResolveParticleVisibility(ageSeconds, lifetime));
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * IN.color;
+            }
+            ENDHLSL
+        }
+    }
+    FallBack Off
+}
+</pre>
+            
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/UI/ViewerHud.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/UI/ViewerHud.cs</h1>
+            <pre>using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public sealed class ViewerHud : MonoBehaviour
+{
+    public ViewerEffectPlayer Player;
+    public Rect HudRect = new Rect(12, 12, 460, 330);
+
+    string _filter = &quot;e_u511_fail&quot;;
+    Vector2 _scroll;
+    string _selectedName = &quot;&quot;;
+    readonly List&lt;string&gt; _filtered = new List&lt;string&gt;();
+    string _statusText = &quot;&quot;;
+
+    void OnEnable()
+    {
+        ViewerStatus.Instance.Changed += RefreshStatus;
+        RefreshStatus();
+    }
+
+    void OnDisable()
+    {
+        ViewerStatus.Instance.Changed -= RefreshStatus;
+    }
+
+    void RefreshStatus()
+    {
+        var s = ViewerStatus.Instance;
+        _statusText = s.Stage + (string.IsNullOrEmpty(s.Detail) ? &quot;&quot; : &quot; — &quot; + s.Detail);
+    }
+
+    public bool ContainsScreenPoint(Vector2 screenPoint)
+    {
+        Vector2 gui = new Vector2(screenPoint.x, Screen.height - screenPoint.y);
+        return HudRect.Contains(gui);
+    }
+
+    public bool ContainsMouse()
+    {
+        Vector2 pos = Input.mousePosition;
+        return ContainsScreenPoint(pos);
+    }
+
+    void OnGUI()
+    {
+        GUI.depth = 0;
+        GUILayout.BeginArea(HudRect, GUI.skin.window);
+        GUILayout.Label(&quot;Viewer Effects&quot;);
+        GUILayout.Label(&quot;Статус: &quot; + _statusText);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(&quot;Поиск&quot;, GUILayout.Width(50));
+        string next = GUILayout.TextField(_filter ?? &quot;&quot;, GUILayout.MinWidth(200));
+        GUILayout.EndHorizontal();
+        if (next != _filter)
+        {
+            _filter = next;
+            RebuildFilter();
+        }
+
+        if (_filtered.Count == 0 &amp;&amp; UcEffectCatalog.Names.Count &gt; 0)
+            RebuildFilter();
+
+        _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(170));
+        int shown = Mathf.Min(_filtered.Count, 80);
+        for (int i = 0; i &lt; shown; i++)
+        {
+            bool on = _selectedName == _filtered[i];
+            if (GUILayout.Toggle(on, _filtered[i], &quot;Button&quot;) &amp;&amp; !on &amp;&amp; !ViewerStatus.Instance.Busy)
+            {
+                _selectedName = _filtered[i];
+                Select(_selectedName);
+            }
+        }
+        if (_filtered.Count &gt; shown)
+            GUILayout.Label(&quot;… ещё &quot; + (_filtered.Count - shown));
+        GUILayout.EndScrollView();
+        GUILayout.Label(&quot;Эффектов: &quot; + UcEffectCatalog.Names.Count + &quot;  показано: &quot; + _filtered.Count);
+        GUILayout.Label(&quot;ПКМ drag — поворот, колёсико — ближе/дальше, ЛКМ — Play.&quot;);
+        if (Player != null &amp;&amp; Player.IsReady &amp;&amp; GUILayout.Button(&quot;Проиграть в центре&quot;))
+            Player.PlayAt(Vector3.zero);
+        GUILayout.EndArea();
+    }
+
+    void RebuildFilter()
+    {
+        string keep = _selectedName;
+        _filtered.Clear();
+        string f = _filter?.Trim() ?? &quot;&quot;;
+        foreach (string name in UcEffectCatalog.Names)
+        {
+            if (f.Length == 0 || name.IndexOf(f, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+                _filtered.Add(name);
+        }
+        bool still = false;
+        for (int i = 0; i &lt; _filtered.Count; i++)
+        {
+            if (_filtered[i] == keep)
+            {
+                still = true;
+                break;
+            }
+        }
+        _selectedName = still ? keep : &quot;&quot;;
+    }
+
+    public void Select(string name)
+    {
+        if (Player == null || ViewerStatus.Instance.Busy)
+            return;
+        _selectedName = name ?? &quot;&quot;;
+        if (!string.IsNullOrEmpty(_selectedName) &amp;&amp;
+            (_filter == null || _selectedName.IndexOf(_filter, StringComparison.OrdinalIgnoreCase) &lt; 0))
+            _filter = _selectedName;
+        RebuildFilter();
+        Player.StopAllCoroutines();
+        Player.StartCoroutine(Player.Prepare(_selectedName));
+    }
+}
+</pre>
+            
+</body>
+</html>

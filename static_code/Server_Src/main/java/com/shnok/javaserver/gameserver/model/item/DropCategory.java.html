@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/DropCategory.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/item/DropCategory.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.item;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.DropType;
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+
+public class DropCategory extends ArrayList&lt;DropData&gt;
+{
+	private static final long serialVersionUID = 1L;
+	private static final CLogger LOGGER = new CLogger(DropCategory.class.getName());
+	
+	private final DropType _dropType;
+	private final double _chance;
+	
+	public DropCategory(DropType dropType, double chance)
+	{
+		_dropType = dropType;
+		_chance = chance;
+	}
+	
+	/**
+	 * @return The {@link DropType} of this {@link DropCategory}.
+	 */
+	public DropType getDropType()
+	{
+		return _dropType;
+	}
+	
+	/**
+	 * @return The {@link DropCategory} chance.
+	 */
+	public double getChance()
+	{
+		return _chance;
+	}
+	
+	/**
+	 * Calculates drops of this {@link DropCategory}.
+	 * @param levelMultiplier : The input level modifier of the last attacker.
+	 * @param raid : The NPC is raid boss.
+	 * @return The list of {@link IntIntHolder} holding item ID and item count.
+	 */
+	public Map&lt;Integer, Integer&gt; calculateDrop(double levelMultiplier, boolean raid)
+	{
+		// If base chance or multiplier is 0, return directly.
+		if (_chance == 0. || levelMultiplier == 0.)
+			return Collections.emptyMap();
+		
+		// Retrieve the Config rate. If rate is 0, return directly.
+		final double rate = getDropType().getDropRate(raid);
+		if (rate == 0.)
+			return Collections.emptyMap();
+		
+		// The actual drops, stored into a map for easier management. Similar drops stack on each other.
+		final Map&lt;Integer, Integer&gt; result = new HashMap&lt;&gt;(1);
+		
+		// Iterate X times category and drop chances.
+		for (int i = 0; i &lt; rate; i++)
+		{
+			// Test category based on level multiplier.
+			double chance = getChance() * levelMultiplier * DropData.PERCENT_CHANCE;
+			int roll = Rnd.get(DropData.MAX_CHANCE);
+			if (chance &gt;= DropData.MAX_CHANCE || roll &lt; chance)
+			{
+				LOGGER.info(&quot;DropCategory {}: category roll passed (chance={}%, calcChance={}, roll={}).&quot;, 
+					_dropType, getChance(), chance, roll);
+				
+				// Evaluate each drop if the drop type is SPOIL.
+				if (_dropType == DropType.SPOIL)
+				{
+					for (DropData dd : this)
+					{
+						if (dd.chance() * DropData.PERCENT_CHANCE &gt;= DropData.MAX_CHANCE || Rnd.get(DropData.MAX_CHANCE) &lt; dd.chance() * DropData.PERCENT_CHANCE)
+							result.merge(dd.itemId(), dd.getRandomDrop(), Integer::sum);
+					}
+				}
+				// For other cases, evaluate all drops, pick only one.
+				else
+				{
+					// Initialize cumulativeChance to 0.
+					double cumulativeChance = 0;
+					
+					// Generate a random value.
+					double randomValue = Rnd.get(DropData.MAX_CHANCE);
+					boolean itemSelected = false;
+					
+					// Iterate through drops to find the one that matches the random value.
+					for (DropData dd : this)
+					{
+						cumulativeChance += dd.chance() * DropData.PERCENT_CHANCE;
+						
+						// If the random value is within the chance range, add the drop to the result list.
+						if (randomValue &lt; cumulativeChance)
+						{
+							int dropCount = dd.getRandomDrop();
+							result.merge(dd.itemId(), dropCount, Integer::sum);
+							LOGGER.info(&quot;DropCategory {}: selected item {} (count={}) by roll {} &lt; cumulative {}.&quot;, 
+								_dropType, dd.itemId(), dropCount, randomValue, cumulativeChance);
+							itemSelected = true;
+							break;
+						}
+					}
+					
+					// If rounding caused cumulativeChance to barely miss randomValue, fallback to last item
+					if (!itemSelected &amp;&amp; !this.isEmpty())
+					{
+						DropData fallback = this.get(this.size() - 1);
+						int dropCount = fallback.getRandomDrop();
+						result.merge(fallback.itemId(), dropCount, Integer::sum);
+						LOGGER.info(&quot;DropCategory {}: fallback selected last item {} (count={}).&quot;, 
+							_dropType, fallback.itemId(), dropCount);
+					}
+				}
+			}
+		}
+		
+		if (!result.isEmpty())
+		{
+			LOGGER.info(&quot;DropCategory {}: total drop result = {}&quot;, _dropType, result);
+		}
+		
+		return result;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/Grp/Model/Npcgrp.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/Grp/Model/Npcgrp.cs</h1>
+            <pre>﻿
+using System.Collections.Generic;
+using FMODUnity;
+using UnityEngine;
+
+[System.Serializable]
+public class Npcgrp
+{
+    [SerializeField] private int _npcId;
+    [SerializeField] private string _className;
+    [SerializeField] private EntityType _type;
+    [SerializeField] private string _mesh;
+    [SerializeField] private string[] _materials;
+    [SerializeField] private float _speed;
+    [SerializeField] private string[] _attackSounds;
+    [SerializeField] private List&lt;EventReference&gt; _attackSoundsEvents;
+    [SerializeField] private string[] _defenseSounds;
+    [SerializeField] private List&lt;EventReference&gt; _defenseSoundsEvents;
+    [SerializeField] private string[] _damageSounds;
+    [SerializeField] private List&lt;EventReference&gt; _damageSoundsEvents;
+    [SerializeField] private string _attackEffect;
+    [SerializeField] private bool _friendly;
+    [SerializeField] private bool _hpVisible;
+    [SerializeField] private string[] _dialogSounds;
+    [SerializeField] private float _collisionRadius;
+    [SerializeField] private float _collisionHeight;
+    [SerializeField] private int _rhand;
+    [SerializeField] private int _lhand;
+    [SerializeField] private float _maxHp;
+    [SerializeField] private float _maxMp;
+
+    public int NpcId { get { return _npcId; } set { _npcId = value; } }
+    public string ClassName { get =&gt; _className; set =&gt; _className = value; }
+    public EntityType Type { get =&gt; _type; set =&gt; _type = value; }
+    public string Mesh { get =&gt; _mesh; set =&gt; _mesh = value; }
+    public string[] Materials { get =&gt; _materials; set =&gt; _materials = value; }
+    public float Speed { get =&gt; _speed; set =&gt; _speed = value; }
+    public string[] AttackSounds { get =&gt; _attackSounds; set =&gt; _attackSounds = value; }
+    public List&lt;EventReference&gt; AttackSoundsEvents { get =&gt; _attackSoundsEvents; set =&gt; _attackSoundsEvents = value; }
+    public string[] DefenseSounds { get =&gt; _defenseSounds; set =&gt; _defenseSounds = value; }
+    public List&lt;EventReference&gt; DefenseSoundsEvents { get =&gt; _defenseSoundsEvents; set =&gt; _defenseSoundsEvents = value; }
+    public string[] DamageSounds { get =&gt; _damageSounds; set =&gt; _damageSounds = value; }
+    public List&lt;EventReference&gt; DamageSoundsEvents { get =&gt; _damageSoundsEvents; set =&gt; _damageSoundsEvents = value; }
+    public string AttackEffect { get =&gt; _attackEffect; set =&gt; _attackEffect = value; }
+    public bool Friendly { get =&gt; _friendly; set =&gt; _friendly = value; }
+    public bool HpVisible { get =&gt; _hpVisible; set =&gt; _hpVisible = value; }
+    public string[] DialogSounds { get =&gt; _dialogSounds; set =&gt; _dialogSounds = value; }
+    public float CollisionRadius { get =&gt; _collisionRadius; set =&gt; _collisionRadius = value; }
+    public float CollisionHeight { get =&gt; _collisionHeight; set =&gt; _collisionHeight = value; }
+    public int Rhand { get =&gt; _rhand; set =&gt; _rhand = value; }
+    public int Lhand { get =&gt; _lhand; set =&gt; _lhand = value; }
+    public float MaxHp { get =&gt; _maxHp; set =&gt; _maxHp = value; }
+    public float MaxMp { get =&gt; _maxMp; set =&gt; _maxMp = value; }
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestBlock.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/unused/RequestBlock.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+
+import com.shnok.javaserver.gameserver.data.manager.RelationManager;
+import com.shnok.javaserver.gameserver.data.sql.PlayerInfoTable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public final class RequestBlock extends L2GameClientPacket
+{
+	private static final int BLOCK = 0;
+	private static final int UNBLOCK = 1;
+	private static final int BLOCKLIST = 2;
+	private static final int ALLBLOCK = 3;
+	private static final int ALLUNBLOCK = 4;
+	
+	private String _targetName;
+	private int _type;
+	
+	@Override
+	protected void readImpl()
+	{
+		_type = readD(); // 0x00 - block, 0x01 - unblock, 0x03 - allblock, 0x04 - allunblock
+		
+		if (_type == BLOCK || _type == UNBLOCK)
+			_targetName = readS();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+			return;
+		
+		switch (_type)
+		{
+			case BLOCK, UNBLOCK:
+				// Can&#x27;t block/unblock inexisting or self.
+				final int targetId = PlayerInfoTable.getInstance().getPlayerObjectId(_targetName);
+				if (targetId &lt;= 0 || player.getObjectId() == targetId)
+				{
+					player.sendPacket(SystemMessageId.FAILED_TO_REGISTER_TO_IGNORE_LIST);
+					return;
+				}
+				
+				// Can&#x27;t block a GM character.
+				if (PlayerInfoTable.getInstance().getPlayerAccessLevel(targetId) &gt; 0)
+				{
+					player.sendPacket(SystemMessageId.YOU_MAY_NOT_IMPOSE_A_BLOCK_ON_GM);
+					return;
+				}
+				
+				if (_type == BLOCK)
+					RelationManager.getInstance().addToBlockList(player, targetId);
+				else
+					RelationManager.getInstance().removeFromBlockList(player, targetId);
+				break;
+			
+			case BLOCKLIST:
+				RelationManager.getInstance().sendBlockList(player);
+				break;
+			
+			case ALLBLOCK:
+				player.sendPacket(SystemMessageId.BLOCKING_ALL);
+				player.setInBlockingAll(true);
+				break;
+			
+			case ALLUNBLOCK:
+				player.sendPacket(SystemMessageId.NOT_BLOCKING_ALL);
+				player.setInBlockingAll(false);
+				break;
+			
+			default:
+				LOGGER.warn(&quot;Unknown block type detected: {}.&quot;, _type);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

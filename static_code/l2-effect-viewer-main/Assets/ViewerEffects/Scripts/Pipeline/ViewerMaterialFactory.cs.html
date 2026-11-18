@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/ViewerMaterialFactory.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>l2-effect-viewer-main/Assets/ViewerEffects/Scripts/Pipeline/ViewerMaterialFactory.cs</h1>
+            <pre>using System;
+using System.IO;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+public static class ViewerMaterialFactory
+{
+    public const string MeshShaderName = &quot;L2/Viewer/MeshEmitter&quot;;
+    public const string SpriteShaderName = &quot;L2/Viewer/SpriteEmitter&quot;;
+    public const string BeamShaderName = &quot;L2/Viewer/BeamEmitter&quot;;
+
+    static readonly int SrcBlend = Shader.PropertyToID(&quot;_SrcBlend&quot;);
+    static readonly int DstBlend = Shader.PropertyToID(&quot;_DstBlend&quot;);
+
+    public static Material Create(ViewerEffectData effect, ViewerEmitterData emitter, Texture texture)
+    {
+        string shaderName = emitter.Kind switch
+        {
+            ViewerEmitterKind.Mesh =&gt; MeshShaderName,
+            ViewerEmitterKind.Beam =&gt; BeamShaderName,
+            _ =&gt; SpriteShaderName
+        };
+        Shader shader = Shader.Find(shaderName);
+        if (shader == null)
+            throw new InvalidOperationException(&quot;Shader not found: &quot; + shaderName + &quot;. Wait for Unity import of ViewerEffects/Shaders.&quot;);
+
+        var mat = new Material(shader)
+        {
+            name = emitter.DisplayName + &quot;_mat&quot;,
+            hideFlags = HideFlags.DontSave
+        };
+        mat.enableInstancing = false;
+        if (texture != null)
+        {
+            mat.SetTexture(&quot;_MainTex&quot;, texture);
+            mat.mainTexture = texture;
+        }
+        else
+        {
+            mat.SetTexture(&quot;_MainTex&quot;, Texture2D.whiteTexture);
+            mat.mainTexture = Texture2D.whiteTexture;
+        }
+
+        ApplyDrawStyle(mat, emitter.DrawStyle);
+        float worldCalibration = emitter.Kind switch
+        {
+            ViewerEmitterKind.Mesh =&gt; ViewerPaths.Config.worldCalibrationMesh,
+            ViewerEmitterKind.Beam =&gt; ViewerPaths.Config.worldCalibrationBeam,
+            _ =&gt; ViewerPaths.Config.worldCalibrationSprite
+        };
+        mat.SetFloat(&quot;_L2FxWorldCalibration&quot;, worldCalibration);
+        mat.SetVector(&quot;_LifetimeRange&quot;, Vec(emitter.Lifetime));
+        mat.SetVector(&quot;_InitialDelayRange&quot;, Vec(emitter.InitialDelay));
+        mat.SetFloat(&quot;_UseSizeScale&quot;, emitter.UseSizeScale ? 1f : 0f);
+        mat.SetFloat(&quot;_SizeScaleRepeats&quot;, emitter.SizeScaleRepeats);
+        SetSizeKeys(mat, emitter);
+        mat.SetFloat(&quot;_FadeIn&quot;, emitter.FadeIn ? 1f : 0f);
+        mat.SetFloat(&quot;_FadeInEndTime&quot;, emitter.FadeInEndTime);
+        mat.SetFloat(&quot;_FadeOut&quot;, emitter.FadeOut ? 1f : 0f);
+        mat.SetFloat(&quot;_FadeOutStartTime&quot;, emitter.FadeOutStartTime);
+        mat.SetFloat(&quot;_Fadeout&quot;, emitter.FadeOut ? 1f : 0f);
+        mat.SetFloat(&quot;_FadeoutStartTime&quot;, emitter.FadeOutStartTime);
+        mat.SetFloat(&quot;_Opacity&quot;, emitter.Opacity);
+        mat.SetFloat(&quot;_L2SpriteColorGammaToLinear&quot;, GammaToLinearEnabled(emitter));
+        mat.SetFloat(&quot;_RgbBoost&quot;, 1f);
+        mat.renderQueue = 3000;
+
+        if (emitter.Kind == ViewerEmitterKind.Mesh)
+            ApplyMesh(mat, emitter);
+        else if (emitter.Kind == ViewerEmitterKind.Beam)
+        {
+            // L2 beam atlases scroll along U; Wrap=Repeat (see heal_ta fx_m_t0004 notes).
+            if (texture != null)
+            {
+                texture.wrapMode = TextureWrapMode.Repeat;
+                mat.mainTexture = texture;
+                mat.SetTexture(&quot;_MainTex&quot;, texture);
+            }
+            ApplyBeam(mat, emitter);
+        }
+        else
+            ApplySprite(mat, emitter);
+
+        bool profileApplied = ApplyValidatedMaterialProfile(effect, emitter, mat);
+        ViewerDiagnostics.Material(effect, emitter, mat, profileApplied);
+        return mat;
+    }
+
+    static float GammaToLinearEnabled(ViewerEmitterData _)
+    {
+        // Default ON: FX atlases load Linear (sRGB OFF), then ColorMul/ColorScale
+        // stay L2 display-gamma numbers. Decompile_Common applies pow(rgb, 2)
+        // after ColorFade. Verified path for kirakira / Wave.
+        return 1f;
+    }
+
+    static bool ApplyValidatedMaterialProfile(
+        ViewerEffectData effect,
+        ViewerEmitterData emitter,
+        Material mat)
+    {
+        if (effect == null ||
+            !string.Equals(effect.ClassName, &quot;it_healing_potion_ta&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Exact values from the working reference materials under
+        // Resources/Data/Effects/it_healing_potion/it_healing_potion_ta.
+        // These are Unity material settings not represented by the UC file;
+        // no Decompile_Common formula is replaced or reimplemented here.
+        if (string.Equals(emitter.ObjectName, &quot;MeshEmitter2&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            mat.SetFloat(&quot;_L2SpriteColorGammaToLinear&quot;, 1f);
+            mat.SetFloat(&quot;_Opacity&quot;, 0.6f);
+            return true;
+        }
+        if (string.Equals(emitter.ObjectName, &quot;MeshEmitter0&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            mat.SetFloat(&quot;_L2SpriteColorGammaToLinear&quot;, 1f);
+            mat.SetFloat(&quot;_RgbBoost&quot;, 1f);
+            return true;
+        }
+        if (string.Equals(emitter.ObjectName, &quot;SpriteEmitter7&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            mat.SetFloat(&quot;_L2SpriteColorGammaToLinear&quot;, 1f);
+            mat.SetFloat(&quot;_RgbBoost&quot;, 1f);
+            // Global sprite K is already 1.1 (ViewerConfig); keep explicit for this profile.
+            mat.SetFloat(&quot;_L2FxWorldCalibration&quot;, 1.1f);
+            mat.SetFloat(&quot;_SubdivisionStart&quot;, 7f);
+            mat.SetFloat(&quot;_SubdivisionEnd&quot;, 8f);
+            // The working material has ColorKey0.a=1 even though the raw
+            // umodel UC dump explicitly serialized A=0. Its verified shader
+            // also calls SpriteColorFade with alphaBlend=1.
+            mat.SetColor(&quot;_ColorKey0&quot;, Color.white);
+            mat.SetFloat(&quot;_ColorFadeAlphaBlend&quot;, 1f);
+            return true;
+        }
+
+        return false;
+    }
+
+    // PTDS_DrawStyle_Reference F90D4F0 + L2FxPTDS_DrawStyle.hlsl.
+    // Unity BlendMode: Zero=0 One=1 DstColor=2 SrcColor=3 OneMinusDstColor=4
+    // SrcAlpha=5 OneMinusSrcColor=6 OneMinusSrcAlpha=7
+    static int ParsePtds(string style)
+    {
+        if (HasIdent(style, &quot;AlphaModulate&quot;)) return 4;
+        if (HasIdent(style, &quot;AlphaBlend&quot;)) return 1;
+        if (HasIdent(style, &quot;Modulated&quot;)) return 2;
+        if (HasIdent(style, &quot;Translucent&quot;)) return 3;
+        if (HasIdent(style, &quot;Darken&quot;)) return 5;
+        if (HasIdent(style, &quot;Brighten&quot;)) return 6;
+        if (HasIdent(style, &quot;Regular&quot;)) return 0;
+        // UE2 ParticleEmitter defaultproperties: DrawStyle=PTDS_Translucent.
+        // Live client shaders: omitted DrawStyle → Blend One One (not Regular).
+        return 3;
+    }
+
+    static bool HasIdent(string value, string ident)
+    {
+        return !string.IsNullOrEmpty(value) &amp;&amp;
+               value.IndexOf(ident, StringComparison.OrdinalIgnoreCase) &gt;= 0;
+    }
+
+    static void ApplyMesh(Material mat, ViewerEmitterData e)
+    {
+        float sizeXY = 0.5f * (e.StartSizeX.Min + e.StartSizeX.Max);
+        mat.SetFloat(&quot;_StartSizeXY&quot;, sizeXY);
+        mat.SetFloat(&quot;_StartSize&quot;, sizeXY);
+        mat.SetVector(&quot;_StartSizeZRange&quot;, Vec(e.StartSizeZ));
+        mat.SetVector(&quot;_StartLocationZRangeUU&quot;, Vec(e.StartLocationZ));
+        mat.SetVector(&quot;_StartVelocityZRangeUU&quot;, Vec(e.StartVelocityZ));
+        mat.SetFloat(&quot;_UsePtrsActor&quot;, e.UseRotationFrom.IndexOf(&quot;PTRS_Actor&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0 ? 1f : 0f);
+        mat.SetFloat(&quot;_SpinParticles&quot;, e.SpinParticles ? 1f : 0f);
+        mat.SetVector(&quot;_StartSpinYawRangeUc&quot;, Vec(e.StartSpinX));
+        mat.SetVector(&quot;_StartSpinPitchRangeUc&quot;, Vec(e.StartSpinY));
+        mat.SetVector(&quot;_StartSpinRollRangeUc&quot;, Vec(e.StartSpinZ));
+        mat.SetVector(&quot;_SpsYawPitchRollUc&quot;, new Vector4(Mid(e.SpinsPerSecondX), Mid(e.SpinsPerSecondY), Mid(e.SpinsPerSecondZ), 0f));
+        mat.SetVector(&quot;_SpinCCWorCW&quot;, new Vector4(e.SpinCCWorCW.x, e.SpinCCWorCW.y, e.SpinCCWorCW.z, 0f));
+        mat.SetVector(&quot;_ColorMultiplier&quot;, new Vector4(e.ColorMulMin.x, e.ColorMulMin.y, e.ColorMulMin.z, 0f));
+        SetColorKeys(mat, e);
+        mat.SetInt(&quot;_Cull&quot;, e.RenderTwoSided ? (int)CullMode.Off : (int)CullMode.Back);
+    }
+
+    static void ApplySprite(Material mat, ViewerEmitterData e)
+    {
+        mat.SetVector(&quot;_SizeRange&quot;, Vec(e.StartSizeX));
+        mat.SetVector(&quot;_StartLocationRangeUU&quot;, new Vector4(
+            Math.Max(Math.Abs(e.StartLocationX.Min), Math.Abs(e.StartLocationX.Max)),
+            Math.Max(Math.Abs(e.StartLocationY.Min), Math.Abs(e.StartLocationY.Max)),
+            Math.Max(Math.Abs(e.StartLocationZ.Min), Math.Abs(e.StartLocationZ.Max)), 0f));
+        mat.SetVector(&quot;_StartLocationRangeXUc&quot;, Vec(e.StartLocationX));
+        mat.SetVector(&quot;_StartLocationRangeYUc&quot;, Vec(e.StartLocationY));
+        mat.SetVector(&quot;_StartLocationRangeZUc&quot;, Vec(e.StartLocationZ));
+        mat.SetFloat(&quot;_UsePolar&quot;, e.IsPolar ? 1f : 0f);
+        mat.SetVector(&quot;_PolarThetaRangeUc&quot;, Vec(e.PolarTheta));
+        mat.SetVector(&quot;_PolarPhiRangeUc&quot;, Vec(e.PolarPhi));
+        mat.SetVector(&quot;_PolarRadiusRangeUc&quot;, Vec(e.PolarRadius));
+        mat.SetVector(&quot;_StartVelocityRangeXUc&quot;, Vec(e.StartVelocityX));
+        mat.SetVector(&quot;_StartVelocityRangeYUc&quot;, Vec(e.StartVelocityY));
+        mat.SetVector(&quot;_StartVelocityRangeZUc&quot;, Vec(e.StartVelocityZ));
+        mat.SetVector(&quot;_AccelerationUc&quot;, new Vector4(e.Acceleration.x, e.Acceleration.y, e.Acceleration.z, 0f));
+        mat.SetFloat(&quot;_SpawnDeltaTime&quot;, e.SpawnDeltaTime);
+        mat.SetFloat(&quot;_PtvdMode&quot;, PtvdMode(e.GetVelocityDirectionFrom));
+        mat.SetFloat(&quot;_PtduDirectionMode&quot;, PtduDirectionMode(e.UseDirectionAs));
+        mat.SetVector(&quot;_SpriteSpinStartRangeUc&quot;, Vec(e.StartSpinX));
+        mat.SetVector(&quot;_SpriteSpinSpsRangeUc&quot;, Vec(e.SpinsPerSecondX));
+        mat.SetVector(&quot;_SpriteSpinCcwOrCw&quot;, new Vector4(e.SpinCCWorCW.x, e.SpinCCWorCW.y, e.SpinCCWorCW.z, 0f));
+        mat.SetFloat(&quot;_ColorScaleCount&quot;, e.ColorScale.Count);
+        mat.SetFloat(&quot;_ColorScaleParam&quot;, e.ColorScaleRepeats);
+        SetColorKeys(mat, e);
+        mat.SetVector(&quot;_ColorMulMin&quot;, new Vector4(e.ColorMulMin.x, e.ColorMulMin.y, e.ColorMulMin.z, 0f));
+        mat.SetVector(&quot;_ColorMulMax&quot;, new Vector4(e.ColorMulMax.x, e.ColorMulMax.y, e.ColorMulMax.z, 0f));
+        mat.SetFloat(&quot;_TextureUSubdivisions&quot;, Mathf.Max(1, e.TextureUSubdivisions));
+        mat.SetFloat(&quot;_TextureVSubdivisions&quot;, Mathf.Max(1, e.TextureVSubdivisions));
+        mat.SetFloat(&quot;_SubdivisionStart&quot;, e.SubdivisionStart);
+        mat.SetFloat(&quot;_SubdivisionEnd&quot;, e.SubdivisionEnd);
+        mat.SetFloat(&quot;_UseRandomSubdivision&quot;, e.UseRandomSubdivision ? 1f : 0f);
+        mat.SetFloat(&quot;_BlendBetweenSubdivisions&quot;, e.BlendBetweenSubdivisions ? 1f : 0f);
+    }
+
+    static void ApplyBeam(Material mat, ViewerEmitterData e)
+    {
+        mat.SetVector(&quot;_SizeRange&quot;, Vec(e.StartSizeX));
+        mat.SetVector(&quot;_StartLocationOffsetUc&quot;, new Vector4(
+            e.StartLocationOffset.x, e.StartLocationOffset.y, e.StartLocationOffset.z, 0f));
+        mat.SetVector(&quot;_StartLocationRangeXUc&quot;, Vec(e.StartLocationX));
+        mat.SetVector(&quot;_StartLocationRangeYUc&quot;, Vec(e.StartLocationY));
+        mat.SetVector(&quot;_StartLocationRangeZUc&quot;, Vec(e.StartLocationZ));
+        mat.SetFloat(&quot;_UsePolar&quot;, e.IsPolar ? 1f : 0f);
+        mat.SetVector(&quot;_PolarThetaRangeUc&quot;, Vec(e.PolarTheta));
+        mat.SetVector(&quot;_PolarPhiRangeUc&quot;, Vec(e.PolarPhi));
+        mat.SetVector(&quot;_PolarRadiusRangeUc&quot;, Vec(e.PolarRadius));
+        mat.SetVector(&quot;_BeamEndOffsetXUc&quot;, Vec(e.BeamEndOffsetX));
+        mat.SetVector(&quot;_BeamEndOffsetYUc&quot;, Vec(e.BeamEndOffsetY));
+        mat.SetVector(&quot;_BeamEndOffsetZUc&quot;, Vec(e.BeamEndOffsetZ));
+        mat.SetVector(&quot;_BeamDistanceRangeUc&quot;, Vec(e.BeamDistanceRange));
+        mat.SetFloat(&quot;_BeamEndpointMode&quot;, BeamEndpointMode(e.DetermineEndPointBy));
+        mat.SetFloat(&quot;_ColorScaleCount&quot;, e.ColorScale.Count);
+        mat.SetFloat(&quot;_ColorScaleParam&quot;, e.ColorScaleRepeats);
+        SetColorKeys(mat, e);
+        mat.SetVector(&quot;_ColorMulMin&quot;, new Vector4(e.ColorMulMin.x, e.ColorMulMin.y, e.ColorMulMin.z, 0f));
+        mat.SetVector(&quot;_ColorMulMax&quot;, new Vector4(e.ColorMulMax.x, e.ColorMulMax.y, e.ColorMulMax.z, 0f));
+
+        // Live UBeamEmitter::UpdateParticles writes its final additive draw RGB directly
+        // to runtimeColorA8 after ColorScale * ColorMultiplier, Fade and Opacity.
+        // wh_heal_ta proof (slot 0, t=0.2899):
+        //   runtime BGRA=(15,15,15,147), exactly the raw formula result.
+        // Applying GammaToLinear after that turns 15/255 into ~1/255 and makes the
+        // beam appear abruptly near its peak. D3D9 PTDS_Translucent consumes the
+        // runtime bytes as additive contributions, so preserve them for Beam.
+        if (ParsePtds(e.DrawStyle) == 3)
+            mat.SetFloat(&quot;_L2SpriteColorGammaToLinear&quot;, 0f);
+    }
+
+    static float BeamEndpointMode(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return 0f;
+        if (value.IndexOf(&quot;OffsetAsAbsolute&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+            return 2f;
+        if (value.IndexOf(&quot;Distance&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+            return 1f;
+        // PTEP_Offset (and TraceOffset falls back to offset for MVP).
+        return 0f;
+    }
+
+    static void SetSizeKeys(Material mat, ViewerEmitterData e)
+    {
+        for (int i = 0; i &lt; 5; i++)
+        {
+            float t = 1f;
+            float s = 1f;
+            if (i &lt; e.SizeScale.Count)
+            {
+                t = e.SizeScale[i].RelativeTime;
+                s = e.SizeScale[i].RelativeSize;
+            }
+            else if (e.SizeScale.Count &gt; 0)
+            {
+                t = e.SizeScale[e.SizeScale.Count - 1].RelativeTime;
+                s = e.SizeScale[e.SizeScale.Count - 1].RelativeSize;
+            }
+            mat.SetVector(&quot;_SizeKey&quot; + i, new Vector4(t, s, 0f, 0f));
+        }
+    }
+
+    static void SetColorKeys(Material mat, ViewerEmitterData e)
+    {
+        Color c0 = e.ColorScale.Count &gt; 0 ? e.ColorScale[0].Color : Color.white;
+        mat.SetColor(&quot;_ColorKey0&quot;, c0);
+        for (int i = 1; i &lt;= 4; i++)
+        {
+            Color c = c0;
+            float t = 1f;
+            if (i &lt; e.ColorScale.Count)
+            {
+                c = e.ColorScale[i].Color;
+                t = e.ColorScale[i].RelativeTime;
+            }
+            else if (e.ColorScale.Count &gt; 0)
+            {
+                c = e.ColorScale[e.ColorScale.Count - 1].Color;
+                t = e.ColorScale[e.ColorScale.Count - 1].RelativeTime;
+            }
+            mat.SetColor(&quot;_ColorKey&quot; + i, c);
+            mat.SetFloat(&quot;_ColorKey&quot; + i + &quot;Time&quot;, t);
+        }
+    }
+
+    static void ApplyDrawStyle(Material mat, string style)
+    {
+        // Source: Decompile_Common/PTDS_DrawStyle_Reference/README.txt (F90D4F0).
+        // 0 Regular      Blend One Zero
+        // 1 AlphaBlend   Blend SrcAlpha OneMinusSrcAlpha
+        // 2 Modulated    Blend DstColor SrcColor
+        // 3 Translucent  Blend One One
+        // 4 AlphaMod     Blend One OneMinusSrcAlpha
+        // 5 Darken       Blend Zero OneMinusSrcColor
+        // 6 Brighten     Blend One OneMinusSrcColor
+        int ptds = ParsePtds(style);
+        int src = 1;
+        int dst = 0;
+        switch (ptds)
+        {
+            case 1: src = 5; dst = 7; break;
+            case 2: src = 2; dst = 3; break;
+            case 3: src = 1; dst = 1; break;
+            case 4: src = 1; dst = 7; break;
+            case 5: src = 0; dst = 6; break;
+            case 6: src = 1; dst = 6; break;
+            default: src = 1; dst = 0; break;
+        }
+        mat.SetFloat(SrcBlend, src);
+        mat.SetFloat(DstBlend, dst);
+        mat.SetInt(SrcBlend, src);
+        mat.SetInt(DstBlend, dst);
+        mat.SetInt(&quot;_ZWrite&quot;, 0);
+        mat.SetOverrideTag(&quot;RenderType&quot;, &quot;Transparent&quot;);
+        // SpriteColorFade: blending 1/2/4 scales A; Brighten scales RGB.
+        mat.SetFloat(&quot;_ColorFadeAlphaBlend&quot;, (ptds == 1 || ptds == 2 || ptds == 4) ? 1f : 0f);
+    }
+
+    static float PtvdMode(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return 0f;
+        if (value.IndexOf(&quot;OwnerAndStartPosition&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+            return 2f;
+        if (value.IndexOf(&quot;StartPositionAndOwner&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+            return 1f;
+        return 0f;
+    }
+
+    // 0 = face camera (default), 1 = PTDU_Normal (quad in particle-normal plane / ground).
+    static float PtduDirectionMode(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return 0f;
+        if (value.IndexOf(&quot;PTDU_Normal&quot;, StringComparison.OrdinalIgnoreCase) &gt;= 0)
+            return 1f;
+        return 0f;
+    }
+
+    static Vector4 Vec(ViewerRange r) =&gt; new Vector4(r.Min, r.Max, 0f, 0f);
+    static float Mid(ViewerRange r) =&gt; 0.5f * (r.Min + r.Max);
+
+    public static void WriteSidecarMat(string destPath, ViewerEmitterData emitter, string textureFile)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+        using var w = new StreamWriter(destPath);
+        w.WriteLine(&quot;kind=&quot; + emitter.Kind);
+        w.WriteLine(&quot;name=&quot; + emitter.DisplayName);
+        w.WriteLine(&quot;mesh=&quot; + emitter.StaticMesh);
+        w.WriteLine(&quot;texture=&quot; + emitter.Texture);
+        w.WriteLine(&quot;textureFile=&quot; + textureFile);
+        w.WriteLine(&quot;drawStyle=&quot; + emitter.DrawStyle);
+        w.WriteLine(&quot;ptds=&quot; + ParsePtds(emitter.DrawStyle));
+        w.WriteLine(&quot;maxParticles=&quot; + emitter.MaxParticles);
+        w.WriteLine(&quot;lifetime=&quot; + emitter.Lifetime.Min + &quot;,&quot; + emitter.Lifetime.Max);
+        w.WriteLine(&quot;fadeIn=&quot; + emitter.FadeIn + &quot; &quot; + emitter.FadeInEndTime);
+        w.WriteLine(&quot;fadeOut=&quot; + emitter.FadeOut + &quot; &quot; + emitter.FadeOutStartTime);
+        w.WriteLine(&quot;opacity=&quot; + emitter.Opacity);
+        w.WriteLine(&quot;colorMul=&quot; + emitter.ColorMulMin.x + &quot;,&quot; + emitter.ColorMulMin.y + &quot;,&quot; + emitter.ColorMulMin.z);
+        w.WriteLine(&quot;gammaToLinear=&quot; + GammaToLinearEnabled(emitter));
+        w.WriteLine(&quot;sizeScale=&quot; + emitter.UseSizeScale);
+        w.WriteLine(&quot;spin=&quot; + emitter.SpinParticles);
+        w.WriteLine(&quot;polar=&quot; + emitter.IsPolar);
+        w.WriteLine(&quot;useDirectionAs=&quot; + emitter.UseDirectionAs);
+        string shader = emitter.Kind switch
+        {
+            ViewerEmitterKind.Mesh =&gt; MeshShaderName,
+            ViewerEmitterKind.Beam =&gt; BeamShaderName,
+            _ =&gt; SpriteShaderName
+        };
+        w.WriteLine(&quot;shader=&quot; + shader);
+        if (emitter.Kind == ViewerEmitterKind.Beam)
+        {
+            w.WriteLine(&quot;determineEndPointBy=&quot; + emitter.DetermineEndPointBy);
+            w.WriteLine(&quot;hfPoints=&quot; + emitter.HighFrequencyPoints);
+            w.WriteLine(&quot;beamEndOffsetZ=&quot; + emitter.BeamEndOffsetZ.Min + &quot;,&quot; + emitter.BeamEndOffsetZ.Max);
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

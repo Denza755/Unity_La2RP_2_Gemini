@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Game/ShopWindow/ShopTab.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Game/ShopWindow/ShopTab.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;ShopTabSmall&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2SlotContainer/L2SlotContainer.uxml?fileID=9197481963319205126&amp;amp;guid=67f2ae460501d60439fd529481631728&amp;amp;type=3#L2SlotContainer&quot; /&gt;
+    &lt;ui:Template name=&quot;L2Bar&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Bar/L2Bar.uxml?fileID=9197481963319205126&amp;amp;guid=e7da9ee05d38b14459d91eca9fc49926&amp;amp;type=3#L2Bar&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Game/ShopWindow/ShopStyle.uss?fileID=7433441132597879392&amp;amp;guid=9e85dc28fcf6a6f4fa0432707a81e0fd&amp;amp;type=3#ShopStyle&quot; /&gt;
+    &lt;ui:VisualElement label=&quot;General&quot; name=&quot;ShopTab&quot; class=&quot;shop-tab&quot;&gt;
+        &lt;ui:VisualElement name=&quot;SmallTabContainer&quot; class=&quot;shop-small-tab-container&quot;&gt;
+            &lt;ui:VisualElement class=&quot;shop-window-arrow&quot; /&gt;
+            &lt;ui:VisualElement name=&quot;ContainerInnerLeft&quot; class=&quot;small-tab-container-inner&quot;&gt;
+                &lt;ui:Instance template=&quot;ShopTabSmall&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;ContainerInnerRight&quot; class=&quot;small-tab-container-inner&quot; style=&quot;margin-right: 0;&quot;&gt;
+                &lt;ui:Instance template=&quot;ShopTabSmall&quot; style=&quot;flex-grow: 1;&quot; /&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+        &lt;ui:GroupBox name=&quot;Footer&quot; class=&quot;shop-item-footer&quot;&gt;
+            &lt;ui:GroupBox name=&quot;StatisticBox&quot; class=&quot;item-statistics-container&quot;&gt;
+                &lt;ui:VisualElement name=&quot;Row&quot; class=&quot;shop-statistic-row&quot;&gt;
+                    &lt;ui:Label text=&quot;Adena&quot; class=&quot;l2-color-4 shop-statistic-label&quot; /&gt;
+                    &lt;ui:VisualElement class=&quot;shop-statistic-icon&quot;&gt;
+                        &lt;ui:VisualElement class=&quot;item-statistic-icon icon-adena&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:GroupBox name=&quot;TextBox&quot; class=&quot;inventory-adena-box shop-statistic-gauge&quot;&gt;
+                        &lt;ui:GroupBox class=&quot;inventory-adena-box-inner&quot;&gt;
+                            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;AdenaCount&quot; class=&quot;inventory-adena-count&quot; /&gt;
+                        &lt;/ui:GroupBox&gt;
+                    &lt;/ui:GroupBox&gt;
+                &lt;/ui:VisualElement&gt;
+                &lt;ui:VisualElement name=&quot;Row&quot; class=&quot;shop-statistic-row&quot; style=&quot;margin-top: 1px;&quot;&gt;
+                    &lt;ui:Label text=&quot;Weight&quot; class=&quot;l2-color-4 shop-statistic-label&quot; /&gt;
+                    &lt;ui:VisualElement class=&quot;shop-statistic-icon&quot;&gt;
+                        &lt;ui:VisualElement class=&quot;item-statistic-icon icon-bag&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:Instance template=&quot;L2Bar&quot; name=&quot;WeightBar&quot; class=&quot;l2-bar weight-3 shop-statistic-gauge&quot;&gt;
+                        &lt;AttributeOverrides element-name=&quot;Text&quot; text=&quot;100.00%&quot; /&gt;
+                    &lt;/ui:Instance&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:GroupBox&gt;
+            &lt;ui:GroupBox name=&quot;Divider&quot; class=&quot;shop-divider&quot; /&gt;
+            &lt;ui:GroupBox name=&quot;StatisticBox&quot; class=&quot;item-statistics-container&quot; style=&quot;justify-content: flex-start;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;Row&quot; class=&quot;shop-statistic-row&quot;&gt;
+                    &lt;ui:Label text=&quot;Price&quot; class=&quot;l2-color-4 shop-statistic-label&quot; /&gt;
+                    &lt;ui:VisualElement class=&quot;shop-statistic-icon&quot;&gt;
+                        &lt;ui:VisualElement class=&quot;item-statistic-icon icon-adena&quot; /&gt;
+                    &lt;/ui:VisualElement&gt;
+                    &lt;ui:GroupBox name=&quot;TextBox&quot; class=&quot;inventory-adena-box shop-statistic-gauge&quot;&gt;
+                        &lt;ui:GroupBox class=&quot;inventory-adena-box-inner&quot;&gt;
+                            &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;0&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Price&quot; class=&quot;inventory-adena-count&quot; /&gt;
+                        &lt;/ui:GroupBox&gt;
+                    &lt;/ui:GroupBox&gt;
+                &lt;/ui:VisualElement&gt;
+            &lt;/ui:GroupBox&gt;
+        &lt;/ui:GroupBox&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

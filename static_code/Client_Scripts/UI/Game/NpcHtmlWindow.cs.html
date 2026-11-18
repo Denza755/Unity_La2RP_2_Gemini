@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/NpcHtmlWindow.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/NpcHtmlWindow.cs</h1>
+            <pre>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class NpcHtmlWindow : L2PopupWindow
+{
+    private VisualTreeAsset _l2Button;
+    private VisualTreeAsset _l2Input;
+    private VisualTreeAsset _htmlTable;
+    private VisualTreeAsset _htmlRow;
+    private VisualTreeAsset _htmlCell;
+    private VisualTreeAsset _hyperlink;
+    private VisualTreeAsset _htmlWrapper;
+    private VisualTreeAsset _l2dropdown;
+    private VisualElement _content;
+    private ScrollView _scrollView;
+    private Label _windowName;
+    private bool _centerEverything;
+    [SerializeField] private List&lt;HtmlNode&gt; _nodes;
+    [SerializeField] private Dictionary&lt;string, string&gt; _inputValues;
+    private static NpcHtmlWindow _instance;
+    public static NpcHtmlWindow Instance
+    {
+        get { return _instance; }
+    }
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _instance = null;
+    }
+
+    protected override void LoadAssets()
+    {
+        _l2Button = LoadAsset(&quot;Data/UI/_Elements/Components/L2Button/L2Button&quot;);
+        _l2Input = LoadAsset(&quot;Data/UI/_Elements/Components/L2Input/L2Input&quot;);
+        _l2dropdown = LoadAsset(&quot;Data/UI/_Elements/Components/L2Dropdown/L2Dropdown&quot;);
+        _windowTemplate = LoadAsset(&quot;Data/UI/_Elements/Game/NpcHtmlWindow/NpcHtmlWindow&quot;);
+        _htmlTable = LoadAsset(&quot;Data/UI/_Elements/Game/NpcHtmlWindow/HtmlTable&quot;);
+        _htmlRow = LoadAsset(&quot;Data/UI/_Elements/Game/NpcHtmlWindow/HtmlRow&quot;);
+        _htmlCell = LoadAsset(&quot;Data/UI/_Elements/Game/NpcHtmlWindow/HtmlCell&quot;);
+        _htmlWrapper = LoadAsset(&quot;Data/UI/_Elements/Game/NpcHtmlWindow/HtmlWrapper&quot;);
+        _hyperlink = LoadAsset(&quot;Data/UI/_Elements/Game/NpcHtmlWindow/HtmlHyperlink&quot;);
+    }
+
+    protected override void InitWindow(VisualElement root)
+    {
+        base.InitWindow(root);
+
+        var dragArea = GetElementByClass(&quot;drag-area&quot;);
+        DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+        dragArea.AddManipulator(drag);
+
+        RegisterCloseWindowEvent(&quot;btn-close-frame&quot;);
+        RegisterClickWindowEvent(_windowEle, dragArea);
+    }
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        _windowEle.style.left = new Length(50, LengthUnit.Percent);
+        _windowEle.style.top = new Length(50, LengthUnit.Percent);
+        _windowEle.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent)));
+
+        _windowName = (Label)GetElementById(&quot;windows-name-label&quot;);
+        _windowName.text = &quot;Chat&quot;;
+
+        _scrollView = _windowEle.Q&lt;ScrollView&gt;(&quot;HtmlContent&quot;);
+        var _scroller = _scrollView.verticalScroller;
+        var highBtn = _scroller.Q&lt;RepeatButton&gt;(&quot;unity-high-button&quot;);
+        var lowBtn = _scroller.Q&lt;RepeatButton&gt;(&quot;unity-low-button&quot;);
+        _content = _windowEle.Q&lt;VisualElement&gt;(&quot;ContentWrapper&quot;);
+
+        highBtn.AddManipulator(new ButtonClickSoundManipulator(highBtn));
+        lowBtn.AddManipulator(new ButtonClickSoundManipulator(lowBtn));
+
+        HideWindow(true);
+
+        L2GameUI.Instance.WindowLoadComplete();
+
+        //         RefreshContent(0,
+        // @&quot;&lt;html&gt;&lt;body&gt;Newbie Helper:&lt;br&gt;
+        // Welcome to Einhovant&#x27;s School of Wizardry. I will be teaching you the basics of combat.&lt;br&gt;
+        //  Please click on &lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Quest&lt;/font&gt;, in your Chat window.&lt;br&gt;
+        // &lt;a action=&quot;&quot;bypass -h npc_%objectId%_Quest&quot;&quot;&gt;Quest&lt;/a&gt;&lt;br&gt;
+        // &lt;/body&gt;&lt;/html&gt;
+        // &quot;, 0);
+        //         RefreshContent(0,
+        // @&quot;&lt;html&gt;&lt;title&gt;Server menu&lt;/title&gt;&lt;body&gt;&lt;center&gt;&lt;table width=260&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Main&quot;&quot; action=&quot;&quot;bypass -h admin_admin&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Game&quot;&quot; action=&quot;&quot;bypass -h admin_admin 2&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Effects&quot;&quot; action=&quot;&quot;bypass -h admin_admin 3&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Server&quot;&quot; action=&quot;&quot;bypass -h admin_admin 4&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;l2ui.SquareWhite&quot;&quot; width=275 height=1&gt;&lt;br&gt;&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;QuickBox&lt;/td&gt;&lt;td&gt;&lt;edit var=&quot;&quot;menu_command&quot;&quot; width=120 height=15&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Help&quot;&quot; action=&quot;&quot;bypass -h admin_help&quot;&quot; width=45 height=15 back=&quot;&quot;sek.cbui94&quot;&quot; fore=&quot;&quot;sek.cbui92&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;Reload&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;combobox width=160 height=21 var=&quot;&quot;cb&quot;&quot; list=admin;announcement;buylist;config;crest;cw;door;htm;item;multisell;npc;npcwalker;script;skill;teleport;zone;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Reload&quot;&quot; action=&quot;&quot;bypass -h admin_reload $cb&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;Zones / Territories&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Zone Check&quot;&quot; action=&quot;&quot;bypass -h admin_zone&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Maker Check&quot;&quot; action=&quot;&quot;bypass -h admin_maker&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td width=75&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Territory Goto&quot;&quot; action=&quot;&quot;bypass -h admin_terr goto $menu_command&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Maker Info&quot;&quot; action=&quot;&quot;bypass -h admin_maker $menu_command&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;GeoEngine&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Position Info&quot;&quot; action=&quot;&quot;bypass -h admin_geo pos&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Beeline Test&quot;&quot; action=&quot;&quot;bypass -h admin_geo move&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Path Find&quot;&quot; action=&quot;&quot;bypass -h admin_path find&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Path Info&quot;&quot; action=&quot;&quot;bypass -h admin_path info&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;LoS Test&quot;&quot; action=&quot;&quot;bypass -h admin_geo see&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Report Geo Bug&quot;&quot; action=&quot;&quot;bypass -h admin_geo bug $menu_command&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;Maintenance / Development&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Maintenance&quot;&quot; action=&quot;&quot;bypass -h admin_server&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Announce&quot;&quot; action=&quot;&quot;bypass -h admin_link announce.htm&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;SysMessage&quot;&quot; action=&quot;&quot;bypass -h admin_msg $menu_command&quot;&quot; width=75 height=21 back=&quot;&quot;L2UI_ch3.Btn1_normalOn&quot;&quot; fore=&quot;&quot;L2UI_ch3.Btn1_normal&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        //         &lt;/center&gt;&lt;/body&gt;&lt;/html&gt;
+        //         &quot;, 0);
+        //         RefreshContent(0,
+        // @&quot;&lt;table width=280 height=45&gt;&lt;tr&gt;&lt;td width=70 align=center&gt;Search&lt;/td&gt;&lt;td width=140&gt;&lt;edit var=&quot;&quot;search&quot;&quot; width=130 height=15&gt;&lt;/td&gt;&lt;td width=70&gt;&lt;button value=&quot;&quot;Find&quot;&quot; action=&quot;&quot;bypass admin_help 1 $search&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td align=center&gt;Found 93 results&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table width=280 height=41 bgcolor=000000&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//admin&lt;/color&gt; &lt;color=#33cccc&gt;[1-4]&lt;/color&gt;&lt;br1&gt;Go through the different admin panels.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 height=41&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//buy&lt;/color&gt; &lt;color=#33cccc&gt;[id]&lt;/color&gt;&lt;br1&gt;Open the GM Shop panel, or the associated BuyList.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 height=41 bgcolor=000000&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//camera&lt;/color&gt;&lt;br1&gt;Toggle the CameraMode.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 height=41&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//gmlist&lt;/color&gt;&lt;br1&gt;Toggle you from /gmlist results.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 height=41 bgcolor=000000&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//gmoff&lt;/color&gt; &lt;color=#33cccc&gt;[duration]&lt;/color&gt;&lt;br1&gt;Toggle off your GM status, 1min by default.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 height=41&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//help&lt;/color&gt; &lt;color=#33cccc&gt;[page]&lt;/color&gt;&lt;br1&gt;Open this panel.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 height=41 bgcolor=000000&gt;&lt;tr&gt;&lt;td width=280 height=34&gt;&lt;color=#FFC900&gt;//link&lt;/color&gt; &lt;color=#33cccc&gt;file name&lt;/color&gt;&lt;br1&gt;Open the proper admin htm.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&lt;table width=280 bgcolor=000000&gt;&lt;tr&gt;&lt;td FIXWIDTH=22 align=center&gt;&lt;img height=2&gt;&lt;button action=&quot;&quot;bypass admin_help 1 &quot;&quot; back=L2UI_CH3.prev1_down fore=L2UI_CH3.prev1 width=16 height=16&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;font color=LEVEL&gt;01&lt;/font&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;a action=&quot;&quot;bypass admin_help 2 &quot;&quot;&gt;02&lt;/a&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;a action=&quot;&quot;bypass admin_help 3 &quot;&quot;&gt;03&lt;/a&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;a action=&quot;&quot;bypass admin_help 4 &quot;&quot;&gt;04&lt;/a&gt;&lt;/td&gt;&lt;td FIXWIDTH=26 align=center&gt;&lt;a action=&quot;&quot;bypass admin_help 5 &quot;&quot;&gt;05&lt;/a&gt;&lt;/td&gt;&lt;td FIXWIDTH=22 align=center&gt;&lt;img height=2&gt;&lt;button action=&quot;&quot;bypass admin_help 14 &quot;&quot; back=L2UI_CH3.next1_down fore=L2UI_CH3.next1 width=16 height=16&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;L2UI.SquareGray&quot;&quot; width=280 height=1&gt;&quot;, 0);
+        //     RefreshContent(0,
+        // @&quot;&lt;title&gt;Main menu&lt;/title&gt;&lt;center&gt;&lt;table width=260&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Main&quot;&quot; action=&quot;&quot;bypass -h admin_admin&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Game&quot;&quot; action=&quot;&quot;bypass -h admin_admin 2&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Effects&quot;&quot; action=&quot;&quot;bypass -h admin_admin 3&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Server&quot;&quot; action=&quot;&quot;bypass -h admin_admin 4&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;img src=&quot;&quot;l2ui.SquareWhite&quot;&quot; width=275 height=1&gt;&lt;br&gt;&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;QuickBox&lt;/td&gt;&lt;td&gt;&lt;edit var=&quot;&quot;menu_command&quot;&quot; width=120 height=15&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Help&quot;&quot; action=&quot;&quot;bypass -h admin_help&quot;&quot; width=45 height=15 back=&quot;&quot;sek.cbui94&quot;&quot; fore=&quot;&quot;sek.cbui92&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;Systems&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Item&quot;&quot; action=&quot;&quot;bypass -h admin_item&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;GM Shop&quot;&quot; action=&quot;&quot;bypass -h admin_buy&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Teleport&quot;&quot; action=&quot;&quot;bypass -h admin_teleport $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Bookmarks&quot;&quot; action=&quot;&quot;bypass -h admin_bk $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Enchant&quot;&quot; action=&quot;&quot;bypass -h admin_enchant $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Petitions&quot;&quot; action=&quot;&quot;bypass -h admin_petition&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Spawnlist&quot;&quot; action=&quot;&quot;bypass -h admin_list_spawns $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&quot;&quot;Players&quot;&quot; actions&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Find&quot;&quot; action=&quot;&quot;bypass -h admin_find player $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Manage&quot;&quot; action=&quot;&quot;bypass -h admin_debug $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Dualbox&quot;&quot; action=&quot;&quot;bypass -h admin_find dualbox $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Unban Char.&quot;&quot; action=&quot;&quot;bypass -h admin_unban player $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Tele. To&quot;&quot; action=&quot;&quot;bypass -h admin_teleportto $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Recall&quot;&quot; action=&quot;&quot;bypass -h admin_recall $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Unban Acc.&quot;&quot; action=&quot;&quot;bypass -h admin_unban account $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&quot;&quot;Others targets&quot;&quot; actions&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Kill&quot;&quot; action=&quot;&quot;bypass -h admin_kill $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Res&quot;&quot; action=&quot;&quot;bypass -h admin_res $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Open&quot;&quot; action=&quot;&quot;bypass -h admin_open $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Close&quot;&quot; action=&quot;&quot;bypass -h admin_close $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;Cancel&quot;&quot; action=&quot;&quot;bypass -h admin_cancel $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Heal&quot;&quot; action=&quot;&quot;bypass -h admin_heal $menu_command&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Full Food&quot;&quot; action=&quot;&quot;bypass -h admin_summon food&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Delete&quot;&quot; action=&quot;&quot;bypass -h admin_delete&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;GM actions&lt;table width=240&gt;&lt;tr&gt;&lt;td&gt;&lt;button value=&quot;&quot;List ON/OFF&quot;&quot; action=&quot;&quot;bypass -h admin_gmlist&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Invul&quot;&quot; action=&quot;&quot;bypass -h admin_invul&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Undying&quot;&quot; action=&quot;&quot;bypass -h admin_undying&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;td&gt;&lt;button value=&quot;&quot;Hide&quot;&quot; action=&quot;&quot;bypass -h admin_hide&quot;&quot; width=65 height=19 back=&quot;&quot;L2UI_ch3.smallbutton2_over&quot;&quot; fore=&quot;&quot;L2UI_ch3.smallbutton2&quot;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/center&gt;&quot;, 0);
+        //         RefreshContent(0,
+        //         @&quot;&lt;html&gt;&lt;body&gt;
+        // &lt;center&gt;
+        // &lt;table width=280&gt;
+        // &lt;tr&gt;
+        // &lt;td width=40&gt;&lt;button value=&quot;&quot;Main&quot;&quot; action=&quot;&quot;bypass -h admin_admin&quot;&quot; width=40 height=15 back=&quot;&quot;sek.cbui94&quot;&quot; fore=&quot;&quot;sek.cbui92&quot;&quot;&gt;&lt;/td&gt;
+        // &lt;td width=180 align=center&gt;GMShop&lt;/td&gt;
+        // &lt;td width=40&gt;&lt;button value=&quot;&quot;Back&quot;&quot; action=&quot;&quot;bypass -h admin_admin&quot;&quot; width=40 height=15 back=&quot;&quot;sek.cbui94&quot;&quot; fore=&quot;&quot;sek.cbui92&quot;&quot;&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;/table&gt;&lt;br&gt;
+        // &lt;table&gt;
+        // &lt;tr&gt;
+        // &lt;td width=120&gt;Attack:&lt;/td&gt;
+        // &lt;td width=120&gt;Defense:&lt;/td&gt;
+        // &lt;td width=120&gt;Accesories:&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/Weapons.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Weapons&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/Armors.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Armors&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/Jewels.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Jewels&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 2012&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Magic Books&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_item set&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Armor sets&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 9121&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Hair&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300527&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Fishing Rods&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 1007&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Underwear&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 1011&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Tattoos&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/pets.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Pets&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 1006&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Cloaks&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300533&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Event/Echo&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;/table&gt;&lt;br&gt;
+        // &lt;table&gt;
+        // &lt;tr&gt;
+        // &lt;td width=160&gt;Material:&lt;/td&gt;
+        // &lt;td width=160&gt;Consumable:&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/materials.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Craft Items&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 3001&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Potions&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/recipes.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Recipes&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/Dyes.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Dyes&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/QuestItems.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Quest items&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 3002&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Scrolls&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/SpellBooks.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;SpellBooks&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300537&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Chests&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300536&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Seeds&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300529&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Tickets&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300532&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Fishing Material&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_link gmshop/Fishing.htm&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Fishes&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300534&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Crystals/Gemstones&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300511&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Shots&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 300543&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Life Stones&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;/table&gt;
+        // &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        // &lt;table&gt;
+        // &lt;tr&gt;&lt;td width=160&gt;C5 Items:&lt;/td&gt;&lt;td width=160&gt;&lt;/td&gt;&lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71025&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Weapons w/o SA&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71021&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Armors&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71022&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Weapons with SA&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71024&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Jewels&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71026&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Monsters only weapons&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71023&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Hair Accesories&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71027&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Spellbooks&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71029&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Tickets&lt;/font&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71030&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Recipes&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71028&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Seeds&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;/table&gt;
+        // &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        // &lt;table&gt;
+        // &lt;tr&gt;&lt;td width=160&gt;&lt;font color=&quot;&quot;FFFFFF&quot;&quot;&gt;Interlude Items:&lt;/font&gt;&lt;/td&gt;&lt;td width=160&gt;&lt;/td&gt;&lt;/tr&gt;
+        // &lt;tr&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71031&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Weapons&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;td&gt;&lt;a action=&quot;&quot;bypass -h admin_buy 71032&quot;&quot;&gt;&lt;font color=&quot;&quot;LEVEL&quot;&quot;&gt;Hair Accesories&lt;/font&gt;&lt;/a&gt;&lt;/td&gt;
+        // &lt;/tr&gt;
+        // &lt;/table&gt;
+        // &lt;/center&gt;
+        // &lt;/body&gt;&lt;/html&gt;
+        // &quot;, 0);
+    }
+
+    public override void ShowWindow()
+    {
+        base.ShowWindow();
+        AudioManager.Instance.PlayUISound(&quot;window_open&quot;);
+        L2GameUI.Instance.WindowOpened(this);
+
+        ShopWindow.Instance.HideWindow(false);
+    }
+
+    public override void HideWindow(bool silent)
+    {
+        base.HideWindow(silent);
+
+        if (!silent &amp;&amp; !_isWindowHidden)
+            AudioManager.Instance.PlayUISound(&quot;window_close&quot;);
+
+        L2GameUI.Instance.WindowClosed(this);
+    }
+
+    public void RefreshContent(int npcId, string htmlString, int itemId)
+    {
+        ShowWindow();
+
+        _content.Clear();
+
+        _inputValues = new Dictionary&lt;string, string&gt;();
+
+        string processedHtml = PreProcessHtml(htmlString, npcId, itemId);
+        ProcessHtmlContent(_content, processedHtml);
+    }
+
+    private string PreProcessHtml(string html, int npcId, int itemId)
+    {
+        // Remove newlines and normalize spaces
+        string processed = Regex.Replace(html, @&quot;\s{2,}&quot;, &quot;&quot;);
+
+        if (processed.Contains(&quot;&lt;center&gt;&quot;))
+        {
+            _centerEverything = true;
+            _content.style.alignContent = Align.Center;
+            _content.style.justifyContent = Justify.Center;
+        }
+        else
+        {
+            _centerEverything = false;
+            _content.style.alignContent = Align.FlexStart;
+            _content.style.justifyContent = Justify.FlexStart;
+        }
+
+        processed = processed
+            .Replace(&quot;&lt;html&gt;&quot;, &quot;&quot;)
+            .Replace(&quot;&lt;/html&gt;&quot;, &quot;&quot;)
+            .Replace(&quot;&lt;body&gt;&quot;, &quot;&quot;)
+            .Replace(&quot;&lt;/body&gt;&quot;, &quot;&quot;)
+            .Replace(&quot;%objectId%&quot;, npcId.ToString())
+            .Replace(&quot;%item%&quot;, itemId.ToString())
+            .Replace(&quot;&lt;center&gt;&quot;, &quot;&quot;)
+            .Replace(&quot;&lt;/center&gt;&quot;, &quot;&quot;)
+            .Replace(&quot;&lt;p&gt;&quot;, &quot;&lt;br1&gt;&quot;)
+            .Replace(&quot;&lt;/p&gt;&quot;, &quot;&lt;br1&gt;&quot;);
+
+        processed = ReplaceItemNames(processed);
+        processed = ReplaceSysStrings(processed);
+        processed = ReplaceFontColors(processed);
+
+        return processed;
+    }
+
+    private string ReplaceItemNames(string processed)
+    {
+        processed = Regex.Replace(processed, @&quot;\&amp;\#(\d+);&quot;, match =&gt;
+                {
+                    // Extract the captured number
+                    string number = match.Groups[1].Value;
+
+                    AbstractItem item = ItemTable.Instance.GetItem(int.Parse(number));
+                    if (item != null)
+                    {
+                        return item.ItemName.Name;
+                    }
+                    else
+                    {
+                        return &quot;&lt;Unknown item&gt;&quot;;
+                    }
+                });
+
+        return processed;
+    }
+
+    private string ReplaceSysStrings(string processed)
+    {
+        processed = Regex.Replace(processed, @&quot;\&amp;\$(\d+);&quot;, match =&gt;
+                {
+                    // Extract the captured number
+                    string number = match.Groups[1].Value;
+
+                    SysStringData sysString = SysStringTable.Instance.GetSysString(int.Parse(number));
+                    if (sysString != null)
+                    {
+                        return sysString.Name;
+                    }
+                    else
+                    {
+                        return &quot;&lt;Unknown SysString&gt;&quot;;
+                    }
+                });
+
+        return processed;
+    }
+
+
+    private string ReplaceFontColors(string processed)
+    {
+        // Process font color tags while preserving Unity rich text format
+        processed = Regex.Replace(
+            processed,
+            @&quot;&lt;font color=(?:&quot;&quot;|&#x27;)?([^&quot;&quot;&#x27;&gt;]+?)(?:&quot;&quot;|&#x27;)?&gt;(.*?)&lt;/font&gt;&quot;,
+            match =&gt;
+            {
+                string colorValue = match.Groups[1].Value;
+                string content = match.Groups[2].Value;
+                return colorValue == &quot;LEVEL&quot;
+                    ? $&quot;&lt;color=#FFC900&gt;{content}&lt;/color&gt;&quot;
+                    : $&quot;&lt;color=#{colorValue}&gt;{content}&lt;/color&gt;&quot;;
+            }
+        );
+
+        return processed;
+    }
+
+    private void ProcessHtmlContent(VisualElement container, string html)
+    {
+        // Debug.LogWarning(StringUtils.Base64Encode(html));
+
+        _nodes = ParseHtmlIntoNodes(html);
+        var currentTextBuilder = new StringBuilder();
+
+        foreach (HtmlNode node in _nodes)
+        {
+            if (node.Type == NodeType.Text)
+            {
+                currentTextBuilder.Append(node.Content);
+            }
+            else
+            {
+                // If we have accumulated text, add it as a text element
+                if (currentTextBuilder.Length &gt; 0)
+                {
+                    AddTextElement(container, currentTextBuilder.ToString());
+                    currentTextBuilder.Clear();
+                }
+                ProcessNode(container, node);
+            }
+        }
+
+        // Add any remaining text
+        if (currentTextBuilder.Length &gt; 0)
+        {
+            AddTextElement(container, currentTextBuilder.ToString());
+        }
+    }
+
+    private List&lt;HtmlNode&gt; ParseHtmlIntoNodes(string html)
+    {
+        var nodes = new List&lt;HtmlNode&gt;();
+        int currentPos = 0;
+        var textBuilder = new StringBuilder();
+
+        while (currentPos &lt; html.Length)
+        {
+            if (html[currentPos] == &#x27;&lt;&#x27;)
+            {
+                int tagEnd = html.IndexOf(&#x27;&gt;&#x27;, currentPos);
+                if (tagEnd == -1) break;
+
+                string tag = html.Substring(currentPos, tagEnd - currentPos + 1);
+
+                if (tag.StartsWith(&quot;&lt;title&quot;))
+                {
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    int linkEnd = html.IndexOf(&quot;&lt;/title&gt;&quot;, currentPos);
+                    if (linkEnd != -1)
+                    {
+                        string linkTag = html.Substring(currentPos, linkEnd - currentPos);
+
+                        string content = linkTag.Substring(Mathf.Clamp(tagEnd + 1 - currentPos, 0, 7));
+
+                        currentPos = currentPos + (linkEnd - currentPos) + 8;
+
+                        _windowName.text = content;
+                    }
+                    else currentPos = tagEnd + 1;
+                }
+                else if (tag.StartsWith(&quot;&lt;br1&quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    nodes.Add(new HtmlNode { Type = NodeType.LineBreakSmall });
+                    currentPos = tagEnd + 1;
+                }
+                else if (tag.StartsWith(&quot;&lt;br&quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    nodes.Add(new HtmlNode { Type = NodeType.LineBreak });
+                    currentPos = tagEnd + 1;
+                }
+                else if (tag.StartsWith(&quot;&lt;img&quot;))
+                {
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    HtmlNode imgNode = ExtractNode(html, &quot;&gt;&quot;, NodeType.Image, tagEnd, ref currentPos);
+                    if (imgNode != null)
+                    {
+                        nodes.Add(imgNode);
+                    }
+                }
+                else if (tag.StartsWith(&quot;&lt;button &quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    HtmlNode buttonNode = ExtractNode(html, &quot;&gt;&quot;, NodeType.Button, tagEnd, ref currentPos);
+                    if (buttonNode != null)
+                    {
+                        nodes.Add(buttonNode);
+                    }
+                }
+                else if (tag.StartsWith(&quot;&lt;edit&quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    HtmlNode inputNode = ExtractNode(html, &quot;&gt;&quot;, NodeType.InputField, tagEnd, ref currentPos);
+                    if (inputNode != null)
+                    {
+                        nodes.Add(inputNode);
+                    }
+                }
+                else if (tag.StartsWith(&quot;&lt;combobox&quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    HtmlNode inputNode = ExtractNode(html, &quot;&gt;&quot;, NodeType.DropList, tagEnd, ref currentPos);
+                    if (inputNode != null)
+                    {
+                        nodes.Add(inputNode);
+                    }
+                }
+                else if (tag.StartsWith(&quot;&lt;table&quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    HtmlNode tableNode = ExtractNode(html, &quot;&lt;/table&gt;&quot;, NodeType.Table, tagEnd, ref currentPos);
+                    if (tableNode != null)
+                    {
+                        nodes.Add(tableNode);
+                    }
+                }
+                else if (tag.StartsWith(&quot;&lt;a &quot;))
+                {
+                    // If we have accumulated text, add it as a node
+                    if (textBuilder.Length &gt; 0)
+                    {
+                        nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+                        textBuilder.Clear();
+                    }
+
+                    int linkEnd = html.IndexOf(&quot;&lt;/a&gt;&quot;, currentPos);
+                    if (linkEnd != -1)
+                    {
+                        string linkTag = html.Substring(currentPos, linkEnd - currentPos);
+                        Match actionMatch = Regex.Match(linkTag, @&quot;action=&quot;&quot;([^&quot;&quot;]+)&quot;&quot;.*?&gt;(.*?)$&quot;);
+                        if (actionMatch.Success)
+                        {
+                            nodes.Add(new HtmlNode
+                            {
+                                Type = NodeType.Link,
+                                Attributes = new Dictionary&lt;string, string&gt;
+                                {
+                                    [&quot;action&quot;] = actionMatch.Groups[1].Value.Replace(&quot;bypass&quot;, &quot;&quot;).Replace(&quot;-h&quot;, &quot;&quot;).Trim(),
+                                    [&quot;value&quot;] = actionMatch.Groups[2].Value
+                                }
+                            });
+                        }
+                        currentPos = linkEnd + 4;
+                    }
+                    else currentPos = tagEnd + 1;
+                }
+                else
+                {
+                    // For &lt;br&gt; and &lt;color&gt; tags, include them in the text content
+                    textBuilder.Append(tag);
+                    currentPos = tagEnd + 1;
+                }
+            }
+            else
+            {
+                textBuilder.Append(html[currentPos]);
+                currentPos++;
+            }
+        }
+
+        // Add any remaining text
+        if (textBuilder.Length &gt; 0)
+        {
+            nodes.Add(new HtmlNode { Type = NodeType.Text, Content = textBuilder.ToString() });
+        }
+
+        return nodes;
+    }
+
+    private HtmlNode ExtractNode(string html, string tag, NodeType nodeType, int tagEnd, ref int currentPos)
+    {
+        int linkEnd = html.IndexOf(tag, currentPos);
+        if (linkEnd != -1)
+        {
+            string linkTag = html.Substring(currentPos, linkEnd - currentPos);
+
+            HtmlNode node = new HtmlNode
+            {
+                Type = nodeType,
+                Attributes = ExtractAttributes(linkTag.Substring(0, tagEnd - currentPos)),
+                Content = linkTag.Substring(Mathf.Clamp(tagEnd + 1 - currentPos, 0, linkTag.Length - 1))
+            };
+
+            currentPos = currentPos + (linkEnd - currentPos) + tag.Length;
+            return node;
+        }
+
+        currentPos = tagEnd + 1;
+        return null;
+    }
+
+    private Dictionary&lt;string, string&gt; ExtractAttributes(string value)
+    {
+        Dictionary&lt;string, string&gt; attributes = new Dictionary&lt;string, string&gt;();
+
+        Dictionary&lt;string, string&gt; patterns = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;action&quot;] = @&quot;action=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;back&quot;] = @&quot;back=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;fore&quot;] = @&quot;fore=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;width&quot;] = @&quot;width=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;height&quot;] = @&quot;height=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;bgcolor&quot;] = @&quot;bgcolor=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;value&quot;] = @&quot;value=[&quot;&quot;&#x27;]([^&quot;&quot;&#x27;]*)[&quot;&quot;&#x27;]&quot;,
+            [&quot;src&quot;] = @&quot;src=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;var&quot;] = @&quot;var=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;,
+            [&quot;list&quot;] = @&quot;list=[&quot;&quot;&#x27;]?([^&quot;&quot;&#x27;&gt;\s]+)[&quot;&quot;&#x27;]?&quot;
+        };
+
+        foreach (KeyValuePair&lt;string, string&gt; pattern in patterns)
+        {
+            Match match = Regex.Match(value, pattern.Value);
+            if (match.Success)
+            {
+                string attributeValue = match.Groups[1].Value;
+                if (pattern.Key == &quot;action&quot;)
+                {
+                    attributeValue = attributeValue.Replace(&quot;bypass&quot;, &quot;&quot;).Replace(&quot;-h&quot;, &quot;&quot;).Trim();
+                }
+                attributes[pattern.Key] = attributeValue;
+            }
+        }
+
+        return attributes;
+    }
+
+    private void ProcessNode(VisualElement container, HtmlNode node)
+    {
+        if (_centerEverything)
+        {
+            container.style.alignContent = Align.Center;
+            container.style.justifyContent = Justify.Center;
+        }
+
+        switch (node.Type)
+        {
+            case NodeType.Text:
+                AddTextElement(container, node.Content);
+                break;
+            case NodeType.DropList:
+                AddDropList(container, node.Attributes);
+                break;
+            case NodeType.Image:
+                AddImageElement(container, node.Attributes);
+                break;
+            case NodeType.LineBreak:
+                AddLineBreak(container, false);
+                break;
+            case NodeType.LineBreakSmall:
+                AddLineBreak(container, true);
+                break;
+            case NodeType.Table:
+                ProcessTable(container, node.Attributes, node.Content);
+                break;
+            case NodeType.Button:
+                AddButton(container, node.Attributes);
+                break;
+            case NodeType.InputField:
+                AddInputField(container, node.Attributes);
+                break;
+            case NodeType.Link:
+                AddHyperlinkElement(container, node.Attributes);
+                break;
+        }
+    }
+
+    private void AddDropList(VisualElement container, Dictionary&lt;string, string&gt; attributes)
+    {
+        DropdownField dropdown = (DropdownField)_l2dropdown.Instantiate()[0];
+
+        if (attributes.TryGetValue(&quot;width&quot;, out string width))
+        {
+            int widthPx = int.Parse(width) + 0;
+            dropdown.style.minWidth = Math.Max(40, widthPx - 50);
+            dropdown.style.width = Math.Max(40, widthPx - 50);
+        }
+        if (attributes.TryGetValue(&quot;height&quot;, out string height))
+        {
+            int heightPx = int.Parse(height);
+            dropdown.style.minHeight = heightPx - 4;
+            dropdown.style.height = heightPx - 4;
+        }
+
+        if (attributes.TryGetValue(&quot;list&quot;, out string list))
+        {
+            if (list != null &amp;&amp; list.Length &gt; 0)
+            {
+                dropdown.choices.AddRange(list.Split(&quot;;&quot;));
+            }
+        }
+
+        dropdown.index = 0;
+        if (attributes.TryGetValue(&quot;var&quot;, out string dropdownIndex))
+        {
+            _inputValues.TryAdd(dropdownIndex, dropdown.text);
+            dropdown.RegisterValueChangedCallback((newVal) =&gt;
+            {
+                _inputValues[dropdownIndex] = newVal.newValue;
+
+                AudioManager.Instance.PlayUISound(&quot;window_open&quot;);
+            });
+
+            dropdown.AddManipulator(new ButtonClickSoundManipulator(dropdown));
+        }
+
+        container.Add(dropdown);
+    }
+
+    private void AddLineBreak(VisualElement container, bool small)
+    {
+        var spacer = _htmlWrapper.Instantiate()[0];
+        if (small)
+        {
+            spacer.style.height = 0;
+        }
+        else
+        {
+            spacer.style.height = 8;
+        }
+        container.Add(spacer);
+    }
+
+    private void AddTextElement(VisualElement container, string text)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+
+        Label label = new Label { text = text };
+        label.enableRichText = true;
+        label.AddToClassList(&quot;l2-color-4&quot;);
+        label.AddToClassList(&quot;html-window-label&quot;);
+
+        container.Add(label);
+    }
+
+    private void AddHyperlinkElement(VisualElement container, Dictionary&lt;string, string&gt; attributes)
+    {
+        Button button = (Button)_hyperlink.Instantiate()[0];
+        VisualElement buttonLabel = button.Q&lt;Label&gt;(&quot;ButtonLabel&quot;);
+        VisualElement buttonBg = button.Q&lt;VisualElement&gt;(&quot;ButtonBg&quot;);
+        Label label = button.Q&lt;Label&gt;(&quot;ButtonLabel&quot;);
+
+        if (attributes.TryGetValue(&quot;width&quot;, out string width))
+        {
+            button.style.width = int.Parse(width);
+        }
+        if (attributes.TryGetValue(&quot;height&quot;, out string height))
+        {
+            button.style.height = int.Parse(height);
+        }
+        if (attributes.TryGetValue(&quot;action&quot;, out string action))
+        {
+            button.clicked += () =&gt; ButtonClicked(action);
+        }
+        if (attributes.TryGetValue(&quot;value&quot;, out string value))
+        {
+            label.text = &quot;&lt;u&gt;&quot; + value + &quot;&lt;/u&gt;&quot;;
+        }
+        else
+        {
+            label.text = &quot;&lt;u&gt;...&lt;/u&gt;&quot;;
+        }
+
+        container.Add(button);
+    }
+
+    private void AddButton(VisualElement container, Dictionary&lt;string, string&gt; attributes)
+    {
+        Button button = (Button)_l2Button.Instantiate()[0];
+        Label label = button.Q&lt;Label&gt;(&quot;ButtonLabel&quot;);
+
+        if (attributes.TryGetValue(&quot;width&quot;, out string width))
+        {
+            button.style.minWidth = int.Parse(width) - 5;
+            button.style.width = int.Parse(width) - 5;
+        }
+        if (attributes.TryGetValue(&quot;height&quot;, out string height))
+        {
+            button.style.minHeight = int.Parse(height) + 3;
+            button.style.height = int.Parse(height) + 3;
+        }
+        if (attributes.TryGetValue(&quot;action&quot;, out string action))
+        {
+            button.clicked += () =&gt; ButtonClicked(action);
+        }
+        if (attributes.TryGetValue(&quot;value&quot;, out string value))
+        {
+            label.text = value;
+        }
+        else
+        {
+            button.style.width = 20;
+            if (attributes.TryGetValue(&quot;fore&quot;, out string fore))
+            {
+                if (fore == &quot;L2UI_CH3.next1&quot;)
+                {
+                    label.text = &quot;&gt;&quot;;
+                }
+                else if (fore == &quot;L2UI_CH3.prev1&quot;)
+                {
+                    label.text = &quot;&lt;&quot;;
+                }
+                else
+                {
+                    label.text = &quot;*&quot;;
+                }
+            }
+            else
+            {
+                label.text = &quot;*&quot;;
+            }
+        }
+
+        button.AddManipulator(new ButtonClickSoundManipulator(button));
+
+        container.Add(button);
+    }
+
+    private void AddInputField(VisualElement container, Dictionary&lt;string, string&gt; attributes)
+    {
+        TextField textField = (TextField)_l2Input.Instantiate()[0];
+
+        if (attributes.TryGetValue(&quot;width&quot;, out string width))
+        {
+            int widthPx = int.Parse(width) + 0;
+            textField.style.minWidth = Math.Max(40, widthPx - 50);
+            textField.style.width = Math.Max(40, widthPx - 50);
+        }
+        if (attributes.TryGetValue(&quot;height&quot;, out string height))
+        {
+            int heightPx = int.Parse(height) + 4;
+            textField.style.minHeight = heightPx;
+            textField.style.height = heightPx;
+        }
+
+        if (attributes.TryGetValue(&quot;var&quot;, out string dropdownIndex))
+        {
+            textField.RegisterValueChangedCallback((newVal) =&gt;
+            {
+                _inputValues[dropdownIndex] = newVal.newValue;
+            });
+        }
+
+        textField.AddManipulator(new BlinkingCursorManipulator(textField));
+
+        container.Add(textField);
+    }
+
+    private void AddImageElement(VisualElement container, Dictionary&lt;string, string&gt; attributes)
+    {
+        VisualElement imageContainer = new VisualElement();
+
+        Texture2D exampleImage = Resources.Load&lt;Texture2D&gt;(&quot;Data/SysTextures/Icon/accessary_magic_ring_i00&quot;);
+
+        Image image = new Image();
+        image.scaleMode = ScaleMode.StretchToFill;
+
+        if (attributes.TryGetValue(&quot;src&quot;, out string src))
+        {
+            Texture2D srcImage = Resources.Load&lt;Texture2D&gt;(&quot;Data/UI/Assets/html/&quot; + src.Split(&quot;.&quot;)[1]);
+            if (srcImage != null)
+            {
+                image.image = srcImage;
+            }
+            else
+            {
+                image.image = exampleImage;
+            }
+        }
+        if (attributes.TryGetValue(&quot;width&quot;, out string width))
+        {
+            int widthPx = int.Parse(width);
+            imageContainer.style.minWidth = widthPx;
+            imageContainer.style.maxWidth = widthPx;
+            image.style.minWidth = widthPx;
+            image.style.maxWidth = widthPx;
+        }
+
+        if (attributes.TryGetValue(&quot;height&quot;, out string height))
+        {
+            int heigthPx = int.Parse(height);
+            imageContainer.style.maxHeight = heigthPx;
+            imageContainer.style.minHeight = heigthPx;
+            image.style.maxHeight = heigthPx;
+            image.style.minHeight = heigthPx;
+        }
+
+        imageContainer.Add(image);
+
+        imageContainer.style.flexShrink = new StyleFloat(StyleKeyword.None);
+
+        container.Add(imageContainer);
+    }
+
+    private void ProcessTable(VisualElement container, Dictionary&lt;string, string&gt; attributes, string tableHtml)
+    {
+        VisualElement wrapper = _htmlWrapper.Instantiate()[0];
+
+        VisualElement tableContainer = _htmlTable.Instantiate()[0];
+
+        if (attributes.TryGetValue(&quot;height&quot;, out string tableHeight))
+        {
+            tableContainer.style.height = int.Parse(tableHeight);
+        }
+        if (attributes.TryGetValue(&quot;width&quot;, out string tableWidth))
+        {
+            tableContainer.style.width = int.Parse(tableWidth);
+        }
+        else
+        {
+            tableContainer.style.width = new Length(100f, LengthUnit.Percent);
+        }
+        if (attributes.TryGetValue(&quot;bgcolor&quot;, out string color))
+        {
+            tableContainer.style.backgroundColor = ColorUtils.HexToColor(color + &quot;FF&quot;);
+        }
+        if (_centerEverything)
+        {
+            tableContainer.style.alignSelf = Align.Center;
+        }
+
+        // Table content
+        var rows = Regex.Matches(tableHtml, @&quot;&lt;tr&gt;(.*?)&lt;/tr&gt;&quot;, RegexOptions.Singleline);
+        int colCount = 0;
+
+        foreach (Match row in rows)
+        {
+            VisualElement rowElement = _htmlRow.Instantiate()[0];
+
+            // Extract attributes individually
+            string widthPattern = @&quot;width=(\d+)&quot;;
+            string heightPattern = @&quot;height=(\d+)&quot;;
+            string fixWidthPattern = @&quot;FIXWIDTH=(\d+)&quot;;
+            string alignPattern = @&quot;align=(left|center|right|justify)&quot;;
+            string contentPattern = @&quot;&lt;td[^&gt;]*&gt;(.*?)&lt;/td&gt;&quot;;
+
+            var cells = Regex.Matches(row.Groups[1].Value, contentPattern, RegexOptions.Singleline);
+
+            foreach (Match cell in cells)
+            {
+                if (colCount == 0)
+                {
+                    colCount = cells.Count;
+                }
+
+                VisualElement cellElement = _htmlCell.Instantiate()[0];
+
+                string cellText = cell.Value;
+                string firstCell = cellText.Substring(0, cellText.IndexOf(&quot;&gt;&quot;));
+
+                // Extract width
+                var widthMatch = Regex.Match(firstCell, widthPattern);
+                string width = widthMatch.Success ? widthMatch.Groups[1].Value : &quot;&quot;;
+
+                // Extract width2
+                var fixWidthMatch = Regex.Match(firstCell, fixWidthPattern);
+                string width2 = fixWidthMatch.Success ? fixWidthMatch.Groups[1].Value : &quot;&quot;;
+
+                // Extract height
+                var heightMatch = Regex.Match(firstCell, heightPattern);
+                string height = heightMatch.Success ? heightMatch.Groups[1].Value : &quot;&quot;;
+
+                // Extract align
+                var alignMatch = Regex.Match(firstCell, alignPattern);
+                string align = alignMatch.Success ? alignMatch.Groups[1].Value : &quot;&quot;;
+
+                // Extract content
+                var contentMatch = Regex.Match(cellText, contentPattern);
+                string content = contentMatch.Success ? contentMatch.Groups[1].Value : &quot;&quot;;
+
+                int customWidth = 0;
+                if (width.Length &gt; 0)
+                {
+                    customWidth = int.Parse(width);// * 0.788f;// - 36;
+                }
+                else if (width2.Length &gt; 0)
+                {
+                    customWidth = int.Parse(width2);// * 0.788f;// - 36;
+                }
+
+                if (customWidth == 0)
+                {
+                    cellElement.style.width = new Length(100f / colCount, LengthUnit.Percent);
+                }
+                else if (customWidth &lt; 120)
+                {
+                    cellElement.style.width = customWidth;
+                    cellElement.style.flexGrow = 0;
+                }
+
+
+                if (height.Length &gt; 0)
+                {
+                    cellElement.style.height = int.Parse(height);
+                }
+
+                switch (align)
+                {
+                    case &quot;left&quot;:
+                        cellElement.style.alignItems = Align.FlexStart;
+                        break;
+                    case &quot;center&quot;:
+                        cellElement.style.alignItems = Align.Center;
+                        break;
+                    case &quot;right&quot;:
+                        cellElement.style.alignItems = Align.FlexEnd;
+                        break;
+                }
+
+                rowElement.Add(cellElement);
+
+                ProcessHtmlContent(cellElement, content);
+            }
+
+            tableContainer.Add(rowElement);
+        }
+
+        wrapper.Add(tableContainer);
+        container.Add(wrapper);
+    }
+
+    private void ButtonClicked(string action)
+    {
+        Debug.Log(action);
+        if (action.Contains(&quot;$&quot;))
+        {
+            string pattern = @&quot;\$\w+&quot;;
+            Regex regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            MatchCollection matches = regex.Matches(action);
+
+            if (matches.Count &gt; 0)
+            {
+                string id = matches[matches.Count - 1].Value;
+                Debug.Log(id[1..]);
+                if (_inputValues.TryGetValue(id[1..], out string value))
+                {
+                    action = action.Replace(id, value);
+                }
+            }
+        }
+        Debug.Log(action);
+
+        GameClient.Instance.ClientPacketHandler.RequestBypassToServer(action);
+    }
+
+    private enum NodeType
+    {
+        Text,
+        LineBreak,
+        LineBreakSmall,
+        Image,
+        Table,
+        Link,
+        Button,
+        InputField,
+        DropList
+    }
+
+    [System.Serializable]
+    private class HtmlNode
+    {
+        public NodeType Type { get; set; }
+        public string Content { get; set; }
+        public Dictionary&lt;string, string&gt; Attributes { get; set; }
+    }
+}
+</pre>
+            
+</body>
+</html>

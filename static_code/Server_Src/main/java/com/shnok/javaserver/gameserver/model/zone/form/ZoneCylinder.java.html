@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/form/ZoneCylinder.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/form/ZoneCylinder.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.zone.form;
+
+import java.awt.Color;
+
+import com.shnok.javaserver.gameserver.model.zone.ZoneForm;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExServerPrimitive;
+
+public class ZoneCylinder extends ZoneForm
+{
+	protected static final int STEP = 50;
+	
+	private final int _x;
+	private final int _y;
+	private final int _z1;
+	private final int _z2;
+	private final int _rad;
+	private final int _radS;
+	
+	public ZoneCylinder(int x, int y, int z1, int z2, int rad)
+	{
+		_x = x;
+		_y = y;
+		_z1 = z1;
+		_z2 = z2;
+		_rad = rad;
+		_radS = rad * rad;
+	}
+	
+	@Override
+	public boolean isInsideZone(int x, int y, int z)
+	{
+		if ((Math.pow(_x - x, 2) + Math.pow(_y - y, 2)) &gt; _radS || z &lt; _z1 || z &gt; _z2)
+			return false;
+		
+		return true;
+	}
+	
+	@Override
+	public boolean intersectsRectangle(int ax1, int ax2, int ay1, int ay2)
+	{
+		// Circles point inside the rectangle?
+		if (_x &gt; ax1 &amp;&amp; _x &lt; ax2 &amp;&amp; _y &gt; ay1 &amp;&amp; _y &lt; ay2)
+			return true;
+		
+		// Any point of the rectangle intersecting the Circle?
+		if ((Math.pow(ax1 - _x, 2) + Math.pow(ay1 - _y, 2)) &lt; _radS)
+			return true;
+		
+		if ((Math.pow(ax1 - _x, 2) + Math.pow(ay2 - _y, 2)) &lt; _radS)
+			return true;
+		
+		if ((Math.pow(ax2 - _x, 2) + Math.pow(ay1 - _y, 2)) &lt; _radS)
+			return true;
+		
+		if ((Math.pow(ax2 - _x, 2) + Math.pow(ay2 - _y, 2)) &lt; _radS)
+			return true;
+		
+		// Collision on any side of the rectangle?
+		if (_x &gt; ax1 &amp;&amp; _x &lt; ax2)
+		{
+			if (Math.abs(_y - ay2) &lt; _rad)
+				return true;
+			
+			if (Math.abs(_y - ay1) &lt; _rad)
+				return true;
+		}
+		
+		if (_y &gt; ay1 &amp;&amp; _y &lt; ay2)
+		{
+			if (Math.abs(_x - ax2) &lt; _rad)
+				return true;
+			
+			if (Math.abs(_x - ax1) &lt; _rad)
+				return true;
+		}
+		
+		return false;
+	}
+	
+	@Override
+	public int getLowZ()
+	{
+		return _z1;
+	}
+	
+	@Override
+	public int getHighZ()
+	{
+		return _z2;
+	}
+	
+	@Override
+	public void visualizeZone(String info, ExServerPrimitive debug)
+	{
+		final int z1 = _z1 - 32;
+		final int z2 = _z2 - 32;
+		
+		final int count = (int) (2 * Math.PI * _rad / STEP);
+		final double angle = 2 * Math.PI / count;
+		
+		for (int i = 0; i &lt; count; i++)
+		{
+			final int x = (int) (Math.cos(angle * i) * _rad) + _x;
+			final int y = (int) (Math.sin(angle * i) * _rad) + _y;
+			
+			// Floors - min/max.
+			debug.addPoint(info, Color.GREEN, true, x, y, z1);
+			debug.addPoint(info, Color.RED, true, x, y, z2);
+			
+			// Vertical line.
+			debug.addLine(&quot;&quot;, Color.YELLOW, true, x, y, z1, x, y, z2);
+		}
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Components/L2ArrowInput/L2ArrowInput.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Components/L2ArrowInput/L2ArrowInput.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2Input&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Input/L2Input.uxml?fileID=9197481963319205126&amp;amp;guid=dce83b8dcd7f5614280886eaaa82f0f7&amp;amp;type=3#L2Input&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uss?fileID=7433441132597879392&amp;amp;guid=b1d2114f9ed155f45a3eb16e5ef02441&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2ArrowInput/L2ArrowInput.uss?fileID=7433441132597879392&amp;amp;guid=4413dbfe44a18c944a866665509dca2a&amp;amp;type=3#L2ArrowInput&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;ArrowInput&quot; tabindex=&quot;-1&quot; class=&quot;arrow-input&quot;&gt;
+        &lt;ui:Instance template=&quot;L2Input&quot; name=&quot;DataField&quot; class=&quot;l2-input-field-template&quot;&gt;
+            &lt;AttributeOverrides element-name=&quot;L2Input&quot; label=&quot;Hair Color&quot; readonly=&quot;true&quot; /&gt;
+        &lt;/ui:Instance&gt;
+        &lt;ui:VisualElement name=&quot;Arrows&quot; tabindex=&quot;-1&quot; class=&quot;arrows-container&quot; style=&quot;margin-left: 8px;&quot;&gt;
+            &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;LeftArrow&quot; class=&quot;arrow-left arrow&quot; style=&quot;margin-right: 2px;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;BG&quot; class=&quot;arrow-bg&quot; style=&quot;width: 20px; height: 20px;&quot; /&gt;
+            &lt;/ui:Button&gt;
+            &lt;ui:Button parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;RightArrow&quot; class=&quot;arrow arrow-right&quot; style=&quot;margin-right: 2px;&quot;&gt;
+                &lt;ui:VisualElement name=&quot;BG&quot; class=&quot;arrow-bg&quot; /&gt;
+            &lt;/ui:Button&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

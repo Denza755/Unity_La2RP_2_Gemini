@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Entity/NetworkEntity.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Entity/NetworkEntity.cs</h1>
+            <pre>using UnityEngine;
+
+public abstract class NetworkEntity : Entity
+{
+
+    public override void Initialize()
+    {
+        base.Initialize();
+    }
+
+    public override float UpdateMAtkSpeed(int mAtkSpd)
+    {
+        float converted = base.UpdateMAtkSpeed(mAtkSpd);
+        // AnimationController.SetMAtkSpd(converted, 1000);
+        return converted;
+    }
+
+    public override float UpdatePAtkSpeed(int pAtkSpd)
+    {
+        float converted = base.UpdatePAtkSpeed(pAtkSpd);
+        // AnimationController.SetPAtkSpd(converted);
+
+        return converted;
+    }
+
+    public override float UpdateRunSpeed(int speed)
+    {
+        float converted = base.UpdateRunSpeed(speed);
+        // AnimationController.SetRunSpeed(converted);
+        return converted;
+    }
+
+    public override float UpdateWalkSpeed(int speed)
+    {
+        float converted = base.UpdateWalkSpeed(speed);
+        // AnimationController.SetWalkSpeed(converted);
+        return converted;
+    }
+
+    public override void OnStopMoving()
+    {
+        base.OnStopMoving();
+        Combat.OnStopMoving();
+    }
+}</pre>
+            
+</body>
+</html>

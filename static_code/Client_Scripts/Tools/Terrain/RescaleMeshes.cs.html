@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Tools/Terrain/RescaleMeshes.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Tools/Terrain/RescaleMeshes.cs</h1>
+            <pre>#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+
+public class RescaleMeshes : MonoBehaviour
+{
+    [MenuItem(&quot;Shnok/[Debug] Rescale Meshes&quot;)]
+    static void GenerateTerrain() {
+        Transform t = GameObject.Find(&quot;StaticMeshes&quot;).transform;
+
+        for (int i = 0; i &lt; t.childCount; i++) {
+            Transform child = t.GetChild(i);
+            if(child.localScale.x &lt; 0.1) {
+                child.localScale = new Vector3(child.localScale.x * 52.5f, child.localScale.y * 52.5f, child.localScale.z * 52.5f);
+            }
+        }
+
+    }
+
+    [MenuItem(&quot;Shnok/[Debug] Rescale Trunks&quot;)]
+    static void RescaleTrunks() {
+        GameObject[] foundObjects = GameObject.FindObjectsByType&lt;GameObject&gt;(FindObjectsSortMode.None);
+        foreach (var gameObj in foundObjects) {
+            if (!gameObj.activeSelf)
+                continue;
+
+            if (gameObj.name == &quot;trunk&quot;) {
+               
+                gameObj.transform.localScale = new Vector3(gameObj.transform.localScale.x / 52.5f, gameObj.transform.localScale.y / 52.5f, gameObj.transform.localScale.z / 52.5f);
+                gameObj.transform.localPosition = new Vector3(gameObj.transform.localPosition.x / 52.5f, gameObj.transform.localPosition.y / 52.5f, gameObj.transform.localPosition.z / 52.5f);
+            }
+        }
+
+    }
+
+    [MenuItem(&quot;Shnok/[Debug] Rescale Decos&quot;)]
+    static void RescaleDeco() {
+        Transform t = GameObject.Find(&quot;DecoLayer&quot;).transform;
+        for (int i = 0; i &lt; t.childCount; i++) {
+            Transform child = t.GetChild(i);
+            for (int j = 0; j &lt; child.childCount; j++) {
+                Transform child2 = child.GetChild(j);
+                child2.localScale = new Vector3(child2.localScale.x * 52.5f, child2.localScale.y * 52.5f, child2.localScale.z * 52.5f);
+            }
+        }
+
+    }
+}
+#endif</pre>
+            
+</body>
+</html>

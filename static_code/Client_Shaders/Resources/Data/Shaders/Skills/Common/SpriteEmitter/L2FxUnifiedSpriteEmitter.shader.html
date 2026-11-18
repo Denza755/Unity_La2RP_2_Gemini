@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Common/SpriteEmitter/L2FxUnifiedSpriteEmitter.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Common/SpriteEmitter/L2FxUnifiedSpriteEmitter.shader</h1>
+            <pre>Shader &quot;L2/Effects/SpriteEmitter&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture&quot;, 2D) = &quot;white&quot; {}
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        _Seed (&quot;Seed&quot;, Float) = 0
+        _SpriteMotionRandStateBits (&quot;Sprite Motion appRand TLS&quot;, Float) = 0
+        _SpriteSpinRandStateBits (&quot;Sprite Spin appRand TLS&quot;, Float) = 0
+        _OwnerWorldPos (&quot;Owner World Position&quot;, Vector) = (0, 0, 0, 0)
+        _LifetimeRange (&quot;Lifetime Min Max&quot;, Vector) = (1, 1, 0, 0)
+        _InitialDelayRange (&quot;Initial Delay Min Max&quot;, Vector) = (0, 0, 0, 0)
+        [Toggle] _UseManualAge (&quot;Use Manual Age&quot;, Float) = 0
+        _ManualAge (&quot;Manual Age&quot;, Float) = 0
+
+        [Enum(None,0,Box,1,Polar,2,FullTLS,3)] _SpawnMode (&quot;Spawn Mode&quot;, Float) = 0
+        [Enum(Shape0Box,0,Polar,1)] _FullTlsShape (&quot;Full TLS Shape&quot;, Float) = 0
+        [Enum(Box,0,Sphere,1,Polar,2)] _HeLocationShape (&quot;HE Location Shape&quot;, Float) = 0
+        [Enum(None,0,Ballistic,1,Drag,2)] _MotionMode (&quot;Motion Mode&quot;, Float) = 0
+        [Enum(CameraBillboard,0,PTDU_Up,1,PTDU_Normal,2,PTDU_Forward,3)] _OrientationMode (&quot;Orientation Mode&quot;, Float) = 0
+        _SurfaceNormals (&quot;Surface Normals&quot;, Vector) = (0, 0, 0, 0)
+        [Enum(None,0,StartAndOwner,1,OwnerAndStart,2)] _PtvdMode (&quot;PTVD Mode&quot;, Float) = 0
+        [Enum(Uniform,0,XYZ,1)] _SizeMode (&quot;Size Mode&quot;, Float) = 0
+        [Enum(None,0,AppRand,1)] _SpinMode (&quot;Spin Mode&quot;, Float) = 0
+        [Enum(Static,0,Timed,1,Random,2,BlendBetween,3)] _FlipbookMode (&quot;Flipbook Mode&quot;, Float) = 0
+
+        _L2FxWorldCalibration (&quot;World Calibration K&quot;, Float) = 1.1
+        [Toggle] _L2FxHeUnitScaleEnable (&quot;High Elf Unit Scale&quot;, Float) = 0
+        _L2FxHeUnitScale (&quot;High Elf UU Scale&quot;, Float) = 0.583
+        _StartLocationOffsetUc (&quot;StartLocationOffset UC XYZ&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeUU (&quot;StartLocation Range UU&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeXUc (&quot;StartLocation X Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeYUc (&quot;StartLocation Y Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartLocationRangeZUc (&quot;StartLocation Z Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _PolarThetaRangeUc (&quot;Polar Theta Min Max&quot;, Vector) = (0, 360, 0, 0)
+        _PolarPhiRangeUc (&quot;Polar Phi Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _PolarRadiusRangeUc (&quot;Polar Radius Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _SphereRadiusRangeUc (&quot;Sphere Radius Min Max&quot;, Vector) = (0, 0, 0, 0)
+        [Toggle] _UseRevolution (&quot;UseRevolution&quot;, Float) = 0
+        _RevolutionCenterOffsetRangeXUc (&quot;Revolution Center X Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _RevolutionCenterOffsetRangeYUc (&quot;Revolution Center Y Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _RevolutionCenterOffsetRangeZUc (&quot;Revolution Center Z Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _RevolutionsPerSecondRangeXUc (&quot;Revolution RPS X Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _RevolutionsPerSecondRangeYUc (&quot;Revolution RPS Y Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _RevolutionsPerSecondRangeZUc (&quot;Revolution RPS Z Min Max&quot;, Vector) = (0, 0, 0, 0)
+        [Toggle] _UseRevolutionScale (&quot;Use RevolutionScale&quot;, Float) = 0
+        _RevolutionScaleRepeats (&quot;RevolutionScale Repeats&quot;, Float) = 0
+        _RevolutionScaleCount (&quot;RevolutionScale Key Count&quot;, Float) = 1
+        _RevolutionScaleKey0 (&quot;RevolutionScale Key 0&quot;, Vector) = (0, 1, 1, 1)
+        _RevolutionScaleKey1 (&quot;RevolutionScale Key 1&quot;, Vector) = (1, 1, 1, 1)
+        _RevolutionScaleKey2 (&quot;RevolutionScale Key 2&quot;, Vector) = (1, 1, 1, 1)
+        _RevolutionScaleKey3 (&quot;RevolutionScale Key 3&quot;, Vector) = (1, 1, 1, 1)
+        _RevolutionScaleKey4 (&quot;RevolutionScale Key 4&quot;, Vector) = (1, 1, 1, 1)
+        _RevolutionScaleKey5 (&quot;RevolutionScale Key 5&quot;, Vector) = (1, 1, 1, 1)
+        _RevolutionScaleKey6 (&quot;RevolutionScale Key 6&quot;, Vector) = (1, 1, 1, 1)
+        _StartVelocityRangeXUc (&quot;StartVelocity X Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartVelocityRangeYUc (&quot;StartVelocity Y Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartVelocityRangeZUc (&quot;StartVelocity Z Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _StartVelocityRadialRangeUc (&quot;StartVelocity Radial&quot;, Vector) = (1, 1, 0, 0)
+        _AccelerationUc (&quot;Acceleration UC XYZ&quot;, Vector) = (0, 0, 0, 0)
+        _VelocityLossRangeUc (&quot;Velocity Loss XYZ&quot;, Vector) = (0, 0, 0, 0)
+        [Enum(Independent,0,Relative,1,Absolute,2,RelativeRotation,3,Spray,4,RelativePosition,5,ScreenAbsolute,6,ScreenRelative,7)] _CoordinateSystem (&quot;CoordinateSystem&quot;, Float) = 1
+        [Toggle] _IndependentSprayAccel (&quot;IndependentSprayAccel&quot;, Float) = 0
+        _MaxAbsVelocityUc (&quot;MaxAbsVelocity XYZ&quot;, Vector) = (10000, 10000, 10000, 0)
+        [Toggle] _UseVelocityScale (&quot;Use VelocityScale&quot;, Float) = 0
+        _VelocityScaleRepeats (&quot;VelocityScale Repeats&quot;, Float) = 0
+        _VelocityScaleCount (&quot;VelocityScale Key Count&quot;, Float) = 1
+        _VelocityScaleKey0 (&quot;VelocityScale Key 0&quot;, Vector) = (0, 1, 1, 1)
+        _VelocityScaleKey1 (&quot;VelocityScale Key 1&quot;, Vector) = (1, 1, 1, 1)
+        _VelocityScaleKey2 (&quot;VelocityScale Key 2&quot;, Vector) = (1, 1, 1, 1)
+        _VelocityScaleKey3 (&quot;VelocityScale Key 3&quot;, Vector) = (1, 1, 1, 1)
+        _VelocityScaleKey4 (&quot;VelocityScale Key 4&quot;, Vector) = (1, 1, 1, 1)
+        _VelocityScaleKey5 (&quot;VelocityScale Key 5&quot;, Vector) = (1, 1, 1, 1)
+        _VelocityScaleKey6 (&quot;VelocityScale Key 6&quot;, Vector) = (1, 1, 1, 1)
+        _SpawnDeltaTime (&quot;Spawn Delta Time&quot;, Float) = 0.012
+
+        _SizeRange (&quot;Uniform Size Min Max&quot;, Vector) = (1, 1, 0, 0)
+        _SizeRangeXUc (&quot;Size X Min Max&quot;, Vector) = (1, 1, 0, 0)
+        _SizeRangeYUc (&quot;Size Y Min Max&quot;, Vector) = (1, 1, 0, 0)
+        _SizeRangeZUc (&quot;Size Z Min Max&quot;, Vector) = (1, 1, 0, 0)
+        [Toggle] _UseSizeScale (&quot;Use SizeScale&quot;, Float) = 0
+        _SizeScaleRepeats (&quot;SizeScale Repeats&quot;, Float) = 0
+        _SizeScaleCount (&quot;SizeScale Key Count&quot;, Float) = 2
+        _SizeKey0 (&quot;Size Key 0&quot;, Vector) = (0, 1, 0, 0)
+        _SizeKey1 (&quot;Size Key 1&quot;, Vector) = (1, 1, 0, 0)
+        _SizeKey2 (&quot;Size Key 2&quot;, Vector) = (1, 1, 0, 0)
+        _SizeKey3 (&quot;Size Key 3&quot;, Vector) = (1, 1, 0, 0)
+        _SizeKey4 (&quot;Size Key 4&quot;, Vector) = (1, 1, 0, 0)
+
+        _SpriteSpinStartRangeUc (&quot;Start Spin Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _SpriteSpinSpsRangeUc (&quot;Spin Per Sec Min Max&quot;, Vector) = (0, 0, 0, 0)
+        _SpriteSpinCcwOrCw (&quot;Spin Direction&quot;, Vector) = (0.5, 0.5, 0.5, 0)
+
+        _ColorScaleCount (&quot;Color Scale Key Count&quot;, Float) = 2
+        _ColorScaleParam (&quot;Color Scale Repeats&quot;, Float) = 0
+        _ColorKey0 (&quot;Color Key 0&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey1Time (&quot;Color Key 1 Time&quot;, Float) = 1
+        _ColorKey1 (&quot;Color Key 1&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey2Time (&quot;Color Key 2 Time&quot;, Float) = 1
+        _ColorKey2 (&quot;Color Key 2&quot;, Color) = (1, 1, 1, 1)
+        _ColorKey3Time (&quot;Color Key 3 Time&quot;, Float) = 1
+        _ColorKey3 (&quot;Color Key 3&quot;, Color) = (1, 1, 1, 1)
+        _ColorMulMin (&quot;ColorMultiplier Min RGB&quot;, Vector) = (1, 1, 1, 0)
+        _ColorMulMax (&quot;ColorMultiplier Max RGB&quot;, Vector) = (1, 1, 1, 0)
+        _ColorFadeAlphaBlend (&quot;ColorFade AlphaBlend&quot;, Float) = 0
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 0
+        _FadeInEndTime (&quot;Fade In End&quot;, Float) = 0
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 0
+        _FadeoutStartTime (&quot;Fade Out Start&quot;, Float) = 0
+        _Opacity (&quot;Opacity&quot;, Range(0, 2)) = 1
+        _RgbBoost (&quot;RGB Boost&quot;, Range(0, 16)) = 1
+        [Toggle] _L2SpriteColorGammaToLinear (&quot;Color Gamma To Linear&quot;, Float) = 0
+
+        _TextureUSubdivisions (&quot;Atlas U Cells&quot;, Float) = 1
+        _TextureVSubdivisions (&quot;Atlas V Cells&quot;, Float) = 1
+        _SubdivisionStart (&quot;Subdivision Start&quot;, Float) = 0
+        _SubdivisionEnd (&quot;Subdivision End&quot;, Float) = 0
+        _StaticSubdivision (&quot;Static Subdivision&quot;, Float) = 0
+
+        [Toggle] _IgnoreMainTexAlpha (&quot;Ignore Texture Alpha&quot;, Float) = 0
+        [Toggle] _AlphaFromLuma (&quot;Alpha From Luma&quot;, Float) = 0
+        _LumaAlphaFloor (&quot;Luma Alpha Floor&quot;, Range(0, 1)) = 0
+        [Toggle] _UseSoftLumaAlpha (&quot;Soft Luma Alpha&quot;, Float) = 0
+        _LumaAlphaPower (&quot;Luma Alpha Power&quot;, Float) = 1
+        _AlphaClipThreshold (&quot;Alpha Clip Threshold (-1 off)&quot;, Float) = -1
+        [Enum(Off,0,TexAlpha,1,Luma,2,RgbOpaque,3,DarkOpaqueHoles,4)] _DebugSpriteOut (&quot;Debug Sprite Output&quot;, Float) = 0
+
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend (&quot;Src Blend&quot;, Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend (&quot;Dst Blend&quot;, Float) = 1
+        [Toggle] _ZWrite (&quot;ZWrite&quot;, Float) = 0
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull (&quot;Cull&quot;, Float) = 0
+    }
+
+    // Same URP Deferred rule as MeshEmitter: Transparent + UniversalForwardOnly.
+    // Geometry + UniversalForward does not draw. Missing mesh texture is not a reason
+    // to replace MeshEmitter with this SpriteEmitter shader.
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot;
+            &quot;Queue&quot; = &quot;Transparent&quot;
+            &quot;RenderType&quot; = &quot;Transparent&quot;
+            &quot;UniversalMaterialType&quot; = &quot;Unlit&quot;
+            &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+        Blend [_SrcBlend] [_DstBlend]
+        ZWrite [_ZWrite]
+        ZTest LEqual
+        Cull [_Cull]
+
+        Pass
+        {
+            Name &quot;UnifiedSpriteForwardOnly&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForwardOnly&quot; }
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #include &quot;L2FxUnifiedSpriteEmitter.Pass.hlsl&quot;
+            ENDHLSL
+        }
+    }
+    FallBack Off
+}
+</pre>
+            
+</body>
+</html>

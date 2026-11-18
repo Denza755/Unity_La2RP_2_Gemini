@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/ruler/RequestRulerCameraSync.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/network/clientpackets/ruler/RequestRulerCameraSync.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.network.clientpackets.ruler;
+
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.WorldRegion;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
+
+public class RequestRulerCameraSync extends L2GameClientPacket
+{
+	private boolean _active;
+	private int _l2X;
+	private int _l2Y;
+	private int _l2Z;
+	
+	@Override
+	protected void readImpl()
+	{
+		_active = readC() != 0;
+		_l2X = readD();
+		_l2Y = readD();
+		_l2Z = readD();
+	}
+	
+	@Override
+	protected void runImpl()
+	{
+		final Player player = getClient().getPlayer();
+		if (player == null)
+		{
+			return;
+		}
+		
+		if (!_active)
+		{
+			return;
+		}
+		
+		final WorldRegion region = World.getInstance().getRegion(_l2X, _l2Y);
+		if (region != null)
+		{
+			for (WorldRegion r : region.getSurroundingRegions())
+			{
+				if (r == null)
+				{
+					continue;
+				}
+				
+				for (WorldObject obj : r.getObjects())
+				{
+					if (obj != null &amp;&amp; obj != player)
+					{
+						obj.sendInfo(player);
+					}
+				}
+			}
+		}
+	}
+}
+</pre>
+            
+</body>
+</html>

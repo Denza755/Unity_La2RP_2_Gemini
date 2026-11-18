@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/type/CastleZone.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/zone/type/CastleZone.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.zone.type;
+
+import com.shnok.javaserver.gameserver.data.manager.CastleManager;
+import com.shnok.javaserver.gameserver.enums.SpawnType;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.residence.castle.Castle;
+import com.shnok.javaserver.gameserver.model.zone.type.subtype.ResidenceZoneType;
+
+/**
+ * A zone extending {@link ResidenceZoneType} which handles following spawns type :
+ * &lt;ul&gt;
+ * &lt;li&gt;Generic spawn locs : owner_restart_point_list (spawns used on siege, to respawn on mass gatekeeper room.&lt;/li&gt;
+ * &lt;li&gt;Chaotic spawn locs : banish_point_list (spawns used to banish players on regular owner maintenance).&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public class CastleZone extends ResidenceZoneType
+{
+	public CastleZone(int id)
+	{
+		super(id);
+	}
+	
+	@Override
+	public void banishForeigners(int clanId)
+	{
+		// Retrieve associated castle.
+		final Castle castle = CastleManager.getInstance().getCastleById(getResidenceId());
+		if (castle == null)
+			return;
+		
+		for (Player player : getKnownTypeInside(Player.class, p -&gt; p.getClanId() != clanId))
+			player.teleportTo(castle.getRndSpawn(SpawnType.BANISH), 20);
+	}
+	
+	@Override
+	public void setParameter(String name, String value)
+	{
+		if (name.equals(&quot;castleId&quot;))
+			setResidenceId(Integer.parseInt(value));
+		else
+			super.setParameter(name, value);
+	}
+	
+	@Override
+	protected void onEnter(Creature creature)
+	{
+		creature.setInsideZone(ZoneId.CASTLE, true);
+	}
+	
+	@Override
+	protected void onExit(Creature creature)
+	{
+		creature.setInsideZone(ZoneId.CASTLE, false);
+	}
+}</pre>
+            
+</body>
+</html>

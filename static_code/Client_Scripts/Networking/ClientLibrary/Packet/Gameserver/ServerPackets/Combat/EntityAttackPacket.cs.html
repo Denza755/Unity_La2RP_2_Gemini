@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Combat/EntityAttackPacket.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Networking/ClientLibrary/Packet/Gameserver/ServerPackets/Combat/EntityAttackPacket.cs</h1>
+            <pre>using UnityEngine;
+using System;
+using System.Linq;
+public class InflictDamagePacket : ServerPacket
+{
+    private Hit[] _hits;
+    public int SenderId { get; private set; }
+    public Hit[] Hits { get { return _hits; } }
+    public Vector3 AttackerPosition { get; private set; }
+
+    public InflictDamagePacket(byte[] d) : base(d)
+    {
+        Parse();
+    }
+
+    public override void Parse()
+    {
+        SenderId = ReadI();
+        int targetId = ReadI();
+        int damage = ReadI();
+        byte flags = ReadB();
+
+        Vector3 currentPos = new Vector3();
+        currentPos.z = ReadI() / 52.5f;
+        currentPos.x = ReadI() / 52.5f;
+        currentPos.y = ReadI() / 52.5f;
+        AttackerPosition = currentPos;
+
+        int hitCount = ReadH();
+        _hits = new Hit[hitCount + 1];
+        _hits[0] = new Hit(targetId, damage, flags);
+
+        for (int i = 1; i &lt; hitCount + 1; i++)
+        {
+            targetId = ReadI();
+            damage = ReadI();
+            flags = ReadB();
+            _hits[i] = new Hit(targetId, damage, flags);
+        }
+
+        Debug.LogWarning(ToString());
+    }
+
+    public override string ToString()
+    {
+        var hitsDescription = _hits != null
+            ? string.Join(&quot;, &quot;, _hits.Select((hit, index) =&gt; $&quot;Hit {index}: {hit}&quot;))
+            : &quot;No hits&quot;;
+
+        return $&quot;InflictDamagePacket: \n&quot; +
+               $&quot;  SenderId: {SenderId}\n&quot; +
+               $&quot;  AttackerPosition: {AttackerPosition}\n&quot; +
+               $&quot;  Hits: [{hitsDescription}]&quot;;
+    }
+}</pre>
+            
+</body>
+</html>

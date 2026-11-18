@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/UndeadBandmaster.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/script/ai/boss/frintezza/UndeadBandmaster.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.script.ai.boss.frintezza;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+import com.shnok.javaserver.gameserver.scripting.script.ai.individual.DefaultNpc;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class UndeadBandmaster extends DefaultNpc
+{
+	// private static final String dmgzone1 = &quot;25_15_frintessaE_02&quot;;
+	// private static final String dmgzone2 = &quot;25_15_frintessaE_03&quot;;
+	// private static final String dmgzone3 = &quot;25_15_frintessaE_04&quot;;
+	
+	private static final int SOUL_BREAKING_ARROW = 8192;
+	
+	public UndeadBandmaster()
+	{
+		super(&quot;ai/boss/frintezza&quot;);
+	}
+	
+	public UndeadBandmaster(String descr)
+	{
+		super(descr);
+	}
+	
+	protected final int[] _npcIds =
+	{
+		18334 // undeadband_bandmaster
+	};
+	
+	@Override
+	public void onCreated(Npc npc)
+	{
+		if (getNpcIntAIParam(npc, &quot;Shoutman&quot;) == 1)
+			npc.broadcastNpcShout(NpcStringId.ID_1010644);
+		
+		npc._i_ai0 = 1;
+		
+		// TODO Zone
+		// gg::Area_SetOnOff(dmgzone1,1);
+		// gg::Area_SetOnOff(dmgzone2,1);
+		// gg::Area_SetOnOff(dmgzone3,1);
+		super.onCreated(npc);
+	}
+	
+	@Override
+	public void onAttacked(Npc npc, Creature attacker, int damage, L2Skill skill)
+	{
+		if (Rnd.get(100) &lt; 33)
+			broadcastScriptEventEx(npc, 0, 10033, attacker.getObjectId(), 1500);
+	}
+	
+	@Override
+	public void onScriptEvent(Npc npc, int eventId, int arg1, int arg2)
+	{
+		if (eventId == 10032)
+		{
+			if (arg1 == 0 || arg1 == 2 || arg1 == 4 || arg1 == 6)
+				npc._i_ai0 = arg1;
+		}
+		
+		if (getNpcIntAIParam(npc, &quot;Shoutman&quot;) == 1)
+		{
+			if (arg1 == 10042)
+				npc.broadcastNpcShout(NpcStringId.ID_1010645);
+			else if (arg1 == 10043)
+				npc.broadcastNpcShout(NpcStringId.ID_1010646);
+		}
+	}
+	
+	@Override
+	public void onMyDying(Npc npc, Creature killer)
+	{
+		if (npc._i_ai0 == 0 || npc._i_ai0 == 2 || npc._i_ai0 == 4 || npc._i_ai0 == 6)
+			npc.dropItem(killer, SOUL_BREAKING_ARROW, 1);
+	}
+}</pre>
+            
+</body>
+</html>

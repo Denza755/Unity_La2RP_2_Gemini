@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Plugins/Beautify/URP/Runtime/Resources/Shaders/BeautifyCAberration.hlsl</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Plugins/Beautify/URP/Runtime/Resources/Shaders/BeautifyCAberration.hlsl</h1>
+            <pre>#ifndef BEAUTIFY_CABERRATION_INCLUDE
+#define BEAUTIFY_CABERRATION_INCLUDE
+
+	// Copyright 2020-2021 Kronnect - All Rights Reserved.
+	#include &quot;BeautifyCommon.hlsl&quot;
+
+	TEXTURE2D_X(_MainTex);
+	SAMPLER(sampler_MainTex);
+	float4 _MainTex_TexelSize;
+
+	#include &quot;BeautifyDistortion.hlsl&quot;
+	
+	float4 fragChromaticAberration (VaryingsSimple i) : SV_Target {
+	    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+        i.uv         = UnityStereoTransformScreenSpaceTex(i.uv);
+        float4 pixel = GetDistortedColor(i.uv);
+  		return pixel;
+	}
+
+
+#endif // BEAUTIFY_CABERRATION_INCLUDE</pre>
+            
+</body>
+</html>

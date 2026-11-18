@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Datatable/ParticleEffectTable.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Datatable/ParticleEffectTable.cs</h1>
+            <pre>using UnityEngine;
+using System.Collections.Generic;
+using System;
+
+public class ParticleEffectTable
+{
+    private static ParticleEffectTable _instance;
+    public static ParticleEffectTable Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new ParticleEffectTable();
+            }
+
+            return _instance;
+        }
+    }
+
+    public Dictionary&lt;string, GameObject&gt; ParticleEffects { get; private set; }
+    public GameObject[,] SoulshotHitParticles { get; private set; }
+    public GameObject[] DefaultHitParticles { get; private set; }
+    public GameObject LocatorParticle { get; private set; }
+    public GameObject LocatorReachedParticle { get; private set; }
+
+    public void Initialize()
+    {
+        CacheEffects();
+    }
+
+    public void CacheEffects()
+    {
+        ParticleEffects = new Dictionary&lt;string, GameObject&gt;();
+
+        LoadSkillParticles();
+
+        // Locator?
+        LocatorParticle = LoadEffectByName(&quot;e_u093_a&quot;);
+        LocatorReachedParticle = LoadEffectByName(&quot;e_u093_b&quot;);
+
+        // Hit particles
+        DefaultHitParticles = new GameObject[2];
+        DefaultHitParticles[0] = LoadEffectByName(&quot;p_u002_a&quot;); // Load whenever any hit occurs (with and without crit)
+        DefaultHitParticles[1] = LoadEffectByName(&quot;p_u004_a&quot;); // Load when soulshot disabled and crit occurs
+        SoulshotHitParticles = new GameObject[12, 2];
+        SoulshotHitParticles[0, 0] = LoadEffectByName(&quot;shot_N_atk&quot;); // SS No-Grade no-crit
+        SoulshotHitParticles[0, 1] = LoadEffectByName(&quot;shot_N_cr&quot;); // SS No-Grade crit
+        SoulshotHitParticles[1, 0] = LoadEffectByName(&quot;shot_D_atk&quot;); // SS D-Grade no-crit
+        SoulshotHitParticles[1, 1] = LoadEffectByName(&quot;shot_D_cr&quot;); // SS D-Grade crit
+        SoulshotHitParticles[2, 0] = LoadEffectByName(&quot;shot_C_atk&quot;); // SS C-Grade no-crit
+        SoulshotHitParticles[2, 1] = LoadEffectByName(&quot;shot_C_cr&quot;); // SS C-Grade crit
+        SoulshotHitParticles[3, 0] = LoadEffectByName(&quot;shot_B_atk&quot;); // SS B-Grade no-crit
+        SoulshotHitParticles[3, 1] = LoadEffectByName(&quot;shot_B_cr&quot;); // SS B-Grade crit
+        SoulshotHitParticles[4, 0] = LoadEffectByName(&quot;shot_A_atk&quot;); // SS A-Grade no-crit
+        SoulshotHitParticles[4, 1] = LoadEffectByName(&quot;shot_A_cr&quot;); // SS A-Grade crit
+        SoulshotHitParticles[5, 0] = LoadEffectByName(&quot;shot_S_atk&quot;); // SS S-Grade no-crit
+        SoulshotHitParticles[5, 1] = LoadEffectByName(&quot;shot_S_cr&quot;); // SS S-Grade crit
+    }
+
+    private void LoadSkillParticles()
+    {
+        // Skills particle effects
+        foreach (KeyValuePair&lt;int, L2SkillEffect&gt; kvp in SkillEffectTable.Instance.SkillEffects)
+        {
+            if (kvp.Value.CastingActions != null &amp;&amp; kvp.Value.CastingActions.Count &gt; 0)
+            {
+                kvp.Value.CastingActions.ForEach((emitter) =&gt;
+                {
+                    string effectClass = emitter.EffectClass;
+
+                    GameObject particle = LoadEffectEmitter(effectClass);
+                    if (particle != null)
+                    {
+                        ParticleEffects[effectClass] = particle;
+                        // Debug.Log($&quot;Loaded particle effect {particle} in ParticleEffectTable.&quot;);
+                    }
+
+
+                    effectClass = emitter.SecondaryEffectClass;
+
+                    if (effectClass != null)
+                    {
+                        particle = LoadEffectEmitter(effectClass);
+                        if (particle != null)
+                        {
+                            ParticleEffects[effectClass] = particle;
+                            // Debug.Log($&quot;Loaded secondary particle effect {particle} in ParticleEffectTable.&quot;);
+                        }
+                    }
+                });
+            }
+
+            if (kvp.Value.ShotActions != null &amp;&amp; kvp.Value.ShotActions.Count &gt; 0)
+            {
+                kvp.Value.ShotActions.ForEach((emitter) =&gt;
+                {
+                    string effectClass = emitter.EffectClass;
+
+                    GameObject particle = LoadEffectEmitter(effectClass);
+                    if (particle != null)
+                    {
+                        ParticleEffects[effectClass] = particle;
+                        // Debug.Log($&quot;Loaded particle effect {particle} in ParticleEffectTable.&quot;);
+                    }
+                });
+            }
+
+
+            if (kvp.Value.ExplosionActions != null &amp;&amp; kvp.Value.ExplosionActions.Count &gt; 0)
+            {
+                kvp.Value.ExplosionActions.ForEach((emitter) =&gt;
+                {
+                    string effectClass = emitter.EffectClass;
+
+                    GameObject particle = LoadEffectEmitter(effectClass);
+                    if (particle != null)
+                    {
+                        ParticleEffects[effectClass] = particle;
+                        Debug.Log($&quot;Loaded particle effect {particle} in ParticleEffectTable.&quot;);
+                    }
+                });
+            }
+        }
+    }
+
+    private GameObject LoadEffectEmitter(string effectClass)
+    {
+        if (effectClass == null || effectClass.Length == 0)
+        {
+            return null;
+        }
+
+        if (ParticleEffects.ContainsKey(effectClass))
+        {
+            return null;
+        }
+
+        return LoadEffectByName(effectClass);
+    }
+
+    private static readonly Dictionary&lt;string, string&gt; _effectPathAliases = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase)
+    {
+        { &quot;bl_curse_poison_ta&quot;, &quot;Data/Effects/curse_poison_deprecated/bl_curse_poison_ta/bl_curse_poison_ta&quot; },
+        { &quot;bl_curse_poison_ca&quot;, &quot;Data/Effects/curse_poison_deprecated/bl_curse_poison_ca/bl_curse_poison_ca&quot; },
+        { &quot;el_ice_bolt_ca&quot;, &quot;Data/Effects/el_ice_bolt_deprecated/el_ice_bolt_ca/el_ice_bolt_ca&quot; },
+        { &quot;el_ice_bolt_ta&quot;, &quot;Data/Effects/el_ice_bolt_deprecated/el_ice_bolt_ta/el_ice_bolt_ta&quot; },
+        { &quot;el_wind_strike_ca&quot;, &quot;Data/Effects/el_wind_strike_deprecated/el_wind_strike_ca/el_wind_strike_ca&quot; },
+        { &quot;wh_heal_ca&quot;, &quot;Data/Effects/wh_heal_deprecated/wh_heal_ca/wh_heal_ca&quot; },
+        { &quot;wh_heal_ta&quot;, &quot;Data/Effects/wh_heal_ta/wh_heal_ta&quot; },
+        { &quot;wh_shield_ta&quot;, &quot;Data/Effects/shield_deprecate/wh_shield_ta/wh_shield_ta&quot; },
+        { &quot;wh_cure_poison_ta&quot;, &quot;Data/Effects/cure_posion/wh_cure_poison_ta/bl_cure_poison_ta&quot; },
+        { &quot;su_might_ta&quot;, &quot;Data/Effects/might_deprecate/wh_might_ta/wh_might_ta&quot; },
+        { &quot;m_u003_a&quot;, &quot;Data/Effects/vampiric/m_u003_b/m_u003_b&quot; },
+        { &quot;m_u003_b&quot;, &quot;Data/Effects/vampiric/m_u003_b/m_u003_b&quot; },
+        { &quot;m_u003_c&quot;, &quot;Data/Effects/vampiric/m_u003_c/m_u003_c&quot; },
+        { &quot;e_u003_a&quot;, &quot;Data/Particles/e_u003_a&quot; },
+        { &quot;p_u003_a&quot;, &quot;Data/Particles/p_u003_a&quot; },
+        { &quot;bl_berserker_spirit_ca&quot;, &quot;Data/Effects/mo_war_cry_ca/mo_war_cry_ca&quot; },
+        { &quot;sa_mass_frenzy_ca&quot;, &quot;Data/Effects/mo_war_cry_ca/mo_war_cry_ca&quot; },
+        { &quot;dw_spoil_ca&quot;, &quot;Data/Effects/curse_weakness/curse_weakness_composite&quot; },
+        { &quot;dw_spoil_ta&quot;, &quot;Data/Effects/curse_weakness/d_mon_fire_ta/d_mon_fire_ta&quot; },
+        { &quot;m_u025_a&quot;, &quot;Data/Effects/e_u004_a/e_u004_a&quot; },
+        { &quot;m_u025_b&quot;, &quot;Data/Effects/e_u005_b/e_u005_b/e_u005_b&quot; },
+        { &quot;m_u025_c&quot;, &quot;Data/Effects/e_u005_b/e_u005_b/e_u005_b&quot; },
+        { &quot;m_u028_a&quot;, &quot;Data/Effects/e_u028_c/e_u028_c&quot; },
+        { &quot;m_u028_b&quot;, &quot;Data/Effects/e_u028_c/e_u028_c&quot; },
+        { &quot;m_u028_c&quot;, &quot;Data/Effects/e_u028_c/e_u028_c&quot; },
+        { &quot;s_u006_a&quot;, &quot;Data/Effects/s_u001_a/s_u001_a&quot; },
+        { &quot;s_u006_b&quot;, &quot;Data/Effects/s_u001_b/s_u001_b&quot; },
+        { &quot;s_u019_a&quot;, &quot;Data/Effects/s_u003_a/s_u003_a&quot; },
+        { &quot;s_u019_b&quot;, &quot;Data/Effects/s_u003_b/s_u003_b&quot; },
+        { &quot;s_u019_c&quot;, &quot;Data/Effects/s_u003_d/s_u003_d&quot; },
+        { &quot;s_devotion_of_shine_ta&quot;, &quot;Data/Effects/wh_heal_ta/wh_heal_ta&quot; }
+    };
+
+    private GameObject LoadEffectByName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return null;
+
+        string cleanName = name;
+        if (cleanName.StartsWith(&quot;ClassLineageEffect.&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            cleanName = cleanName.Substring(&quot;ClassLineageEffect.&quot;.Length);
+        }
+
+        // 1. Direct standard path Data/Effects/{cleanName}/{cleanName}
+        string path = $&quot;Data/Effects/{cleanName}/{cleanName}&quot;;
+        GameObject prefab = Resources.Load&lt;GameObject&gt;(path);
+        if (prefab != null)
+            return prefab;
+
+        // 2. Direct flat path Data/Effects/{cleanName}
+        path = $&quot;Data/Effects/{cleanName}&quot;;
+        prefab = Resources.Load&lt;GameObject&gt;(path);
+        if (prefab != null)
+            return prefab;
+
+        // 3. Direct path in Data/Particles/{cleanName}
+        path = $&quot;Data/Particles/{cleanName}&quot;;
+        prefab = Resources.Load&lt;GameObject&gt;(path);
+        if (prefab != null)
+            return prefab;
+
+        path = $&quot;Data/Particles/{cleanName}/{cleanName}&quot;;
+        prefab = Resources.Load&lt;GameObject&gt;(path);
+        if (prefab != null)
+            return prefab;
+
+        // 4. Known aliases and nested folders
+        if (_effectPathAliases.TryGetValue(cleanName, out string aliasPath))
+        {
+            prefab = Resources.Load&lt;GameObject&gt;(aliasPath);
+            if (prefab != null)
+                return prefab;
+        }
+
+        // Debug.LogWarning($&quot;Can&#x27;t find particle effect {name} (cleaned: {cleanName}).&quot;);
+        return null;
+    }
+}
+</pre>
+            
+</body>
+</html>

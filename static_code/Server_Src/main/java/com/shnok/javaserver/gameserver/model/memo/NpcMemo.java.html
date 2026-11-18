@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/memo/NpcMemo.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/memo/NpcMemo.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.memo;
+
+import java.util.Map;
+
+import com.shnok.javaserver.commons.data.MemoSet;
+
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+
+/**
+ * An implementation of {@link MemoSet} used for Npc.
+ */
+public class NpcMemo extends MemoSet
+{
+	public static final NpcMemo DUMMY_SET = new NpcMemo();
+	
+	private static final long serialVersionUID = 1L;
+	
+	public NpcMemo()
+	{
+		super();
+	}
+	
+	public NpcMemo(final int size)
+	{
+		super(size);
+	}
+	
+	public NpcMemo(final Map&lt;String, String&gt; m)
+	{
+		super(m);
+	}
+	
+	@Override
+	protected void onSet(String key, String value)
+	{
+		// Do nothing.
+	}
+	
+	@Override
+	protected void onUnset(String key)
+	{
+		// Do nothing.
+	}
+	
+	/**
+	 * @param str : The {@link String} used as parameter.
+	 * @return The {@link Creature} linked to the objectId passed as a {@link String} parameter, or null if not found.
+	 */
+	public final Creature getCreature(String str)
+	{
+		final int id = getInteger(str, 0);
+		if (id == 0)
+			return null;
+		
+		final WorldObject object = World.getInstance().getObject(id);
+		if (object == null || (object instanceof Npc npc &amp;&amp; npc.isDecayed()))
+			return null;
+		
+		return (object instanceof Creature creature) ? creature : null;
+	}
+}</pre>
+            
+</body>
+</html>

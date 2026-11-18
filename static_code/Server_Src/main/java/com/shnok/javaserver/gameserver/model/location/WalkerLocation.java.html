@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/WalkerLocation.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/location/WalkerLocation.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.location;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.network.NpcStringId;
+
+/**
+ * A datatype extending {@link Location}, used as a unique node of a pre-programmed route for walking NPCs.&lt;br&gt;
+ * &lt;br&gt;
+ * Added to the x/y/z informations, you can also find delay (the time the walking NPC will stand on the point without moving), the String to broadcast (null if none) and the running behavior.
+ */
+public class WalkerLocation extends Location
+{
+	private final int _delay;
+	private final NpcStringId _fstring;
+	private final int _socialId;
+	
+	public WalkerLocation(StatSet set)
+	{
+		super(set);
+		
+		_delay = set.getInteger(&quot;delay&quot;, 0) * 1000;
+		_fstring = set.getNpcStringId(&quot;fstring&quot;, null);
+		_socialId = set.getInteger(&quot;socialId&quot;, 0);
+	}
+	
+	public int getDelay()
+	{
+		return _delay;
+	}
+	
+	public NpcStringId getNpcStringId()
+	{
+		return _fstring;
+	}
+	
+	public int getSocialId()
+	{
+		return _socialId;
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/random/Rnd.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/random/Rnd.java</h1>
+            <pre>package com.shnok.javaserver.commons.random;
+
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
+/**
+ * A central randomness provider. Currently all methods delegate to {@link ThreadLocalRandom}.
+ */
+public final class Rnd
+{
+	private Rnd()
+	{
+		throw new IllegalStateException(&quot;Utility class&quot;);
+	}
+	
+	public static double nextDouble(double n)
+	{
+		return ThreadLocalRandom.current().nextDouble(n);
+	}
+	
+	public static double nextDouble()
+	{
+		return ThreadLocalRandom.current().nextDouble();
+	}
+	
+	public static double get(double n)
+	{
+		return nextDouble(n);
+	}
+	
+	public static int nextInt(int n)
+	{
+		return ThreadLocalRandom.current().nextInt(n);
+	}
+	
+	public static int nextInt()
+	{
+		return ThreadLocalRandom.current().nextInt();
+	}
+	
+	public static int get(int n)
+	{
+		return nextInt(n);
+	}
+	
+	public static int get(int min, int max)
+	{
+		return ThreadLocalRandom.current().nextInt(min, max == Integer.MAX_VALUE ? max : max + 1);
+	}
+	
+	public static long nextLong(long n)
+	{
+		return ThreadLocalRandom.current().nextLong(n);
+	}
+	
+	public static long nextLong()
+	{
+		return ThreadLocalRandom.current().nextLong();
+	}
+	
+	public static long get(long n)
+	{
+		return nextLong(n);
+	}
+	
+	public static long get(long min, long max)
+	{
+		return ThreadLocalRandom.current().nextLong(min, max == Long.MAX_VALUE ? max : max + 1L);
+	}
+	
+	public static boolean calcChance(double applicableUnits, int totalUnits)
+	{
+		return applicableUnits &gt; nextInt(totalUnits);
+	}
+	
+	public static double nextGaussian()
+	{
+		return ThreadLocalRandom.current().nextGaussian();
+	}
+	
+	public static boolean nextBoolean()
+	{
+		return ThreadLocalRandom.current().nextBoolean();
+	}
+	
+	public static byte[] nextBytes(int count)
+	{
+		return nextBytes(new byte[count]);
+	}
+	
+	public static byte[] nextBytes(byte[] array)
+	{
+		ThreadLocalRandom.current().nextBytes(array);
+		return array;
+	}
+	
+	/**
+	 * Returns a randomly selected element taken from the given list.
+	 * @param &lt;T&gt; type of list elements.
+	 * @param list a list.
+	 * @return a randomly selected element.
+	 */
+	public static final &lt;T&gt; T get(List&lt;T&gt; list)
+	{
+		if (list == null || list.isEmpty())
+			return null;
+		
+		return list.get(get(list.size()));
+	}
+	
+	/**
+	 * Returns a randomly selected element taken from the given array.
+	 * @param array an array.
+	 * @return a randomly selected element.
+	 */
+	public static final int get(int[] array)
+	{
+		return array[get(array.length)];
+	}
+	
+	/**
+	 * Returns a randomly selected element taken from the given array.
+	 * @param &lt;T&gt; type of array elements.
+	 * @param array an array.
+	 * @return a randomly selected element.
+	 */
+	public static final &lt;T&gt; T get(T[] array)
+	{
+		return array[get(array.length)];
+	}
+}</pre>
+            
+</body>
+</html>

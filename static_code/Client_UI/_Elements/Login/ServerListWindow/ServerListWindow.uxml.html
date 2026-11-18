@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_UI/_Elements/Login/ServerListWindow/ServerListWindow.uxml</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_UI/_Elements/Login/ServerListWindow/ServerListWindow.uxml</h1>
+            <pre>&lt;ui:UXML xmlns:ui=&quot;UnityEngine.UIElements&quot; xmlns:uie=&quot;UnityEditor.UIElements&quot; editor-extension-mode=&quot;False&quot;&gt;
+    &lt;ui:Template name=&quot;L2Button&quot; src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;amp;guid=47796068f89476143b10b5d383be52fc&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;amp;type=3#L2StyleSheet&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uss?fileID=7433441132597879392&amp;amp;guid=b1d2114f9ed155f45a3eb16e5ef02441&amp;amp;type=3#L2Button&quot; /&gt;
+    &lt;Style src=&quot;project://database/Assets/Resources/Data/UI/_Elements/Login/ServerListWindow/ServerListWindow.uss?fileID=7433441132597879392&amp;amp;guid=f34de1f6d64cd8340abe125d042baf40&amp;amp;type=3#ServerListWindow&quot; /&gt;
+    &lt;ui:VisualElement name=&quot;ServerListWindow&quot; class=&quot;serverlist-window&quot;&gt;
+        &lt;ui:VisualElement name=&quot;Window&quot; tabindex=&quot;-1&quot; class=&quot;server-list-inner&quot;&gt;
+            &lt;ui:VisualElement name=&quot;ListHeader&quot; class=&quot;serverlist-header&quot;&gt;
+                &lt;ui:Button text=&quot;Log In&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Name&quot; tabindex=&quot;-1&quot; focusable=&quot;false&quot; class=&quot;l2-button serverlist-header-cat-name serverlist-header-cat&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBg&quot; tabindex=&quot;-1&quot; class=&quot;l2-button-bg serverlist-header-cat-name-bg serverlist-header-cat-bg&quot; /&gt;
+                    &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Name&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ButtonLabel&quot; class=&quot;button-label serverlist-header-label&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;Log In&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Traffic&quot; tabindex=&quot;-1&quot; focusable=&quot;false&quot; class=&quot;l2-button serverlist-header-cat-traffic serverlist-header-cat&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBg&quot; tabindex=&quot;-1&quot; class=&quot;l2-button-bg serverlist-header-cat-traffic-bg serverlist-header-cat-bg&quot; /&gt;
+                    &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Traffic&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ButtonLabel&quot; class=&quot;button-label serverlist-header-label&quot; /&gt;
+                &lt;/ui:Button&gt;
+                &lt;ui:Button text=&quot;Log In&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;Character&quot; tabindex=&quot;-1&quot; focusable=&quot;false&quot; class=&quot;l2-button serverlist-header-cat-character serverlist-header-cat&quot;&gt;
+                    &lt;ui:VisualElement name=&quot;ButtonBg&quot; tabindex=&quot;-1&quot; class=&quot;l2-button-bg serverlist-header-cat-character-bg serverlist-header-cat-bg&quot; /&gt;
+                    &lt;ui:Label tabindex=&quot;-1&quot; text=&quot;Character&quot; parse-escape-sequences=&quot;true&quot; display-tooltip-when-elided=&quot;true&quot; name=&quot;ButtonLabel&quot; class=&quot;button-label serverlist-header-label&quot; /&gt;
+                &lt;/ui:Button&gt;
+            &lt;/ui:VisualElement&gt;
+            &lt;ui:VisualElement name=&quot;ServerContainer&quot; class=&quot;serverlist-list-container&quot; /&gt;
+            &lt;ui:VisualElement name=&quot;BottomBar&quot; class=&quot;serverlist-button-container&quot;&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;ConfirmButton&quot; class=&quot;l2-button-template&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Confirm&quot; /&gt;
+                &lt;/ui:Instance&gt;
+                &lt;ui:Instance template=&quot;L2Button&quot; name=&quot;CancelButton&quot; class=&quot;l2-button-template&quot;&gt;
+                    &lt;AttributeOverrides element-name=&quot;ButtonLabel&quot; text=&quot;Cancel&quot; /&gt;
+                &lt;/ui:Instance&gt;
+            &lt;/ui:VisualElement&gt;
+        &lt;/ui:VisualElement&gt;
+    &lt;/ui:VisualElement&gt;
+&lt;/ui:UXML&gt;
+</pre>
+            
+</body>
+</html>

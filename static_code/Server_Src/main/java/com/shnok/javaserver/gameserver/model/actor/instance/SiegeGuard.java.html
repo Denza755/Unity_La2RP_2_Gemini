@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/SiegeGuard.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/instance/SiegeGuard.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.instance;
+
+import com.shnok.javaserver.gameserver.enums.SiegeSide;
+import com.shnok.javaserver.gameserver.geoengine.GeoEngine;
+import com.shnok.javaserver.gameserver.model.actor.Attackable;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.template.NpcTemplate;
+
+/**
+ * This class represents all Castle guards.
+ */
+public final class SiegeGuard extends Attackable
+{
+	public SiegeGuard(int objectId, NpcTemplate template)
+	{
+		super(objectId, template);
+	}
+	
+	@Override
+	public boolean isAttackableBy(Creature attacker)
+	{
+		if (!super.isAttackableBy(attacker))
+			return false;
+		
+		final Player player = attacker.getActingPlayer();
+		if (player == null)
+			return false;
+		
+		if (getCastle() != null &amp;&amp; getCastle().getSiege().isInProgress())
+			return getCastle().getSiege().checkSides(player.getClan(), SiegeSide.ATTACKER);
+		
+		if (getSiegableHall() != null &amp;&amp; getSiegableHall().isInSiege())
+			return getSiegableHall().getSiege().checkSides(player.getClan(), SiegeSide.ATTACKER);
+		
+		return false;
+	}
+	
+	@Override
+	public boolean isAttackableWithoutForceBy(Playable attacker)
+	{
+		return isAttackableBy(attacker);
+	}
+	
+	@Override
+	public boolean returnHome()
+	{
+		// Do nothing if no spawn location exists, or already in drift range of spawn location.
+		if (getSpawnLocation() == null || isIn2DRadius(getSpawnLocation(), getDriftRange()))
+			return false;
+		
+		getAI().getAggroList().cleanAllHate();
+		
+		forceRunStance();
+		
+		// Move to the position.
+		if (getMove().getGeoPathFailCount() &gt;= 10)
+		{
+			teleportTo(getSpawnLocation(), 0);
+			getMove().resetGeoPathFailCount();
+		}
+		else
+			getAI().addMoveToDesire(getSpawnLocation(), 1000000);
+		
+		return true;
+	}
+	
+	@Override
+	public boolean isGuard()
+	{
+		return true;
+	}
+	
+	@Override
+	public int getDriftRange()
+	{
+		return 20;
+	}
+	
+	@Override
+	public boolean canAutoAttack(Creature target)
+	{
+		final Player player = target.getActingPlayer();
+		if (player == null || player.isAlikeDead())
+			return false;
+		
+		// Check if the target is invisible.
+		if (!player.getAppearance().isVisible())
+			return false;
+		
+		// Check if the target isn&#x27;t in silent move mode AND too far
+		if (player.isSilentMoving() &amp;&amp; !isIn3DRadius(player, 250))
+			return false;
+		
+		return target.isAttackableBy(this) &amp;&amp; GeoEngine.getInstance().canSeeTarget(this, target);
+	}
+}</pre>
+            
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/UI/Game/Skillbar/SkillbarMin.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/UI/Game/Skillbar/SkillbarMin.cs</h1>
+            <pre>using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class SkillbarMin : AbstractSkillbar
+{
+    protected float _currentHeight;
+
+    public SkillbarMin(VisualElement skillbarWindowElement, int skillbarIndex, int page, bool horizontalBar)
+    : base(skillbarWindowElement, skillbarIndex, page, horizontalBar)
+    {
+    }
+
+    protected override void UpdateVisuals()
+    {
+        _windowEle.Q&lt;VisualElement&gt;(&quot;Footer&quot;).style.display = DisplayStyle.None;
+        _windowEle.Q&lt;VisualElement&gt;(&quot;ExpandBtn&quot;).style.display = DisplayStyle.None;
+        _windowEle.Q&lt;VisualElement&gt;(&quot;MinimizeBtn&quot;).style.display = DisplayStyle.None;
+
+        if (_horizontalBar)
+        {
+            _windowEle.style.marginBottom = -3;
+        }
+        else
+        {
+            _windowEle.style.marginRight = -3;
+        }
+
+        HideBar();
+    }
+
+    public IEnumerator Expand()
+    {
+        ShowBar();
+
+        AdjustHeight(0);
+        while (_currentHeight &lt; 46)
+        {
+            AdjustHeight(Mathf.Min(46, _currentHeight + 6f));
+            yield return new WaitForFixedUpdate();
+        }
+    }
+
+    public IEnumerator Minimize()
+    {
+        AdjustHeight(46);
+
+        while (_currentHeight &gt; 0)
+        {
+            AdjustHeight(Mathf.Max(0, _currentHeight - 6f));
+            yield return new WaitForFixedUpdate();
+        }
+
+        HideBar();
+    }
+
+    private void AdjustHeight(float value)
+    {
+        _currentHeight = value;
+
+        if (_horizontalBar)
+        {
+            _windowEle.style.height = value;
+        }
+        else
+        {
+            _windowEle.style.width = value;
+        }
+    }
+
+}
+</pre>
+            
+</body>
+</html>

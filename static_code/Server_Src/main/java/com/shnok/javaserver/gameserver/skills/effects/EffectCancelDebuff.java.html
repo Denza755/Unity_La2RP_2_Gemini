@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/effects/EffectCancelDebuff.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/effects/EffectCancelDebuff.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills.effects;
+
+import com.shnok.javaserver.commons.random.Rnd;
+
+import com.shnok.javaserver.gameserver.enums.skills.EffectType;
+import com.shnok.javaserver.gameserver.enums.skills.SkillType;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.skills.AbstractEffect;
+import com.shnok.javaserver.gameserver.skills.Formulas;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class EffectCancelDebuff extends AbstractEffect
+{
+	public EffectCancelDebuff(EffectTemplate template, L2Skill skill, Creature effected, Creature effector)
+	{
+		super(template, skill, effected, effector);
+	}
+	
+	@Override
+	public EffectType getEffectType()
+	{
+		return EffectType.CANCEL_DEBUFF;
+	}
+	
+	@Override
+	public boolean onStart()
+	{
+		return cancel(getEffector(), getEffected(), getSkill(), getTemplate().getEffectType());
+	}
+	
+	@Override
+	public boolean onActionTime()
+	{
+		return false;
+	}
+	
+	private static boolean cancel(Creature caster, Creature target, L2Skill skill, SkillType effectType)
+	{
+		if (!(target instanceof Player targetPlayer) || targetPlayer.isDead())
+			return false;
+		
+		final int cancelLvl = skill.getMagicLevel();
+		int count = skill.getMaxNegatedEffects();
+		double baseRate = Formulas.calcSkillVulnerability(caster, targetPlayer, skill, effectType);
+		
+		AbstractEffect effect;
+		int lastCanceledSkillId = 0;
+		final AbstractEffect[] effects = targetPlayer.getAllEffects();
+		for (int i = effects.length; --i &gt;= 0;)
+		{
+			effect = effects[i];
+			if (effect == null)
+				continue;
+			
+			if (!effect.getSkill().isDebuff() || !effect.getSkill().canBeDispeled())
+			{
+				effects[i] = null;
+				continue;
+			}
+			
+			if (effect.getSkill().getId() == lastCanceledSkillId)
+			{
+				effect.exit(); // this skill already canceled
+				continue;
+			}
+			
+			if (!calcCancelSuccess(effect, cancelLvl, (int) baseRate))
+				continue;
+			
+			lastCanceledSkillId = effect.getSkill().getId();
+			effect.exit();
+			count--;
+			
+			if (count == 0)
+				break;
+		}
+		
+		if (count != 0)
+		{
+			lastCanceledSkillId = 0;
+			for (int i = effects.length; --i &gt;= 0;)
+			{
+				effect = effects[i];
+				if (effect == null)
+					continue;
+				
+				if (!effect.getSkill().isDebuff() || !effect.getSkill().canBeDispeled())
+				{
+					effects[i] = null;
+					continue;
+				}
+				
+				if (effect.getSkill().getId() == lastCanceledSkillId)
+				{
+					effect.exit(); // this skill already canceled
+					continue;
+				}
+				
+				if (!calcCancelSuccess(effect, cancelLvl, (int) baseRate))
+					continue;
+				
+				lastCanceledSkillId = effect.getSkill().getId();
+				effect.exit();
+				count--;
+				
+				if (count == 0)
+					break;
+			}
+		}
+		return true;
+	}
+	
+	private static boolean calcCancelSuccess(AbstractEffect effect, int cancelLvl, int baseRate)
+	{
+		int rate = 2 * (cancelLvl - effect.getSkill().getMagicLevel());
+		rate += (effect.getPeriod() - effect.getTime()) / 1200;
+		rate *= baseRate;
+		
+		if (rate &lt; 25)
+			rate = 25;
+		else if (rate &gt; 75)
+			rate = 75;
+		
+		return Rnd.get(100) &lt; rate;
+	}
+}</pre>
+            
+</body>
+</html>

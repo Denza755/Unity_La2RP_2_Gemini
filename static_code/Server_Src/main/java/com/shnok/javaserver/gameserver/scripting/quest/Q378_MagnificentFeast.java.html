@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q378_MagnificentFeast.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/scripting/quest/Q378_MagnificentFeast.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.scripting.quest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.shnok.javaserver.gameserver.enums.QuestStatus;
+import com.shnok.javaserver.gameserver.model.actor.Npc;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.scripting.Quest;
+import com.shnok.javaserver.gameserver.scripting.QuestState;
+
+public class Q378_MagnificentFeast extends Quest
+{
+	private static final String QUEST_NAME = &quot;Q378_MagnificentFeast&quot;;
+	
+	// NPC
+	private static final int RANSPO = 30594;
+	
+	// Items
+	private static final int WINE_15 = 5956;
+	private static final int WINE_30 = 5957;
+	private static final int WINE_60 = 5958;
+	private static final int MUSICAL_SCORE = 4421;
+	private static final int SALAD_RECIPE = 1455;
+	private static final int SAUCE_RECIPE = 1456;
+	private static final int STEAK_RECIPE = 1457;
+	private static final int RITRON_DESSERT = 5959;
+	
+	// Rewards
+	private static final Map&lt;String, int[]&gt; REWARDS = HashMap.newHashMap(9);
+	
+	public Q378_MagnificentFeast()
+	{
+		super(378, &quot;Magnificent Feast&quot;);
+		
+		REWARDS.put(&quot;9&quot;, new int[]
+		{
+			847,
+			1,
+			5700
+		});
+		REWARDS.put(&quot;10&quot;, new int[]
+		{
+			846,
+			2,
+			0
+		});
+		REWARDS.put(&quot;12&quot;, new int[]
+		{
+			909,
+			1,
+			25400
+		});
+		REWARDS.put(&quot;17&quot;, new int[]
+		{
+			846,
+			2,
+			1200
+		});
+		REWARDS.put(&quot;18&quot;, new int[]
+		{
+			879,
+			1,
+			6900
+		});
+		REWARDS.put(&quot;20&quot;, new int[]
+		{
+			890,
+			2,
+			8500
+		});
+		REWARDS.put(&quot;33&quot;, new int[]
+		{
+			879,
+			1,
+			8100
+		});
+		REWARDS.put(&quot;34&quot;, new int[]
+		{
+			910,
+			1,
+			0
+		});
+		REWARDS.put(&quot;36&quot;, new int[]
+		{
+			848,
+			1,
+			2200
+		});
+		
+		addQuestStart(RANSPO);
+		addTalkId(RANSPO);
+	}
+	
+	@Override
+	public String onAdvEvent(String event, Npc npc, Player player)
+	{
+		String htmltext = event;
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		if (st == null)
+			return htmltext;
+		
+		if (event.equalsIgnoreCase(&quot;30594-2.htm&quot;))
+		{
+			st.setState(QuestStatus.STARTED);
+			st.setCond(1);
+			playSound(player, SOUND_ACCEPT);
+		}
+		else if (event.equalsIgnoreCase(&quot;30594-4a.htm&quot;))
+		{
+			if (player.getInventory().hasItem(WINE_15))
+			{
+				st.setCond(2);
+				st.set(&quot;score&quot;, 1);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, WINE_15, 1);
+			}
+			else
+				htmltext = &quot;30594-4.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30594-4b.htm&quot;))
+		{
+			if (player.getInventory().hasItem(WINE_30))
+			{
+				st.setCond(2);
+				st.set(&quot;score&quot;, 2);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, WINE_30, 1);
+			}
+			else
+				htmltext = &quot;30594-4.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30594-4c.htm&quot;))
+		{
+			if (player.getInventory().hasItem(WINE_60))
+			{
+				st.setCond(2);
+				st.set(&quot;score&quot;, 4);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, WINE_60, 1);
+			}
+			else
+				htmltext = &quot;30594-4.htm&quot;;
+		}
+		else if (event.equalsIgnoreCase(&quot;30594-6.htm&quot;))
+		{
+			if (player.getInventory().hasItem(MUSICAL_SCORE))
+			{
+				st.setCond(3);
+				playSound(player, SOUND_MIDDLE);
+				takeItems(player, MUSICAL_SCORE, 1);
+			}
+			else
+				htmltext = &quot;30594-5.htm&quot;;
+		}
+		else
+		{
+			int score = st.getInteger(&quot;score&quot;);
+			if (event.equalsIgnoreCase(&quot;30594-8a.htm&quot;))
+			{
+				if (player.getInventory().hasItem(SALAD_RECIPE))
+				{
+					st.setCond(4);
+					st.set(&quot;score&quot;, score + 8);
+					playSound(player, SOUND_MIDDLE);
+					takeItems(player, SALAD_RECIPE, 1);
+				}
+				else
+					htmltext = &quot;30594-8.htm&quot;;
+			}
+			else if (event.equalsIgnoreCase(&quot;30594-8b.htm&quot;))
+			{
+				if (player.getInventory().hasItem(SAUCE_RECIPE))
+				{
+					st.setCond(4);
+					st.set(&quot;score&quot;, score + 16);
+					playSound(player, SOUND_MIDDLE);
+					takeItems(player, SAUCE_RECIPE, 1);
+				}
+				else
+					htmltext = &quot;30594-8.htm&quot;;
+			}
+			else if (event.equalsIgnoreCase(&quot;30594-8c.htm&quot;))
+			{
+				if (player.getInventory().hasItem(STEAK_RECIPE))
+				{
+					st.setCond(4);
+					st.set(&quot;score&quot;, score + 32);
+					playSound(player, SOUND_MIDDLE);
+					takeItems(player, STEAK_RECIPE, 1);
+				}
+				else
+					htmltext = &quot;30594-8.htm&quot;;
+			}
+		}
+		
+		return htmltext;
+	}
+	
+	@Override
+	public String onTalk(Npc npc, Player player)
+	{
+		QuestState st = player.getQuestList().getQuestState(QUEST_NAME);
+		String htmltext = getNoQuestMsg();
+		if (st == null)
+			return htmltext;
+		
+		switch (st.getState())
+		{
+			case CREATED:
+				htmltext = (player.getStatus().getLevel() &lt; 20) ? &quot;30594-0.htm&quot; : &quot;30594-1.htm&quot;;
+				break;
+			
+			case STARTED:
+				final int cond = st.getCond();
+				if (cond == 1)
+					htmltext = &quot;30594-3.htm&quot;;
+				else if (cond == 2)
+					htmltext = (!player.getInventory().hasItem(MUSICAL_SCORE)) ? &quot;30594-5.htm&quot; : &quot;30594-5a.htm&quot;;
+				else if (cond == 3)
+					htmltext = &quot;30594-7.htm&quot;;
+				else if (cond == 4)
+				{
+					final String score = st.get(&quot;score&quot;);
+					if (REWARDS.containsKey(score) &amp;&amp; player.getInventory().hasItem(RITRON_DESSERT))
+					{
+						htmltext = &quot;30594-10.htm&quot;;
+						
+						takeItems(player, RITRON_DESSERT, 1);
+						giveItems(player, REWARDS.get(score)[0], REWARDS.get(score)[1]);
+						
+						int adena = REWARDS.get(score)[2];
+						if (adena &gt; 0)
+							rewardItems(player, 57, adena);
+						
+						playSound(player, SOUND_FINISH);
+						st.exitQuest(true);
+					}
+					else
+						htmltext = &quot;30594-9.htm&quot;;
+				}
+		}
+		
+		return htmltext;
+	}
+}</pre>
+            
+</body>
+</html>

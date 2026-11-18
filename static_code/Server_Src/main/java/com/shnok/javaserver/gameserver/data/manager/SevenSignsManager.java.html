@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/SevenSignsManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/data/manager/SevenSignsManager.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.data.manager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Calendar;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import com.shnok.javaserver.commons.data.StatSet;
+import com.shnok.javaserver.commons.logging.CLogger;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+import com.shnok.javaserver.commons.pool.ThreadPool;
+
+import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.data.SkillTable;
+import com.shnok.javaserver.gameserver.enums.CabalType;
+import com.shnok.javaserver.gameserver.enums.PeriodType;
+import com.shnok.javaserver.gameserver.enums.RestartType;
+import com.shnok.javaserver.gameserver.enums.SealType;
+import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.PlaySound;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.SSQInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
+
+public class SevenSignsManager
+{
+	private static final CLogger LOGGER = new CLogger(SevenSignsManager.class.getName());
+	
+	// SQL queries
+	private static final String LOAD_DATA = &quot;SELECT char_obj_id, cabal, seal, red_stones, green_stones, blue_stones, ancient_adena_amount, contribution_score FROM seven_signs&quot;;
+	private static final String LOAD_STATUS = &quot;SELECT * FROM seven_signs_status WHERE id=0&quot;;
+	private static final String INSERT_PLAYER = &quot;INSERT INTO seven_signs (char_obj_id, cabal, seal) VALUES (?,?,?)&quot;;
+	private static final String UPDATE_PLAYER = &quot;UPDATE seven_signs SET cabal=?, seal=?, red_stones=?, green_stones=?, blue_stones=?, ancient_adena_amount=?, contribution_score=? WHERE char_obj_id=?&quot;;
+	private static final String UPDATE_STATUS = &quot;UPDATE seven_signs_status SET current_cycle=?, active_period=?, previous_winner=?, &quot; + &quot;dawn_stone_score=?, dawn_festival_score=?, dusk_stone_score=?, dusk_festival_score=?, &quot; + &quot;avarice_owner=?, gnosis_owner=?, strife_owner=?, avarice_dawn_score=?, gnosis_dawn_score=?, &quot; + &quot;strife_dawn_score=?, avarice_dusk_score=?, gnosis_dusk_score=?, strife_dusk_score=?, &quot; + &quot;festival_cycle=?, accumulated_bonus0=?, accumulated_bonus1=?, accumulated_bonus2=?,&quot; + &quot;accumulated_bonus3=?, accumulated_bonus4=?, date=? WHERE id=0&quot;;
+	
+	// Seven Signs constants
+	public static final String SEVEN_SIGNS_HTML_PATH = &quot;data/html/seven_signs/&quot;;
+	
+	public static final int PERIOD_START_HOUR = 18;
+	public static final int PERIOD_START_MINS = 00;
+	public static final int PERIOD_START_DAY = Calendar.MONDAY;
+	
+	// The quest event and seal validation periods last for approximately one week with a 15 minutes &quot;interval&quot; period sandwiched between them.
+	public static final int PERIOD_MINOR_LENGTH = 900000;
+	public static final int PERIOD_MAJOR_LENGTH = 604800000 - PERIOD_MINOR_LENGTH;
+	
+	public static final int RECORD_SEVEN_SIGNS_ID = 5707;
+	public static final int CERTIFICATE_OF_APPROVAL_ID = 6388;
+	public static final int RECORD_SEVEN_SIGNS_COST = 500;
+	public static final int ADENA_JOIN_DAWN_COST = 50000;
+	
+	// Seal Stone related constants
+	public static final int SEAL_STONE_BLUE_ID = 6360;
+	public static final int SEAL_STONE_GREEN_ID = 6361;
+	public static final int SEAL_STONE_RED_ID = 6362;
+	
+	public static final int SEAL_STONE_BLUE_VALUE = 3;
+	public static final int SEAL_STONE_GREEN_VALUE = 5;
+	public static final int SEAL_STONE_RED_VALUE = 10;
+	
+	private final Calendar _nextPeriodChange = Calendar.getInstance();
+	private Calendar _lastSave = Calendar.getInstance();
+	
+	protected PeriodType _activePeriod;
+	protected int _currentCycle;
+	protected double _dawnStoneScore;
+	protected double _duskStoneScore;
+	protected int _dawnFestivalScore;
+	protected int _duskFestivalScore;
+	protected CabalType _previousWinner;
+	
+	private final Map&lt;Integer, StatSet&gt; _playersData = new HashMap&lt;&gt;();
+	private final Map&lt;SealType, CabalType&gt; _sealOwners = new EnumMap&lt;&gt;(SealType.class);
+	private final Map&lt;SealType, Integer&gt; _duskScores = new EnumMap&lt;&gt;(SealType.class);
+	private final Map&lt;SealType, Integer&gt; _dawnScores = new EnumMap&lt;&gt;(SealType.class);
+	
+	protected SevenSignsManager()
+	{
+		if(!Config.SEVEN_SIGNS_ENABLED) {
+			return;
+		}
+
+		restoreSevenSignsData();
+		
+		LOGGER.info(&quot;Currently on {} period.&quot;, _activePeriod.getName());
+		initializeSeals();
+		
+		final CabalType winningCabal = getWinningCabal();
+		if (isSealValidationPeriod())
+		{
+			if (winningCabal == CabalType.NORMAL)
+				LOGGER.info(&quot;The Seven Signs competition ended with a tie last week.&quot;);
+			else
+				LOGGER.info(&quot;{} were victorious on Seven Signs competition last week.&quot;, winningCabal.getFullName());
+		}
+		else if (winningCabal == CabalType.NORMAL)
+			LOGGER.info(&quot;The Seven Signs competition will end in a tie this week.&quot;);
+		else
+			LOGGER.info(&quot;{} are leading on Seven Signs competition this week.&quot;, winningCabal.getFullName());
+		
+		long milliToChange = 0;
+		if (isNextPeriodChangeInPast())
+			LOGGER.info(&quot;Next Seven Signs period is already computed.&quot;);
+		else
+		{
+			setCalendarForNextPeriodChange();
+			milliToChange = getMilliToPeriodChange();
+		}
+		
+		// Schedule a time for the next period change.
+		ThreadPool.schedule(new SevenSignsPeriodChange(), milliToChange);
+		
+		double numSecs = (milliToChange / 1000) % 60;
+		double countDown = ((milliToChange / 1000) - numSecs) / 60;
+		int numMins = (int) Math.floor(countDown % 60);
+		countDown = (countDown - numMins) / 60;
+		int numHours = (int) Math.floor(countDown % 24);
+		int numDays = (int) Math.floor((countDown - numHours) / 24);
+		
+		LOGGER.info(&quot;Next Seven Signs period begins in {} days, {} hours and {} mins.&quot;, numDays, numHours, numMins);
+	}
+	
+	private boolean isNextPeriodChangeInPast()
+	{
+		Calendar lastPeriodChange = Calendar.getInstance();
+		switch (_activePeriod)
+		{
+			case SEAL_VALIDATION, COMPETITION:
+				lastPeriodChange.set(Calendar.DAY_OF_WEEK, PERIOD_START_DAY);
+				lastPeriodChange.set(Calendar.HOUR_OF_DAY, PERIOD_START_HOUR);
+				lastPeriodChange.set(Calendar.MINUTE, PERIOD_START_MINS);
+				lastPeriodChange.set(Calendar.SECOND, 0);
+				// If we hit next week, just turn back 1 week
+				if (Calendar.getInstance().before(lastPeriodChange))
+					lastPeriodChange.add(Calendar.HOUR, -24 * 7);
+				break;
+			
+			case RECRUITING, RESULTS:
+				// Because of the short duration of this period, just check it from last save
+				lastPeriodChange.setTimeInMillis(_lastSave.getTimeInMillis() + PERIOD_MINOR_LENGTH);
+				break;
+		}
+		
+		// Because of previous &quot;date&quot; column usage, check only if it already contains usable data for us
+		return _lastSave.getTimeInMillis() &gt; 7 &amp;&amp; _lastSave.before(lastPeriodChange);
+	}
+	
+	public static int calcScore(int blueCount, int greenCount, int redCount)
+	{
+		return blueCount * SEAL_STONE_BLUE_VALUE + greenCount * SEAL_STONE_GREEN_VALUE + redCount * SEAL_STONE_RED_VALUE;
+	}
+	
+	public final int getCurrentCycle()
+	{
+		return _currentCycle;
+	}
+	
+	public final PeriodType getCurrentPeriod()
+	{
+		return _activePeriod;
+	}
+	
+	private final int getDaysToPeriodChange()
+	{
+		int numDays = _nextPeriodChange.get(Calendar.DAY_OF_WEEK) - PERIOD_START_DAY;
+		
+		if (numDays &lt; 0)
+			return 0 - numDays;
+		
+		return 7 - numDays;
+	}
+	
+	public final long getMilliToPeriodChange()
+	{
+		return _nextPeriodChange.getTimeInMillis() - System.currentTimeMillis();
+	}
+	
+	/**
+	 * Calculate the number of days until the next period.&lt;BR&gt;
+	 * A period starts at 18:00 pm (local time), like on official servers.
+	 */
+	protected void setCalendarForNextPeriodChange()
+	{
+		switch (_activePeriod)
+		{
+			case SEAL_VALIDATION, COMPETITION:
+				int daysToChange = getDaysToPeriodChange();
+				
+				if (daysToChange == 7 &amp;&amp; (_nextPeriodChange.get(Calendar.HOUR_OF_DAY) &lt; PERIOD_START_HOUR || (_nextPeriodChange.get(Calendar.HOUR_OF_DAY) == PERIOD_START_HOUR &amp;&amp; _nextPeriodChange.get(Calendar.MINUTE) &lt; PERIOD_START_MINS)))
+					daysToChange = 0;
+				
+				if (daysToChange &gt; 0)
+					_nextPeriodChange.add(Calendar.DATE, daysToChange);
+				
+				_nextPeriodChange.set(Calendar.HOUR_OF_DAY, PERIOD_START_HOUR);
+				_nextPeriodChange.set(Calendar.MINUTE, PERIOD_START_MINS);
+				_nextPeriodChange.set(Calendar.SECOND, 0);
+				_nextPeriodChange.set(Calendar.MILLISECOND, 0);
+				break;
+			
+			case RECRUITING, RESULTS:
+				_nextPeriodChange.add(Calendar.MILLISECOND, PERIOD_MINOR_LENGTH);
+				break;
+		}
+		LOGGER.info(&quot;Next Seven Signs period change set to {}.&quot;, _nextPeriodChange.getTime());
+	}
+	
+	public final boolean isRecruitingPeriod()
+	{
+		return _activePeriod == PeriodType.RECRUITING;
+	}
+	
+	public final boolean isSealValidationPeriod()
+	{
+		return _activePeriod == PeriodType.SEAL_VALIDATION;
+	}
+	
+	public final boolean isCompResultsPeriod()
+	{
+		return _activePeriod == PeriodType.RESULTS;
+	}
+	
+	public final int getCurrentScore(CabalType cabal)
+	{
+		double totalStoneScore = _dawnStoneScore + _duskStoneScore;
+		
+		switch (cabal)
+		{
+			case DAWN:
+				return Math.round((float) (_dawnStoneScore / ((float) totalStoneScore == 0 ? 1 : totalStoneScore)) * 500) + _dawnFestivalScore;
+			
+			case DUSK:
+				return Math.round((float) (_duskStoneScore / ((float) totalStoneScore == 0 ? 1 : totalStoneScore)) * 500) + _duskFestivalScore;
+		}
+		
+		return 0;
+	}
+	
+	public final double getCurrentStoneScore(CabalType cabal)
+	{
+		switch (cabal)
+		{
+			case DAWN:
+				return _dawnStoneScore;
+			
+			case DUSK:
+				return _duskStoneScore;
+		}
+		
+		return 0;
+	}
+	
+	public final int getCurrentFestivalScore(CabalType cabal)
+	{
+		switch (cabal)
+		{
+			case DAWN:
+				return _dawnFestivalScore;
+			
+			case DUSK:
+				return _duskFestivalScore;
+		}
+		
+		return 0;
+	}
+	
+	public final CabalType getWinningCabal()
+	{
+		final int duskScore = getCurrentScore(CabalType.DUSK);
+		final int dawnScore = getCurrentScore(CabalType.DAWN);
+		
+		if (duskScore == dawnScore)
+			return CabalType.NORMAL;
+		
+		if (duskScore &gt; dawnScore)
+			return CabalType.DUSK;
+		
+		return CabalType.DAWN;
+	}
+	
+	public final CabalType getLosingCabal()
+	{
+		final int duskScore = getCurrentScore(CabalType.DUSK);
+		final int dawnScore = getCurrentScore(CabalType.DAWN);
+		
+		if (duskScore == dawnScore)
+			return CabalType.NORMAL;
+		
+		if (duskScore &gt; dawnScore)
+			return CabalType.DAWN;
+		
+		return CabalType.DUSK;
+	}
+	
+	public final CabalType getSealOwner(SealType seal)
+	{
+		return _sealOwners.get(seal);
+	}
+	
+	public final Map&lt;SealType, CabalType&gt; getSealOwners()
+	{
+		return _sealOwners;
+	}
+	
+	public final int getSealProportion(SealType seal, CabalType cabal)
+	{
+		switch (cabal)
+		{
+			case DAWN:
+				return _dawnScores.get(seal);
+			
+			case DUSK:
+				return _duskScores.get(seal);
+		}
+		
+		return 0;
+	}
+	
+	public final int getTotalMembers(CabalType cabal)
+	{
+		int cabalMembers = 0;
+		
+		for (StatSet set : _playersData.values())
+			if (set.getEnum(&quot;cabal&quot;, CabalType.class) == cabal)
+				cabalMembers++;
+			
+		return cabalMembers;
+	}
+	
+	public int getPlayerStoneContrib(int objectId)
+	{
+		final StatSet set = _playersData.get(objectId);
+		if (set == null)
+			return 0;
+		
+		return set.getInteger(&quot;red_stones&quot;) + set.getInteger(&quot;green_stones&quot;) + set.getInteger(&quot;blue_stones&quot;);
+	}
+	
+	public int getPlayerContribScore(int objectId)
+	{
+		final StatSet set = _playersData.get(objectId);
+		if (set == null)
+			return 0;
+		
+		return set.getInteger(&quot;contribution_score&quot;);
+	}
+	
+	public int getPlayerAdenaCollect(int objectId)
+	{
+		final StatSet set = _playersData.get(objectId);
+		if (set == null)
+			return 0;
+		
+		return set.getInteger(&quot;ancient_adena_amount&quot;);
+	}
+	
+	public SealType getPlayerSeal(int objectId)
+	{
+		final StatSet set = _playersData.get(objectId);
+		if (set == null)
+			return SealType.NONE;
+		
+		return set.getEnum(&quot;seal&quot;, SealType.class);
+	}
+	
+	public CabalType getPlayerCabal(int objectId)
+	{
+		final StatSet set = _playersData.get(objectId);
+		if (set == null)
+			return CabalType.NORMAL;
+		
+		return set.getEnum(&quot;cabal&quot;, CabalType.class);
+	}
+	
+	/**
+	 * Restores all Seven Signs data and settings, usually called at server startup.
+	 */
+	protected void restoreSevenSignsData()
+	{
+		try (Connection con = ConnectionPool.getConnection())
+		{
+			try (PreparedStatement ps = con.prepareStatement(LOAD_DATA);
+				ResultSet rs = ps.executeQuery())
+			{
+				while (rs.next())
+				{
+					final int objectId = rs.getInt(&quot;char_obj_id&quot;);
+					
+					final StatSet set = new StatSet();
+					set.set(&quot;char_obj_id&quot;, objectId);
+					set.set(&quot;cabal&quot;, Enum.valueOf(CabalType.class, rs.getString(&quot;cabal&quot;)));
+					set.set(&quot;seal&quot;, Enum.valueOf(SealType.class, rs.getString(&quot;seal&quot;)));
+					set.set(&quot;red_stones&quot;, rs.getInt(&quot;red_stones&quot;));
+					set.set(&quot;green_stones&quot;, rs.getInt(&quot;green_stones&quot;));
+					set.set(&quot;blue_stones&quot;, rs.getInt(&quot;blue_stones&quot;));
+					set.set(&quot;ancient_adena_amount&quot;, rs.getDouble(&quot;ancient_adena_amount&quot;));
+					set.set(&quot;contribution_score&quot;, rs.getDouble(&quot;contribution_score&quot;));
+					
+					_playersData.put(objectId, set);
+				}
+			}
+			
+			try (PreparedStatement ps = con.prepareStatement(LOAD_STATUS);
+				ResultSet rs = ps.executeQuery())
+			{
+				while (rs.next())
+				{
+					_currentCycle = rs.getInt(&quot;current_cycle&quot;);
+					_activePeriod = Enum.valueOf(PeriodType.class, rs.getString(&quot;active_period&quot;));
+					_previousWinner = Enum.valueOf(CabalType.class, rs.getString(&quot;previous_winner&quot;));
+					
+					_dawnStoneScore = rs.getDouble(&quot;dawn_stone_score&quot;);
+					_dawnFestivalScore = rs.getInt(&quot;dawn_festival_score&quot;);
+					_duskStoneScore = rs.getDouble(&quot;dusk_stone_score&quot;);
+					_duskFestivalScore = rs.getInt(&quot;dusk_festival_score&quot;);
+					
+					_sealOwners.put(SealType.AVARICE, Enum.valueOf(CabalType.class, rs.getString(&quot;avarice_owner&quot;)));
+					_sealOwners.put(SealType.GNOSIS, Enum.valueOf(CabalType.class, rs.getString(&quot;gnosis_owner&quot;)));
+					_sealOwners.put(SealType.STRIFE, Enum.valueOf(CabalType.class, rs.getString(&quot;strife_owner&quot;)));
+					
+					_dawnScores.put(SealType.AVARICE, rs.getInt(&quot;avarice_dawn_score&quot;));
+					_dawnScores.put(SealType.GNOSIS, rs.getInt(&quot;gnosis_dawn_score&quot;));
+					_dawnScores.put(SealType.STRIFE, rs.getInt(&quot;strife_dawn_score&quot;));
+					
+					_duskScores.put(SealType.AVARICE, rs.getInt(&quot;avarice_dusk_score&quot;));
+					_duskScores.put(SealType.GNOSIS, rs.getInt(&quot;gnosis_dusk_score&quot;));
+					_duskScores.put(SealType.STRIFE, rs.getInt(&quot;strife_dusk_score&quot;));
+					
+					_lastSave.setTimeInMillis(rs.getLong(&quot;date&quot;));
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t load Seven Signs data.&quot;, e);
+		}
+	}
+	
+	/**
+	 * Saves all Seven Signs player data.&lt;br&gt;
+	 * Should be called on period change and shutdown only.
+	 */
+	public void saveSevenSignsData()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_PLAYER))
+		{
+			for (StatSet set : _playersData.values())
+			{
+				ps.setString(1, set.getString(&quot;cabal&quot;));
+				ps.setString(2, set.getString(&quot;seal&quot;));
+				ps.setInt(3, set.getInteger(&quot;red_stones&quot;));
+				ps.setInt(4, set.getInteger(&quot;green_stones&quot;));
+				ps.setInt(5, set.getInteger(&quot;blue_stones&quot;));
+				ps.setDouble(6, set.getDouble(&quot;ancient_adena_amount&quot;));
+				ps.setDouble(7, set.getDouble(&quot;contribution_score&quot;));
+				ps.setInt(8, set.getInteger(&quot;char_obj_id&quot;));
+				ps.addBatch();
+			}
+			ps.executeBatch();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t save Seven Signs player data.&quot;, e);
+		}
+	}
+	
+	public final void saveSevenSignsStatus()
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_STATUS))
+		{
+			ps.setInt(1, _currentCycle);
+			ps.setString(2, _activePeriod.toString());
+			ps.setString(3, _previousWinner.toString());
+			ps.setDouble(4, _dawnStoneScore);
+			ps.setInt(5, _dawnFestivalScore);
+			ps.setDouble(6, _duskStoneScore);
+			ps.setInt(7, _duskFestivalScore);
+			ps.setString(8, _sealOwners.get(SealType.AVARICE).toString());
+			ps.setString(9, _sealOwners.get(SealType.GNOSIS).toString());
+			ps.setString(10, _sealOwners.get(SealType.STRIFE).toString());
+			ps.setInt(11, _dawnScores.get(SealType.AVARICE));
+			ps.setInt(12, _dawnScores.get(SealType.GNOSIS));
+			ps.setInt(13, _dawnScores.get(SealType.STRIFE));
+			ps.setInt(14, _duskScores.get(SealType.AVARICE));
+			ps.setInt(15, _duskScores.get(SealType.GNOSIS));
+			ps.setInt(16, _duskScores.get(SealType.STRIFE));
+			ps.setInt(17, FestivalOfDarknessManager.getInstance().getCurrentFestivalCycle());
+			
+			for (int i = 0; i &lt; FestivalOfDarknessManager.FESTIVAL_COUNT; i++)
+				ps.setInt(18 + i, FestivalOfDarknessManager.getInstance().getAccumulatedBonus(i));
+			
+			_lastSave = Calendar.getInstance();
+			ps.setLong(18 + FestivalOfDarknessManager.FESTIVAL_COUNT, _lastSave.getTimeInMillis());
+			ps.execute();
+		}
+		catch (Exception e)
+		{
+			LOGGER.error(&quot;Couldn&#x27;t save Seven Signs status data.&quot;, e);
+		}
+	}
+	
+	/**
+	 * Used to reset the cabal details of all players, and update the database.&lt;BR&gt;
+	 * Primarily used when beginning a new cycle, and should otherwise never be called.
+	 */
+	protected void resetPlayerData()
+	{
+		for (StatSet set : _playersData.values())
+		{
+			set.set(&quot;cabal&quot;, CabalType.NORMAL);
+			set.set(&quot;seal&quot;, SealType.NONE);
+			set.set(&quot;contribution_score&quot;, 0);
+		}
+	}
+	
+	/**
+	 * Used to specify cabal-related details for the specified player.&lt;br&gt;
+	 * This method checks to see if the player has registered before and will update the database if necessary.
+	 * @param objectId
+	 * @param cabal
+	 * @param seal
+	 * @return the cabal ID the player has joined.
+	 */
+	public CabalType setPlayerInfo(int objectId, CabalType cabal, SealType seal)
+	{
+		StatSet set = _playersData.get(objectId);
+		if (set != null)
+		{
+			set.set(&quot;cabal&quot;, cabal);
+			set.set(&quot;seal&quot;, seal);
+		}
+		else
+		{
+			set = new StatSet();
+			set.set(&quot;char_obj_id&quot;, objectId);
+			set.set(&quot;cabal&quot;, cabal);
+			set.set(&quot;seal&quot;, seal);
+			set.set(&quot;red_stones&quot;, 0);
+			set.set(&quot;green_stones&quot;, 0);
+			set.set(&quot;blue_stones&quot;, 0);
+			set.set(&quot;ancient_adena_amount&quot;, 0);
+			set.set(&quot;contribution_score&quot;, 0);
+			
+			_playersData.put(objectId, set);
+			
+			// Update data in database, as we have a new player signing up.
+			try (Connection con = ConnectionPool.getConnection();
+				PreparedStatement ps = con.prepareStatement(INSERT_PLAYER))
+			{
+				ps.setInt(1, objectId);
+				ps.setString(2, cabal.toString());
+				ps.setString(3, seal.toString());
+				ps.execute();
+			}
+			catch (Exception e)
+			{
+				LOGGER.error(&quot;Couldn&#x27;t save Seven Signs player info data.&quot;, e);
+			}
+		}
+		
+		// Increasing Seal total score for the player chosen Seal.
+		if (cabal == CabalType.DAWN)
+			_dawnScores.put(seal, _dawnScores.get(seal) + 1);
+		else
+			_duskScores.put(seal, _duskScores.get(seal) + 1);
+		
+		return cabal;
+	}
+	
+	/**
+	 * @param objectId
+	 * @return the amount of ancient adena the specified player can claim, if any.
+	 */
+	public int getAncientAdenaReward(int objectId)
+	{
+		StatSet set = _playersData.get(objectId);
+		int rewardAmount = set.getInteger(&quot;ancient_adena_amount&quot;);
+		
+		set.set(&quot;red_stones&quot;, 0);
+		set.set(&quot;green_stones&quot;, 0);
+		set.set(&quot;blue_stones&quot;, 0);
+		set.set(&quot;ancient_adena_amount&quot;, 0);
+		
+		return rewardAmount;
+	}
+	
+	/**
+	 * Used to add the specified player&#x27;s seal stone contribution points to the current total for their cabal. Returns the point score the contribution was worth.&lt;br&gt;
+	 * Each stone count &lt;B&gt;must be&lt;/B&gt; broken down and specified by the stone&#x27;s color.
+	 * @param objectId The objectId of the player.
+	 * @param blueCount Amount of blue stones.
+	 * @param greenCount Amount of green stones.
+	 * @param redCount Amount of red stones.
+	 * @return
+	 */
+	public int addPlayerStoneContrib(int objectId, int blueCount, int greenCount, int redCount)
+	{
+		StatSet set = _playersData.get(objectId);
+		
+		int contribScore = calcScore(blueCount, greenCount, redCount);
+		int totalAncientAdena = set.getInteger(&quot;ancient_adena_amount&quot;) + contribScore;
+		int totalContribScore = set.getInteger(&quot;contribution_score&quot;) + contribScore;
+		
+		if (totalContribScore &gt; Config.MAXIMUM_PLAYER_CONTRIB)
+			return -1;
+		
+		set.set(&quot;red_stones&quot;, set.getInteger(&quot;red_stones&quot;) + redCount);
+		set.set(&quot;green_stones&quot;, set.getInteger(&quot;green_stones&quot;) + greenCount);
+		set.set(&quot;blue_stones&quot;, set.getInteger(&quot;blue_stones&quot;) + blueCount);
+		set.set(&quot;ancient_adena_amount&quot;, totalAncientAdena);
+		set.set(&quot;contribution_score&quot;, totalContribScore);
+		
+		switch (getPlayerCabal(objectId))
+		{
+			case DAWN:
+				_dawnStoneScore += contribScore;
+				break;
+			
+			case DUSK:
+				_duskStoneScore += contribScore;
+				break;
+		}
+		
+		return contribScore;
+	}
+	
+	/**
+	 * Adds the specified number of festival points to the specified cabal. Remember, the same number of points are &lt;B&gt;deducted from the rival cabal&lt;/B&gt; to maintain proportionality.
+	 * @param cabal
+	 * @param amount
+	 */
+	public void addFestivalScore(CabalType cabal, int amount)
+	{
+		if (cabal == CabalType.DUSK)
+		{
+			_duskFestivalScore += amount;
+			
+			// To prevent negative scores!
+			if (_dawnFestivalScore &gt;= amount)
+				_dawnFestivalScore -= amount;
+		}
+		else
+		{
+			_dawnFestivalScore += amount;
+			
+			if (_duskFestivalScore &gt;= amount)
+				_duskFestivalScore -= amount;
+		}
+	}
+	
+	/**
+	 * Used to initialize the seals for each cabal. (Used at startup or at beginning of a new cycle). This method should be called after &lt;B&gt;resetSeals()&lt;/B&gt; and &lt;B&gt;calcNewSealOwners()&lt;/B&gt; on a new cycle.
+	 */
+	protected void initializeSeals()
+	{
+		for (Entry&lt;SealType, CabalType&gt; sealEntry : _sealOwners.entrySet())
+		{
+			final SealType currentSeal = sealEntry.getKey();
+			final CabalType sealOwner = sealEntry.getValue();
+			
+			if (sealOwner != CabalType.NORMAL)
+			{
+				if (isSealValidationPeriod())
+					LOGGER.info(&quot;The {} have won {}.&quot;, sealOwner.getFullName(), currentSeal.getFullName());
+				else
+					LOGGER.info(&quot;The {} is currently owned by {}.&quot;, currentSeal.getFullName(), sealOwner.getFullName());
+			}
+			else
+				LOGGER.info(&quot;The {} remains unclaimed.&quot;, currentSeal.getFullName());
+		}
+	}
+	
+	/**
+	 * Only really used at the beginning of a new cycle, this method resets all seal-related data.
+	 */
+	protected void resetSeals()
+	{
+		_dawnScores.put(SealType.AVARICE, 0);
+		_dawnScores.put(SealType.GNOSIS, 0);
+		_dawnScores.put(SealType.STRIFE, 0);
+		
+		_duskScores.put(SealType.AVARICE, 0);
+		_duskScores.put(SealType.GNOSIS, 0);
+		_duskScores.put(SealType.STRIFE, 0);
+	}
+	
+	/**
+	 * Calculates the ownership of the three Seals of the Seven Signs, based on various criterias.&lt;BR&gt;
+	 * Should only ever called at the beginning of a new cycle.
+	 */
+	protected void calcNewSealOwners()
+	{
+		for (SealType seal : _dawnScores.keySet())
+		{
+			final CabalType prevSealOwner = _sealOwners.get(seal);
+			
+			final int dawnProportion = getSealProportion(seal, CabalType.DAWN);
+			final int totalDawnMembers = Math.max(1, getTotalMembers(CabalType.DAWN));
+			final int dawnPercent = Math.round(((float) dawnProportion / (float) totalDawnMembers) * 100);
+			
+			final int duskProportion = getSealProportion(seal, CabalType.DUSK);
+			final int totalDuskMembers = Math.max(1, getTotalMembers(CabalType.DUSK));
+			final int duskPercent = Math.round(((float) duskProportion / (float) totalDuskMembers) * 100);
+			
+			CabalType newSealOwner = CabalType.NORMAL;
+			
+			// If a Seal was already closed or owned by the opponent and the new winner wants to assume ownership of the Seal, 35% or more of the members of the Cabal must have chosen the Seal. If they chose less than 35%, they cannot own the Seal.
+			// If the Seal was owned by the winner in the previous Seven Signs, they can retain that seal if 10% or more members have chosen it. If they want to possess a new Seal, at least 35% of the members of the Cabal must have chosen the new Seal.
+			switch (prevSealOwner)
+			{
+				case NORMAL:
+					switch (getWinningCabal())
+					{
+						case DAWN:
+							if (dawnPercent &gt;= 35)
+								newSealOwner = CabalType.DAWN;
+							break;
+						
+						case DUSK:
+							if (duskPercent &gt;= 35)
+								newSealOwner = CabalType.DUSK;
+							break;
+					}
+					break;
+				
+				case DAWN:
+					switch (getWinningCabal())
+					{
+						case NORMAL:
+							if (dawnPercent &gt;= 10)
+								newSealOwner = CabalType.DAWN;
+							break;
+						
+						case DAWN:
+							if (dawnPercent &gt;= 10)
+								newSealOwner = CabalType.DAWN;
+							break;
+						
+						case DUSK:
+							if (duskPercent &gt;= 35)
+								newSealOwner = CabalType.DUSK;
+							else if (dawnPercent &gt;= 10)
+								newSealOwner = CabalType.DAWN;
+							break;
+					}
+					break;
+				
+				case DUSK:
+					switch (getWinningCabal())
+					{
+						case NORMAL:
+							if (duskPercent &gt;= 10)
+								newSealOwner = CabalType.DUSK;
+							break;
+						
+						case DAWN:
+							if (dawnPercent &gt;= 35)
+								newSealOwner = CabalType.DAWN;
+							else if (duskPercent &gt;= 10)
+								newSealOwner = CabalType.DUSK;
+							break;
+						
+						case DUSK:
+							if (duskPercent &gt;= 10)
+								newSealOwner = CabalType.DUSK;
+							break;
+					}
+					break;
+			}
+			
+			_sealOwners.put(seal, newSealOwner);
+			
+			// Alert all online players to new seal status.
+			switch (seal)
+			{
+				case AVARICE:
+					if (newSealOwner == CabalType.DAWN)
+						World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DAWN_OBTAINED_AVARICE));
+					else if (newSealOwner == CabalType.DUSK)
+						World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DUSK_OBTAINED_AVARICE));
+					break;
+				
+				case GNOSIS:
+					if (newSealOwner == CabalType.DAWN)
+						World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DAWN_OBTAINED_GNOSIS));
+					else if (newSealOwner == CabalType.DUSK)
+						World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DUSK_OBTAINED_GNOSIS));
+					break;
+				
+				case STRIFE:
+					if (newSealOwner == CabalType.DAWN)
+						World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DAWN_OBTAINED_STRIFE));
+					else if (newSealOwner == CabalType.DUSK)
+						World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DUSK_OBTAINED_STRIFE));
+					
+					CastleManager.getInstance().validateTaxes(newSealOwner);
+					break;
+			}
+		}
+	}
+	
+	/**
+	 * This method is called to remove all players from catacombs and necropolises, who belong to the losing cabal.&lt;BR&gt;
+	 * &lt;b&gt;Should only ever called at the beginning of Seal Validation.&lt;/b&gt;
+	 * @param winningCabal
+	 */
+	protected void teleLosingCabalFromDungeons(CabalType winningCabal)
+	{
+		for (Player player : World.getInstance().getPlayers())
+		{
+			if (player.isGM() || !player.isIn7sDungeon())
+				continue;
+			
+			final StatSet set = _playersData.get(player.getObjectId());
+			if (set != null)
+			{
+				final CabalType playerCabal = set.getEnum(&quot;cabal&quot;, CabalType.class);
+				if (isSealValidationPeriod() || isCompResultsPeriod())
+				{
+					if (playerCabal == winningCabal)
+						continue;
+				}
+				else if (playerCabal == CabalType.NORMAL)
+					continue;
+			}
+			
+			player.teleportTo(RestartType.TOWN);
+			player.setIsIn7sDungeon(false);
+		}
+	}
+	
+	/**
+	 * The primary controller of period change of the Seven Signs system. This runs all related tasks depending on the period that is about to begin.
+	 */
+	protected class SevenSignsPeriodChange implements Runnable
+	{
+		@Override
+		public void run()
+		{
+			// Remember the period check here refers to the period just ENDED!
+			final PeriodType periodEnded = _activePeriod;
+			
+			// Increment the period.
+			_activePeriod = PeriodType.VALUES[(_activePeriod.ordinal() + 1) % PeriodType.VALUES.length];
+			
+			switch (periodEnded)
+			{
+				case RECRUITING: // Initialization
+					// Start the Festival of Darkness cycle.
+					FestivalOfDarknessManager.getInstance().startFestivalManager();
+					
+					// Reset castles certificates count.
+					CastleManager.getInstance().resetCertificates();
+					
+					// Send sound for all online players.
+					World.toAllOnlinePlayers(new PlaySound(0, &quot;SSQ_Neutral_01&quot;));
+					
+					// Send message that Competition has begun.
+					World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.QUEST_EVENT_PERIOD_BEGUN));
+					break;
+				
+				case COMPETITION: // Results Calculation
+					// Send sound for all online players.
+					World.toAllOnlinePlayers(new PlaySound(0, &quot;SSQ_Neutral_01&quot;));
+					
+					// Send message that Competition has ended.
+					World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.QUEST_EVENT_PERIOD_ENDED));
+					
+					final CabalType winningCabal = getWinningCabal();
+					
+					// Schedule a stop of the festival engine and reward highest ranking members from cycle
+					FestivalOfDarknessManager.getInstance().getFestivalManagerSchedule().cancel(false);
+					FestivalOfDarknessManager.getInstance().rewardHighestRanked();
+					
+					calcNewSealOwners();
+					
+					switch (winningCabal)
+					{
+						case DAWN:
+							World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DAWN_WON));
+							break;
+						
+						case DUSK:
+							World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.DUSK_WON));
+							break;
+					}
+					
+					_previousWinner = winningCabal;
+					break;
+				
+				case RESULTS: // Seal Validation
+					// Perform initial Seal Validation set up.
+					initializeSeals();
+					
+					// Buff/Debuff members of the event when Seal of Strife captured.
+					giveSosEffect(getSealOwner(SealType.STRIFE));
+					
+					// Send sound for all online players.
+					World.toAllOnlinePlayers(new PlaySound(0, _previousWinner == CabalType.DAWN ? &quot;SSQ_Dawn_01&quot; : &quot;SSQ_Dusk_01&quot;));
+					
+					// Send message that Seal Validation has begun.
+					World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.SEAL_VALIDATION_PERIOD_BEGUN));
+					
+					LOGGER.info(&quot;The {} have won the competition with {} points.&quot;, _previousWinner.getFullName(), getCurrentScore(_previousWinner));
+					break;
+				
+				case SEAL_VALIDATION: // Reset for New Cycle
+					// Ensure a cycle restart when this period ends.
+					_activePeriod = PeriodType.RECRUITING;
+					
+					// Send sound for all online players.
+					World.toAllOnlinePlayers(new PlaySound(0, &quot;SSQ_Neutral_01&quot;));
+					
+					// Send message that Seal Validation has ended.
+					World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.SEAL_VALIDATION_PERIOD_ENDED));
+					
+					// Clear Seal of Strife influence.
+					removeSosEffect();
+					
+					// Reset all data
+					resetPlayerData();
+					resetSeals();
+					
+					_currentCycle++;
+					
+					// Reset all Festival-related data and remove any unused blood offerings.
+					// NOTE: A full update of Festival data in the database is also performed.
+					FestivalOfDarknessManager.getInstance().resetFestivalData(false);
+					
+					_dawnStoneScore = 0;
+					_duskStoneScore = 0;
+					
+					_dawnFestivalScore = 0;
+					_duskFestivalScore = 0;
+					break;
+			}
+			
+			// Make sure all Seven Signs data is saved for future use.
+			saveSevenSignsData();
+			saveSevenSignsStatus();
+			
+			teleLosingCabalFromDungeons(getWinningCabal());
+			
+			// Spawns NPCs and change sky color.
+			World.toAllOnlinePlayers(SSQInfo.sendSky());
+			SpawnManager.getInstance().notifySevenSignsChange();
+			
+			LOGGER.info(&quot;The {} period of Seven Signs has begun.&quot;, _activePeriod.getName());
+			
+			setCalendarForNextPeriodChange();
+			
+			ThreadPool.schedule(new SevenSignsPeriodChange(), getMilliToPeriodChange());
+		}
+	}
+	
+	/**
+	 * Buff/debuff players following their membership to Seal of Strife.
+	 * @param strifeOwner The cabal owning the Seal of Strife.
+	 */
+	public void giveSosEffect(CabalType strifeOwner)
+	{
+		for (Player player : World.getInstance().getPlayers())
+		{
+			final CabalType cabal = getPlayerCabal(player.getObjectId());
+			if (cabal != CabalType.NORMAL)
+			{
+				if (cabal == strifeOwner)
+					player.addSkill(SkillTable.FrequentSkill.THE_VICTOR_OF_WAR.getSkill(), false);
+				else
+					player.addSkill(SkillTable.FrequentSkill.THE_VANQUISHED_OF_WAR.getSkill(), false);
+			}
+		}
+	}
+	
+	/**
+	 * Stop Seal of Strife effects on all online characters.
+	 */
+	public void removeSosEffect()
+	{
+		for (Player player : World.getInstance().getPlayers())
+		{
+			player.removeSkill(SkillTable.FrequentSkill.THE_VICTOR_OF_WAR.getSkill().getId(), false);
+			player.removeSkill(SkillTable.FrequentSkill.THE_VANQUISHED_OF_WAR.getSkill().getId(), false);
+		}
+	}
+	
+	public static SevenSignsManager getInstance()
+	{
+		return SingletonHolder.INSTANCE;
+	}
+	
+	private static class SingletonHolder
+	{
+		protected static final SevenSignsManager INSTANCE = new SevenSignsManager();
+	}
+}</pre>
+            
+</body>
+</html>

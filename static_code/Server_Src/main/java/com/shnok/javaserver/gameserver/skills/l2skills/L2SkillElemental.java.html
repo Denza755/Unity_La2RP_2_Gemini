@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/l2skills/L2SkillElemental.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/skills/l2skills/L2SkillElemental.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.skills.l2skills;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.enums.items.ShotType;
+import com.shnok.javaserver.gameserver.enums.skills.ShieldDefense;
+import com.shnok.javaserver.gameserver.model.WorldObject;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.skills.AbstractEffect;
+import com.shnok.javaserver.gameserver.skills.Formulas;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
+
+public class L2SkillElemental extends L2Skill
+{
+	private final int[] _seeds;
+	private final boolean _seedAny;
+	
+	public L2SkillElemental(StatSet set)
+	{
+		super(set);
+		
+		_seeds = new int[3];
+		_seeds[0] = set.getInteger(&quot;seed1&quot;, 0);
+		_seeds[1] = set.getInteger(&quot;seed2&quot;, 0);
+		_seeds[2] = set.getInteger(&quot;seed3&quot;, 0);
+		
+		_seedAny = set.getInteger(&quot;seed_any&quot;, 0) == 1;
+	}
+	
+	@Override
+	public void useSkill(Creature creature, WorldObject[] targets)
+	{
+		if (creature.isAlikeDead())
+			return;
+		
+		final boolean sps = creature.isChargedShot(ShotType.SPIRITSHOT);
+		final boolean bsps = creature.isChargedShot(ShotType.BLESSED_SPIRITSHOT);
+		
+		for (WorldObject target : targets)
+		{
+			if (!(target instanceof Creature targetCreature))
+				continue;
+			
+			if (targetCreature.isAlikeDead())
+				continue;
+			
+			boolean charged = true;
+			if (!_seedAny)
+			{
+				for (int _seed : _seeds)
+				{
+					if (_seed != 0)
+					{
+						final AbstractEffect effect = targetCreature.getFirstEffect(_seed);
+						if (effect == null || !effect.getInUse())
+						{
+							charged = false;
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				charged = false;
+				for (int _seed : _seeds)
+				{
+					if (_seed != 0)
+					{
+						final AbstractEffect effect = targetCreature.getFirstEffect(_seed);
+						if (effect != null &amp;&amp; effect.getInUse())
+						{
+							charged = true;
+							break;
+						}
+					}
+				}
+			}
+			
+			if (!charged)
+			{
+				creature.sendMessage(&quot;Target is not charged by elements.&quot;);
+				continue;
+			}
+			
+			final boolean isCrit = Formulas.calcMCrit(creature, targetCreature, this);
+			final ShieldDefense sDef = Formulas.calcShldUse(creature, targetCreature, this, false);
+			
+			int damage = (int) Formulas.calcMagicDam(creature, targetCreature, this, sDef, sps, bsps, isCrit);
+			if (damage &gt; 0)
+			{
+				targetCreature.reduceCurrentHp(damage, creature, this);
+				
+				// Manage cast break of the target (calculating rate, sending message...)
+				Formulas.calcCastBreak(targetCreature, damage);
+				
+				creature.sendDamageMessage(targetCreature, damage, false, false, false);
+			}
+			
+			// activate attacked effects, if any
+			targetCreature.stopSkillEffects(getId());
+			getEffects(creature, targetCreature, sDef, bsps);
+		}
+		
+		creature.setChargedShot(bsps ? ShotType.BLESSED_SPIRITSHOT : ShotType.SPIRITSHOT, isStaticReuse());
+	}
+}</pre>
+            
+</body>
+</html>

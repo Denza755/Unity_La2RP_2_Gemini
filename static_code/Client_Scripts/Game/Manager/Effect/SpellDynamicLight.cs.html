@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Manager/Effect/SpellDynamicLight.cs</h1>
+            <pre>using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class SpellLightConfig
+{
+    public int SkillId;
+    public string SkillName;
+    public Color CastLightColor = new Color(0.32f, 0.78f, 1.0f);
+    public float CastLightRange = 5.5f;
+    public float CastMaxIntensity = 4.5f;
+    public float CastHeightOffset = 0.9f;
+
+    public Color ProjectileLightColor = new Color(0.35f, 0.82f, 1.0f);
+    public float ProjectileLightRange = 7.0f;
+    public float ProjectileIntensity = 5.5f;
+
+    public Color HitFlashColor = new Color(0.35f, 0.82f, 1.0f);
+    public float HitFlashRange = 7.0f;
+    public float HitFlashPeakIntensity = 8.0f;
+    public float HitFlashHoldTime = 0.08f;
+    public float HitFlashFadeTime = 0.25f;
+}
+
+/// &lt;summary&gt;
+/// Dynamic Point Light controller for spell casting, flying projectiles, and impact flashes in URP.
+/// &lt;/summary&gt;
+public class SpellDynamicLight : MonoBehaviour
+{
+    private static SpellDynamicLight _instance;
+    public static SpellDynamicLight Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                GameObject go = new GameObject(&quot;[SpellLightManager]&quot;);
+                DontDestroyOnLoad(go);
+                _instance = go.AddComponent&lt;SpellDynamicLight&gt;();
+            }
+            return _instance;
+        }
+    }
+
+    #region Configuration Registry
+
+    private static readonly Dictionary&lt;int, SpellLightConfig&gt; _configsBySkillId = new Dictionary&lt;int, SpellLightConfig&gt;();
+    private static readonly Dictionary&lt;string, SpellLightConfig&gt; _configsByKeyword = new Dictionary&lt;string, SpellLightConfig&gt;();
+
+    static SpellDynamicLight()
+    {
+        // 1. Wind Strike (ID 1177, 11774, etc.) &amp; Twister - Ice/Cyan/Blue magical glow
+        SpellLightConfig windStrikeConfig = new SpellLightConfig
+        {
+            SkillId = 1177,
+            SkillName = &quot;Wind Strike&quot;,
+            CastLightColor = new Color(0.32f, 0.78f, 1.0f),
+            CastLightRange = 5.5f,
+            CastMaxIntensity = 1.5f,
+            CastHeightOffset = 0.9f,
+
+            ProjectileLightColor = ColorUtility.TryParseHtmlString(&quot;#98AEDA&quot;, out Color my_ProjectileLight_Color) ? my_ProjectileLight_Color : Color.white,
+            ProjectileLightRange = 7.0f,
+            ProjectileIntensity = 0.5f,
+
+            HitFlashColor = ColorUtility.TryParseHtmlString(&quot;#98AEDA&quot;, out Color myColor) ? myColor : Color.white,
+            HitFlashRange = 3.2f,
+            HitFlashPeakIntensity = 1.4f,
+            HitFlashHoldTime = 0.08f,
+            HitFlashFadeTime = 0.20f
+        };
+        RegisterConfig(windStrikeConfig, &quot;wind_strike&quot;, &quot;twister&quot;, &quot;wind&quot;);
+        _configsBySkillId[11774] = windStrikeConfig;
+
+        // Template 2. Fire / Blaze / Flame Strike - warm orange glow (ready for future skills)
+        SpellLightConfig fireConfig = new SpellLightConfig
+        {
+            SkillId = 1178,
+            SkillName = &quot;Fire/Blaze&quot;,
+            CastLightColor = new Color(1.0f, 0.45f, 0.12f),
+            CastLightRange = 6.0f,
+            CastMaxIntensity = 4.5f,
+            CastHeightOffset = 0.9f,
+
+            ProjectileLightColor = new Color(1.0f, 0.48f, 0.15f),
+            ProjectileLightRange = 7.5f,
+            ProjectileIntensity = 5.5f,
+
+            HitFlashColor = new Color(1.0f, 0.55f, 0.2f),
+            HitFlashRange = 8.0f,
+            HitFlashPeakIntensity = 8.5f,
+            HitFlashHoldTime = 0.08f,
+            HitFlashFadeTime = 0.25f
+        };
+        RegisterConfig(fireConfig, &quot;blaze&quot;, &quot;flame_strike&quot;, &quot;fire&quot;);
+
+        // Template 3. Dark / Vampiric Touch - deep purple glow (ready for future skills)
+        SpellLightConfig darkConfig = new SpellLightConfig
+        {
+            SkillId = 1148,
+            SkillName = &quot;Vampiric Touch/Death Spike&quot;,
+            CastLightColor = new Color(0.78f, 0.22f, 1.0f),
+            CastLightRange = 5.5f,
+            CastMaxIntensity = 4.5f,
+            CastHeightOffset = 0.9f,
+
+            ProjectileLightColor = new Color(0.82f, 0.25f, 1.0f),
+            ProjectileLightRange = 7.0f,
+            ProjectileIntensity = 5.5f,
+
+            HitFlashColor = new Color(0.85f, 0.3f, 1.0f),
+            HitFlashRange = 7.5f,
+            HitFlashPeakIntensity = 8.0f,
+            HitFlashHoldTime = 0.08f,
+            HitFlashFadeTime = 0.25f
+        };
+        RegisterConfig(darkConfig, &quot;vampiric_touch&quot;, &quot;death_spike&quot;, &quot;dark&quot;);
+        _configsBySkillId[1147] = darkConfig; // Vampiric Touch (1147)
+
+        // Template 3b. Life Drain (Skill ID 1090) - Crimson-ruby glow for cast, drain return flight, and hit flash
+        SpellLightConfig lifeDrainConfig = new SpellLightConfig
+        {
+            SkillId = 1090,
+            SkillName = &quot;Life Drain&quot;,
+            CastLightColor = new Color(0.72f, 0.08f, 0.08f), // Deep crimson-ruby glow at feet
+            CastLightRange = 5.0f,
+            CastMaxIntensity = 4.2f,
+            CastHeightOffset = 0.3f, // Near ground/feet to illuminate pentagram
+
+            ProjectileLightColor = new Color(0.85f, 0.12f, 0.12f), // Vivid ruby blood flight
+            ProjectileLightRange = 6.0f,
+            ProjectileIntensity = 5.0f,
+
+            HitFlashColor = new Color(0.92f, 0.18f, 0.18f), // Intense blood burst on target / golden-crimson on return
+            HitFlashRange = 7.0f,
+            HitFlashPeakIntensity = 7.5f,
+            HitFlashHoldTime = 0.08f,
+            HitFlashFadeTime = 0.25f
+        };
+        RegisterConfig(lifeDrainConfig, &quot;life_drain&quot;, &quot;vampiric&quot;, &quot;m_u003&quot;);
+        _configsBySkillId[1090] = lifeDrainConfig; // Life Drain (1090)
+        _configsBySkillId[70] = lifeDrainConfig;   // Drain Health (70)
+
+        // 4. Self Heal (Skill ID 1216) &amp; Healing skills - Warm golden-peach cast light, golden-white heal flash
+        SpellLightConfig healConfig = new SpellLightConfig
+        {
+            SkillId = 1216,
+            SkillName = &quot;Self Heal&quot;,
+            CastLightColor = new Color32(255, 205, 145, 255), // Warm golden-peach glow
+            CastLightRange = 3.8f,
+            CastMaxIntensity = 2.4f,
+            CastHeightOffset = 0.4f, // near ground/feet to illuminate rune seal and grass
+
+            ProjectileLightColor = new Color32(255, 228, 175, 255),
+            ProjectileLightRange = 4.2f,
+            ProjectileIntensity = 2.8f,
+
+            HitFlashColor = new Color32(255, 228, 175, 255), // Soft majestic golden-white heal flash
+            HitFlashRange = 4.2f,
+            HitFlashPeakIntensity = 2.8f,
+            HitFlashHoldTime = 0.10f,
+            HitFlashFadeTime = 0.45f
+        };
+        RegisterConfig(healConfig, &quot;heal&quot;, &quot;self_heal&quot;, &quot;cure&quot;);
+        _configsBySkillId[1011] = healConfig; // Heal
+        _configsBySkillId[1012] = healConfig; // Cure Poison
+        _configsBySkillId[1015] = healConfig; // Battle Heal
+        _configsBySkillId[1027] = healConfig; // Group Heal
+    }
+
+    public static void RegisterConfig(SpellLightConfig config, params string[] keywords)
+    {
+        if (config == null) return;
+        if (config.SkillId &gt; 0)
+        {
+            _configsBySkillId[config.SkillId] = config;
+        }
+        if (keywords != null)
+        {
+            foreach (string kw in keywords)
+            {
+                if (!string.IsNullOrEmpty(kw))
+                {
+                    _configsByKeyword[kw.ToLowerInvariant()] = config;
+                }
+            }
+        }
+    }
+
+    public static SpellLightConfig GetConfig(int skillId, string effectClass = null, string skillName = null)
+    {
+        if (skillId &gt; 0 &amp;&amp; _configsBySkillId.TryGetValue(skillId, out SpellLightConfig cfg))
+        {
+            return cfg;
+        }
+
+        if (!string.IsNullOrEmpty(effectClass))
+        {
+            string lower = effectClass.ToLowerInvariant();
+            foreach (KeyValuePair&lt;string, SpellLightConfig&gt; kvp in _configsByKeyword)
+            {
+                if (lower.Contains(kvp.Key))
+                {
+                    return kvp.Value;
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(skillName))
+        {
+            string lowerName = skillName.ToLowerInvariant();
+            foreach (KeyValuePair&lt;string, SpellLightConfig&gt; kvp in _configsByKeyword)
+            {
+                if (lowerName.Contains(kvp.Key))
+                {
+                    return kvp.Value;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static SpellLightConfig GetConfig(Skill skill, string effectClass = null)
+    {
+        if (skill == null) return GetConfig(0, effectClass, null);
+
+        string name = null;
+        if (skill.SkillNameDatas != null &amp;&amp; skill.SkillNameDatas.Length &gt; 0 &amp;&amp; skill.SkillNameDatas[0] != null)
+        {
+            name = skill.SkillNameDatas[0].Name;
+        }
+
+        return GetConfig(skill.SkillId, effectClass, name);
+    }
+
+    #endregion
+
+    #region Cast Light Component on Caster
+
+    private Light _castLight;
+    private GameObject _castLightObject;
+    private SpellLightConfig _currentCastConfig;
+    private float _castDuration;
+    private float _castStartTime;
+    private bool _isCasting;
+    private bool _isFadingOut;
+    private float _fadeStartTime;
+    private float _fadeStartIntensity;
+    private const float FadeDuration = 0.2f;
+
+    public void BeginCast(SpellLightConfig config, float durationSec)
+    {
+        if (config == null) return;
+
+        _currentCastConfig = config;
+        _castDuration = Mathf.Max(0.1f, durationSec);
+        _castStartTime = Time.time;
+        _isCasting = true;
+        _isFadingOut = false;
+
+        EnsureCastLightCreated(config.CastHeightOffset);
+        if (_castLight != null)
+        {
+            _castLight.transform.localPosition = new Vector3(0, config.CastHeightOffset, 0);
+            _castLight.color = config.CastLightColor;
+            _castLight.range = config.CastLightRange;
+            _castLight.intensity = 0f;
+            _castLight.enabled = true;
+        }
+    }
+
+    public void EndCast()
+    {
+        if (!_isCasting &amp;&amp; !_isFadingOut) return;
+
+        _isCasting = false;
+        _isFadingOut = true;
+        _fadeStartTime = Time.time;
+        _fadeStartIntensity = _castLight != null ? _castLight.intensity : 0f;
+    }
+
+    private void EnsureCastLightCreated(float heightOffset = 0.9f)
+    {
+        if (_castLightObject == null)
+        {
+            Transform existing = transform.Find(&quot;SpellCastLight&quot;);
+            if (existing != null)
+            {
+                _castLightObject = existing.gameObject;
+                _castLight = _castLightObject.GetComponent&lt;Light&gt;();
+                _castLightObject.transform.localPosition = new Vector3(0, heightOffset, 0);
+            }
+            else
+            {
+                _castLightObject = new GameObject(&quot;SpellCastLight&quot;);
+                _castLightObject.transform.SetParent(transform, false);
+                _castLightObject.transform.localPosition = new Vector3(0, heightOffset, 0);
+
+                _castLight = _castLightObject.AddComponent&lt;Light&gt;();
+                _castLight.type = LightType.Point;
+                _castLight.shadows = LightShadows.None;
+                _castLight.renderMode = LightRenderMode.Auto;
+            }
+        }
+        else
+        {
+            _castLightObject.transform.localPosition = new Vector3(0, heightOffset, 0);
+        }
+    }
+
+    private void Update()
+    {
+        if (_castLight == null || !_castLight.enabled) return;
+
+        if (_isCasting)
+        {
+            float elapsed = Time.time - _castStartTime;
+            float progress = Mathf.Clamp01(elapsed / _castDuration);
+
+            // Smooth flare-up curve
+            float baseIntensity = Mathf.Lerp(0f, _currentCastConfig.CastMaxIntensity, progress);
+
+            // Gentle living pulsation
+            float pulse = 1f + 0.12f * Mathf.Sin(Time.time * 16f) + 0.05f * Mathf.Cos(Time.time * 25f);
+            _castLight.intensity = baseIntensity * pulse;
+        }
+        else if (_isFadingOut)
+        {
+            float elapsed = Time.time - _fadeStartTime;
+            float progress = Mathf.Clamp01(elapsed / FadeDuration);
+
+            _castLight.intensity = Mathf.Lerp(_fadeStartIntensity, 0f, progress);
+
+            if (progress &gt;= 1f)
+            {
+                _isFadingOut = false;
+                _castLight.intensity = 0f;
+                _castLight.enabled = false;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Static Public API
+
+    /// &lt;summary&gt;
+    /// Starts dynamic casting light on the caster entity.
+    /// &lt;/summary&gt;
+    public static void StartCastLight(Entity caster, Skill skill, int hitTimeMs)
+    {
+        if (caster == null || skill == null) return;
+
+        string effectClass = (skill.SkillEffect != null &amp;&amp; skill.SkillEffect.CastingActions != null &amp;&amp; skill.SkillEffect.CastingActions.Count &gt; 0)
+            ? skill.SkillEffect.CastingActions[0].EffectClass
+            : null;
+
+        SpellLightConfig config = GetConfig(skill, effectClass);
+        if (config == null) return;
+
+        SpellDynamicLight comp = caster.GetComponent&lt;SpellDynamicLight&gt;();
+        if (comp == null)
+        {
+            comp = caster.gameObject.AddComponent&lt;SpellDynamicLight&gt;();
+        }
+
+        comp.BeginCast(config, hitTimeMs / 1000f);
+    }
+
+    /// &lt;summary&gt;
+    /// Smoothly fades out and disables casting light on the caster entity.
+    /// &lt;/summary&gt;
+    public static void StopCastLight(Entity caster)
+    {
+        if (caster == null) return;
+
+        SpellDynamicLight comp = caster.GetComponent&lt;SpellDynamicLight&gt;();
+        if (comp != null)
+        {
+            comp.EndCast();
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Attaches or enables a dynamic point light on a flying spell projectile.
+    /// &lt;/summary&gt;
+    public static void AttachProjectileLight(PooledEffect effect)
+    {
+        if (effect == null || effect.GameObject == null) return;
+
+        SpellLightConfig config = GetConfig(effect.Skill, effect.EffectClass);
+        if (config == null) return;
+
+        Transform lightTransform = effect.GameObject.transform.Find(&quot;SpellProjectileLight&quot;);
+        Light lightComp;
+
+        if (lightTransform == null)
+        {
+            GameObject lightGo = new GameObject(&quot;SpellProjectileLight&quot;);
+            lightGo.transform.SetParent(effect.GameObject.transform, false);
+            lightGo.transform.localPosition = Vector3.zero;
+
+            lightComp = lightGo.AddComponent&lt;Light&gt;();
+            lightComp.type = LightType.Point;
+            lightComp.shadows = LightShadows.None;
+            lightComp.renderMode = LightRenderMode.Auto;
+        }
+        else
+        {
+            lightComp = lightTransform.GetComponent&lt;Light&gt;();
+        }
+
+        if (lightComp != null)
+        {
+            lightComp.color = config.ProjectileLightColor;
+            lightComp.range = config.ProjectileLightRange;
+            lightComp.intensity = config.ProjectileIntensity;
+            lightComp.shadows = LightShadows.None;
+            lightComp.enabled = true;
+            lightComp.gameObject.SetActive(true);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Triggers an explosive impact flash at the target position.
+    /// &lt;/summary&gt;
+    public static void TriggerHitFlash(Entity target, Skill skill, string effectClass, Vector3 fallbackPosition)
+    {
+        SpellLightConfig config = GetConfig(skill, effectClass);
+        if (config == null) return;
+
+        Vector3 hitPos = fallbackPosition;
+        if (target != null)
+        {
+            float heightOffset = (target.Appearance != null &amp;&amp; target.Appearance.CollisionHeight &gt; 0.1f)
+                ? target.Appearance.CollisionHeight * 0.5f
+                : 1.0f;
+            hitPos = target.transform.position + Vector3.up * heightOffset;
+        }
+
+        Instance.SpawnFlashLight(config, hitPos);
+    }
+
+    /// &lt;summary&gt;
+    /// Triggers an instant flash (e.g. for heals, buffs, or self-skills with no flying projectile).
+    /// &lt;/summary&gt;
+    public static void TriggerSelfFlash(Entity target, Skill skill)
+    {
+        if (target == null || skill == null) return;
+        TriggerHitFlash(target, skill, null, target.transform.position);
+    }
+
+    #endregion
+
+    #region Hit Flash Pooling
+
+    private readonly Queue&lt;Light&gt; _flashLightPool = new Queue&lt;Light&gt;();
+    private Transform _flashLightContainer;
+
+    private void SpawnFlashLight(SpellLightConfig config, Vector3 position)
+    {
+        if (_flashLightContainer == null)
+        {
+            GameObject container = new GameObject(&quot;HitFlashPool&quot;);
+            container.transform.SetParent(transform, false);
+            _flashLightContainer = container.transform;
+        }
+
+        Light flashLight = null;
+        while (_flashLightPool.Count &gt; 0)
+        {
+            Light candidate = _flashLightPool.Dequeue();
+            if (candidate != null)
+            {
+                flashLight = candidate;
+                break;
+            }
+        }
+
+        if (flashLight == null)
+        {
+            GameObject go = new GameObject(&quot;SpellHitFlash&quot;);
+            go.transform.SetParent(_flashLightContainer, false);
+            flashLight = go.AddComponent&lt;Light&gt;();
+            flashLight.type = LightType.Point;
+            flashLight.shadows = LightShadows.None;
+            flashLight.renderMode = LightRenderMode.Auto;
+        }
+
+        flashLight.transform.position = position;
+        flashLight.color = config.HitFlashColor;
+        flashLight.range = config.HitFlashRange;
+        flashLight.intensity = config.HitFlashPeakIntensity;
+        flashLight.enabled = true;
+        flashLight.gameObject.SetActive(true);
+
+        StartCoroutine(AnimateFlashRoutine(flashLight, config));
+    }
+
+    private IEnumerator AnimateFlashRoutine(Light flashLight, SpellLightConfig config)
+    {
+        float peakIntensity = config.HitFlashPeakIntensity;
+        float holdTime = config.HitFlashHoldTime;
+        float fadeTime = config.HitFlashFadeTime;
+
+        // 1. Hold peak intensity
+        float elapsed = 0f;
+        while (elapsed &lt; holdTime)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // 2. Smooth fade out
+        elapsed = 0f;
+        while (elapsed &lt; fadeTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / fadeTime);
+            if (flashLight != null)
+            {
+                flashLight.intensity = Mathf.Lerp(peakIntensity, 0f, t);
+            }
+            yield return null;
+        }
+
+        // 3. Return to pool
+        if (flashLight != null)
+        {
+            flashLight.intensity = 0f;
+            flashLight.enabled = false;
+            flashLight.gameObject.SetActive(false);
+            _flashLightPool.Enqueue(flashLight);
+        }
+    }
+
+    #endregion
+}
+</pre>
+            
+</body>
+</html>

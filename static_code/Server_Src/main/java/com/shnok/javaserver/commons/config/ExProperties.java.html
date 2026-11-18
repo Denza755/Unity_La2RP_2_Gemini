@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/commons/config/ExProperties.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/commons/config/ExProperties.java</h1>
+            <pre>package com.shnok.javaserver.commons.config;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+import com.shnok.javaserver.commons.logging.CLogger;
+
+import com.shnok.javaserver.gameserver.model.holder.IntIntHolder;
+
+public class ExProperties extends Properties
+{
+	private static final CLogger LOGGER = new CLogger(ExProperties.class.getName());
+	
+	private static final long serialVersionUID = 1L;
+	private static final IntIntHolder[] NO_HOLDER = {};
+	
+	public static final String DEFAULT_DELIMITERS = &quot;[\\s,;]+&quot;;
+	
+	public void load(final String fileName) throws IOException
+	{
+		load(new File(fileName));
+	}
+	
+	public void load(final File file) throws IOException
+	{
+		try (InputStream is = new FileInputStream(file))
+		{
+			load(is);
+		}
+	}
+	
+	public boolean getProperty(final String name, final boolean defaultValue)
+	{
+		boolean val = defaultValue;
+		
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+			val = Boolean.parseBoolean(value);
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public int getProperty(final String name, final int defaultValue)
+	{
+		int val = defaultValue;
+		
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+			val = Integer.parseInt(value);
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public long getProperty(final String name, final long defaultValue)
+	{
+		long val = defaultValue;
+		
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+			val = Long.parseLong(value);
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public double getProperty(final String name, final double defaultValue)
+	{
+		double val = defaultValue;
+		
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+			val = Double.parseDouble(value);
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public String[] getProperty(final String name, final String[] defaultValue)
+	{
+		return getProperty(name, defaultValue, DEFAULT_DELIMITERS);
+	}
+	
+	public String[] getProperty(final String name, final String[] defaultValue, final String delimiter)
+	{
+		String[] val = defaultValue;
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+			val = value.split(delimiter);
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public boolean[] getProperty(final String name, final boolean[] defaultValue)
+	{
+		return getProperty(name, defaultValue, DEFAULT_DELIMITERS);
+	}
+	
+	public boolean[] getProperty(final String name, final boolean[] defaultValue, final String delimiter)
+	{
+		boolean[] val = defaultValue;
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+		{
+			final String[] values = value.split(delimiter);
+			val = new boolean[values.length];
+			for (int i = 0; i &lt; val.length; i++)
+				val[i] = Boolean.parseBoolean(values[i]);
+		}
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public int[] getProperty(final String name, final int[] defaultValue)
+	{
+		return getProperty(name, defaultValue, DEFAULT_DELIMITERS);
+	}
+	
+	public int[] getProperty(final String name, final int[] defaultValue, final String delimiter)
+	{
+		int[] val = defaultValue;
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+		{
+			final String[] values = value.split(delimiter);
+			val = new int[values.length];
+			for (int i = 0; i &lt; val.length; i++)
+				val[i] = Integer.parseInt(values[i]);
+		}
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public long[] getProperty(final String name, final long[] defaultValue)
+	{
+		return getProperty(name, defaultValue, DEFAULT_DELIMITERS);
+	}
+	
+	public long[] getProperty(final String name, final long[] defaultValue, final String delimiter)
+	{
+		long[] val = defaultValue;
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+		{
+			final String[] values = value.split(delimiter);
+			val = new long[values.length];
+			for (int i = 0; i &lt; val.length; i++)
+				val[i] = Long.parseLong(values[i]);
+		}
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	public double[] getProperty(final String name, final double[] defaultValue)
+	{
+		return getProperty(name, defaultValue, DEFAULT_DELIMITERS);
+	}
+	
+	public double[] getProperty(final String name, final double[] defaultValue, final String delimiter)
+	{
+		double[] val = defaultValue;
+		final String value;
+		
+		if ((value = super.getProperty(name, null)) != null)
+		{
+			final String[] values = value.split(delimiter);
+			val = new double[values.length];
+			for (int i = 0; i &lt; val.length; i++)
+				val[i] = Double.parseDouble(values[i]);
+		}
+		else
+			LOGGER.warn(&quot;The following property key &#x27;{}&#x27; is missing. It will use default value &#x27;{}&#x27;.&quot;, name, defaultValue);
+		
+		return val;
+	}
+	
+	/**
+	 * @param key : the hashtable key.
+	 * @param defaultValue : a default value.
+	 * @return an {@link IntIntHolder} array consisting of parsed items.
+	 */
+	public final IntIntHolder[] parseIntIntList(String key, String defaultValue)
+	{
+		final String[] propertySplit = getProperty(key, defaultValue).split(&quot;;&quot;);
+		if (propertySplit.length == 0)
+			return NO_HOLDER;
+		
+		int i = 0;
+		final IntIntHolder[] result = new IntIntHolder[propertySplit.length];
+		for (String value : propertySplit)
+		{
+			final String[] valueSplit = value.split(&quot;-&quot;);
+			if (valueSplit.length != 2)
+			{
+				LOGGER.warn(&quot;Error parsing entry &#x27;{}&#x27;, it should be itemId-itemNumber.&quot;, key);
+				return NO_HOLDER;
+			}
+			
+			try
+			{
+				result[i] = new IntIntHolder(Integer.parseInt(valueSplit[0]), Integer.parseInt(valueSplit[1]));
+			}
+			catch (Exception e)
+			{
+				LOGGER.error(&quot;Error parsing entry &#x27;{}&#x27;, one of the value isn&#x27;t a number.&quot;, e, key);
+				return NO_HOLDER;
+			}
+			
+			i++;
+		}
+		return result;
+	}
+}</pre>
+            
+</body>
+</html>

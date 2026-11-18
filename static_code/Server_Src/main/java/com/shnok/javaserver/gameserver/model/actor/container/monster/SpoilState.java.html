@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/container/monster/SpoilState.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/container/monster/SpoilState.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.container.monster;
+
+import java.util.HashMap;
+import java.util.List;
+
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.actor.instance.Monster;
+
+/**
+ * A container holding all related informations of a {@link Monster} spoil state.&lt;br&gt;
+ * &lt;br&gt;
+ * A spoil occurs when a {@link Player} procs a spoil skill over a Monster.
+ */
+public class SpoilState extends HashMap&lt;Integer, Integer&gt;
+{
+	private static final long serialVersionUID = 1L;
+	
+	private int _spoilerId;
+	
+	public int getSpoilerId()
+	{
+		return _spoilerId;
+	}
+	
+	public void setSpoilerId(int value)
+	{
+		_spoilerId = value;
+	}
+	
+	/**
+	 * @return true if the spoiler objectId is set.
+	 */
+	public boolean isSpoiled()
+	{
+		return _spoilerId &gt; 0;
+	}
+	
+	/**
+	 * @param player : The Player to test.
+	 * @return true if the given {@link Player} set as parameter is the actual spoiler.
+	 */
+	public boolean isActualSpoiler(Player player)
+	{
+		return player != null &amp;&amp; player.getObjectId() == _spoilerId;
+	}
+	
+	/**
+	 * @return true if _sweepItems {@link List} is filled.
+	 */
+	public boolean isSweepable()
+	{
+		return !isEmpty();
+	}
+	
+	/**
+	 * Clear all spoil related variables.
+	 */
+	@Override
+	public void clear()
+	{
+		_spoilerId = 0;
+		
+		super.clear();
+	}
+}</pre>
+            
+</body>
+</html>

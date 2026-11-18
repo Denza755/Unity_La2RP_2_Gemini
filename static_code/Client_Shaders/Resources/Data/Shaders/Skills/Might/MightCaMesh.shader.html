@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Might/MightCaMesh.shader</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Might/MightCaMesh.shader</h1>
+            <pre>// m_u004_b MeshEmitter0 &quot;supportenchant00&quot;: fx_m_t0005, spin, size scale, Z velocity + accel.
+// m_u004_a MeshEmitter9 same mesh on ground: spin + size scale, no velocity/accel (params differ).
+// m_u004_b MeshEmitter3 shares this shader with different material params.
+//
+// Axis: UE (X,Y,Z) -&gt; Unity (X,Z,Y). Unity Y is up; UE Z maps to Unity Y.
+// supportenchant00 FBX is already authored in Unity meters — keep _ApplyUuToStartSize off.
+// Motion/accel/velocity from .uc stay in raw UE UU; shader converts axis + * _SpawnUnitScale.
+Shader &quot;L2/Effects/MightCaMesh&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Texture (fx_m_t0005)&quot;, 2D) = &quot;white&quot; {}
+
+        _StartTime (&quot;Start Time&quot;, Float) = 0
+        [Toggle] _HasLifetime (&quot;Has Lifetime&quot;, Float) = 1
+        _InitialDelayRange (&quot;Initial Delay Range (Min,Max) sec&quot;, Vector) = (0, 0, 0, 0)
+        _LifetimeRange (&quot;Lifetime Range (Min,Max) sec&quot;, Vector) = (2, 2, 0, 0)
+        _Seed (&quot;Seed&quot;, Float) = 0
+        _Hold (&quot;Hold (0 = off, L2SkillEffect)&quot;, Range(0, 1)) = 0
+        _HoldSizeReference (&quot;Hold Size Reference (loop ref after release)&quot;, Range(0, 1)) = 0.413
+
+        [Toggle] _FadeIn (&quot;Fade In&quot;, Float) = 1
+        _FadeInEndTime (&quot;FadeIn End Time (sec)&quot;, Float) = 0.02
+        [Toggle] _Fadeout (&quot;Fade Out&quot;, Float) = 1
+        _FadeoutStartTime (&quot;FadeOut Start Time (sec)&quot;, Float) = 0.78
+        _FadeOutPower (&quot;Fade Out strength (&gt;1 = faster drop)&quot;, Range(1, 4)) = 1
+
+        _ColorScale0 (&quot;ColorScale[0]&quot;, Color) = (0.858824, 0.858824, 0.858824, 1)
+        _ColorScaleTime1 (&quot;ColorScale Time[1]&quot;, Range(0, 1)) = 0.5
+        _ColorScale1 (&quot;ColorScale[1]&quot;, Color) = (0.643137, 0.643137, 0.643137, 1)
+        _ColorScaleTime2 (&quot;ColorScale Time[2]&quot;, Range(0, 1)) = 1
+        _ColorScale2 (&quot;ColorScale[2]&quot;, Color) = (0.858824, 0.858824, 0.858824, 1)
+        _ColorScaleCount (&quot;ColorScale Count&quot;, Int) = 3
+        _ColorScaleRepeats (&quot;ColorScale Repeats&quot;, Float) = 8
+        [Toggle] _bAlphaBlend (&quot;AlphaBlend ColorScale&quot;, Float) = 0
+
+        _ColorMultMin (&quot;ColorMult Min&quot;, Color) = (0.7, 0.7, 0.8, 1)
+        _ColorMultMax (&quot;ColorMult Max&quot;, Color) = (0.7, 0.7, 0.8, 1)
+        _Opacity (&quot;Opacity&quot;, Range(0, 2)) = 1
+        _EmitterAlpha (&quot;Emitter Alpha&quot;, Range(0, 1)) = 1
+
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend (&quot;Source Blend&quot;, Float) = 5
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend (&quot;Destination Blend&quot;, Float) = 1
+        [Toggle] _IgnoreMainTexAlpha (&quot;Ignore texture alpha (fx_m_t A=255)&quot;, Float) = 1
+        [Toggle] _AlphaFromLuma (&quot;Alpha from luma (black = transparent)&quot;, Float) = 1
+        _LumaAlphaFloor (&quot;Luma alpha trim&quot;, Range(0, 0.25)) = 0.02
+        _AlphaEdgeFeather (&quot;Alpha edge feather&quot;, Range(0, 0.25)) = 0.02
+
+        [Header(D3D9 Brighten FS supportenchant00)]
+        [Toggle] _UseD3d9BrightenFs (&quot;D3D9 FF: tex * textureFactor (no luma trim)&quot;, Float) = 0
+        _RgbBoost (&quot;RGB Boost (heads + base)&quot;, Range(0.25, 4)) = 1
+        _PlasmaRgbScale (&quot;Plasma RGB Scale (low luma only)&quot;, Range(0, 2)) = 1
+        _PlasmaLumaMax (&quot;Plasma Luma Max&quot;, Range(0.01, 1)) = 0.35
+        _AlphaBoost (&quot;Alpha Boost (SrcAlpha One)&quot;, Range(0.25, 3)) = 1
+        _TailLift (&quot;Tail RGB lift (additive, soft band only)&quot;, Range(0, 2)) = 0.35
+        [Toggle] _D3d9FadeAlphaWithLife (&quot;D3D9: multiply alpha by lifeAlpha&quot;, Float) = 0
+        _SoftLumMin (&quot;Tail band luma min&quot;, Range(0, 1)) = 0
+        _SoftLumMax (&quot;Tail band luma max&quot;, Range(0, 1)) = 0.45
+        _LineLumMin (&quot;Head luma min (excluded from tail lift)&quot;, Range(0, 1)) = 0.35
+        _LineLumMax (&quot;Head luma max&quot;, Range(0, 1)) = 1
+
+        _StartSize (&quot;Start Size UE order (X,Y,Z from .uc)&quot;, Vector) = (0.2, 0.2, 0.25, 0)
+        [Toggle] _ApplyUuToStartSize (&quot;Also x UU-&gt;m on size (off for Unity FBX)&quot;, Float) = 0
+        _L2FxEffectScale (&quot;L2 Fx Effect Scale (runtime target)&quot;, Float) = 1
+        _L2FxMeshScale (&quot;L2 Fx Mesh Scale (per-effect tune)&quot;, Float) = 1
+        [Toggle] _UniformSize (&quot;Uniform Size&quot;, Float) = 0
+        [Toggle] _UseSizeScale (&quot;Use SizeScale&quot;, Float) = 1
+        [Toggle] _UseRegularSizeScale (&quot;Regular SizeScale&quot;, Float) = 0
+        _SizeScaleCount (&quot;SizeScale Count&quot;, Int) = 4
+        _SizeScaleRepeats (&quot;SizeScale Repeats&quot;, Float) = 1
+        _SizeScaleParam (&quot;SizeScale Param&quot;, Float) = 0
+        _SizeScaleTime0 (&quot;SizeScale Time[0]&quot;, Range(0, 1)) = 0
+        _SizeScaleVal0 (&quot;SizeScale Value[0]&quot;, Float) = 0.4
+        _SizeScaleTime1 (&quot;SizeScale Time[1]&quot;, Range(0, 1)) = 0.25
+        _SizeScaleVal1 (&quot;SizeScale Value[1]&quot;, Float) = 1
+        _SizeScaleTime2 (&quot;SizeScale Time[2]&quot;, Range(0, 1)) = 0.68
+        _SizeScaleVal2 (&quot;SizeScale Value[2]&quot;, Float) = 1.8
+        _SizeScaleTime3 (&quot;SizeScale Time[3]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal3 (&quot;SizeScale Value[3]&quot;, Float) = 2.1
+        _SizeScaleTime4 (&quot;SizeScale Time[4]&quot;, Range(0, 1)) = 1
+        _SizeScaleVal4 (&quot;SizeScale Value[4]&quot;, Float) = 2.1
+
+        [Toggle] _SpinParticles (&quot;Spin Particles&quot;, Float) = 1
+        _StartSpinRange (&quot;Start Spin rev (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+        [Toggle] _UseStartSpin3Axis (&quot;Start Spin XYZ (UE StartSpinRange)&quot;, Float) = 0
+        _StartSpinRangeX (&quot;Start Spin X rev (Min,Max)&quot;, Vector) = (0, 1, 0, 0)
+        _StartSpinRangeY (&quot;Start Spin Y rev (Min,Max)&quot;, Vector) = (0, 0, 0, 0)
+        _StartSpinRangeZ (&quot;Start Spin Z rev (Min,Max)&quot;, Vector) = (0, 0, 0, 0)
+        _SpinsPerSecond (&quot;Spins Per Second rev/s&quot;, Float) = 1.5
+        _SpinCCWorCW (&quot;Spin CCW(0) / CW(1)&quot;, Range(0, 1)) = 1
+        _L2FxMeshSpinDirection (&quot;L2 Fx Mesh Spin Direction (UC-&gt;Unity)&quot;, Float) = 1
+
+        _StartLocationOffset (&quot;StartLocationOffset UE (X,Y,Z)&quot;, Vector) = (0, 0, 0, 0)
+        _MeshYOffset (&quot;Lift above ground (m)&quot;, Float) = 0
+        _ClipDepthBias (&quot;Pull toward camera (NDC z)&quot;, Range(0, 0.01)) = 0.001
+
+        _Acceleration (&quot;Acceleration (XYZ UE UU/s²)&quot;, Vector) = (0, 0, -11, 0)
+        _StartVelocityRangeZ (&quot;StartVelocity Z UU/s (Min,Max)&quot;, Vector) = (-23, -23, 0, 0)
+        _SpawnUnitScale (&quot;UE UU -&gt; Unity meters&quot;, Float) = 0.01
+        _UcStartSizeScale (&quot;UC StartSize Scale&quot;, Float) = 1
+        _UcStartLocationOffsetScale (&quot;UC StartLocationOffset Scale&quot;, Float) = 1
+        _UcVelocityScale (&quot;UC StartVelocity Scale&quot;, Float) = 1
+        _UcAccelerationScale (&quot;UC Acceleration Scale&quot;, Float) = 1
+
+        [Header(Scene Debug Preview)]
+        [Toggle] _DebugMeshPreview (&quot;Debug Mesh Preview (_StartTime=0)&quot;, Float) = 0
+        [Toggle] _DebugMeshPreviewLoop (&quot;Debug Preview Loop&quot;, Float) = 0
+        _DebugMeshPreviewAge (&quot;Debug Preview Age (sec, pause)&quot;, Range(0, 4)) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            &quot;RenderPipeline&quot; = &quot;UniversalPipeline&quot;
+            &quot;Queue&quot; = &quot;Transparent&quot;
+            &quot;RenderType&quot; = &quot;Transparent&quot;
+                    &quot;L2FxGpuInstancing&quot; = &quot;On&quot;
+        }
+
+        Blend [_SrcBlend] [_DstBlend]
+        Cull Off
+        ZWrite Off
+        ZTest LEqual
+
+        Pass
+        {
+            Name &quot;MightCaMesh&quot;
+            Tags { &quot;LightMode&quot; = &quot;UniversalForward&quot; }
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+
+            #include &quot;../Common/L2FxMeshEmitterUrp.hlsl&quot;
+            #include &quot;../Common/L2FxMeshDebug.hlsl&quot;
+            #include &quot;../Common/L2FxMeshFragment.hlsl&quot;
+            #include &quot;../Common/L2FxMeshLifetimeAlpha.hlsl&quot;
+            #include &quot;../Common/L2FxMeshBrightenD3d9.hlsl&quot;
+            #include &quot;../Common/L2FxHold.hlsl&quot;
+            #include &quot;../Common/L2FxMeshAutoScale.hlsl&quot;
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _StartTime;
+                float _HasLifetime;
+                float4 _InitialDelayRange;
+                float4 _LifetimeRange;
+                float _Seed;
+                float _Hold;
+                float _HoldSizeReference;
+                float _FadeIn;
+                float _FadeInEndTime;
+                float _Fadeout;
+                float _FadeoutStartTime;
+                float _FadeOutPower;
+                float4 _ColorScale0;
+                float _ColorScaleTime1;
+                float4 _ColorScale1;
+                float _ColorScaleTime2;
+                float4 _ColorScale2;
+                uint _ColorScaleCount;
+                float _ColorScaleRepeats;
+                float _bAlphaBlend;
+                float4 _ColorMultMin;
+                float4 _ColorMultMax;
+                float _Opacity;
+                float _EmitterAlpha;
+                float _SrcBlend;
+                float _DstBlend;
+                float _IgnoreMainTexAlpha;
+                float _AlphaFromLuma;
+                float _LumaAlphaFloor;
+                float _AlphaEdgeFeather;
+                float _UseD3d9BrightenFs;
+                float _RgbBoost;
+                float _PlasmaRgbScale;
+                float _PlasmaLumaMax;
+                float _AlphaBoost;
+                float _TailLift;
+                float _D3d9FadeAlphaWithLife;
+                float _SoftLumMin;
+                float _SoftLumMax;
+                float _LineLumMin;
+                float _LineLumMax;
+                float4 _StartSize;
+                float _ApplyUuToStartSize;
+                float _L2FxEffectScale;
+                float _L2FxMeshScale;
+                float _UniformSize;
+                float _UseSizeScale;
+                float _UseRegularSizeScale;
+                uint _SizeScaleCount;
+                float _SizeScaleRepeats;
+                float _SizeScaleParam;
+                float _SizeScaleTime0;
+                float _SizeScaleVal0;
+                float _SizeScaleTime1;
+                float _SizeScaleVal1;
+                float _SizeScaleTime2;
+                float _SizeScaleVal2;
+                float _SizeScaleTime3;
+                float _SizeScaleVal3;
+                float _SizeScaleTime4;
+                float _SizeScaleVal4;
+                float _SpinParticles;
+                float4 _StartSpinRange;
+                float _UseStartSpin3Axis;
+                float4 _StartSpinRangeX;
+                float4 _StartSpinRangeY;
+                float4 _StartSpinRangeZ;
+                float _SpinsPerSecond;
+                float _SpinCCWorCW;
+                float _L2FxMeshSpinDirection;
+                float4 _StartLocationOffset;
+                float _MeshYOffset;
+                float _ClipDepthBias;
+                float4 _Acceleration;
+                float4 _StartVelocityRangeZ;
+                float _SpawnUnitScale;
+                float _UcStartSizeScale;
+                float _UcStartLocationOffsetScale;
+                float _UcVelocityScale;
+                float _UcAccelerationScale;
+                float _DebugMeshPreview;
+                float _DebugMeshPreviewLoop;
+                float _DebugMeshPreviewAge;
+            CBUFFER_END
+
+            #include &quot;../Common/L2FxInstancing.hlsl&quot;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float ageNorm : TEXCOORD1;
+                float lifeAlpha : TEXCOORD2;
+            };
+
+            L2Fx_UcToUnityMeshConvertData MightCaMeshConvertData()
+            {
+                L2Fx_UcToUnityMeshConvertData data;
+                data.applyUuToStartSize = _ApplyUuToStartSize;
+                data.spawnUnitScale = _SpawnUnitScale;
+                data.effectScale = _L2FxEffectScale;
+                data.meshScale = _L2FxMeshScale;
+                data.meshSpinDirection = _L2FxMeshSpinDirection;
+                return data;
+            }
+
+            float3 MightCaMeshParticleMotion(float ageSeconds)
+            {
+                float velZUe = L2Fx_RandomRange(_StartVelocityRangeZ.xy, _Seed, _StartTime, 101.0);
+                float3 velUe = L2Fx_UcToUnityApplyScale3(float3(0.0, 0.0, velZUe), _UcVelocityScale);
+                float3 accUe = L2Fx_UcToUnityApplyScale3(_Acceleration.xyz, _UcAccelerationScale);
+                float3 velUnity = L2Fx_UeVectorToUnity(velUe) * _SpawnUnitScale;
+                float3 accUnity = L2Fx_UeVectorToUnity(accUe) * _SpawnUnitScale;
+                return L2Fx_DisplacementConstantAccel(velUnity, accUnity, ageSeconds);
+            }
+
+            Varyings vert(Attributes IN)
+            {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                Varyings OUT;
+
+                float delay, lifetime, elapsed, ageNormUnused;
+                L2Fx_MeshDebug_ComputeTiming(
+                    _DebugMeshPreview, _DebugMeshPreviewLoop, _DebugMeshPreviewAge,
+                    _HasLifetime, _Time.y,
+                    _InitialDelayRange, _LifetimeRange, _Seed, _StartTime,
+                    delay, lifetime, elapsed, ageNormUnused);
+
+                lifetime = max(lifetime, 1e-4);
+
+                float motionAge = L2Fx_HoldMotionAgeStable(elapsed, lifetime, _Hold, _HoldSizeReference);
+                float spinAge = L2Fx_HoldSpinAge(elapsed);
+                float loopAgeNorm = L2Fx_HoldLoopAgeNorm(elapsed, lifetime, _Hold);
+                float sizeAgeNorm = L2Fx_HoldSizeAgeNorm(elapsed, lifetime, _Hold, _HoldSizeReference);
+
+                OUT.ageNorm = loopAgeNorm;
+
+                float3 posOS = IN.positionOS.xyz;
+                float3 nrmOS = IN.normalOS;
+                L2Fx_UcToUnityMeshConvertData convertData = MightCaMeshConvertData();
+                float3 startSizeUe = L2Fx_UcToUnityApplyScale3(_StartSize.xyz, _UcStartSizeScale);
+                float3 startSizeUnity = L2Fx_UcToUnityMeshSize(startSizeUe, convertData);
+                float spinsPerSecondUnity = L2Fx_UcToUnityMeshSpinRate(_SpinsPerSecond, convertData);
+                float3 startLocationOffsetUe = L2Fx_UcToUnityApplyScale3(
+                    _StartLocationOffset.xyz, _UcStartLocationOffsetScale);
+                float3 startLocationOffsetUnity = L2Fx_UcToUnityStartLocationOffset(
+                    startLocationOffsetUe, convertData);
+
+                if (_UseStartSpin3Axis &gt;= 0.5)
+                {
+                    float sizeScale = L2Fx_MeshBuiltin_SampleSizeScaleScalar(
+                        sizeAgeNorm,
+                        _SizeScaleParam,
+                        _SizeScaleRepeats,
+                        _SizeScaleCount,
+                        _UseSizeScale,
+                        _UseRegularSizeScale,
+                        _SizeScaleTime0, _SizeScaleVal0,
+                        _SizeScaleTime1, _SizeScaleVal1,
+                        _SizeScaleTime2, _SizeScaleVal2,
+                        _SizeScaleTime3, _SizeScaleVal3,
+                        _SizeScaleTime4, _SizeScaleVal4);
+
+                    float3 sizeMul = startSizeUnity * sizeScale;
+                    float2 zeroSps = float2(0.0, 0.0);
+
+                    // Spin + scale in mesh-local space, then translate (same as sprite billboard center).
+                    // Offset-before-spin orbited vertices around object origin and shifted MeshEmitter3 sideways.
+                    L2Fx_ApplyMeshParticleSpin(
+                        posOS,
+                        nrmOS,
+                        _SpinParticles,
+                        spinAge,
+                        _StartSpinRangeX.xy,
+                        _StartSpinRangeY.xy,
+                        _StartSpinRangeZ.xy,
+                        zeroSps,
+                        zeroSps,
+                        zeroSps,
+                        _Seed,
+                        _StartTime);
+                    posOS *= sizeMul;
+                    posOS += startLocationOffsetUnity;
+                    posOS.y += _MeshYOffset;
+                }
+                else
+                {
+                    float startSpinRev = L2Fx_RandomRange(_StartSpinRange.xy, _Seed, _StartTime, 91.0);
+
+                    L2Fx_MeshBuiltin_TransformVertexOS_SplitAgeUnityOffset(
+                        posOS, nrmOS,
+                        _SpinParticles,
+                        startSpinRev,
+                        spinsPerSecondUnity,
+                        _SpinCCWorCW,
+                        spinAge, sizeAgeNorm,
+                        startSizeUnity,
+                        _UseSizeScale, _UseRegularSizeScale,
+                        _SizeScaleParam, _SizeScaleRepeats, _SizeScaleCount,
+                        _SizeScaleTime0, _SizeScaleVal0,
+                        _SizeScaleTime1, _SizeScaleVal1,
+                        _SizeScaleTime2, _SizeScaleVal2,
+                        _SizeScaleTime3, _SizeScaleVal3,
+                        _SizeScaleTime4, _SizeScaleVal4,
+                        startLocationOffsetUnity, _MeshYOffset, 0.0);
+                }
+
+                posOS += MightCaMeshParticleMotion(motionAge);
+
+                OUT.positionHCS = L2Fx_MeshUrp_ObjectToHClip(posOS, _ClipDepthBias);
+                OUT.lifeAlpha = L2Fx_MeshLifetimeAlphaHold(
+                    motionAge, elapsed, lifetime,
+                    _Hold, _HasLifetime,
+                    _FadeIn, _FadeInEndTime, _Fadeout, _FadeoutStartTime);
+                if (_FadeOutPower &gt; 1.0001)
+                {
+                    OUT.lifeAlpha = pow(saturate(OUT.lifeAlpha), _FadeOutPower);
+                }
+
+                float2 uvMeshUnused;
+                L2Fx_MeshBuiltin_ResolveUv(
+                    IN.uv, IN.positionOS.xyz,
+                    0.0, 0.5, 1.0, 0.0, float4(0.5, 0.5, 0, 0),
+                    _MainTex_ST, 0.0, float4(0, 0, 1, 1),
+                    OUT.uv, uvMeshUnused);
+
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+
+                half4 factor = L2Fx_MeshBuiltin_SampleBaseTint(
+                    IN.ageNorm,
+                    _ColorScaleRepeats,
+                    _ColorScaleCount,
+                    _ColorScale0, _ColorScaleTime1, _ColorScale1,
+                    _ColorScaleTime2, _ColorScale2,
+                    _bAlphaBlend,
+                    _ColorMultMin.rgb, _ColorMultMax.rgb,
+                    _Opacity, _EmitterAlpha);
+
+                if (_UseD3d9BrightenFs &gt;= 0.5)
+                {
+                    return L2Fx_MeshBrighten_D3d9TexFactor(
+                        texColor, factor, (half)IN.lifeAlpha,
+                        _TailLift,
+                        _SoftLumMin, _SoftLumMax, _LineLumMin, _LineLumMax,
+                        _RgbBoost, _PlasmaRgbScale, _PlasmaLumaMax,
+                        _AlphaBoost, _IgnoreMainTexAlpha,
+                        _D3d9FadeAlphaWithLife);
+                }
+
+                float mask = L2Fx_MeshFrag_SampleTextureAlpha(
+                    texColor, _AlphaFromLuma, _LumaAlphaFloor, _IgnoreMainTexAlpha);
+                mask = L2Fx_MeshFrag_AlphaFeather(mask, _AlphaEdgeFeather);
+
+                half3 rgb = factor.rgb * texColor.rgb * (half)mask;
+                half alpha = (half)saturate(factor.a * mask * IN.lifeAlpha);
+                return half4(saturate(rgb), alpha);
+            }
+
+            ENDHLSL
+        }
+    }
+}
+</pre>
+            
+</body>
+</html>

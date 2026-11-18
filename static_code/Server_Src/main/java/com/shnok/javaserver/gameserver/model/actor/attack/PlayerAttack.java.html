@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/attack/PlayerAttack.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/actor/attack/PlayerAttack.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.actor.attack;
+
+import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Player;
+import com.shnok.javaserver.gameserver.model.item.kind.Weapon;
+import com.shnok.javaserver.gameserver.network.SystemMessageId;
+
+/**
+ * This class groups all attack data related to a {@link Creature}.
+ */
+public class PlayerAttack extends PlayableAttack&lt;Player&gt;
+{
+	public PlayerAttack(Player creature)
+	{
+		super(creature);
+	}
+	
+	@Override
+	public void doAttack(Creature target)
+	{
+		super.doAttack(target);
+		
+		_actor.clearRecentFakeDeath();
+	}
+	
+	@Override
+	public boolean canAttack(Creature target)
+	{
+		if (!super.canAttack(target))
+			return false;
+		
+		final Weapon weaponItem = _actor.getActiveWeaponItem();
+		
+		switch (weaponItem.getItemType())
+		{
+			case FISHINGROD:
+				_actor.sendPacket(SystemMessageId.CANNOT_ATTACK_WITH_FISHING_POLE);
+				return false;
+			
+			case BOW:
+				if (!_actor.checkAndEquipArrows())
+				{
+					_actor.sendPacket(SystemMessageId.NOT_ENOUGH_ARROWS);
+					return false;
+				}
+				
+				final int mpConsume = weaponItem.getMpConsume();
+				if (mpConsume &gt; 0 &amp;&amp; mpConsume &gt; _actor.getStatus().getMp())
+				{
+					_actor.sendPacket(SystemMessageId.NOT_ENOUGH_MP);
+					return false;
+				}
+		}
+		return true;
+	}
+	
+	@Override
+	public void stop()
+	{
+		super.stop();
+		
+		_actor.getAI().clientActionFailed();
+	}
+}</pre>
+            
+</body>
+</html>

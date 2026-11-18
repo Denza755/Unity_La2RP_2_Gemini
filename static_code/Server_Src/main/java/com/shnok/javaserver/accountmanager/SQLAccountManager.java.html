@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/accountmanager/SQLAccountManager.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/accountmanager/SQLAccountManager.java</h1>
+            <pre>package com.shnok.javaserver.accountmanager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Scanner;
+
+import com.shnok.javaserver.commons.crypt.BCrypt;
+import com.shnok.javaserver.commons.pool.ConnectionPool;
+
+import com.shnok.javaserver.Config;
+
+public class SQLAccountManager
+{
+	private static final String INSERT_OR_UPDATE_ACCOUNT = &quot;INSERT INTO accounts(login, password, access_level) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password), access_level = VALUES(access_level)&quot;;
+	private static final String UPDATE_ACCOUNT_LEVEL = &quot;UPDATE accounts SET access_level = ? WHERE login = ?&quot;;
+	private static final String DELETE_ACCOUNT = &quot;DELETE FROM accounts WHERE login = ?&quot;;
+	
+	private static String _uname = &quot;&quot;;
+	private static String _pass = &quot;&quot;;
+	private static String _level = &quot;&quot;;
+	private static String _mode = &quot;&quot;;
+	
+	public static void main(String[] args)
+	{
+		Config.loadAccountManager();
+		
+		ConnectionPool.init();
+		
+		try (Scanner _scn = new Scanner(System.in))
+		{
+			while (true)
+			{
+				System.out.println(&quot;Please choose an option:&quot;);
+				System.out.println();
+				System.out.println(&quot;1 - Create new account or update existing one (change pass and access level)&quot;);
+				System.out.println(&quot;2 - Change access level&quot;);
+				System.out.println(&quot;3 - Delete existing account&quot;);
+				System.out.println(&quot;4 - List accounts and access levels&quot;);
+				System.out.println(&quot;5 - Exit&quot;);
+				
+				while (!(_mode.equals(&quot;1&quot;) || _mode.equals(&quot;2&quot;) || _mode.equals(&quot;3&quot;) || _mode.equals(&quot;4&quot;) || _mode.equals(&quot;5&quot;)))
+				{
+					System.out.print(&quot;Your choice: &quot;);
+					_mode = _scn.next();
+				}
+				
+				if (_mode.equals(&quot;1&quot;) || _mode.equals(&quot;2&quot;) || _mode.equals(&quot;3&quot;))
+				{
+					while (_uname.trim().length() == 0)
+					{
+						System.out.print(&quot;Username: &quot;);
+						_uname = _scn.next().toLowerCase();
+					}
+					
+					if (_mode.equals(&quot;1&quot;))
+					{
+						while (_pass.trim().length() == 0)
+						{
+							System.out.print(&quot;Password: &quot;);
+							_pass = _scn.next();
+						}
+					}
+					
+					if (_mode.equals(&quot;1&quot;) || _mode.equals(&quot;2&quot;))
+					{
+						while (_level.trim().length() == 0)
+						{
+							System.out.print(&quot;Access level: &quot;);
+							_level = _scn.next();
+						}
+					}
+				}
+				
+				if (_mode.equals(&quot;1&quot;))
+				{
+					// Add or Update
+					addOrUpdateAccount(_uname.trim(), _pass.trim(), _level.trim());
+				}
+				else if (_mode.equals(&quot;2&quot;))
+				{
+					// Change Level
+					changeAccountLevel(_uname.trim(), _level.trim());
+				}
+				else if (_mode.equals(&quot;3&quot;))
+				{
+					// Delete
+					System.out.print(&quot;WARNING: This will not delete the gameserver data (characters, items, etc..)&quot;);
+					System.out.print(&quot; it will only delete the account login server data.&quot;);
+					System.out.println();
+					System.out.print(&quot;Do you really want to delete this account? Y/N: &quot;);
+					
+					String yesno = _scn.next();
+					if ((yesno != null) &amp;&amp; yesno.equalsIgnoreCase(&quot;Y&quot;))
+					{
+						deleteAccount(_uname.trim());
+					}
+					else
+					{
+						System.out.println(&quot;Deletion cancelled.&quot;);
+					}
+				}
+				else if (_mode.equals(&quot;4&quot;))
+				{
+					// List
+					_mode = &quot;&quot;;
+					System.out.println();
+					System.out.println(&quot;Please choose a listing mode:&quot;);
+					System.out.println();
+					System.out.println(&quot;1 - Banned accounts only (accessLevel &lt; 0)&quot;);
+					System.out.println(&quot;2 - GM/privileged accounts (accessLevel &gt; 0&quot;);
+					System.out.println(&quot;3 - Regular accounts only (accessLevel = 0)&quot;);
+					System.out.println(&quot;4 - List all&quot;);
+					
+					while (!(_mode.equals(&quot;1&quot;) || _mode.equals(&quot;2&quot;) || _mode.equals(&quot;3&quot;) || _mode.equals(&quot;4&quot;)))
+					{
+						System.out.print(&quot;Your choice: &quot;);
+						_mode = _scn.next();
+					}
+					System.out.println();
+					printAccInfo(_mode);
+				}
+				else if (_mode.equals(&quot;5&quot;))
+				{
+					System.exit(0);
+				}
+				
+				_uname = &quot;&quot;;
+				_pass = &quot;&quot;;
+				_level = &quot;&quot;;
+				_mode = &quot;&quot;;
+				System.out.println();
+			}
+		}
+	}
+	
+	private static void printAccInfo(String m)
+	{
+		int count = 0;
+		String q = &quot;SELECT login, access_level FROM accounts &quot;;
+		if (m.equals(&quot;1&quot;))
+		{
+			q = q.concat(&quot;WHERE access_level &lt; 0&quot;);
+		}
+		else if (m.equals(&quot;2&quot;))
+		{
+			q = q.concat(&quot;WHERE access_level &gt; 0&quot;);
+		}
+		else if (m.equals(&quot;3&quot;))
+		{
+			q = q.concat(&quot;WHERE access_level = 0&quot;);
+		}
+		q = q.concat(&quot; ORDER BY login ASC&quot;);
+		
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(q);
+			ResultSet rset = ps.executeQuery())
+		{
+			while (rset.next())
+			{
+				System.out.println(rset.getString(&quot;login&quot;) + &quot; -&gt; &quot; + rset.getInt(&quot;access_level&quot;));
+				count++;
+			}
+			
+			System.out.println(&quot;Displayed accounts: &quot; + count);
+		}
+		catch (Exception e)
+		{
+			System.out.println(&quot;There was error while displaying accounts:&quot;);
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private static void addOrUpdateAccount(String account, String password, String level)
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(INSERT_OR_UPDATE_ACCOUNT))
+		{
+			// Hash the password with default (10) salt
+			final String hashed = BCrypt.hashPw(password);
+			
+			ps.setString(1, account);
+			ps.setString(2, hashed);
+			ps.setString(3, level);
+			
+			if (ps.executeUpdate() &gt; 0)
+			{
+				System.out.println(&quot;Account &quot; + account + &quot; has been created or updated&quot;);
+			}
+			else
+			{
+				System.out.println(&quot;Account &quot; + account + &quot; doesn&#x27;t exist&quot;);
+			}
+		}
+		catch (Exception e)
+		{
+			System.out.println(&quot;There was error while adding/updating account:&quot;);
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private static void changeAccountLevel(String account, String level)
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(UPDATE_ACCOUNT_LEVEL))
+		{
+			ps.setString(1, level);
+			ps.setString(2, account);
+			if (ps.executeUpdate() &gt; 0)
+			{
+				System.out.println(&quot;Account &quot; + account + &quot; has been updated&quot;);
+			}
+			else
+			{
+				System.out.println(&quot;Account &quot; + account + &quot; doesn&#x27;t exist&quot;);
+			}
+		}
+		catch (Exception e)
+		{
+			System.out.println(&quot;There was error while updating account:&quot;);
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private static void deleteAccount(String account)
+	{
+		try (Connection con = ConnectionPool.getConnection();
+			PreparedStatement ps = con.prepareStatement(DELETE_ACCOUNT))
+		{
+			ps.setString(1, account);
+			if (ps.executeUpdate() &gt; 0)
+			{
+				System.out.println(&quot;Account &quot; + account + &quot; has been deleted&quot;);
+			}
+			else
+			{
+				System.out.println(&quot;Account &quot; + account + &quot; doesn&#x27;t exist&quot;);
+			}
+		}
+		catch (Exception e)
+		{
+			System.out.println(&quot;There was error while deleting account:&quot;);
+			System.out.println(e.getMessage());
+		}
+	}
+}</pre>
+            
+</body>
+</html>

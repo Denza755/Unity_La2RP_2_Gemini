@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Server_Src/main/java/com/shnok/javaserver/gameserver/model/multisell/Ingredient.java</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Server_Src/main/java/com/shnok/javaserver/gameserver/model/multisell/Ingredient.java</h1>
+            <pre>package com.shnok.javaserver.gameserver.model.multisell;
+
+import com.shnok.javaserver.commons.data.StatSet;
+
+import com.shnok.javaserver.gameserver.data.xml.ItemData;
+import com.shnok.javaserver.gameserver.model.item.kind.Armor;
+import com.shnok.javaserver.gameserver.model.item.kind.Item;
+import com.shnok.javaserver.gameserver.model.item.kind.Weapon;
+
+/**
+ * A datatype which is part of multisell system. It is either the &quot;result&quot; or the &quot;required part&quot; of a multisell action.
+ */
+public class Ingredient
+{
+	private int _itemId;
+	private int _itemCount;
+	private int _enchantmentLevel;
+	
+	private boolean _isTaxIngredient;
+	private boolean _maintainIngredient;
+	
+	private Item _template = null;
+	
+	public Ingredient(StatSet set)
+	{
+		this(set.getInteger(&quot;id&quot;), set.getInteger(&quot;count&quot;), set.getBool(&quot;isTaxIngredient&quot;, false), set.getBool(&quot;maintainIngredient&quot;, false));
+	}
+	
+	public Ingredient(int itemId, int itemCount, boolean isTaxIngredient, boolean maintainIngredient)
+	{
+		_itemId = itemId;
+		_itemCount = itemCount;
+		_isTaxIngredient = isTaxIngredient;
+		_maintainIngredient = maintainIngredient;
+		
+		if (_itemId &gt; 0)
+			_template = ItemData.getInstance().getTemplate(_itemId);
+	}
+	
+	/**
+	 * @return a new Ingredient instance with the same values as this.
+	 */
+	public Ingredient getCopy()
+	{
+		return new Ingredient(_itemId, _itemCount, _isTaxIngredient, _maintainIngredient);
+	}
+	
+	public final int getItemId()
+	{
+		return _itemId;
+	}
+	
+	public final void setItemId(int itemId)
+	{
+		_itemId = itemId;
+	}
+	
+	public final int getItemCount()
+	{
+		return _itemCount;
+	}
+	
+	public final void setItemCount(int itemCount)
+	{
+		_itemCount = itemCount;
+	}
+	
+	public final int getEnchantLevel()
+	{
+		return _enchantmentLevel;
+	}
+	
+	public final void setEnchantLevel(int enchantmentLevel)
+	{
+		_enchantmentLevel = enchantmentLevel;
+	}
+	
+	public final boolean isTaxIngredient()
+	{
+		return _isTaxIngredient;
+	}
+	
+	public final void setIsTaxIngredient(boolean isTaxIngredient)
+	{
+		_isTaxIngredient = isTaxIngredient;
+	}
+	
+	public final boolean getMaintainIngredient()
+	{
+		return _maintainIngredient;
+	}
+	
+	public final void setMaintainIngredient(boolean maintainIngredient)
+	{
+		_maintainIngredient = maintainIngredient;
+	}
+	
+	public final Item getTemplate()
+	{
+		return _template;
+	}
+	
+	public final boolean isStackable()
+	{
+		return _template == null || _template.isStackable();
+	}
+	
+	public final boolean isArmorOrWeapon()
+	{
+		return _template instanceof Armor || _template instanceof Weapon;
+	}
+	
+	public final int getWeight()
+	{
+		return (_template == null) ? 0 : _template.getWeight();
+	}
+}</pre>
+            
+</body>
+</html>

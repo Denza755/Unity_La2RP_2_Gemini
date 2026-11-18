@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Game/Character/CharacterBuilder.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Game/Character/CharacterBuilder.cs</h1>
+            <pre>using UnityEngine;
+
+public class CharacterBuilder : MonoBehaviour
+{
+    private static CharacterBuilder _instance;
+    public static CharacterBuilder Instance { get { return _instance; } }
+
+    void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            Destroy(this);
+        }
+    }
+
+    // Load player animations, face and hair
+    public GameObject BuildCharacterBase(CharacterModelType raceId, PlayerAppearance appearance, EntityType entityType)
+    {
+
+        //Debug.Log($&quot;Building character: Race:{raceId} Sex:{appearance.Sex} Face:{appearance.Face} Hair:{appearance.HairStyle} HairC:{appearance.HairColor}&quot;);
+
+        Entity entity;
+        GameObject containerPrefab = ModelTable.Instance.GetContainer(raceId, entityType);
+        if (containerPrefab == null)
+        {
+            Debug.LogError($&quot;Character base container {raceId} for {entityType} is null in ModelTable.&quot;);
+            return null;
+        }
+
+        GameObject go = Instantiate(containerPrefab);
+        bool isOrc = raceId == CharacterModelType.MOrc || raceId == CharacterModelType.FOrc ||
+                     raceId == CharacterModelType.MShaman || raceId == CharacterModelType.FShaman;
+
+        go.TryGetComponent&lt;Entity&gt;(out entity);
+        if (entity == null)
+        {
+            Debug.LogError($&quot;Character base {raceId} missing entity class.&quot;);
+        }
+        else
+        {
+            entity.RaceId = raceId;
+            float defColHeight = CharacterModelHelper.GetColHeight(raceId);
+            float defColRadius = CharacterModelHelper.GetColRadius(raceId);
+            entity.Appearance.CollisionHeight = appearance.CollisionHeight &gt; 0 ? appearance.CollisionHeight : defColHeight;
+            entity.Appearance.CollisionRadius = appearance.CollisionRadius &gt; 0 ? appearance.CollisionRadius : defColRadius;
+        }
+
+        if (isOrc)
+        {
+            Transform model = go.transform.Find(&quot;model&quot;) ?? (go.transform.childCount &gt; 0 ? go.transform.GetChild(0) : null);
+            float scaleFactor = CharacterModelHelper.GetOrcScaleFactor(raceId);
+
+            CharacterController cc = go.GetComponent&lt;CharacterController&gt;();
+            if (cc != null)
+            {
+                float targetHeight = CharacterModelHelper.GetControllerHeight(raceId);
+                float targetRadius = CharacterModelHelper.GetControllerRadius(raceId);
+
+                cc.skinWidth = 0.01f;
+                cc.height = targetHeight;
+                cc.radius = targetRadius;
+                cc.center = new Vector3(0, targetHeight * 0.5f, 0);
+                cc.stepOffset = Mathf.Min(0.3f, targetHeight * 0.35f);
+            }
+
+            if (model != null)
+            {
+                model.localScale = Vector3.one * scaleFactor;
+                // If CharacterController is present, its bottom contact surface is at center.y - height * 0.5f - skinWidth = -0.01f.
+                // Resting on the ground places transform.position.y at +0.01f (skinWidth).
+                // Offsetting model by -skinWidth ensures the bottom of boots (_b) is exactly at ground level y = 0 with no levitation.
+                float groundCompensation = (cc != null) ? -cc.skinWidth : 0f;
+                model.localPosition = new Vector3(0, groundCompensation, 0);
+            }
+        }
+
+        Transform clickArea = go.transform.FindRecursive(&quot;click_area&quot;);
+        if (clickArea != null)
+        {
+            float targetHeight = CharacterModelHelper.GetControllerHeight(raceId);
+            float targetRadius = CharacterModelHelper.GetControllerRadius(raceId);
+            clickArea.localScale = new Vector3(Mathf.Max(0.6f, targetRadius * 2.2f), targetHeight, Mathf.Max(0.6f, targetRadius * 2.2f));
+            clickArea.localPosition = new Vector3(0, targetHeight * 0.5f, 0);
+        }
+
+        foreach (Animator anim in go.GetComponentsInChildren&lt;Animator&gt;(true))
+        {
+            if (anim.GetComponent&lt;L2CharacterAnimationEvents&gt;() == null)
+            {
+                anim.gameObject.AddComponent&lt;L2CharacterAnimationEvents&gt;();
+            }
+        }
+
+        if (go.GetComponent&lt;L2CharacterAnimationEvents&gt;() == null)
+        {
+            go.AddComponent&lt;L2CharacterAnimationEvents&gt;();
+        }
+
+        return go;
+    }
+}
+</pre>
+            
+</body>
+</html>

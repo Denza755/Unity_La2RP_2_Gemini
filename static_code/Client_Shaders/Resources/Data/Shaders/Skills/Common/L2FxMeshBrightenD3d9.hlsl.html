@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Shaders/Resources/Data/Shaders/Skills/Common/L2FxMeshBrightenD3d9.hlsl</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../../../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../../../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Shaders/Resources/Data/Shaders/Skills/Common/L2FxMeshBrightenD3d9.hlsl</h1>
+            <pre>#ifndef L2_FX_MESH_BRIGHTEN_D3D9_INCLUDED
+#define L2_FX_MESH_BRIGHTEN_D3D9_INCLUDED
+
+// D3D9 fixed-function brighten for ribbon/mesh emitters (supportenchant00, fx_m_t0005).
+//
+// Original L2 FS: out = sample(t0, uv) * textureFactor; blend SrcAlpha One.
+// Ribbon UV layout: low luma = tail gradient, high luma = bright head (separate mesh strips).
+//
+// Tail lift: additive RGB on soft band only (not multiplicative split — avoids head blowout).
+// FadeIn/FadeOut: multiply final RGB by lifeAlpha; alpha = textureFactor * tex.a (no lifeAlpha²).
+//
+// Texture: use authored alpha (fx_m_t*_A.png), not From Gray Scale on blue VFX atlases.
+// Include after L2FxMeshFragment.hlsl.
+
+#include &quot;L2FxPlasmaParticleBlend.hlsl&quot;
+
+// Weight for tail band: smoothstep(softLum) excluding bright head (lineLum).
+float L2Fx_MeshBrighten_SoftTailWeight(
+    float3 texRgb,
+    float softLumMin,
+    float softLumMax,
+    float lineLumMin,
+    float lineLumMax)
+{
+    float lum = dot(texRgb, float3(0.299, 0.587, 0.114));
+    float lineW = (lineLumMax &gt; lineLumMin + 1e-5)
+        ? smoothstep(lineLumMin, lineLumMax, lum)
+        : lum;
+    float softW = 0.0;
+    if (softLumMax &gt; softLumMin + 1e-5)
+    {
+        softW = smoothstep(softLumMin, softLumMax, lum) * (1.0 - lineW);
+    }
+    return softW;
+}
+
+half3 L2Fx_MeshBrighten_TexHueTint(half3 texRgb)
+{
+    half texPeak = max(max(texRgb.r, texRgb.g), texRgb.b);
+    return texPeak &gt; 0.02 ? texRgb / texPeak : half3(1.0, 1.0, 1.0);
+}
+
+// PTDS_Brighten mesh path: tex * factor + tail hue lift; lifeAlpha gates RGB only.
+half4 L2Fx_MeshBrighten_D3d9TexFactor(
+    half4 texColor,
+    half4 factor,
+    half lifeAlpha,
+    float tailLift,
+    float softLumMin,
+    float softLumMax,
+    float lineLumMin,
+    float lineLumMax,
+    float rgbBoost,
+    float plasmaRgbScale,
+    float plasmaLumaMax,
+    float alphaBoost,
+    float ignoreMainTexAlpha,
+    float fadeAlphaWithLife)
+{
+    half la = lifeAlpha;
+    half3 rgb = texColor.rgb * factor.rgb * (half)rgbBoost;
+
+    float softW = L2Fx_MeshBrighten_SoftTailWeight(
+        texColor.rgb, softLumMin, softLumMax, lineLumMin, lineLumMax);
+    half3 hueTint = L2Fx_MeshBrighten_TexHueTint(texColor.rgb);
+    rgb += hueTint * factor.rgb * (half)softW * (half)tailLift;
+    rgb = L2Fx_PlasmaParticle_ApplyLowLumaRgbScale(
+        rgb, texColor.rgb, plasmaRgbScale, plasmaLumaMax);
+    rgb *= la;
+
+    half alpha = factor.a * (half)alphaBoost;
+    if (ignoreMainTexAlpha &lt; 0.5)
+    {
+        alpha *= texColor.a;
+    }
+    if (fadeAlphaWithLife &gt;= 0.5)
+    {
+        alpha *= la;
+    }
+
+    return half4(saturate(rgb), saturate(alpha));
+}
+
+#endif // L2_FX_MESH_BRIGHTEN_D3D9_INCLUDED
+</pre>
+            
+</body>
+</html>

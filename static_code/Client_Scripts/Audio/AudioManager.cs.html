@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Client_Scripts/Audio/AudioManager.cs</title>
+<style>
+  body { background:#121417; color:#e0e6ed; font-family:Consolas,monospace; padding:20px; line-height:1.45; }
+  a { color:#58a6ff; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  pre { background:#1b1f24; padding:16px; border-radius:6px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word; border:1px solid #30363d; }
+  h1, h2 { font-family:sans-serif; color:#ffffff; border-bottom:1px solid #30363d; padding-bottom:6px; }
+</style>
+</head>
+<body>
+
+            <p><a href="../../../code_index.html">&larr; Назад к оглавлению</a> | <a href="../../../context_dump.html">Context Dump</a></p>
+            <h1>Client_Scripts/Audio/AudioManager.cs</h1>
+            <pre>using System;
+using FMOD.Studio;
+using FMODUnity;
+using UnityEngine;
+
+public class AudioManager : MonoBehaviour
+{
+    [Header(&quot;Volume&quot;)]
+    [Range(0, 1)]
+    [SerializeField] private float _masterVolume = 1;
+    [Range(0, 1)]
+    [SerializeField] private float _musicVolume = 1;
+    [Range(0, 1)]
+    [SerializeField] private float _SFXVolume = 1;
+    [Range(0, 1)]
+    [SerializeField] private float _UIVolume = 1;
+    [Range(0, 1)]
+    [SerializeField] private float _ambientVolume = 1;
+    [SerializeField] private bool _muteWhenNotFocused = true;
+
+    private Bus _masterBus;
+    private Bus _musicBus;
+    private Bus _SFXBus;
+    private Bus _UIBus;
+    private Bus _ambientBus;
+
+    private EventReference[] _weaponSwishes;
+
+    private static AudioManager _instance;
+    public static AudioManager Instance { get { return _instance; } }
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(this);
+        }
+
+        SetBuses();
+        CacheEvents();
+    }
+
+    private void SetBuses()
+    {
+        _masterBus = RuntimeManager.GetBus(&quot;bus:/&quot;);
+        _musicBus = RuntimeManager.GetBus(&quot;bus:/Music&quot;);
+        _SFXBus = RuntimeManager.GetBus(&quot;bus:/SFX&quot;);
+        _UIBus = RuntimeManager.GetBus(&quot;bus:/UI&quot;);
+        _ambientBus = RuntimeManager.GetBus(&quot;bus:/Ambient&quot;);
+    }
+
+    private void CacheEvents()
+    {
+        _weaponSwishes = new EventReference[12];
+        _weaponSwishes[(int)WeaponType.none] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/fist&quot;);
+        _weaponSwishes[(int)WeaponType.hand] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/fist&quot;);
+        _weaponSwishes[(int)WeaponType.sword] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/sword_mid&quot;);
+        _weaponSwishes[(int)WeaponType.bigword] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/sword_great&quot;);
+        _weaponSwishes[(int)WeaponType.blunt] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/axe&quot;);
+        _weaponSwishes[(int)WeaponType.bigblunt] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/hammer&quot;);
+        _weaponSwishes[(int)WeaponType.bow] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/bow_small&quot;);
+        _weaponSwishes[(int)WeaponType.dagger] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/dagger&quot;);
+        _weaponSwishes[(int)WeaponType.fist] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/fist&quot;);
+        _weaponSwishes[(int)WeaponType.dual] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/sword_mid&quot;);
+        _weaponSwishes[(int)WeaponType.dualfist] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/fist&quot;);
+        _weaponSwishes[(int)WeaponType.pole] = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/spear&quot;);
+    }
+
+    private void Update()
+    {
+        if (_muteWhenNotFocused &amp;&amp; !Application.isFocused)
+        {
+            _masterBus.setVolume(0);
+            _musicBus.setVolume(0);
+            _SFXBus.setVolume(0);
+            _UIBus.setVolume(0);
+            _ambientBus.setVolume(0);
+        }
+        else
+        {
+            _masterBus.setVolume(_masterVolume * 0.75f);
+            _musicBus.setVolume(_musicVolume * 0.7f);
+            _SFXBus.setVolume(_SFXVolume);
+            _UIBus.setVolume(_UIVolume);
+            _ambientBus.setVolume(_ambientVolume * 0.45f);
+        }
+    }
+
+    public void Play3DSoundByReferenceName(string referenceName, Vector3 position)
+    {
+        EventReference er = RuntimeManager.PathToEventReference(&quot;event:/&quot; + referenceName);
+        if (!er.IsNull)
+        {
+            PlaySound(er, position);
+        }
+    }
+
+    public void PlayMonsterSound(EntitySoundEvent monsterSoundEvent, string npcClassName, Vector3 position)
+    {
+        string eventKey = monsterSoundEvent.ToString().ToLower();
+        EventReference er = RuntimeManager.PathToEventReference(&quot;event:/MonSound/&quot; + npcClassName + &quot;/&quot; + eventKey);
+        if (!er.IsNull)
+        {
+            PlaySound(er, position);
+        }
+    }
+
+    public void PlayCharacterSound(EntitySoundEvent characterSoundEvent, CharacterModelSound characterRace, Vector3 position)
+    {
+        string eventKey = characterSoundEvent.ToString();
+        EventReference er = RuntimeManager.PathToEventReference(&quot;event:/ChrSound/&quot; + characterRace + &quot;/&quot; + characterRace + &quot;_&quot; + eventKey);
+        if (!er.IsNull)
+        {
+            PlaySound(er, position);
+        }
+    }
+
+    public void PlayUISound(string soundName)
+    {
+        EventReference er = RuntimeManager.PathToEventReference(&quot;event:/InterfaceSound/&quot; + soundName);
+        if (!er.IsNull)
+        {
+            PlaySound(er);
+        }
+    }
+
+    public void PlayEquipSound(string soundName)
+    {
+        EventReference er = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/&quot; + soundName);
+        if (!er.IsNull)
+        {
+            PlaySound(er);
+        }
+    }
+
+    public void PlayStepSound(string surfaceTag, Vector3 position)
+    {
+        string eventKey;
+        surfaceTag = surfaceTag.ToLower();
+
+        switch (surfaceTag)
+        {
+            case &quot;dirt&quot;:
+                eventKey = surfaceTag + &quot;_run&quot;;
+                break;
+            case &quot;stone&quot;:
+                eventKey = surfaceTag + &quot;_run&quot;;
+                break;
+            case &quot;wood&quot;:
+                eventKey = surfaceTag + &quot;_run&quot;;
+                break;
+            default:
+                eventKey = &quot;default_run&quot;;
+                break;
+
+        }
+
+        EventReference er = RuntimeManager.PathToEventReference(&quot;event:/StepSound/&quot; + eventKey);
+        if (!er.IsNull)
+        {
+            PlaySound(er, position);
+        }
+    }
+
+    public void PlayItemSound(ItemSoundEvent itemSoundEvent, Vector3 position)
+    {
+        EventReference er;
+        er = RuntimeManager.PathToEventReference(&quot;event:/ItemSound/&quot; + itemSoundEvent.ToString());
+
+
+        if (!er.IsNull)
+        {
+            PlaySound(er, position);
+        }
+    }
+
+    public void PlaySound(EventReference sound, Vector3 postition)
+    {
+        if (!sound.IsNull)
+        {
+            RuntimeManager.PlayOneShot(sound, postition);
+        }
+        else
+        {
+            Debug.LogWarning(&quot;Trying to play a null EventReference sound.&quot;);
+        }
+    }
+
+    public void PlaySound(EventReference sound)
+    {
+        if (!sound.IsNull)
+        {
+            RuntimeManager.PlayOneShot(sound);
+        }
+        else
+        {
+            Debug.LogWarning(&quot;Trying to play a null EventReference sound.&quot;);
+        }
+    }
+
+    public void PlaySwishSound(WeaponType weaponType, Vector3 position)
+    {
+        PlaySound(_weaponSwishes[(int)weaponType], position);
+    }
+}
+</pre>
+            
+</body>
+</html>
