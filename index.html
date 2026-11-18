@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>La2RP — Архитектура и исходный код проекта</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <!-- Тёмная тема Docsify -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/dark.css">
+  <style>
+    :root {
+      --theme-color: #4ea8de;
+    }
+    .markdown-section pre > code {
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">Загрузка документации проекта La2RP...</div>
+  <script>
+    window.$docsify = {
+      name: 'La2RP Codebase',
+      repo: 'https://github.com/Denza755/Unity_La2RP_2_Gemini',
+      // Главной страницей сайта сразу открывается PROJECT_CONTEXT.md
+      homepage: 'PROJECT_CONTEXT.md',
+      loadSidebar: '_sidebar.md',
+      subMaxLevel: 2,
+      auto2top: true,
+      // Встроенный полнотекстовый поиск по всем файлам
+      search: {
+        maxAge: 3600000,
+        paths: 'auto',
+        placeholder: 'Поиск по коду и документам...',
+        noData: 'Ничего не найдено',
+        depth: 4
+      }
+    }
+  </script>
+  <!-- Движок Docsify -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <!-- Плагин поиска -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <!-- Подсветка синтаксиса C# и Java -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-csharp.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-java.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-glsl.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+=== GIT STATUS === 
+ M PROJECT_CONTEXT.md
+?? FILE_TREE.txt
+?? LATEST_GIT_DIFF.txt
+ 
+=== GIT DIFF === 
+diff --git a/PROJECT_CONTEXT.md b/PROJECT_CONTEXT.md
+index 198dced..884d06b 100644
+--- a/PROJECT_CONTEXT.md
++++ b/PROJECT_CONTEXT.md
+@@ -67,3 +67,4 @@
+ • [2026-11-18] Исправление FormatException при парсинге метаданных: в Skillgrp_Classic.txt исправлены записи с дробным mp_consume (скилл 1194, 11.7 -> 12). В SkillgrpTable.cs и SkillNameTable.cs внедрен безопасный парсинг чисел ParseIntSafe с поддержкой округления float/InvariantCulture и Enum.TryParse с безопасными дефолтами (SkillType.Physical, SkillMagicType.None). Сборка l2-unity.sln завершена с 0 ошибок.
+ • [2026-11-18] Устранение NullReferenceException в SkillTable.CacheSkills: добавлен null-safe fallback для skillname и skillgrp (генерация дефолтного имени Skill_{ID} при отсутствии записи в SkillNameTable). В Skill.cs свойство EffectId защищено от пустого массива Skillgrps. В SkillName_Classic-eu.txt добавлены отсутствовавшие скиллы 3695 и 3696 (Squire's Shirt). Сборка l2-unity.sln завершена с 0 ошибок.
+ • [2026-11-18] Устранение NullReferenceException в ParticleManager.SpawnEffect: в ParticleManager.cs добавлено автодобавление компонента L2Particle при создании эффектов и хитов (AddComponent<L2Particle>), а также безопасная инициализация PooledEffect. В L2Particle.cs обеспечено автосоздание _pooledEffect в геттере и Awake, защита от null в ResetTimer(). В SpawnCastParticles заменен прерывающий return null на continue при невозможности спавна отдельного эффекта. Сборка l2-unity.sln завершена с 0 ошибок.
++• [2026-11-18] Исправление визуала Life Drain (ID 1090): в m_u003_b.prefab и m_u003_c.prefab материалы переведены на Universal Render Pipeline/Particles/Unlit с багровым оттенком (#B01515); устранен розовый артефакт. Для каста m_u003_b выставлен разворот в плоскость XZ (pitch 90°), высота localPosition.y = 0.03f и диаметр ~2.3м. Сборка l2-unity.sln прошла с 0 ошибок.
