@@ -49,7 +49,11 @@ public class BuffWindow : AbstractEffectWindow
 
     public override void SetEtcEffects(PlayerBuffStatus status)
     {
+        base.SetEtcEffects(status);
         // to fix: skillid - duelist sonic focus = 8 or tyrant focus force = 50 
-        if (status.Charges > 0) AddEffect(8, status.Charges, 600, BuffType.Special);
+        if (status != null && status.Charges > 0)
+        {
+            AddEffect(8, status.Charges, 600, BuffType.Special);
+        }
     }
 }

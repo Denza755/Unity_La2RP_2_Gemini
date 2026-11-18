@@ -9,7 +9,7 @@ public class BuffSlot : L2Slot
 
     public BuffSlot(VisualElement slotElement) : base(slotElement, 0, SlotType.Effect)
     {
-        _durationLabel = slotElement.Q<Label>("Duration");
+        _durationLabel = slotElement != null ? slotElement.Q<Label>("Duration") : null;
     }
 
     public void AssignEffect(int effectId, int effectLevel, int duration, BuffType buffType)
@@ -18,19 +18,30 @@ public class BuffSlot : L2Slot
         Skillgrp skillgrp = SkillgrpTable.Instance.GetSkill(effectId, effectLevel);
         SkillNameData skillNameData = SkillNameTable.Instance.GetName(effectId, effectLevel);
 
-        // string desc = string.IsNullOrEmpty(skillNameData.Desc) ? SkillNameTable.Instance.GetDescription(effectId, effectLevel) : skillNameData.Desc;
-        string description = ComposeDescription(skillNameData.Desc, skillNameData.DescParams);
+        string skillName = skillNameData != null ? skillNameData.Name : $"Skill {effectId}";
+        string desc = skillNameData != null ? (skillNameData.Desc ?? "") : "";
+        string[] descParams = skillNameData != null ? skillNameData.DescParams : null;
+        string description = ComposeDescription(desc, descParams);
+        string icon = skillgrp != null ? skillgrp.Icon : "";
 
-        Buff = new Buff(skillNameData.Name, description, skillgrp.Icon, effectLevel, duration, buffType, Time.unscaledTime);
+        Buff = new Buff(skillName, description, icon, effectLevel, duration, buffType, Time.unscaledTime);
 
-        StyleBackground background = new StyleBackground(IconTable.Instance.LoadTextureByName(skillgrp.Icon));
-        _slotBg.style.backgroundImage = background;
+        if (_slotBg != null && !string.IsNullOrEmpty(icon))
+        {
+            StyleBackground background = new StyleBackground(IconTable.Instance.LoadTextureByName(icon));
+            _slotBg.style.backgroundImage = background;
+        }
 
         AddTooltip();
     }
 
     private string ComposeDescription(string desc, string[] descParams)
     {
+        if (string.IsNullOrEmpty(desc) || descParams == null)
+        {
+            return desc ?? "";
+        }
+
         for (var i = 0; i < descParams.Length; i++)
         {
             desc = desc.Replace($"$s{i + 1}", descParams[i]);
@@ -40,21 +51,24 @@ public class BuffSlot : L2Slot
 
     public void UpdateRemainingDuration()
     {
-        if (Buff.Duration < -1)
+        if (Buff == null || Buff.Duration <= 0)
         {
+            HideRemainingDuration();
             return;
         }
 
         float remainingDuration = GetRemainingDuration();
 
-        if (remainingDuration < 60)
+        if (remainingDuration <= 0f)
+        {
+            HideRemainingDuration();
+            return;
+        }
+
+        if (remainingDuration < 60f)
         {
             TogglePulse();
-
-            if (Buff.Duration != -1)
-            {
-                ShowRemainingDuration(remainingDuration);
-            }
+            ShowRemainingDuration(remainingDuration);
         }
         else
         {
@@ -64,16 +78,22 @@ public class BuffSlot : L2Slot
 
     public float GetRemainingDuration()
     {
+        if (Buff == null) return 0f;
         return Buff.StartTime + Buff.Duration - Time.unscaledTime;
     }
 
     private void AddTooltip()
     {
-        _tooltipManipulator?.SetValue(Buff);
+        if (Buff != null)
+        {
+            _tooltipManipulator?.SetValue(Buff);
+        }
     }
 
     private void TogglePulse()
     {
+        if (_slotElement == null) return;
+
         if (_slotElement.ClassListContains("fade-low"))
         {
             _slotElement.RemoveFromClassList("fade-low");
@@ -88,12 +108,17 @@ public class BuffSlot : L2Slot
 
     private void ShowRemainingDuration(float duration)
     {
+        if (_durationLabel == null) return;
+        if (duration < 0f) duration = 0f;
         _durationLabel.text = Mathf.Ceil(duration).ToString(CultureInfo.InvariantCulture);
         if (_durationLabel.style.display != DisplayStyle.Flex) _durationLabel.style.display = DisplayStyle.Flex;
     }
 
     private void HideRemainingDuration()
     {
-        if (_durationLabel.style.display != DisplayStyle.None) _durationLabel.style.display = DisplayStyle.None;
+        if (_durationLabel != null && _durationLabel.style.display != DisplayStyle.None)
+        {
+            _durationLabel.style.display = DisplayStyle.None;
+        }
     }
 }

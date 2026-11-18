@@ -739,6 +739,10 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
                     }
                     UpdateCastAnimationSpeed(_lastPlayedClipDuration, _entityReferenceHolder.Combat.LastSkillHitTime, true);
                 }
+                else
+                {
+                    Wait();
+                }
             }
             else
             {
@@ -749,6 +753,10 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
                         _animancerState.Events.OnEnd = PlaySkillCastEndAnimation;
                     }
                     UpdateCastAnimationSpeed(_lastPlayedClipDuration, _entityReferenceHolder.Combat.LastSkillHitTime, false);
+                }
+                else
+                {
+                    Wait();
                 }
             }
 
@@ -774,6 +782,11 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
             _lastAnimationType = HumanoidWeaponAnimType.cast_throw;
 
             SkillThrowAnimation skillThrowAnim = _lastSkill.Skillgrps[0].ThrowAnimation;
+            if (skillThrowAnim == SkillThrowAnimation.None)
+            {
+                Wait();
+                return true;
+            }
 
             HumanoidAnimationDefaultEvent throwAnim = (HumanoidAnimationDefaultEvent)skillThrowAnim;
 
@@ -788,6 +801,10 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
                 }
 
                 return true;
+            }
+            else
+            {
+                Wait();
             }
 
             return false;

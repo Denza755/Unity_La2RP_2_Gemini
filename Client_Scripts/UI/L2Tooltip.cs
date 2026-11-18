@@ -196,6 +196,12 @@ public class L2ToolTip : L2PopupWindow
             }
 
             float duration = effect.StartTime + effect.Duration - Time.unscaledTime;
+            if (duration <= 0)
+            {
+                durationLabel.text = "0s";
+                yield return new WaitForSeconds(1);
+                continue;
+            }
             float hours = duration * 0.00027777778f;
             float remainderAfterHours = duration - ((int)hours * 3600);
             float minutes = Mathf.Floor(remainderAfterHours * 0.0166666667f);

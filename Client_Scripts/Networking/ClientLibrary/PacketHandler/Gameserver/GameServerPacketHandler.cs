@@ -825,7 +825,7 @@ public class GameServerPacketHandler : ServerPacketHandler
     private void OnShortBuffStatusUpdate(byte[] data)
     {
         ShortBuffStatusUpdatePacket packet = new ShortBuffStatusUpdatePacket(data);
-        BuffWindow.Instance.AddEffect(packet.SkillId, packet.SkillLvl, packet.Duration, BuffType.Special);
+        _eventProcessor.QueueEvent(() => BuffWindow.Instance.AddEffect(packet.SkillId, packet.SkillLvl, packet.Duration, BuffType.Special));
     }
 
     private void OnAbnormalStatusUpdate(byte[] data)

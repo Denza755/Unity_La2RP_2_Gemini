@@ -92,49 +92,49 @@ public class SkillgrpTable
                     switch (key)
                     {
                         case "skill_id":
-                            skillGrp.Id = int.Parse(value);
+                            skillGrp.Id = ParseIntSafe(value);
                             break;
                         case "skill_level":
-                            skillGrp.Level = int.Parse(value);
+                            skillGrp.Level = ParseIntSafe(value);
                             break;
                         case "skill_sublevel":
-                            skillGrp.SubLevel = int.Parse(value);
+                            skillGrp.SubLevel = ParseIntSafe(value);
                             break;
                         case "icon_type":
-                            skillGrp.IconType = Enum.Parse<SkillType>(value, true);
+                            skillGrp.IconType = Enum.TryParse<SkillType>(value, true, out var it) ? it : SkillType.Physical;
                             break;
                         case "MagicType":
-                            skillGrp.MagicType = int.Parse(value);
+                            skillGrp.MagicType = ParseIntSafe(value);
                             break;
                         case "operate_type":
-                            skillGrp.OperateType = (SkillOperateType)int.Parse(value);
+                            skillGrp.OperateType = (SkillOperateType)ParseIntSafe(value);
                             break;
                         case "mp_consume":
-                            skillGrp.MpConsume = int.Parse(value);
+                            skillGrp.MpConsume = ParseIntSafe(value);
                             break;
                         case "cast_range":
-                            skillGrp.CastRange = int.Parse(value);
+                            skillGrp.CastRange = ParseIntSafe(value);
                             break;
                         case "cast_style":
-                            skillGrp.CastStyle = int.Parse(value);
+                            skillGrp.CastStyle = ParseIntSafe(value);
                             break;
                         case "hit_time":
-                            skillGrp.HitTime = float.Parse(value, CultureInfo.InvariantCulture);
+                            skillGrp.HitTime = float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var ht) ? ht : 0f;
                             break;
                         case "cool_time":
-                            skillGrp.CoolTime = float.Parse(value, CultureInfo.InvariantCulture);
+                            skillGrp.CoolTime = float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var ct) ? ct : 0f;
                             break;
                         case "reuse_delay":
-                            skillGrp.ReuseDelay = float.Parse(value, CultureInfo.InvariantCulture);
+                            skillGrp.ReuseDelay = float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var rd) ? rd : 0f;
                             break;
                         case "effect_point":
-                            skillGrp.EffectPoint = int.Parse(value);
+                            skillGrp.EffectPoint = ParseIntSafe(value);
                             break;
                         case "is_magic":
-                            skillGrp.IsMagic = Enum.Parse<SkillMagicType>(value, true);
+                            skillGrp.IsMagic = Enum.TryParse<SkillMagicType>(value, true, out var im) ? im : SkillMagicType.None;
                             break;
                         case "origin_skill":
-                            skillGrp.IsDouble = int.Parse(value);
+                            skillGrp.IsDouble = ParseIntSafe(value);
                             break;
                         case "animation":
                             string val = DatUtils.CleanupString(value).Replace("}", "").Replace("{", "");
@@ -168,6 +168,18 @@ public class SkillgrpTable
                                     skillGrp.CastAnimation = SkillCastAnimation.CastLong;
                                     skillGrp.ThrowAnimation = SkillThrowAnimation.MagicNoTarget;
                                     break;
+                                case "K":
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastLong;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicShot;
+                                    break;
+                                case "L":
+                                    skillGrp.CastAnimation = SkillCastAnimation.CastLong;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicThrow;
+                                    break;
+                                case "I":
+                                    skillGrp.CastAnimation = SkillCastAnimation.NoCast;
+                                    skillGrp.ThrowAnimation = SkillThrowAnimation.MagicShot;
+                                    break;
                                 case "J":
                                     skillGrp.CastAnimation = SkillCastAnimation.NoCast;
                                     skillGrp.ThrowAnimation = SkillThrowAnimation.MagicNoTarget;
@@ -184,11 +196,24 @@ public class SkillgrpTable
                                 case "V":
                                     skillGrp.CastAnimation = SkillCastAnimation.SpAtk04;
                                     break;
+                                case "W":
+                                    skillGrp.CastAnimation = SkillCastAnimation.Spatk03;
+                                    break;
+                                case "Y":
+                                    skillGrp.CastAnimation = SkillCastAnimation.SpAtk02;
+                                    break;
                                 case "X":
                                     skillGrp.CastAnimation = SkillCastAnimation.WarriorBuff01;
                                     break;
                                 default:
-                                    skillGrp.CastAnimation = SkillCastAnimation.None;
+                                    if (val.StartsWith("MIX", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        skillGrp.CastAnimation = SkillCastAnimation.SpAtk01;
+                                    }
+                                    else
+                                    {
+                                        skillGrp.CastAnimation = SkillCastAnimation.None;
+                                    }
                                     break;
                             }
                             break;
@@ -210,25 +235,25 @@ public class SkillgrpTable
                             skillGrp.IconPanel = DatUtils.CleanupString(value);
                             break;
                         case "debuff":
-                            skillGrp.Debuff = int.Parse(value);
+                            skillGrp.Debuff = ParseIntSafe(value);
                             break;
                         case "resist_cast":
-                            skillGrp.ResistCast = int.Parse(value);
+                            skillGrp.ResistCast = ParseIntSafe(value);
                             break;
                         case "enchant_skill_level":
-                            skillGrp.EnchantSkillLevel = int.Parse(value);
+                            skillGrp.EnchantSkillLevel = ParseIntSafe(value);
                             break;
                         case "enchant_icon":
                             skillGrp.EnchantIcon = DatUtils.CleanupString(value);
                             break;
                         case "hp_consume":
-                            skillGrp.HpConsume = int.Parse(value);
+                            skillGrp.HpConsume = ParseIntSafe(value);
                             break;
                         case "rumble_self":
-                            skillGrp.RumbleSelf = int.Parse(value);
+                            skillGrp.RumbleSelf = ParseIntSafe(value);
                             break;
                         case "rumble_target":
-                            skillGrp.RumbleTarget = int.Parse(value);
+                            skillGrp.RumbleTarget = ParseIntSafe(value);
                             break;
                     }
                 }
@@ -269,5 +294,14 @@ public class SkillgrpTable
     private void AddDict(Dictionary<int, Skillgrp> dataGrp, Skillgrp skillGrp)
     {
         dataGrp.TryAdd(skillGrp.Level, skillGrp);
+    }
+
+    private static int ParseIntSafe(string value)
+    {
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intVal))
+            return intVal;
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float floatVal))
+            return (int)Math.Round(floatVal);
+        return 0;
     }
 }

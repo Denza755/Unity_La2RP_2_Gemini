@@ -24,8 +24,11 @@ public abstract class AbstractEffectWindow : L2Window
         _windowEle.style.left = 182;
 
         VisualElement dragArea = GetElementByClass("drag-area");
-        DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
-        dragArea.AddManipulator(drag);
+        if (dragArea != null)
+        {
+            DragManipulator drag = new DragManipulator(dragArea, _windowEle, this);
+            dragArea.AddManipulator(drag);
+        }
 
         MouseOverDetectionManipulator mouseOverDetectionManipulator = new MouseOverDetectionManipulator(_windowEle);
         _windowEle.AddManipulator(mouseOverDetectionManipulator);
@@ -38,7 +41,8 @@ public abstract class AbstractEffectWindow : L2Window
 
     protected void HideWindowIfNeeded()
     {
-        if (_effectSlots.Count == 0 && _specialEffectSlots.Count == 0)
+        if ((_effectSlots == null || _effectSlots.Count == 0) &&
+            (_specialEffectSlots == null || _specialEffectSlots.Count == 0))
         {
             if (!_isWindowHidden)
             {
@@ -49,36 +53,64 @@ public abstract class AbstractEffectWindow : L2Window
 
     private void CleanupAllNormalEffects()
     {
-        for (int i = _effectSlots.Count - 1; i >= 0; i--)
+        if (_buffRowContainers != null && _buffRowContainers.Length > 0 && _buffRowContainers[0] != null)
         {
-            _buffRowContainers[0].RemoveAt(i);
-            _effectSlots.RemoveAt(i);
+            _buffRowContainers[0].Clear();
         }
+        _effectSlots?.Clear();
     }
 
     private void CleanupAllSpecialEffects()
     {
-        for (int i = _specialEffectSlots.Count - 1; i >= 0; i--)
+        if (_buffRowContainers != null && _buffRowContainers.Length > 1 && _buffRowContainers[1] != null)
         {
-            _buffRowContainers[1].RemoveAt(i);
-            _specialEffectSlots.RemoveAt(i);
+            _buffRowContainers[1].Clear();
         }
+        _specialEffectSlots?.Clear();
+    }
+
+    private void CleanupAllToggleEffects()
+    {
+        if (_buffRowContainers != null && _buffRowContainers.Length > 2 && _buffRowContainers[2] != null)
+        {
+            _buffRowContainers[2].Clear();
+        }
+    }
+
+    public void CleanupAllEffects()
+    {
+        CleanupAllNormalEffects();
+        CleanupAllSpecialEffects();
+        CleanupAllToggleEffects();
     }
 
     public void SetEffects(BuffEffect[] buffEffects)
     {
-        CleanupAllNormalEffects();
+        CleanupAllEffects();
+
+        if (buffEffects == null || buffEffects.Length == 0)
+        {
+            HideWindowIfNeeded();
+            return;
+        }
 
         foreach (BuffEffect buffEffect in buffEffects)
         {
+            if (buffEffect == null) continue;
+
             Skillgrp skillgrp = SkillgrpTable.Instance.GetSkill(buffEffect.SkillId, buffEffect.SkillLvl);
             if (skillgrp == null) continue;
 
-            if (skillgrp.IconType == SkillType.Buff && _effectType == EffectType.Buff ||
-                skillgrp.IconType == SkillType.Debuff && _effectType == EffectType.Debuff)
+            bool isDebuff = skillgrp.Debuff == 1 || skillgrp.IconType == SkillType.Debuff;
+
+            if (_effectType == EffectType.Buff && !isDebuff)
             {
-                // newEffects.Add(buffEffect);
-                AddEffect(buffEffect.SkillId, buffEffect.SkillLvl, buffEffect.Duration, _effectType == EffectType.Buff ? BuffType.Normal : BuffType.Debuff);
+                BuffType bType = Buff.ResolveBuffType(skillgrp);
+                AddEffect(buffEffect.SkillId, buffEffect.SkillLvl, buffEffect.Duration, bType);
+            }
+            else if (_effectType == EffectType.Debuff && isDebuff)
+            {
+                AddEffect(buffEffect.SkillId, buffEffect.SkillLvl, buffEffect.Duration, BuffType.Debuff);
             }
         }
 
@@ -87,16 +119,33 @@ public abstract class AbstractEffectWindow : L2Window
 
     public void AddEffect(int effectId, int effectLevel, int duration, BuffType type)
     {
-        Debug.Log($"Received buff: {effectId}, duration: {duration}");
+        Debug.Log($"Received buff: {effectId}, level: {effectLevel}, duration: {duration}, type: {type}");
 
-        List<BuffSlot> buffSlots = type == BuffType.Special ? _specialEffectSlots : _effectSlots;
-        int containerIndex = type == BuffType.Special ? 1 : 0;
+        int containerIndex = 0;
+        List<BuffSlot> targetSlotList = _effectSlots;
 
-        VisualElement visualElement = _buffSlot.Instantiate()[0];
-        BuffSlot buffSlot = new BuffSlot(visualElement);
-        _buffRowContainers[containerIndex].Add(buffSlot.SlotElement);
-        buffSlots.Add(buffSlot);
+        if (type == BuffType.Special)
+        {
+            containerIndex = 1;
+            targetSlotList = _specialEffectSlots;
+        }
+        else if (type == BuffType.Toggle)
+        {
+            containerIndex = 2;
+            targetSlotList = _effectSlots;
+        }
 
+        TemplateContainer template = _buffSlot.Instantiate();
+        VisualElement slotVisual = template.Q<VisualElement>("BgContainer") ?? (template.childCount > 0 ? template[0] : template);
+
+        BuffSlot buffSlot = new BuffSlot(slotVisual);
+
+        if (_buffRowContainers != null && containerIndex < _buffRowContainers.Length && _buffRowContainers[containerIndex] != null)
+        {
+            _buffRowContainers[containerIndex].Add(buffSlot.SlotElement);
+        }
+
+        targetSlotList.Add(buffSlot);
         buffSlot.AssignEffect(effectId, effectLevel, duration, type);
 
         if (_isWindowHidden)
@@ -115,13 +164,98 @@ public abstract class AbstractEffectWindow : L2Window
                 continue;
             }
 
-            foreach (BuffSlot buffSlot in _effectSlots)
+            bool removedAny = false;
+
+            // Tick & expire standard/toggle effects
+            if (_effectSlots != null)
             {
-                buffSlot.UpdateRemainingDuration();
+                for (int i = _effectSlots.Count - 1; i >= 0; i--)
+                {
+                    BuffSlot slot = _effectSlots[i];
+                    if (slot == null || slot.Buff == null)
+                    {
+                        _effectSlots.RemoveAt(i);
+                        removedAny = true;
+                        continue;
+                    }
+
+                    if (slot.Buff.Duration > 0)
+                    {
+                        float remaining = slot.GetRemainingDuration();
+                        if (remaining <= 0f)
+                        {
+                            if (slot.SlotElement != null && slot.SlotElement.parent != null)
+                            {
+                                slot.SlotElement.parent.Remove(slot.SlotElement);
+                            }
+                            _effectSlots.RemoveAt(i);
+                            removedAny = true;
+                            continue;
+                        }
+                    }
+
+                    slot.UpdateRemainingDuration();
+                }
+            }
+
+            // Tick & expire special effects
+            if (_specialEffectSlots != null)
+            {
+                for (int i = _specialEffectSlots.Count - 1; i >= 0; i--)
+                {
+                    BuffSlot slot = _specialEffectSlots[i];
+                    if (slot == null || slot.Buff == null)
+                    {
+                        _specialEffectSlots.RemoveAt(i);
+                        removedAny = true;
+                        continue;
+                    }
+
+                    if (slot.Buff.Duration > 0)
+                    {
+                        float remaining = slot.GetRemainingDuration();
+                        if (remaining <= 0f)
+                        {
+                            if (slot.SlotElement != null && slot.SlotElement.parent != null)
+                            {
+                                slot.SlotElement.parent.Remove(slot.SlotElement);
+                            }
+                            _specialEffectSlots.RemoveAt(i);
+                            removedAny = true;
+                            continue;
+                        }
+                    }
+
+                    slot.UpdateRemainingDuration();
+                }
+            }
+
+            if (removedAny)
+            {
+                HideWindowIfNeeded();
             }
 
             yield return new WaitForSeconds(1f);
         }
+    }
+
+    public void UpdateBuffs()
+    {
+        if (_effectSlots != null)
+        {
+            foreach (var slot in _effectSlots)
+            {
+                slot?.UpdateRemainingDuration();
+            }
+        }
+        if (_specialEffectSlots != null)
+        {
+            foreach (var slot in _specialEffectSlots)
+            {
+                slot?.UpdateRemainingDuration();
+            }
+        }
+        HideWindowIfNeeded();
     }
 
     private void OnDestroy()

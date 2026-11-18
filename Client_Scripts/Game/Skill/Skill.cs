@@ -8,7 +8,7 @@ public class Skill
     [SerializeField] private int _skillId;
     [SerializeField] private L2SkillEffect _skillEffect;
     public int SkillId { get => _skillId; }
-    public int EffectId { get => Skillgrps[0].SkillVisualEffect; }
+    public int EffectId { get => (Skillgrps != null && Skillgrps.Length > 0) ? Skillgrps[0].SkillVisualEffect : -1; }
     public SkillNameData[] SkillNameDatas { get; private set; }
     public Skillgrp[] Skillgrps { get; private set; }
     public L2SkillEffect SkillEffect { get => _skillEffect; set => _skillEffect = value; }

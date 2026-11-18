@@ -139,19 +139,82 @@ public class ParticleEffectTable
         return LoadEffectByName(effectClass);
     }
 
+    private static readonly Dictionary<string, string> _effectPathAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "bl_curse_poison_ta", "Data/Effects/curse_poison_deprecated/bl_curse_poison_ta/bl_curse_poison_ta" },
+        { "bl_curse_poison_ca", "Data/Effects/curse_poison_deprecated/bl_curse_poison_ca/bl_curse_poison_ca" },
+        { "el_ice_bolt_ca", "Data/Effects/el_ice_bolt_deprecated/el_ice_bolt_ca/el_ice_bolt_ca" },
+        { "el_ice_bolt_ta", "Data/Effects/el_ice_bolt_deprecated/el_ice_bolt_ta/el_ice_bolt_ta" },
+        { "el_wind_strike_ca", "Data/Effects/el_wind_strike_deprecated/el_wind_strike_ca/el_wind_strike_ca" },
+        { "wh_heal_ca", "Data/Effects/wh_heal_deprecated/wh_heal_ca/wh_heal_ca" },
+        { "wh_heal_ta", "Data/Effects/wh_heal_ta/wh_heal_ta" },
+        { "wh_shield_ta", "Data/Effects/shield_deprecate/wh_shield_ta/wh_shield_ta" },
+        { "wh_cure_poison_ta", "Data/Effects/cure_posion/wh_cure_poison_ta/bl_cure_poison_ta" },
+        { "su_might_ta", "Data/Effects/might_deprecate/wh_might_ta/wh_might_ta" },
+        { "m_u003_a", "Data/Effects/vampiric/m_u003_b/m_u003_b" },
+        { "m_u003_b", "Data/Effects/vampiric/m_u003_b/m_u003_b" },
+        { "m_u003_c", "Data/Effects/vampiric/m_u003_c/m_u003_c" },
+        { "bl_berserker_spirit_ca", "Data/Effects/mo_war_cry_ca/mo_war_cry_ca" },
+        { "sa_mass_frenzy_ca", "Data/Effects/mo_war_cry_ca/mo_war_cry_ca" },
+        { "dw_spoil_ca", "Data/Effects/curse_weakness/curse_weakness_composite" },
+        { "dw_spoil_ta", "Data/Effects/curse_weakness/d_mon_fire_ta/d_mon_fire_ta" },
+        { "m_u025_a", "Data/Effects/e_u004_a/e_u004_a" },
+        { "m_u025_b", "Data/Effects/e_u005_b/e_u005_b/e_u005_b" },
+        { "m_u025_c", "Data/Effects/e_u005_b/e_u005_b/e_u005_b" },
+        { "m_u028_a", "Data/Effects/e_u028_c/e_u028_c" },
+        { "m_u028_b", "Data/Effects/e_u028_c/e_u028_c" },
+        { "m_u028_c", "Data/Effects/e_u028_c/e_u028_c" },
+        { "s_u006_a", "Data/Effects/s_u001_a/s_u001_a" },
+        { "s_u006_b", "Data/Effects/s_u001_b/s_u001_b" },
+        { "s_u019_a", "Data/Effects/s_u003_a/s_u003_a" },
+        { "s_u019_b", "Data/Effects/s_u003_b/s_u003_b" },
+        { "s_u019_c", "Data/Effects/s_u003_d/s_u003_d" },
+        { "s_devotion_of_shine_ta", "Data/Effects/wh_heal_ta/wh_heal_ta" }
+    };
+
     private GameObject LoadEffectByName(string name)
     {
-        string path = $"Data/Effects/{name}/{name}";
-
-        GameObject prefab = Resources.Load<GameObject>(path);
-        if (prefab == null)
-        {
-            // Debug.LogWarning($"Can't find particle effect {name} at path {path}.");
+        if (string.IsNullOrEmpty(name))
             return null;
+
+        string cleanName = name;
+        if (cleanName.StartsWith("ClassLineageEffect.", StringComparison.OrdinalIgnoreCase))
+        {
+            cleanName = cleanName.Substring("ClassLineageEffect.".Length);
         }
 
-        // Debug.Log($"Successfully loaded particle effect {name}.");
+        // 1. Direct standard path Data/Effects/{cleanName}/{cleanName}
+        string path = $"Data/Effects/{cleanName}/{cleanName}";
+        GameObject prefab = Resources.Load<GameObject>(path);
+        if (prefab != null)
+            return prefab;
 
-        return prefab;
+        // 2. Direct flat path Data/Effects/{cleanName}
+        path = $"Data/Effects/{cleanName}";
+        prefab = Resources.Load<GameObject>(path);
+        if (prefab != null)
+            return prefab;
+
+        // 3. Direct path in Data/Particles/{cleanName}
+        path = $"Data/Particles/{cleanName}";
+        prefab = Resources.Load<GameObject>(path);
+        if (prefab != null)
+            return prefab;
+
+        path = $"Data/Particles/{cleanName}/{cleanName}";
+        prefab = Resources.Load<GameObject>(path);
+        if (prefab != null)
+            return prefab;
+
+        // 4. Known aliases and nested folders
+        if (_effectPathAliases.TryGetValue(cleanName, out string aliasPath))
+        {
+            prefab = Resources.Load<GameObject>(aliasPath);
+            if (prefab != null)
+                return prefab;
+        }
+
+        // Debug.LogWarning($"Can't find particle effect {name} (cleaned: {cleanName}).");
+        return null;
     }
 }

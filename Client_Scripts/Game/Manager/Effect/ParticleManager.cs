@@ -285,8 +285,8 @@ public class ParticleManager : MonoBehaviour
                 PooledEffect effect = SpawnEffect(effectClass);
                 if (effect == null || effect.GameObject == null)
                 {
-                    Debug.LogError($"Can't spawn skill effect {effectClass} for skill {skill.SkillId}.");
-                    return null;
+                    Debug.LogWarning($"Can't spawn skill effect {effectClass} for skill {skill.SkillId}.");
+                    continue;
                 }
 
                 effect.HitTime = hitTime / 1000f; //in seconds
@@ -496,7 +496,16 @@ public class ParticleManager : MonoBehaviour
                 {
                     Debug.Log($"Created new effect {effectClass}.");
                     GameObject effectGo = GameObject.Instantiate(gameObject);
-                    PooledEffect effect = effectGo.GetComponent<L2Particle>().PooledEffect;
+                    L2Particle l2p = effectGo.GetComponent<L2Particle>();
+                    if (l2p == null)
+                    {
+                        l2p = effectGo.AddComponent<L2Particle>();
+                    }
+                    PooledEffect effect = l2p.PooledEffect;
+                    if (effect == null)
+                    {
+                        effect = new PooledEffect();
+                    }
                     effect.GameObject = effectGo.gameObject;
                     effect.EffectClass = effectClass;
                     return effect;
@@ -634,7 +643,16 @@ public class ParticleManager : MonoBehaviour
             Debug.Log($"Created new hit effect.");
 
             GameObject effectGo = GameObject.Instantiate(go);
-            PooledEffect effect = effectGo.GetComponent<L2Particle>().PooledEffect;
+            L2Particle l2p = effectGo.GetComponent<L2Particle>();
+            if (l2p == null)
+            {
+                l2p = effectGo.AddComponent<L2Particle>();
+            }
+            PooledEffect effect = l2p.PooledEffect;
+            if (effect == null)
+            {
+                effect = new PooledEffect();
+            }
             effect.HitEffectIndex = index;
             effect.GameObject = effectGo.gameObject;
 

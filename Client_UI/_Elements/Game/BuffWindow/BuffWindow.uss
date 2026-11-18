@@ -42,7 +42,9 @@
 
 .buff-row {
     padding: 0;
+    margin: 0;
     flex-direction: row;
+    flex-wrap: nowrap;
     max-width: 336px;
 }
 
@@ -51,6 +53,11 @@
     height: 30px;
     max-width: 30px;
     max-height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    margin: 1px 1px 1px 0;
+    padding: 0;
+    flex-shrink: 0;
     -unity-background-image-tint-color: rgb(255, 235, 182);
     border-color: rgba(200, 200, 200, 0.75);
     border-width: 0.5px;
@@ -62,6 +69,11 @@
     height: 28px;
     max-width: 28px;
     max-height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    margin: 1px 1px 1px 0;
+    padding: 0;
+    flex-shrink: 0;
     -unity-background-image-tint-color: rgb(255, 235, 182);
     border-color: rgba(200, 18, 18, 0.75);
     border-width: 1px;

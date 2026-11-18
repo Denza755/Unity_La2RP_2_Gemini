@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
@@ -115,13 +116,13 @@ public class SkillNameTable
                     switch (key)
                     {
                         case "skill_id":
-                            nameData.Id = int.Parse(value);
+                            nameData.Id = ParseIntSafe(value);
                             break;
                         case "skill_level":
-                            nameData.Level = int.Parse(value);
+                            nameData.Level = ParseIntSafe(value);
                             break;
                         case "skill_sublevel":
-                            nameData.SubLevel = int.Parse(value);
+                            nameData.SubLevel = ParseIntSafe(value);
                             break;
                         case "name":
                             nameData.Name = DatUtils.CleanupString(value);
@@ -130,7 +131,7 @@ public class SkillNameTable
                             nameData.Desc = DatUtils.CleanupString(value);
                             break;
                         case "prev_skill_id":
-                            nameData.PrevSkillId = int.Parse(value);
+                            nameData.PrevSkillId = ParseIntSafe(value);
                             break;
                         case "desc_param":
                             nameData.DescParams = DatUtils.CleanupString(value).Split(';');
@@ -174,5 +175,14 @@ public class SkillNameTable
     private void AddDict(Dictionary<int, SkillNameData> dataGrp, SkillNameData skillName)
     {
         dataGrp.TryAdd(skillName.Level, skillName);
+    }
+
+    private static int ParseIntSafe(string value)
+    {
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intVal))
+            return intVal;
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float floatVal))
+            return (int)Math.Round(floatVal);
+        return 0;
     }
 }

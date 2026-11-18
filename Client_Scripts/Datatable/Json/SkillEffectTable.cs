@@ -57,8 +57,15 @@ public class SkillEffectTable
 
     private L2SkillEffect ParseEffectId(int id)
     {
-
         string dataPath = Path.Combine(Application.streamingAssetsPath, $"Data/LineageEffects/{id}.json");
+        if (!File.Exists(dataPath))
+        {
+            dataPath = Path.Combine(Application.streamingAssetsPath, $"Data/Skill/{id}.json");
+        }
+        if (!File.Exists(dataPath))
+        {
+            dataPath = Path.Combine(Application.streamingAssetsPath, $"Data/Skill/skill_{id}.json");
+        }
         if (!File.Exists(dataPath))
         {
             // Debug.LogWarning("File not found: " + dataPath);
