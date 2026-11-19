@@ -1,9 +1,14 @@
 package com.shnok.javaserver.gameserver.bots;
 
+import com.shnok.javaserver.commons.data.StatSet;
 import com.shnok.javaserver.commons.random.Rnd;
+import com.shnok.javaserver.gameserver.data.xml.AdminData;
 import com.shnok.javaserver.gameserver.enums.MessageType;
 import com.shnok.javaserver.gameserver.enums.SayType;
+import com.shnok.javaserver.gameserver.enums.ZoneId;
 import com.shnok.javaserver.gameserver.enums.items.ShotType;
+import com.shnok.javaserver.gameserver.model.AccessLevel;
+import com.shnok.javaserver.gameserver.model.actor.Creature;
 import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.model.actor.container.player.Appearance;
 import com.shnok.javaserver.gameserver.model.actor.template.PlayerTemplate;
@@ -12,9 +17,12 @@ import com.shnok.javaserver.gameserver.network.SystemMessageId;
 import com.shnok.javaserver.gameserver.network.serverpackets.CreatureSay;
 import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
 import com.shnok.javaserver.gameserver.network.serverpackets.skill.MagicSkillUse;
+import com.shnok.javaserver.gameserver.skills.L2Skill;
 
 public class FakePlayer extends Player
 {
+	private static AccessLevel _defaultBotAccessLevel;
+
 	private final BotRole _role;
 	private BotSpot _assignedSpot;
 	private BotSimulationMode _simulationMode = BotSimulationMode.HOT;
@@ -34,17 +42,75 @@ public class FakePlayer extends Player
 	private Player _followTarget = null;
 	private boolean _isPartyAssistant = false;
 
+	private static AccessLevel getDefaultBotAccessLevel()
+	{
+		if (_defaultBotAccessLevel == null)
+		{
+			AccessLevel level = AdminData.getInstance().getAccessLevel(0);
+			if (level == null)
+			{
+				final StatSet set = new StatSet();
+				set.set("level", 0);
+				set.set("name", "User");
+				set.set("nameColor", "FFFFFF");
+				set.set("titleColor", "FFFF77");
+				set.set("childLevel", 0);
+				set.set("isGM", false);
+				set.set("allowFixedRes", false);
+				set.set("allowTransaction", true);
+				set.set("allowAltg", false);
+				set.set("giveDamage", true);
+				level = new AccessLevel(set);
+			}
+			_defaultBotAccessLevel = level;
+		}
+		return _defaultBotAccessLevel;
+	}
+
 	public FakePlayer(int objectId, PlayerTemplate template, String accountName, Appearance app, BotRole role, BotSpot spot)
 	{
 		super(objectId, template, accountName, app);
 		_role = role;
 		_assignedSpot = spot;
+		_ai = new HotBotAI(this);
+
+		setMove();
+		setAccessLevel(0);
+	}
+
+	@Override
+	public void setMove()
+	{
+		_move = new BotMove(this);
+	}
+
+	@Override
+	public BotMove getMove()
+	{
+		return (BotMove) _move;
 	}
 
 	@Override
 	public boolean isFakePlayer()
 	{
 		return true;
+	}
+
+	@Override
+	public boolean isGM()
+	{
+		return false;
+	}
+
+	@Override
+	public AccessLevel getAccessLevel()
+	{
+		AccessLevel level = super.getAccessLevel();
+		if (level == null)
+		{
+			level = getDefaultBotAccessLevel();
+		}
+		return level;
 	}
 
 	@Override
@@ -56,6 +122,10 @@ public class FakePlayer extends Player
 	@Override
 	public HotBotAI getAI()
 	{
+		if (_ai == null || !(_ai instanceof HotBotAI))
+		{
+			_ai = new HotBotAI(this);
+		}
 		return (HotBotAI) _ai;
 	}
 
@@ -275,6 +345,13 @@ public class FakePlayer extends Player
 			return true;
 		}
 
+		// Potions check
+		final ItemInstance pots = getInventory().getItemByItemId(1060);
+		if (pots == null || pots.getCount() <= 0)
+		{
+			return true;
+		}
+
 		// Arrows check for archer
 		if (_role == BotRole.ARCHER)
 		{
@@ -298,14 +375,35 @@ public class FakePlayer extends Player
 		// Teleport to village town
 		teleportTo(BotSpot.VILLAGE_TOWN.getCenter(), 80);
 
-		// Add shots
+		final int lvl = getStatus().getLevel();
 		final int shotId = (_role == BotRole.MAGE || _role == BotRole.HEALER) ? 2047 : 2039;
-		getInventory().addItem(shotId, 1000);
 
-		// Add arrows for archers
-		if (_role == BotRole.ARCHER)
+		if (lvl <= 5)
 		{
-			getInventory().addItem(17, 2000);
+			getInventory().addItem(shotId, 50);
+			getInventory().addItem(1060, 2);
+			if (_role == BotRole.ARCHER)
+			{
+				getInventory().addItem(17, 500);
+			}
+		}
+		else if (lvl <= 11)
+		{
+			getInventory().addItem(shotId, 300);
+			getInventory().addItem(1060, 5);
+			if (_role == BotRole.ARCHER)
+			{
+				getInventory().addItem(17, 1000);
+			}
+		}
+		else
+		{
+			getInventory().addItem(shotId, 800);
+			getInventory().addItem(1060, 10);
+			if (_role == BotRole.ARCHER)
+			{
+				getInventory().addItem(17, 2000);
+			}
 		}
 
 		// Friendly ambient chatter in town
@@ -316,6 +414,71 @@ public class FakePlayer extends Player
 
 		// Resume travel back to assigned spot
 		_botState = BotState.RETURNING_TO_SPOT;
+	}
+
+	/**
+	 * Consume Lesser Healing Potion (ID 1060) from inventory.
+	 */
+	public boolean useHealingPotion()
+	{
+		final ItemInstance potion = getInventory().getItemByItemId(1060);
+		if (potion == null || potion.getCount() <= 0)
+		{
+			return false;
+		}
+
+		destroyItem(potion, 1, false);
+		broadcastPacketInRadius(new MagicSkillUse(this, this, 2031, 1, 0, 0), 600);
+		final double maxHp = getStatus().getMaxHp();
+		getStatus().setHp(Math.min(maxHp, getStatus().getHp() + 90));
+		return true;
+	}
+
+	@Override
+	public void reduceCurrentHp(double value, Creature attacker, boolean awake, boolean isDOT, L2Skill skill)
+	{
+		super.reduceCurrentHp(value, attacker, awake, isDOT, skill);
+
+		if (isDead() || attacker == null || attacker == this)
+		{
+			return;
+		}
+
+		// Self-defense & PvP handling when attacked by a real player
+		if (attacker instanceof Player realPlayer && !realPlayer.isFakePlayer())
+		{
+			// Never retaliate or flag if inside peace zone
+			if (isInsideZone(ZoneId.PEACE) || realPlayer.isInsideZone(ZoneId.PEACE))
+			{
+				return;
+			}
+
+			// Reciprocal PvP flagging: flag real player and bot
+			realPlayer.updatePvPStatus(this);
+			updatePvPStatus(realPlayer);
+			if (getPvpFlag() == 0)
+			{
+				updatePvPFlag(1);
+			}
+
+			// Notify AI to engage in self-defense against the attacking player
+			getAI().onAttackedByPlayer(realPlayer);
+
+			// Alert party members in radius 1000 to assist
+			if (isInParty() && getParty() != null)
+			{
+				for (Player member : getParty().getMembers())
+				{
+					if (member instanceof FakePlayer botMember && botMember != this && !botMember.isDead())
+					{
+						if (distance2D(botMember) <= 1000)
+						{
+							botMember.getAI().notifyPartyMemberUnderAttack(this, realPlayer);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	/**

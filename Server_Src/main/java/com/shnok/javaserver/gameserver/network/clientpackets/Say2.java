@@ -6,8 +6,12 @@ import java.util.logging.Logger;
 
 import com.shnok.javaserver.Config;
 import com.shnok.javaserver.gameserver.enums.SayType;
+import com.shnok.javaserver.gameserver.handler.AdminCommandHandler;
 import com.shnok.javaserver.gameserver.handler.ChatHandler;
+import com.shnok.javaserver.gameserver.handler.IAdminCommandHandler;
 import com.shnok.javaserver.gameserver.handler.IChatHandler;
+import com.shnok.javaserver.gameserver.handler.IVoicedCommandHandler;
+import com.shnok.javaserver.gameserver.handler.VoicedCommandHandler;
 import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.network.SystemMessageId;
 
@@ -78,7 +82,29 @@ public final class Say2 extends L2GameClientPacket
 		
 		if (_text.isEmpty() || _text.length() > 100)
 			return;
-		
+
+		if (_text.startsWith("."))
+		{
+			final String command = _text.substring(1);
+			final IVoicedCommandHandler vch = VoicedCommandHandler.getInstance().getHandler(command);
+			if (vch != null)
+			{
+				vch.useVoicedCommand(command, player, _target);
+				return;
+			}
+		}
+
+		if (_text.startsWith("//") && player.isGM())
+		{
+			final String cmd = _text.substring(2);
+			final IAdminCommandHandler ach = AdminCommandHandler.getInstance().getHandler(cmd);
+			if (ach != null)
+			{
+				ach.useAdminCommand("admin_" + cmd, player);
+				return;
+			}
+		}
+
 		SayType type = SayType.VALUES[_id];
 		if (Config.L2WALKER_PROTECTION && type == SayType.TELL && checkBot(_text))
 			return;

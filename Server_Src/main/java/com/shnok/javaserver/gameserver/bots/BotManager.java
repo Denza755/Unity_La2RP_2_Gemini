@@ -13,7 +13,9 @@ import com.shnok.javaserver.commons.random.Rnd;
 import com.shnok.javaserver.gameserver.enums.LootRule;
 import com.shnok.javaserver.gameserver.enums.SayType;
 import com.shnok.javaserver.gameserver.enums.actors.OperateType;
+import com.shnok.javaserver.gameserver.geoengine.GeoEngine;
 import com.shnok.javaserver.gameserver.model.World;
+import com.shnok.javaserver.gameserver.model.WorldRegion;
 import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.model.group.Party;
 import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
@@ -124,7 +126,7 @@ public class BotManager
 
 			final int x = villageCenter.getX() + offsets[i][0];
 			final int y = villageCenter.getY() + offsets[i][1];
-			final int z = villageCenter.getZ();
+			final int z = GeoEngine.getInstance().getHeight(x, y, villageCenter.getZ());
 
 			trader.spawnMe(x, y, z);
 			_bots.put(trader.getObjectId(), trader);
@@ -370,14 +372,20 @@ public class BotManager
 				continue;
 			}
 
-			// Evaluate proximity to real players
-			boolean nearRealPlayer = false;
-			for (Player realPlayer : realPlayers)
+			// Evaluate proximity to real players (same/neighboring active region or distance <= 5000)
+			final WorldRegion region = bot.getRegion();
+			final boolean regionActive = region != null && region.isActive();
+
+			boolean nearRealPlayer = regionActive;
+			if (!nearRealPlayer)
 			{
-				if (bot.distance2D(realPlayer) <= 3500)
+				for (Player realPlayer : realPlayers)
 				{
-					nearRealPlayer = true;
-					break;
+					if (bot.distance2D(realPlayer) <= 5000)
+					{
+						nearRealPlayer = true;
+						break;
+					}
 				}
 			}
 
@@ -416,11 +424,11 @@ public class BotManager
 		final FakePlayer bot = BotAppearanceFactory.createBot(_botNameCounter++, role, spot, level);
 		final Location center = spot.getCenter();
 
-		final int offsetX = Rnd.get(-120, 120);
-		final int offsetY = Rnd.get(-120, 120);
+		final int offsetX = Rnd.get(-150, 150);
+		final int offsetY = Rnd.get(-150, 150);
 		final int x = center.getX() + offsetX;
 		final int y = center.getY() + offsetY;
-		final int z = center.getZ();
+		final int z = GeoEngine.getInstance().getHeight(x, y, center.getZ());
 
 		bot.setSimulationMode(BotSimulationMode.HOT);
 		bot.setBotState(BotState.FARMING);

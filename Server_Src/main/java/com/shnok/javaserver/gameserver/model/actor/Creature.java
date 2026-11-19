@@ -420,7 +420,7 @@ public abstract class Creature extends WorldObject
 		getPosition().set(x, y, z);
 		
 		// Handle onTeleported behavior, but only if it's not a Player. Players are handled from Appearing packet.
-		if (!(this instanceof Player player) || (player.getClient() != null && player.getClient().isDetached()))
+		if (!(this instanceof Player player) || isFakePlayer() || (player.getClient() != null && player.getClient().isDetached()))
 			onTeleported();
 		
 		getAI().notifyEvent(AiEventType.TELEPORTED, null, null);
@@ -1916,6 +1916,11 @@ public abstract class Creature extends WorldObject
 	public boolean canBeHealed()
 	{
 		return !isDead() && !isInvul();
+	}
+
+	public boolean isFakePlayer()
+	{
+		return false;
 	}
 	
 	/**

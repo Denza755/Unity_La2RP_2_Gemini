@@ -1,5 +1,6 @@
 package com.shnok.javaserver.gameserver.bots;
 
+import com.shnok.javaserver.gameserver.geoengine.GeoEngine;
 import com.shnok.javaserver.gameserver.model.location.Location;
 
 public class BotSpot
@@ -26,6 +27,8 @@ public class BotSpot
 
 	public Location getCenter()
 	{
+		final int realZ = GeoEngine.getInstance().getHeight(_center.getX(), _center.getY(), _center.getZ());
+		_center.setZ(realZ);
 		return _center;
 	}
 
@@ -44,22 +47,25 @@ public class BotSpot
 		return _maxLevel;
 	}
 
-	// Preset spots strictly within Talking Island (16_24, 16_25, 17_24, 17_25)
-	public static final BotSpot VILLAGE_TOWN = new BotSpot("TI Village Town", -84200, 243000, -3729, 600, 1, 20);
-	public static final BotSpot KELTIR_PLAINS = new BotSpot("Keltir Plains (Lvl 1-4)", -84300, 240500, -3720, 1500, 1, 4);
-	public static final BotSpot WOLF_FOREST = new BotSpot("Wolf Forest (Lvl 4-8)", -81800, 243500, -3720, 1500, 4, 8);
-	public static final BotSpot ORC_OUTPOST = new BotSpot("Orc Outpost (Lvl 6-10)", -86500, 243000, -3720, 1500, 6, 10);
-	public static final BotSpot CEDRIC_GROUNDS = new BotSpot("Cedric Grounds (Lvl 8-12)", -84500, 245500, -3720, 1600, 8, 12);
-	public static final BotSpot OBELISK_HILLS = new BotSpot("Obelisk Spiders (Lvl 11-15)", -84000, 247000, -3600, 1800, 11, 15);
-	public static final BotSpot ELVEN_RUINS_VALLEY = new BotSpot("Elven Ruins Valley (Lvl 14-18)", -90500, 248000, -3560, 1800, 14, 18);
+	// Preset spots distributed across Talking Island sectors (17_25, 16_25, 17_24, 16_24)
+	public static final BotSpot VILLAGE_TOWN = new BotSpot("TI Village Town", -84164, 243200, -3729, 600, 1, 20);
+	public static final BotSpot KELTIR_PLAINS = new BotSpot("Keltir Plains (Lvl 1-4)", -86500, 239500, -3600, 1800, 1, 4);
+	public static final BotSpot WOLF_FOREST = new BotSpot("Wolf Forest (Lvl 4-8)", -79500, 243500, -3500, 1800, 4, 8);
+	public static final BotSpot ORC_HILLS = new BotSpot("Orc Hills (Lvl 6-10)", -88000, 250500, -3550, 1800, 6, 10);
+	public static final BotSpot ORC_OUTPOST = ORC_HILLS;
+	public static final BotSpot CEDRIC_GROUNDS = new BotSpot("Cedric Grounds (Lvl 8-12)", -73500, 255500, -3250, 1800, 8, 12);
+	public static final BotSpot MAGIC_SCHOOL_VALLEY = new BotSpot("School of Magic Valley (Lvl 11-15)", -90800, 248200, -3570, 1800, 11, 15);
+	public static final BotSpot ELVEN_RUINS_VALLEY = MAGIC_SCHOOL_VALLEY;
+	public static final BotSpot OBELISK_PLAINS = new BotSpot("Obelisk Plains (Lvl 14-18)", -80000, 251000, -3450, 1800, 14, 18);
+	public static final BotSpot OBELISK_HILLS = OBELISK_PLAINS;
 
 	public static final BotSpot[] FARM_SPOTS =
 	{
 		KELTIR_PLAINS,
 		WOLF_FOREST,
-		ORC_OUTPOST,
+		ORC_HILLS,
 		CEDRIC_GROUNDS,
-		OBELISK_HILLS,
-		ELVEN_RUINS_VALLEY
+		MAGIC_SCHOOL_VALLEY,
+		OBELISK_PLAINS
 	};
 }

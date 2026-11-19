@@ -1465,10 +1465,13 @@ Server_Src\main\java\com\shnok\javaserver\gameserver\LoginServerThread.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\Shutdown.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotAppearanceFactory.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotManager.java
+Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotMove.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotRole.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotSimulationMode.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotSpot.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\BotState.java
+Server_Src\main\java\com\shnok\javaserver\gameserver\bots\CompanionAI.java
+Server_Src\main\java\com\shnok\javaserver\gameserver\bots\CompanionManager.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\FakePlayer.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\bots\HotBotAI.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\communitybbs\CommunityBoard.java
@@ -1660,9 +1663,11 @@ Server_Src\main\java\com\shnok\javaserver\gameserver\handler\ISkillHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\ITargetHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\ItemHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\IUserCommandHandler.java
+Server_Src\main\java\com\shnok\javaserver\gameserver\handler\IVoicedCommandHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\SkillHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\TargetHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\UserCommandHandler.java
+Server_Src\main\java\com\shnok\javaserver\gameserver\handler\VoicedCommandHandler.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\admincommandhandlers\AdminAdmin.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\admincommandhandlers\AdminAlternativeSpawn.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\admincommandhandlers\AdminAnnouncements.java
@@ -1806,6 +1811,7 @@ Server_Src\main\java\com\shnok\javaserver\gameserver\handler\usercommandhandlers
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\usercommandhandlers\PartyInfo.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\usercommandhandlers\SiegeStatus.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\handler\usercommandhandlers\Time.java
+Server_Src\main\java\com\shnok\javaserver\gameserver\handler\voicedcommandhandlers\VoiceTeam.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\idfactory\IdFactory.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\model\AccessLevel.java
 Server_Src\main\java\com\shnok\javaserver\gameserver\model\Announcement.java

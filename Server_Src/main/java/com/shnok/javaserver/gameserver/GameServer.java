@@ -17,6 +17,7 @@ import com.shnok.javaserver.commons.util.SysUtil;
 
 import com.shnok.javaserver.Config;
 import com.shnok.javaserver.gameserver.bots.BotManager;
+import com.shnok.javaserver.gameserver.bots.CompanionManager;
 import com.shnok.javaserver.gameserver.communitybbs.CommunityBoard;
 import com.shnok.javaserver.gameserver.data.SkillTable;
 import com.shnok.javaserver.gameserver.data.cache.CrestCache;
@@ -80,6 +81,7 @@ import com.shnok.javaserver.gameserver.handler.ItemHandler;
 import com.shnok.javaserver.gameserver.handler.SkillHandler;
 import com.shnok.javaserver.gameserver.handler.TargetHandler;
 import com.shnok.javaserver.gameserver.handler.UserCommandHandler;
+import com.shnok.javaserver.gameserver.handler.VoicedCommandHandler;
 import com.shnok.javaserver.gameserver.idfactory.IdFactory;
 import com.shnok.javaserver.gameserver.model.World;
 import com.shnok.javaserver.gameserver.model.memo.GlobalMemo;
@@ -270,6 +272,7 @@ public class GameServer
 		
 		StringUtil.printSection("Bots");
 		BotManager.getInstance().init();
+		CompanionManager.getInstance().init();
 		
 		StringUtil.printSection("Handlers");
 		LOGGER.info("Loaded {} admin command handlers.", AdminCommandHandler.getInstance().size());
@@ -278,6 +281,7 @@ public class GameServer
 		LOGGER.info("Loaded {} skill handlers.", SkillHandler.getInstance().size());
 		LOGGER.info("Loaded {} target handlers.", TargetHandler.getInstance().size());
 		LOGGER.info("Loaded {} user command handlers.", UserCommandHandler.getInstance().size());
+		LOGGER.info("Loaded {} voiced command handlers.", VoicedCommandHandler.getInstance().size());
 		
 		StringUtil.printSection("System");
 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());

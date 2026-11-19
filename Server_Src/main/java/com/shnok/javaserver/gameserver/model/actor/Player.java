@@ -28,6 +28,7 @@ import com.shnok.javaserver.commons.util.ArraysUtil;
 
 import com.shnok.javaserver.Config;
 import com.shnok.javaserver.gameserver.LoginServerThread;
+import com.shnok.javaserver.gameserver.bots.CompanionManager;
 import com.shnok.javaserver.gameserver.communitybbs.CommunityBoard;
 import com.shnok.javaserver.gameserver.communitybbs.model.Forum;
 import com.shnok.javaserver.gameserver.data.SkillTable;
@@ -648,6 +649,11 @@ public class Player extends Playable
 	{
 		_ai = new PlayerAI(this);
 	}
+
+	public void setAI(PlayerAI ai)
+	{
+		_ai = ai;
+	}
 	
 	@Override
 	public PlayerMove getMove()
@@ -659,6 +665,34 @@ public class Player extends Playable
 	public void setMove()
 	{
 		_move = new PlayerMove(this);
+	}
+
+	public void setMove(PlayerMove move)
+	{
+		_move = move;
+	}
+
+	private boolean _isCompanion = false;
+	private Player _companionOwner = null;
+
+	public boolean isCompanion()
+	{
+		return _isCompanion;
+	}
+
+	public void setIsCompanion(boolean val)
+	{
+		_isCompanion = val;
+	}
+
+	public Player getCompanionOwner()
+	{
+		return _companionOwner;
+	}
+
+	public void setCompanionOwner(Player owner)
+	{
+		_companionOwner = owner;
 	}
 	
 	@Override
@@ -6251,6 +6285,11 @@ public class Player extends Playable
 	@Override
 	public void deleteMe()
 	{
+		if (!_isCompanion)
+		{
+			CompanionManager.getInstance().despawnTeam(this);
+		}
+
 		super.deleteMe();
 		
 		cleanup();
