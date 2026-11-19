@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -17,11 +17,13 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float _camSpeed = 25f;
 
     [Header("Zoom controls")]
-    [SerializeField] private float _minDistance = .5f;
+    [SerializeField] private float _minDistance = 0f;
     [SerializeField] private float _maxDistance = 10f;
     [SerializeField] private float _zoomSpeed = 5f;
     [SerializeField] private float _camDistance = 2f;
     [SerializeField] private float _currentDistance = 0;
+    private bool _isFirstPerson = false;
+    private Renderer[] _playerRenderers;
 
     [Header("Bone stickiness")]
     [SerializeField] private bool _stickToBone = false;
@@ -198,6 +200,34 @@ public class CameraController : MonoBehaviour
     {
         float scrollAxis = InputManager.Instance.ZoomAxis;
         _camDistance = Mathf.Clamp(_camDistance - scrollAxis * _zoomSpeed * 0.1f, _minDistance, _maxDistance);
+
+        bool shouldBeFirstPerson = _camDistance <= 0.45f;
+        if (shouldBeFirstPerson != _isFirstPerson)
+        {
+            _isFirstPerson = shouldBeFirstPerson;
+            SetPlayerModelVisible(!_isFirstPerson);
+        }
+    }
+
+    private void SetPlayerModelVisible(bool visible)
+    {
+        if (_target == null) return;
+
+        if (_playerRenderers == null || _playerRenderers.Length == 0)
+        {
+            _playerRenderers = _target.GetComponentsInChildren<Renderer>(true);
+        }
+
+        if (_playerRenderers != null)
+        {
+            for (int i = 0; i < _playerRenderers.Length; i++)
+            {
+                if (_playerRenderers[i] != null)
+                {
+                    _playerRenderers[i].enabled = visible;
+                }
+            }
+        }
     }
 
     private void UpdatePosition()

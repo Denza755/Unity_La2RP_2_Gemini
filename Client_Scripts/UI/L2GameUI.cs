@@ -37,6 +37,14 @@ public class L2GameUI : L2UI
         {
             gameObject.AddComponent<RulerHUDWindow>();
         }
+        if (ChatBubbleManager.Instance == null)
+        {
+            gameObject.AddComponent<ChatBubbleManager>();
+        }
+        if (QuestWindow.Instance == null)
+        {
+            gameObject.AddComponent<QuestWindow>();
+        }
     }
 
     private void OnDestroy()
@@ -178,6 +186,11 @@ public class L2GameUI : L2UI
                 RulerHUDWindow.Instance.HideWindow(true);
             }
         }
+        if (QuestWindow.Instance != null)
+        {
+            QuestWindow.Instance.AddWindow(_rootVisualContainer);
+            QuestWindow.Instance.HideWindow(true);
+        }
     }
 
     public void EnableMouse()
@@ -280,6 +293,14 @@ public class L2GameUI : L2UI
             if (MapWindow.Instance != null)
             {
                 MapWindow.Instance.RequestToggleMap();
+            }
+        }
+
+        if (InputManager.Instance.OpenQuest)
+        {
+            if (QuestWindow.Instance != null)
+            {
+                QuestWindow.Instance.ToggleHideWindow();
             }
         }
     }

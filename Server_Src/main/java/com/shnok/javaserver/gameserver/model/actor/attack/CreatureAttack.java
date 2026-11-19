@@ -86,6 +86,7 @@ public class CreatureAttack<T extends Creature>
 		if (!GeoEngine.getInstance().canSeeTarget(_actor, target))
 		{
 			_actor.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.CANT_SEE_TARGET));
+			_actor.sendPacket(ActionFailed.STATIC_PACKET);
 			return false;
 		}
 		

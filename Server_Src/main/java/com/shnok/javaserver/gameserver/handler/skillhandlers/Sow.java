@@ -55,6 +55,7 @@ public class Sow implements ISkillHandler
 		}
 		
 		targetMonster.getSeedState().setSeeded(player, seed);
+		player.destroyItem(item, 1, false);
 		
 		player.sendPacket(SystemMessageId.THE_SEED_WAS_SUCCESSFULLY_SOWN);
 	}

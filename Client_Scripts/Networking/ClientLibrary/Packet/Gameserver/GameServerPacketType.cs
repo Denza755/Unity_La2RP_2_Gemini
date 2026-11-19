@@ -62,6 +62,7 @@ public enum GameServerPacketType : int
     ShortBuffStatusUpdate = 0xF4,
     ExAutoSoulshot = 0xFE,
     ShowMiniMap = 0x9d,
+    BuyListSeed = 0xE8,
 
 
 

@@ -16,6 +16,7 @@ import com.shnok.javaserver.commons.pool.ThreadPool;
 import com.shnok.javaserver.commons.util.SysUtil;
 
 import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.bots.BotManager;
 import com.shnok.javaserver.gameserver.communitybbs.CommunityBoard;
 import com.shnok.javaserver.gameserver.data.SkillTable;
 import com.shnok.javaserver.gameserver.data.cache.CrestCache;
@@ -266,6 +267,9 @@ public class GameServer
 		
 		StringUtil.printSection("Spawns");
 		SpawnManager.getInstance().spawn();
+		
+		StringUtil.printSection("Bots");
+		BotManager.getInstance().init();
 		
 		StringUtil.printSection("Handlers");
 		LOGGER.info("Loaded {} admin command handlers.", AdminCommandHandler.getInstance().size());

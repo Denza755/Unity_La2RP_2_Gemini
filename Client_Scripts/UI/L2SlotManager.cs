@@ -153,6 +153,10 @@ public class L2SlotManager : L2PopupWindow
         {
             Unequip();
         }
+        else if (_hoverSlot.Type == L2Slot.SlotType.SkillBar)
+        {
+            AddItemToSkillbar();
+        }
         else if (_hoverSlot.Type == L2Slot.SlotType.Trash)
         {
             DestroyItem();

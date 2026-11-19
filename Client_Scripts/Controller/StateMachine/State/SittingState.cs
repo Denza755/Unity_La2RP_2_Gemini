@@ -3,7 +3,7 @@ using UnityEngine;
 public class SittingState : StateBase
 {
     public SittingState(PlayerStateMachine stateMachine) : base(stateMachine) { }
-    public const float SIT_ANIM_LENGTH_SEC = 4.5f;
+    public const float SIT_ANIM_LENGTH_SEC = 1.5f;
     private bool _sitting = false;
 
 

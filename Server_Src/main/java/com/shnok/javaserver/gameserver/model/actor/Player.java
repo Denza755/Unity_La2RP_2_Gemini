@@ -224,7 +224,7 @@ import com.shnok.javaserver.gameserver.taskmanager.WaterTaskManager;
  * This class represents a player in the world.<br>
  * There is always a client-thread connected to this (except if a player-store is activated upon logout).
  */
-public final class Player extends Playable
+public class Player extends Playable
 {
 	private static final String RESTORE_SKILLS_FOR_CHAR = "SELECT skill_id,skill_level FROM character_skills WHERE char_obj_id=? AND class_index=?";
 	private static final String ADD_OR_UPDATE_SKILL = "INSERT INTO character_skills (char_obj_id,skill_id,skill_level,class_index) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE skill_level=VALUES(skill_level)";
@@ -478,7 +478,7 @@ public final class Player extends Playable
 	 * @param accountName The name of the account including this Player
 	 * @param app The PcAppearance of the Player
 	 */
-	private Player(int objectId, PlayerTemplate template, String accountName, Appearance app)
+	protected Player(int objectId, PlayerTemplate template, String accountName, Appearance app)
 	{
 		super(objectId, template);
 		
@@ -1556,7 +1556,7 @@ public final class Player extends Playable
 			
 			getAI().notifyEvent(AiEventType.SAT_DOWN, null, null);
 			
-		}, 2500);
+		}, 1500);
 		
 		// Broadcast the packet.
 		broadcastPacket(new ChangeWaitType(this, ChangeWaitType.WT_SITTING));
@@ -1570,7 +1570,7 @@ public final class Player extends Playable
 	}
 	
 	/**
-	 * Stand this {@link Player} up. The {@link Player} retrieves control after a 2.5s delay.
+	 * Stand this {@link Player} up. The {@link Player} retrieves control after a 1.2s delay.
 	 * <ul>
 	 * <li>Schedule the STOOD_UP event.</li>
 	 * <li>Broadcast {@link ChangeWaitType} packet.</li>
@@ -1589,7 +1589,7 @@ public final class Player extends Playable
 			
 			getAI().notifyEvent(AiEventType.STOOD_UP, null, null);
 			
-		}, 2500);
+		}, 1200);
 		
 		// Broadcast the packet.
 		broadcastPacket(new ChangeWaitType(this, ChangeWaitType.WT_STANDING));
@@ -5541,6 +5541,11 @@ public final class Player extends Playable
 	public boolean isNoble()
 	{
 		return _isNoble;
+	}
+	
+	public boolean isFakePlayer()
+	{
+		return false;
 	}
 	
 	/**

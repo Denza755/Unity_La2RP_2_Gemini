@@ -283,6 +283,29 @@ public class SkillbarWindow : L2PopupWindow
         UpdateBarShortcut(shortcut);
     }
 
+    public void OnInventoryUpdated()
+    {
+        if (_skillbars == null) return;
+
+        foreach (var bar in _skillbars)
+        {
+            if (bar.BarSlots == null) continue;
+            foreach (var slot in bar.BarSlots)
+            {
+                if (slot.Shortcut != null && slot.Shortcut.Type == Shortcut.TYPE_ITEM)
+                {
+                    ItemInstance item = PlayerInventory.Instance.GetItemByObjectId(slot.Shortcut.Id);
+                    if (item == null)
+                    {
+                        item = PlayerInventory.Instance.GetItemById(slot.Shortcut.Id);
+                    }
+                    int count = item != null ? item.Count : 0;
+                    slot.UpdateItemCount(count);
+                }
+            }
+        }
+    }
+
     public void RemoveShortcut(int oldSlot)
     {
         int slot = oldSlot % PlayerShortcuts.MAXIMUM_SHORTCUTS_PER_BAR;

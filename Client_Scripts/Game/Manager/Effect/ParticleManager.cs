@@ -20,6 +20,21 @@ public class ParticleManager : MonoBehaviour
 
     private GameObject _arrowPrefab;
 
+    private readonly Dictionary<string, GameObject> _customSkillPrefabCache = new Dictionary<string, GameObject>();
+
+    private GameObject TryLoadCustomSkillPrefab(int skillId, string phase)
+    {
+        string key = $"{skillId}_{phase}";
+        if (_customSkillPrefabCache.TryGetValue(key, out GameObject cached))
+        {
+            return cached;
+        }
+
+        GameObject prefab = Resources.Load<GameObject>($"Data/CustomSkills/{skillId}/{phase}");
+        _customSkillPrefabCache[key] = prefab;
+        return prefab;
+    }
+
     public Dictionary<string, Queue<PooledEffect>> EffectPool
     {
         get
@@ -233,13 +248,26 @@ public class ParticleManager : MonoBehaviour
 
     #region Skill Particles
     public PooledEffect[] SpawnCastParticles(Entity caster, Skill skill, int hitTime)
-{
-    // Intercept Life Drain (Skill ID 1090) to use modern effect system
-    if (skill != null && skill.SkillId == 1090)
     {
-        global::ModernSpellEffects.SpawnCastEffect(caster, skill);
-        return null; // No traditional pooled effects used
-    }
+        if (caster == null || skill == null) return null;
+
+        // 1. Priority check for user-assembled HD VFX in Assets/Resources/Data/CustomSkills/{SkillId}/cast
+        GameObject customCastPrefab = TryLoadCustomSkillPrefab(skill.SkillId, "cast");
+        if (customCastPrefab != null)
+        {
+            Transform parentTransform = _effectContainer != null ? _effectContainer.transform : null;
+            GameObject instance = Instantiate(customCastPrefab, caster.transform.position, caster.transform.rotation, parentTransform);
+            float timeout = hitTime / 1000f + 3f;
+            CustomVfxAutoDestroy.Attach(instance, timeout);
+            return null; // Don't duplicate old effect
+        }
+
+        // Intercept Life Drain (Skill ID 1090) to use modern effect system
+        if (skill.SkillId == 1090)
+        {
+            global::ModernSpellEffects.SpawnCastEffect(caster, skill);
+            return null; // No traditional pooled effects used
+        }
     // Original implementation for other skills
     List<EffectEmitter> castingActions = skill.SkillEffect.CastingActions;
     if (castingActions == null || castingActions.Count == 0)
@@ -341,8 +369,38 @@ public class ParticleManager : MonoBehaviour
 
     public void SpawnSkillShotParticle(Entity caster, Entity target, Skill skill, float hitTime)
     {
-        if (caster == null || skill == null || skill.SkillEffect == null) return;
+        if (caster == null || skill == null) return;
         if (target == null) target = caster;
+
+        // 1. Priority check for user-assembled HD VFX in Assets/Resources/Data/CustomSkills/{SkillId}/
+        GameObject customProjPrefab = TryLoadCustomSkillPrefab(skill.SkillId, "projectile");
+        GameObject customHitPrefab = TryLoadCustomSkillPrefab(skill.SkillId, "hit");
+
+        if (customProjPrefab != null)
+        {
+            float casterChestY = caster.Appearance != null ? caster.Appearance.CollisionHeight * 0.7f : 1.0f;
+            float targetChestY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
+            Vector3 startPos = caster.transform.position + Vector3.up * casterChestY;
+            Vector3 targetOffset = Vector3.up * targetChestY;
+
+            Transform parentTransform = _effectContainer != null ? _effectContainer.transform : null;
+            GameObject projObj = Instantiate(customProjPrefab, startPos, caster.transform.rotation, parentTransform);
+            CustomVfxProjectile projComp = projObj.AddComponent<CustomVfxProjectile>();
+            float duration = Mathf.Max(0.1f, hitTime - Time.time);
+            projComp.Launch(target.transform, targetOffset, duration, customHitPrefab, parentTransform);
+            return;
+        }
+        else if (customHitPrefab != null)
+        {
+            float targetChestY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
+            Vector3 hitPos = target.transform.position + Vector3.up * targetChestY;
+            Transform parentTransform = _effectContainer != null ? _effectContainer.transform : null;
+            GameObject hitObj = Instantiate(customHitPrefab, hitPos, Quaternion.identity, parentTransform);
+            CustomVfxAutoDestroy.Attach(hitObj, 4.0f);
+            return;
+        }
+
+        if (skill.SkillEffect == null) return;
 
         List<EffectEmitter> shotActions = skill.SkillEffect.ShotActions;
         if (shotActions == null || shotActions.Count == 0)
@@ -439,12 +497,6 @@ public class ParticleManager : MonoBehaviour
             return;
         }
 
-        if (drainProj == null || drainProj.GameObject == null)
-        {
-            Debug.LogWarning($"[ParticleManager] Failed to create drain return projectile for skill {skill.SkillId}");
-            return;
-        }
-
         float targetCenterY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
         float casterCenterY = caster.Appearance != null ? caster.Appearance.CollisionHeight * 0.7f : 1.0f;
 
@@ -476,16 +528,19 @@ public class ParticleManager : MonoBehaviour
         drainProj.OnArrival = () =>
         {
             // Trigger healing burst on caster upon blood essence reaching caster
-            PooledEffect healFx = SpawnEffect("e_u003_a");
-            if (healFx != null && healFx.GameObject != null)
+            if (EffectPool.ContainsKey("e_u003_a"))
             {
-                healFx.GameObject.transform.parent = _effectContainer.transform;
-                healFx.GameObject.transform.position = caster.transform.position;
-                healFx.GameObject.transform.localScale = Vector3.one * 1.0f;
-                healFx.GameObject.SetActive(true);
-                healFx.StartTime = Time.time;
-                healFx.EffectDurationSec = 1.2f;
-                ActiveEffects.Enqueue(healFx);
+                PooledEffect healFx = SpawnEffect("e_u003_a");
+                if (healFx != null && healFx.GameObject != null)
+                {
+                    healFx.GameObject.transform.parent = _effectContainer.transform;
+                    healFx.GameObject.transform.position = caster.transform.position;
+                    healFx.GameObject.transform.localScale = Vector3.one * 1.0f;
+                    healFx.GameObject.SetActive(true);
+                    healFx.StartTime = Time.time;
+                    healFx.EffectDurationSec = 1.2f;
+                    ActiveEffects.Enqueue(healFx);
+                }
             }
             SpellDynamicLight.TriggerSelfFlash(caster, skill);
         };
@@ -497,8 +552,22 @@ public class ParticleManager : MonoBehaviour
 
     public void SpawnSkillExplosionParticle(Entity caster, Entity target, Skill skill)
     {
-        if (caster == null || skill == null || skill.SkillEffect == null) return;
+        if (caster == null || skill == null) return;
         if (target == null) target = caster;
+
+        // 1. Priority check for user-assembled HD VFX in Assets/Resources/Data/CustomSkills/{SkillId}/hit
+        GameObject customHitPrefab = TryLoadCustomSkillPrefab(skill.SkillId, "hit");
+        if (customHitPrefab != null)
+        {
+            float targetChestY = target.Appearance != null ? target.Appearance.CollisionHeight * 0.7f : 1.0f;
+            Vector3 hitPos = target.transform.position + Vector3.up * targetChestY;
+            Transform parentTransform = _effectContainer != null ? _effectContainer.transform : null;
+            GameObject hitObj = Instantiate(customHitPrefab, hitPos, Quaternion.identity, parentTransform);
+            CustomVfxAutoDestroy.Attach(hitObj, 4.0f);
+            return;
+        }
+
+        if (skill.SkillEffect == null) return;
 
         List<EffectEmitter> explosionActions = skill.SkillEffect.ExplosionActions;
         if (explosionActions == null || explosionActions.Count == 0)

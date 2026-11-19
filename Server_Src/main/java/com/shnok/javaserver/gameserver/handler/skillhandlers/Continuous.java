@@ -112,6 +112,11 @@ public class Continuous implements ISkillHandler
 					targetCreature.stopSkillEffects(skill.getId());
 				
 				skill.getEffects(creature, targetCreature, sDef, bsps);
+
+				if (skill.getSkillType() == SkillType.BUFF && targetCreature instanceof Player targetPlayer && targetPlayer.isFakePlayer() && creature instanceof Player playerCaster && !playerCaster.isFakePlayer())
+				{
+					((com.shnok.javaserver.gameserver.bots.FakePlayer) targetPlayer).onBeneficialSkillReceived(playerCaster, skill.getName());
+				}
 				
 				if (skill.getSkillType() == SkillType.AGGDEBUFF)
 				{

@@ -106,8 +106,18 @@ public class IdleState : StateBase
                 _stateMachine.ChangeState(PlayerState.SKILL, arg0);
                 break;
             case Event.SKILL_DENIED:
+                _stateMachine.SetWaitingForServerReply(false);
+                if (_stateMachine.Intention == Intention.INTENTION_SKILL)
+                {
+                    _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+                }
                 break;
             case Event.ACTION_DENIED:
+                _stateMachine.SetWaitingForServerReply(false);
+                if (_stateMachine.Intention == Intention.INTENTION_SKILL || _stateMachine.Intention == Intention.INTENTION_ATTACK)
+                {
+                    _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+                }
                 break;
             case Event.DEAD:
                 _stateMachine.ChangeState(PlayerState.DEAD);

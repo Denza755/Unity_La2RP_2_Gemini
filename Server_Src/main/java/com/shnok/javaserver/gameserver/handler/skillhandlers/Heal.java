@@ -47,7 +47,13 @@ public class Heal implements ISkillHandler
 			if (target instanceof Player targetPlayer)
 			{
 				if (creature != targetPlayer)
+				{
 					targetPlayer.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S2_HP_RESTORED_BY_S1).addCharName(creature).addNumber((int) amount));
+					if (targetPlayer.isFakePlayer() && creature instanceof Player playerCaster && !playerCaster.isFakePlayer())
+					{
+						((com.shnok.javaserver.gameserver.bots.FakePlayer) targetPlayer).onBeneficialSkillReceived(playerCaster, skill.getName());
+					}
+				}
 				else
 					targetPlayer.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_HP_RESTORED).addNumber((int) amount));
 			}

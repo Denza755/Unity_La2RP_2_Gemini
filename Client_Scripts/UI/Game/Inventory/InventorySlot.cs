@@ -88,11 +88,16 @@ public class InventorySlot : L2DraggableSlot
             tooltipText = $"{_name} ({_count:n0})";
         }
 
-        if (item.Type2 == ItemType2.TYPE2_WEAPON ||
+        if (item != null && (item.Type2 == ItemType2.TYPE2_WEAPON ||
             item.Type2 == ItemType2.TYPE2_ACCESSORY ||
-            item.Type2 == ItemType2.TYPE2_SHIELD_ARMOR)
+            item.Type2 == ItemType2.TYPE2_SHIELD_ARMOR))
         {
             tooltipText = _name;
+        }
+
+        if (!string.IsNullOrEmpty(_description) && _description != "Unkown item." && _description != "None")
+        {
+            tooltipText = $"{tooltipText}\n\n{_description}";
         }
 
         int itemId = _id > 0 ? _id : (item != null ? item.ItemId : 0);

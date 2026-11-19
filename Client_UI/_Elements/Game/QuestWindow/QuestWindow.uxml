@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="quest-window">
+        <AttributeOverrides element-name="windows-name-label" text="Quest" />
+        <ui:VisualElement name="Content" class="quest-content-container">
+            <ui:VisualElement name="QuestTabsBar" class="quest-tabs-bar">
+                <ui:Button text="Once" name="TabOnce" class="quest-tab-button active" />
+                <ui:Button text="Repeat" name="TabRepeat" class="quest-tab-button" />
+                <ui:Button text="Epic" name="TabEpic" class="quest-tab-button" />
+                <ui:Button text="Transfer" name="TabTransfer" class="quest-tab-button" />
+                <ui:Button text="Special" name="TabSpecial" class="quest-tab-button" />
+            </ui:VisualElement>
+            <ui:VisualElement name="QuestHeaderRow" class="quest-header-row">
+                <ui:Label text="Accepted Quest" name="QuestHeaderTitle" class="quest-header-title" />
+                <ui:Label text="(0/40)" name="QuestCountLabel" class="quest-header-counter" />
+            </ui:VisualElement>
+            <ui:ScrollView name="QuestScrollView" class="quest-list-scroll">
+                <ui:Label text="No active quests" name="EmptyQuestsLabel" class="quest-empty-label" />
+                <ui:VisualElement name="QuestListItemsContainer" />
+            </ui:ScrollView>
+            <ui:VisualElement name="QuestOptionsRow" class="quest-options-row">
+                <ui:VisualElement name="AutoNotifyOption" class="quest-checkbox-container">
+                    <ui:VisualElement name="AutoNotifyCheck" class="quest-checkbox-icon" />
+                    <ui:Label text="Auto-notify" name="AutoNotifyLabel" class="quest-checkbox-label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="TrackingOption" class="quest-checkbox-container">
+                    <ui:VisualElement name="TrackingCheck" class="quest-checkbox-icon checked" />
+                    <ui:Label text="Tracking" name="TrackingLabel" class="quest-checkbox-label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="QuestFooterRow" class="quest-footer-row">
+                <ui:Button text="Detailed Info" name="DetailedInfoButton" class="quest-detail-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

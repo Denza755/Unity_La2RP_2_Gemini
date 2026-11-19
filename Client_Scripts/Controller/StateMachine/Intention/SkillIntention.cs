@@ -61,7 +61,7 @@ public class SkillIntention : IntentionBase
 
                 _stateMachine.ChangeState(PlayerState.IDLE);
 
-                if (!targetEntity.IsDead)
+                if (!targetEntity.IsDead || IsCorpseSkill(_lastSkillIntention.Id))
                 {
                     _stateMachine.NotifyEvent(Event.READY_TO_SKILL, _lastSkillIntention);
                 }
@@ -122,6 +122,32 @@ public class SkillIntention : IntentionBase
         }
 
         return result;
+    }
+
+    public static bool IsCorpseSkill(int skillId)
+    {
+        switch (skillId)
+        {
+            case 42: // Sweeper
+            case 2098: // Harvesting
+            case 1016: // Resurrection
+            case 1017: // Mass Resurrection
+            case 1044: // Blessed Resurrection
+            case 1049: // Corpse Life Drain
+            case 1050: // Corpse Plague
+            case 1146: // Corpse Burst
+            case 1147: // Corpse Vampire
+            case 1254:
+            case 1256:
+            case 1258:
+            case 1303:
+            case 2014:
+            case 2042:
+            case 2062:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public override void Exit() { }

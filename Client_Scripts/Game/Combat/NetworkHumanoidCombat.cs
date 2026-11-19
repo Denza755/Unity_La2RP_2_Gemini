@@ -10,6 +10,11 @@ public class NetworkHumanoidCombat : NetworkCombat
     public override void OnDeath()
     {
         base.OnDeath();
+        var ncc = GetComponent<NetworkCharacterControllerReceive>();
+        if (ncc != null)
+        {
+            ncc.ResetDestination();
+        }
         HumanoidAnimationController.Die();
     }
 

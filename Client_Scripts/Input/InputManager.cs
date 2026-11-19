@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.InputSystem;
@@ -75,6 +75,7 @@ public class InputManager : MonoBehaviour
     [field: SerializeField] public bool OpenActions { get; private set; }
     [field: SerializeField] public bool OpenSkills { get; private set; }
     [field: SerializeField] public bool OpenMap { get; private set; }
+    [field: SerializeField] public bool OpenQuest { get; private set; }
     [field: SerializeField] public bool CloseWindow { get; private set; }
     [field: SerializeField] public bool Validate { get; private set; }
 
@@ -216,7 +217,8 @@ public class InputManager : MonoBehaviour
             Sit = _sitAction.WasPerformedThisFrame();
 
             OpenCharacerStatus = _characterStatusAction.WasPerformedThisFrame();
-            OpenInventory = _inventoryAction.WasPerformedThisFrame();
+            bool tabPressed = (Keyboard.current != null && Keyboard.current.tabKey != null && Keyboard.current.tabKey.wasPressedThisFrame) || Input.GetKeyDown(KeyCode.Tab);
+            OpenInventory = _inventoryAction.WasPerformedThisFrame() || tabPressed;
             OpenSystemMenu = _systemMenuAction.WasPerformedThisFrame();
             OpenActions = _actionsAction.WasPerformedThisFrame();
 
@@ -236,6 +238,17 @@ public class InputManager : MonoBehaviour
                 mPressed = Input.GetKeyDown(KeyCode.M);
             }
             OpenMap = altPressed && mPressed;
+
+            bool uPressed = false;
+            if (Keyboard.current != null)
+            {
+                uPressed = Keyboard.current.uKey.wasPressedThisFrame;
+            }
+            if (!uPressed)
+            {
+                uPressed = Input.GetKeyDown(KeyCode.U);
+            }
+            OpenQuest = altPressed && uPressed;
 
             bool walkRunPressed = false;
             if (Keyboard.current != null)
@@ -262,6 +275,7 @@ public class InputManager : MonoBehaviour
             MoveInput = Vector2.zero;
             ToggleWalkRun = false;
             OpenMap = false;
+            OpenQuest = false;
         }
 
         ArrowUp = _arrowUpAction.WasPerformedThisFrame();

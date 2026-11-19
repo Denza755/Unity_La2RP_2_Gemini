@@ -116,6 +116,11 @@ public class WorldSpawner : MonoBehaviour
 
                 Debug.Log("Gameobject destroyed : " + e.gameObject.name);
 
+                if (TargetManager.Instance != null && TargetManager.Instance.Target != null && TargetManager.Instance.Target.Identity != null && TargetManager.Instance.Target.Identity.Id == id)
+                {
+                    TargetManager.Instance.ClearTarget();
+                }
+
                 NameplatesManagerGame.Instance.RemoveNameplate(id);
 
                 Destroy(e.gameObject);
@@ -226,6 +231,21 @@ public class WorldSpawner : MonoBehaviour
         }
 
         return entity;
+    }
+
+    public Entity GetEntity(int id)
+    {
+        if (PlayerEntity.Instance != null && (id == GameClient.Instance.CurrentPlayerId || (PlayerEntity.Instance.Identity != null && id == PlayerEntity.Instance.Identity.Id)))
+        {
+            return PlayerEntity.Instance;
+        }
+
+        if (_objects.TryGetValue(id, out Entity entity))
+        {
+            return entity;
+        }
+
+        return null;
     }
 
     public bool IsEntityPresent(int id)

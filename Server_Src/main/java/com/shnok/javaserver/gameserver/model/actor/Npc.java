@@ -66,6 +66,7 @@ import com.shnok.javaserver.gameserver.model.spawn.Spawn;
 import com.shnok.javaserver.gameserver.network.NpcStringId;
 import com.shnok.javaserver.gameserver.network.SystemMessageId;
 import com.shnok.javaserver.gameserver.network.serverpackets.actor.AbstractNpcInfo.NpcInfo;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.DeleteObject;
 import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
 import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowScreenMessage;
 import com.shnok.javaserver.gameserver.network.serverpackets.unused.ExShowVariationCancelWindow;
@@ -606,6 +607,9 @@ public class Npc extends Creature
 			}
 		}
 		
+		// Broadcast DeleteObject to all nearby players so corpse disappears cleanly
+		broadcastPacket(new DeleteObject(this));
+		
 		// Remove the Npc from the world when the decay task is launched.
 		super.onDecay();
 		
@@ -986,9 +990,14 @@ public class Npc extends Creature
 	/**
 	 * @return The {@link Castle} this {@link Npc} belongs to.
 	 */
-	public final Castle getCastle()
+	public Castle getCastle()
 	{
-		return (_residence instanceof Castle castle) ? castle : null;
+		if (_residence instanceof Castle castle)
+			return castle;
+		Castle c = CastleManager.getInstance().getCastle(this);
+		if (c != null)
+			return c;
+		return CastleManager.getInstance().getCastleById(1);
 	}
 	
 	/**

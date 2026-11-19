@@ -29,8 +29,7 @@ public class Seeds implements IItemHandler
 			return;
 		}
 		
-		final ManorArea area = ManorAreaData.getInstance().getManorArea(targetMonster);
-		if (!targetMonster.getTemplate().isSeedable() || area == null)
+		if (targetMonster.isRaidBoss())
 		{
 			playable.sendPacket(SystemMessageId.THE_TARGET_IS_UNAVAILABLE_FOR_SEEDING);
 			return;
@@ -40,7 +39,9 @@ public class Seeds implements IItemHandler
 		if (seed == null)
 			return;
 		
-		if (area.getCastleId() != seed.getCastleId())
+		final ManorArea area = ManorAreaData.getInstance().getManorArea(targetMonster);
+		int castleId = (area != null) ? area.getCastleId() : 1;
+		if (area != null && area.getCastleId() != seed.getCastleId() && seed.getCastleId() != 1)
 		{
 			playable.sendPacket(SystemMessageId.THIS_SEED_MAY_NOT_BE_SOWN_HERE);
 			return;

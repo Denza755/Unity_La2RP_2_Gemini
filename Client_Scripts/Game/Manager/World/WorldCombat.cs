@@ -349,11 +349,11 @@ public class WorldCombat : MonoBehaviour
             float atkEndTime = 0;
             if (senderEntity.Gear.WeaponType == WeaponType.bow)
             {
-                hit.HitTime = Time.time + senderEntity.AnimationController.PAtkSpd / 1000f;
+                hit.HitTime = Time.time + (senderEntity.AnimationController.PAtkSpd / 1000f) * 0.4f;
             }
             else
             {
-                hit.HitTime = Time.time + senderEntity.AnimationController.PAtkSpd / (2f * (hitIndex + 1)) / 1000f;
+                hit.HitTime = Time.time + (senderEntity.AnimationController.PAtkSpd / (2f * (hitIndex + 1)) / 1000f) * 0.4f;
             }
 
             _hits.Add(hit);

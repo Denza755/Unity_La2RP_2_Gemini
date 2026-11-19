@@ -68,9 +68,9 @@ public final class DecayTaskManager implements Runnable
 	 */
 	public final void add(Creature creature, int interval)
 	{
-		// If character is a Monster and is spoiled or seeded, double the corpse delay.
+		// If character is a Monster and is spoiled or seeded, make sure corpse stays at least 20 seconds.
 		if (creature instanceof Monster monster && (monster.getSpoilState().isSpoiled() || monster.getSeedState().isSeeded()))
-			interval *= 2;
+			interval = Math.max(interval * 2, 20);
 		
 		_creatures.put(creature, System.currentTimeMillis() + interval * 1000);
 	}

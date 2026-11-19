@@ -10,8 +10,10 @@ public class SkillbarSlot : SkillSlot
     [SerializeField] private int _skillbarId;
     [SerializeField] private int _slot;
     private VisualElement _keyElement;
+    private Label _countLabel;
 
     public int Slot { get => _slot; }
+    public Shortcut Shortcut { get => _shortcut; }
 
     public SkillbarSlot(VisualElement slotElement, int position, int skillbarId, int slot) : base(position, slotElement, SlotType.SkillBar)
     {
@@ -21,6 +23,18 @@ public class SkillbarSlot : SkillSlot
         _slot = slot;
         _keyElement = _slotElement.Q<VisualElement>("Key");
         _toggled = false;
+
+        _countLabel = new Label();
+        _countLabel.name = "ItemCount";
+        _countLabel.style.position = UnityEngine.UIElements.Position.Absolute;
+        _countLabel.style.bottom = 1;
+        _countLabel.style.right = 2;
+        _countLabel.style.fontSize = 9;
+        _countLabel.style.color = new Color(1f, 0.9f, 0.6f, 1f);
+        _countLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        _countLabel.pickingMode = PickingMode.Ignore;
+        _countLabel.style.display = DisplayStyle.None;
+        _slotElement.Add(_countLabel);
     }
 
     public void AssignShortcut(Shortcut shortcut)
@@ -53,6 +67,22 @@ public class SkillbarSlot : SkillSlot
         _empty = false;
 
         ItemInstance item = PlayerInventory.Instance.GetItemByObjectId(objectId);
+        if (item == null)
+        {
+            item = PlayerInventory.Instance.GetItemById(objectId);
+        }
+
+        if (item == null)
+        {
+            if (_slotBg != null) _slotBg.style.unityBackgroundImageTintColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+            if (_countLabel != null)
+            {
+                _countLabel.text = "0";
+                _countLabel.style.display = DisplayStyle.Flex;
+            }
+            return;
+        }
+
         _innerSlot = new InventorySlot(_position, _slotElement, SlotType.SkillBar);
         ((InventorySlot)_innerSlot).AssignItem(item);
         ((L2ClickableSlot)_innerSlot).UnregisterClickableCallback();
@@ -60,6 +90,7 @@ public class SkillbarSlot : SkillSlot
         _slotAnimationManipulator = new SlotAnimationManipulator(_slotEffect, this);
 
         UpdateInputInfo();
+        UpdateItemCount(item.Count);
 
         if (PlayerShortcuts.Instance.IsItemToggled(item.ItemId))
         {
@@ -70,6 +101,29 @@ public class SkillbarSlot : SkillSlot
         {
             _toggled = false;
             SkillbarWindow.Instance.RemoveToggledSlot(this);
+        }
+    }
+
+    public void UpdateItemCount(int count)
+    {
+        if (_countLabel == null) return;
+
+        if (count > 1)
+        {
+            _countLabel.text = count > 99999 ? $"{count / 1000}k" : count.ToString();
+            _countLabel.style.display = DisplayStyle.Flex;
+            if (_slotBg != null) _slotBg.style.unityBackgroundImageTintColor = Color.white;
+        }
+        else if (count == 1)
+        {
+            _countLabel.style.display = DisplayStyle.None;
+            if (_slotBg != null) _slotBg.style.unityBackgroundImageTintColor = Color.white;
+        }
+        else
+        {
+            _countLabel.text = "0";
+            _countLabel.style.display = DisplayStyle.Flex;
+            if (_slotBg != null) _slotBg.style.unityBackgroundImageTintColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
         }
     }
 

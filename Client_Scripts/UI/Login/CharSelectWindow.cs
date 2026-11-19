@@ -133,6 +133,12 @@ public class CharSelectWindow : L2Window
         userNameInput.AddManipulator(_charNameManipulator);
         userNameInputContainer.Add(userNameInput);
 
+        if (CharacterSelector.Instance != null && CharacterSelector.Instance.Characters != null && CharacterSelector.Instance.Characters.Count > 0)
+        {
+            SetCharacterList(CharacterSelector.Instance.Characters);
+            SelectSlot(CharacterSelector.Instance.SelectedSlot >= 0 ? CharacterSelector.Instance.SelectedSlot : CharacterSelector.Instance.DefaultSelectedSlot);
+        }
+
         L2LoginUI.Instance.WindowLoadComplete();
     }
 

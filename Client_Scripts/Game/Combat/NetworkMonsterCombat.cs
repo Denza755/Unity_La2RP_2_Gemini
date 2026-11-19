@@ -8,6 +8,11 @@ public class NetworkMonsterCombat : NetworkCombat
     public override void OnDeath()
     {
         base.OnDeath();
+        var ncc = GetComponent<NetworkCharacterControllerReceive>();
+        if (ncc != null)
+        {
+            ncc.ResetDestination();
+        }
         MonsterAnimationController.Die();
     }
 

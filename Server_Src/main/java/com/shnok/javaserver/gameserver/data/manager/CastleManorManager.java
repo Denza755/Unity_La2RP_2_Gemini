@@ -144,6 +144,28 @@ public class CastleManorManager implements IXmlReader
 		// Schedule mode change
 		scheduleModeChange();
 		
+		// Initialize eternal manor production and procure defaults for all castles
+		for (int cId = 1; cId <= 9; cId++)
+		{
+			List<SeedProduction> prod = _production.get(cId);
+			if (prod == null || prod.isEmpty())
+				_production.put(cId, initDefaultProduction(cId));
+			
+			List<SeedProduction> prodNext = _productionNext.get(cId);
+			if (prodNext == null || prodNext.isEmpty())
+				_productionNext.put(cId, initDefaultProduction(cId));
+			
+			List<CropProcure> proc = _procure.get(cId);
+			if (proc == null || proc.isEmpty())
+				_procure.put(cId, initDefaultProcure(cId));
+			
+			List<CropProcure> procNext = _procureNext.get(cId);
+			if (procNext == null || procNext.isEmpty())
+				_procureNext.put(cId, initDefaultProcure(cId));
+		}
+		
+		_mode = ManorStatus.APPROVED;
+		
 		// Schedule autosave
 		ThreadPool.scheduleAtFixedRate(this::storeMe, Config.MANOR_SAVE_PERIOD_RATE, Config.MANOR_SAVE_PERIOD_RATE);
 		
@@ -387,9 +409,62 @@ public class CastleManorManager implements IXmlReader
 		}
 	}
 	
+	public final List<SeedProduction> initDefaultProduction(int castleId)
+	{
+		final List<SeedProduction> list = new ArrayList<>();
+		for (Seed s : _seeds.values())
+		{
+			if (s.getCastleId() == castleId || castleId <= 0)
+			{
+				int price = s.getSeedReferencePrice() > 0 ? s.getSeedReferencePrice() : 50;
+				list.add(new SeedProduction(s.getSeedId(), 999999, price, 999999));
+			}
+		}
+		if (list.isEmpty())
+		{
+			for (Seed s : _seeds.values())
+			{
+				int price = s.getSeedReferencePrice() > 0 ? s.getSeedReferencePrice() : 50;
+				list.add(new SeedProduction(s.getSeedId(), 999999, price, 999999));
+			}
+		}
+		return list;
+	}
+
+	public final List<CropProcure> initDefaultProcure(int castleId)
+	{
+		final List<CropProcure> list = new ArrayList<>();
+		for (Seed s : _seeds.values())
+		{
+			if (s.getCastleId() == castleId || castleId <= 0)
+			{
+				int price = s.getCropReferencePrice() > 0 ? s.getCropReferencePrice() : 100;
+				list.add(new CropProcure(s.getCropId(), 999999, 1, 999999, price));
+			}
+		}
+		if (list.isEmpty())
+		{
+			for (Seed s : _seeds.values())
+			{
+				int price = s.getCropReferencePrice() > 0 ? s.getCropReferencePrice() : 100;
+				list.add(new CropProcure(s.getCropId(), 999999, 1, 999999, price));
+			}
+		}
+		return list;
+	}
+
 	public final List<SeedProduction> getSeedProduction(int castleId, boolean nextPeriod)
 	{
-		return (nextPeriod) ? _productionNext.get(castleId) : _production.get(castleId);
+		List<SeedProduction> list = (nextPeriod) ? _productionNext.get(castleId) : _production.get(castleId);
+		if (list == null || list.isEmpty())
+		{
+			list = initDefaultProduction(castleId);
+			if (nextPeriod)
+				_productionNext.put(castleId, list);
+			else
+				_production.put(castleId, list);
+		}
+		return list;
 	}
 	
 	public final SeedProduction getSeedProduct(int castleId, int seedId, boolean nextPeriod)
@@ -397,14 +472,34 @@ public class CastleManorManager implements IXmlReader
 		for (SeedProduction sp : getSeedProduction(castleId, nextPeriod))
 		{
 			if (sp.getId() == seedId)
+			{
+				if (sp.getAmount() < 1000)
+					sp.setAmount(999999);
 				return sp;
+			}
+		}
+		final Seed s = getSeed(seedId);
+		if (s != null)
+		{
+			SeedProduction defaultSp = new SeedProduction(seedId, 999999, Math.max(s.getSeedReferencePrice(), 20), 999999);
+			getSeedProduction(castleId, nextPeriod).add(defaultSp);
+			return defaultSp;
 		}
 		return null;
 	}
 	
 	public final List<CropProcure> getCropProcure(int castleId, boolean nextPeriod)
 	{
-		return (nextPeriod) ? _procureNext.get(castleId) : _procure.get(castleId);
+		List<CropProcure> list = (nextPeriod) ? _procureNext.get(castleId) : _procure.get(castleId);
+		if (list == null || list.isEmpty())
+		{
+			list = initDefaultProcure(castleId);
+			if (nextPeriod)
+				_procureNext.put(castleId, list);
+			else
+				_procure.put(castleId, list);
+		}
+		return list;
 	}
 	
 	public final CropProcure getCropProcure(int castleId, int cropId, boolean nextPeriod)
@@ -412,7 +507,18 @@ public class CastleManorManager implements IXmlReader
 		for (CropProcure cp : getCropProcure(castleId, nextPeriod))
 		{
 			if (cp.getId() == cropId)
+			{
+				if (cp.getAmount() < 1000)
+					cp.setAmount(999999);
 				return cp;
+			}
+		}
+		final Seed s = getSeedByCrop(cropId);
+		if (s != null)
+		{
+			CropProcure defaultCp = new CropProcure(cropId, 999999, 1, 999999, Math.max(s.getCropReferencePrice(), 50));
+			getCropProcure(castleId, nextPeriod).add(defaultCp);
+			return defaultCp;
 		}
 		return null;
 	}
@@ -539,17 +645,17 @@ public class CastleManorManager implements IXmlReader
 	
 	public final boolean isUnderMaintenance()
 	{
-		return _mode == ManorStatus.MAINTENANCE;
+		return false; // Eternal manor: never under maintenance
 	}
 	
 	public final boolean isManorApproved()
 	{
-		return _mode == ManorStatus.APPROVED;
+		return true; // Always approved
 	}
 	
 	public final boolean isModifiablePeriod()
 	{
-		return _mode == ManorStatus.MODIFIABLE;
+		return true; // Always modifiable
 	}
 	
 	public final String getCurrentModeName()

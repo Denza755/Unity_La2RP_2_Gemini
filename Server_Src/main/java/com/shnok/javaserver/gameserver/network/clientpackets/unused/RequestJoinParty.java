@@ -1,13 +1,17 @@
 package com.shnok.javaserver.gameserver.network.clientpackets.unused;
 
+import com.shnok.javaserver.gameserver.bots.BotState;
+import com.shnok.javaserver.gameserver.bots.FakePlayer;
 import com.shnok.javaserver.gameserver.data.manager.RelationManager;
 import com.shnok.javaserver.gameserver.enums.LootRule;
+import com.shnok.javaserver.gameserver.enums.SayType;
 import com.shnok.javaserver.gameserver.model.World;
 import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.model.group.Party;
 import com.shnok.javaserver.gameserver.network.SystemMessageId;
 import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
 import com.shnok.javaserver.gameserver.network.serverpackets.unused.AskJoinParty;
+import com.shnok.javaserver.gameserver.network.serverpackets.unused.JoinParty;
 import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
 
 public final class RequestJoinParty extends L2GameClientPacket
@@ -59,7 +63,41 @@ public final class RequestJoinParty extends L2GameClientPacket
 			requestor.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_IS_ALREADY_IN_PARTY).addCharName(target));
 			return;
 		}
-		
+
+		if (target.isFakePlayer())
+		{
+			final FakePlayer bot = (FakePlayer) target;
+			Party party = requestor.getParty();
+			if (party != null)
+			{
+				if (!party.isLeader(requestor))
+				{
+					requestor.sendPacket(SystemMessageId.ONLY_LEADER_CAN_INVITE);
+					return;
+				}
+
+				if (party.getMembersCount() >= 9)
+				{
+					requestor.sendPacket(SystemMessageId.PARTY_FULL);
+					return;
+				}
+
+				party.addPartyMember(bot);
+			}
+			else
+			{
+				party = new Party(requestor, bot, requestor.getLootRule());
+			}
+
+			bot.setFollowTarget(requestor);
+			bot.setPartyAssistant(true);
+			bot.setBotState(BotState.IN_PARTY);
+			requestor.sendPacket(new JoinParty(1));
+			requestor.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.YOU_INVITED_S1_TO_PARTY).addCharName(bot));
+			bot.sayInChat("Let's go!", SayType.ALL);
+			return;
+		}
+
 		if (target.getClient().isDetached())
 		{
 			requestor.sendMessage("The player you tried to invite is in offline mode.");

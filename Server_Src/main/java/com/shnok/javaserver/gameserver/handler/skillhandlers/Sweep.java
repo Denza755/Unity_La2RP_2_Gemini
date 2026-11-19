@@ -11,6 +11,7 @@ import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.model.actor.instance.Monster;
 import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
 import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.taskmanager.DecayTaskManager;
 
 public class Sweep implements ISkillHandler
 {
@@ -46,6 +47,10 @@ public class Sweep implements ISkillHandler
 			
 			// Reset variables.
 			targetMonster.getSpoilState().clear();
+			
+			// Immediately remove corpse from the world on successful sweep
+			DecayTaskManager.getInstance().cancel(targetMonster);
+			targetMonster.onDecay();
 		}
 		
 		if (skill.hasSelfEffects())

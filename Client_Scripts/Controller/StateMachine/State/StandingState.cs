@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class StandingState : StateBase
 {
-    public const float STAND_ANIM_LENGTH_SEC = 5f;
+    public const float STAND_ANIM_LENGTH_SEC = 1.2f;
     private bool _sitting = true;
 
     public StandingState(PlayerStateMachine stateMachine) : base(stateMachine) { }
@@ -13,6 +13,10 @@ public class StandingState : StateBase
         {
             case Event.DEAD:
                 _stateMachine.ChangeState(PlayerState.DEAD);
+                break;
+            case Event.ACTION_ALLOWED:
+                _sitting = false;
+                _stateMachine.ChangeState(PlayerState.IDLE);
                 break;
         }
     }

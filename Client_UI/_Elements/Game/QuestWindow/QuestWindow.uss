@@ -1,0 +1,171 @@
+.quest-window {
+    width: 310px;
+    height: 520px;
+    position: absolute;
+    left: 200px;
+    top: 150px;
+}
+
+.quest-content-container {
+    flex-grow: 1;
+    position: absolute;
+    width: 286px;
+    height: 455px;
+    margin-left: 12px;
+    margin-top: 42px;
+    flex-direction: column;
+}
+
+.quest-tabs-bar {
+    flex-direction: row;
+    height: 24px;
+    width: 100%;
+    margin-bottom: 4px;
+    justify-content: space-between;
+}
+
+.quest-tab-button {
+    flex-grow: 1;
+    height: 22px;
+    margin: 0 1px;
+    padding: 0;
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    color: rgb(180, 175, 160);
+    background-color: rgba(30, 30, 30, 0.6);
+    border-width: 1px;
+    border-color: rgba(60, 55, 45, 0.7);
+    border-radius: 2px;
+}
+
+.quest-tab-button:hover {
+    color: rgb(230, 220, 195);
+    background-color: rgba(50, 50, 50, 0.8);
+}
+
+.quest-tab-button.active {
+    color: rgb(245, 235, 205);
+    background-color: rgba(70, 60, 45, 0.9);
+    border-color: rgba(160, 140, 95, 0.9);
+    -unity-font-style: bold;
+}
+
+.quest-header-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 4px;
+    margin-top: 2px;
+    margin-bottom: 4px;
+    background-color: rgba(20, 20, 20, 0.4);
+    border-radius: 2px;
+}
+
+.quest-header-title {
+    font-size: 12px;
+    color: rgb(215, 205, 180);
+    -unity-font-style: bold;
+}
+
+.quest-header-counter {
+    font-size: 11px;
+    color: rgb(165, 145, 115);
+}
+
+.quest-list-scroll {
+    flex-grow: 1;
+    width: 100%;
+    background-color: rgba(15, 15, 15, 0.6);
+    border-width: 1px;
+    border-color: rgba(45, 40, 35, 0.8);
+    border-radius: 2px;
+    padding: 4px;
+}
+
+.quest-empty-label {
+    margin-top: 40px;
+    font-size: 12px;
+    color: rgb(140, 135, 125);
+    -unity-text-align: middle-center;
+    align-self: center;
+}
+
+.quest-list-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    margin-bottom: 2px;
+    border-radius: 2px;
+    background-color: rgba(30, 30, 30, 0.4);
+}
+
+.quest-list-item:hover {
+    background-color: rgba(60, 55, 45, 0.6);
+}
+
+.quest-list-item.selected {
+    background-color: rgba(90, 75, 50, 0.8);
+    border-width: 1px;
+    border-color: rgba(180, 155, 100, 0.8);
+}
+
+.quest-item-title {
+    font-size: 11px;
+    color: rgb(230, 225, 210);
+    flex-grow: 1;
+}
+
+.quest-options-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 4px 4px 4px;
+    justify-content: flex-start;
+}
+
+.quest-checkbox-container {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 14px;
+}
+
+.quest-checkbox-icon {
+    width: 13px;
+    height: 13px;
+    margin-right: 4px;
+    background-image: resource('Data/UI/Assets/Quest/CheckBoxQuest');
+}
+
+.quest-checkbox-icon.checked {
+    background-image: resource('Data/UI/Assets/Quest/CheckBox_checked');
+}
+
+.quest-checkbox-label {
+    font-size: 11px;
+    color: rgb(210, 205, 195);
+}
+
+.quest-footer-row {
+    height: 32px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+.quest-detail-button {
+    width: 110px;
+    height: 24px;
+    font-size: 11px;
+    color: rgb(230, 225, 210);
+    background-color: rgba(45, 40, 35, 0.8);
+    border-width: 1px;
+    border-color: rgba(100, 90, 70, 0.8);
+    border-radius: 3px;
+    -unity-text-align: middle-center;
+}
+
+.quest-detail-button:hover {
+    background-color: rgba(70, 60, 48, 0.9);
+    border-color: rgba(180, 155, 105, 0.9);
+    color: rgb(255, 245, 220);
+}

@@ -13,6 +13,7 @@ import com.shnok.javaserver.commons.math.MathUtil;
 import com.shnok.javaserver.commons.pool.ThreadPool;
 
 import com.shnok.javaserver.Config;
+import com.shnok.javaserver.gameserver.model.World;
 import com.shnok.javaserver.gameserver.data.manager.CursedWeaponManager;
 import com.shnok.javaserver.gameserver.enums.BossInfoType;
 import com.shnok.javaserver.gameserver.enums.DropType;
@@ -504,6 +505,13 @@ public class Monster extends Attackable
 				else
 					dropOrAutoLootItem(player, drop.getKey(), drop.getValue());
 			}
+		}
+		
+		if (getSpoilState().isSweepable())
+		{
+			final Player spoiler = World.getInstance().getPlayer(getSpoilState().getSpoilerId());
+			if (spoiler != null)
+				spoiler.sendPacket(SystemMessageId.SPOIL_SUCCESS);
 		}
 	}
 	

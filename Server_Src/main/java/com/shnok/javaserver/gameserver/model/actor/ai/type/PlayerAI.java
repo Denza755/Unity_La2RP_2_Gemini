@@ -286,6 +286,9 @@ public class PlayerAI extends PlayableAI<Player>
 			// In case the cast is unsuccessful, we trigger MoveToPawn to handle the rotation.
 			if (!_actor.getCast().canCast(target, skill, isCtrlPressed, itemObjectId))
 			{
+				_actor.sendPacket(ActionFailed.STATIC_PACKET);
+				doIdleIntention();
+				
 				if (skill.nextActionIsAttack() && target.isAttackableWithoutForceBy(_actor))
 					doAttackIntention(target, isCtrlPressed, isShiftPressed, true);
 				

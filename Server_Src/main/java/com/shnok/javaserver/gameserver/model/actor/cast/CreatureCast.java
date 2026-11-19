@@ -1,5 +1,7 @@
 package com.shnok.javaserver.gameserver.model.actor.cast;
 
+import com.shnok.javaserver.gameserver.network.serverpackets.combat.ActionFailed;
+
 import java.util.concurrent.ScheduledFuture;
 
 import com.shnok.javaserver.commons.math.MathUtil;
@@ -392,6 +394,7 @@ public class CreatureCast<T extends Creature>
 		if (skill.getCastRange() > 0 && !GeoEngine.getInstance().canSeeTarget(_actor, target))
 		{
 			_actor.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.CANT_SEE_TARGET));
+			_actor.sendPacket(ActionFailed.STATIC_PACKET);
 			return false;
 		}
 		

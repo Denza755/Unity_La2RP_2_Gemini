@@ -23,6 +23,11 @@ public class PlayerCombat : Combat
     public override void OnDeath()
     {
         base.OnDeath();
+        if (PlayerController.Instance != null)
+        {
+            PlayerController.Instance.StopMoving();
+            PlayerController.Instance.ResetDestination(false);
+        }
         PlayerStateMachine.Instance.NotifyEvent(Event.DEAD);
     }
 

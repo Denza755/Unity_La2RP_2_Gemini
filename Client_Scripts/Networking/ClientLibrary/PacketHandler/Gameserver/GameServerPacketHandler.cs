@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Threading;
 
@@ -169,6 +169,9 @@ public class GameServerPacketHandler : ServerPacketHandler
                 break;
             case GameServerPacketType.BuyList:
                 OnBuyListReceived(data);
+                break;
+            case GameServerPacketType.BuyListSeed:
+                OnBuyListSeedReceived(data);
                 break;
             case GameServerPacketType.SellList:
                 OnSellListReceived(data);
@@ -377,7 +380,18 @@ public class GameServerPacketHandler : ServerPacketHandler
                 break;
         }
 
-        _eventProcessor.QueueEvent(() => ChatWindow.Instance.ReceiveChatMessage(message));
+        int senderObjectId = packet.ObjectId;
+        string chatText = packet.Text;
+        bool isAllChat = packet.MessageType == L2MessageType.ALL;
+
+        _eventProcessor.QueueEvent(() =>
+        {
+            ChatWindow.Instance.ReceiveChatMessage(message);
+            if (isAllChat && ChatBubbleManager.Instance != null)
+            {
+                ChatBubbleManager.Instance.ShowBubble(senderObjectId, chatText);
+            }
+        });
     }
 
     private void OnSystemMessageReceive(byte[] data)
@@ -778,6 +792,17 @@ public class GameServerPacketHandler : ServerPacketHandler
             NpcHtmlWindow.Instance.HideWindow(false);
             ShopWindow.Instance.ShowWindow();
             ShopWindow.Instance.RefreshProductList(packet.ListId, packet.Adena, packet.Products, ShopTab.ShopTabType.BUY, packet.OpenTab);
+        });
+    }
+
+    private void OnBuyListSeedReceived(byte[] data)
+    {
+        BuyListSeedPacket packet = new BuyListSeedPacket(data);
+        _eventProcessor.QueueEvent(() =>
+        {
+            NpcHtmlWindow.Instance.HideWindow(false);
+            ShopWindow.Instance.ShowWindow();
+            ShopWindow.Instance.RefreshProductList(packet.ListId, packet.Adena, packet.Products, ShopTab.ShopTabType.BUY, true);
         });
     }
 

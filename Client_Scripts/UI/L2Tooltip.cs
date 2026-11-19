@@ -244,7 +244,7 @@ public class L2ToolTip : L2PopupWindow
         GetElementById("SkillTooltipIcon").style.backgroundImage = background;
         GetLabelById("SkillTooltipName").text = skill.Name;
         GetLabelById("SkillTooltipLevelValue").text = skill.Level.ToString();
-        GetLabelById("SkillTooltipType").text = skill.GetSkillType();
+        GetLabelById("SkillTooltipType").text = $"{skill.GetSkillType()} (ID: {skill.SkillId})";
         Label desc = GetLabelById("SkillTooltipDescription");
         desc.text = skill.ComposeDescription();
 

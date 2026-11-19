@@ -35,6 +35,11 @@ public class CursorManager : MonoBehaviour
         _attackCursorTexture = Resources.Load<Texture2D>(_cursorFolder + "Attack");
         _talkCursorTexture = Resources.Load<Texture2D>(_cursorFolder + "Talk");
         _pickupCursorTexture = Resources.Load<Texture2D>(_cursorFolder + "Pickup");
+
+        if (_defaultCursorTexture != null)
+        {
+            UnityEngine.Cursor.SetCursor(_defaultCursorTexture, Vector2.zero, CursorMode.Auto);
+        }
     }
 
     public void ChangeCursor(CursorType cursorType)

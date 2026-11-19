@@ -117,6 +117,11 @@ public class PlayerInventory : MonoBehaviour
         {
             InventoryWindow.Instance.UpdateItemList(_playerInventory);
         }
+
+        if (SkillbarWindow.Instance != null)
+        {
+            SkillbarWindow.Instance.OnInventoryUpdated();
+        }
     }
 
     public ItemInstance GetItemByObjectId(int objectId)

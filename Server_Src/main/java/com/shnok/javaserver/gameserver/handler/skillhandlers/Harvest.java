@@ -14,6 +14,7 @@ import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
 import com.shnok.javaserver.gameserver.network.SystemMessageId;
 import com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage;
 import com.shnok.javaserver.gameserver.skills.L2Skill;
+import com.shnok.javaserver.gameserver.taskmanager.DecayTaskManager;
 
 public class Harvest implements ISkillHandler
 {
@@ -76,6 +77,10 @@ public class Harvest implements ISkillHandler
 			
 			player.getParty().broadcastToPartyMembers(player, sm);
 		}
+		
+		// Immediately remove corpse from the world on successful harvest
+		DecayTaskManager.getInstance().cancel(targetMonster);
+		targetMonster.onDecay();
 	}
 	
 	private static boolean calcSuccess(Player player, Creature target)

@@ -49,6 +49,7 @@ import com.shnok.javaserver.gameserver.model.location.Location;
 import com.shnok.javaserver.gameserver.model.zone.type.WaterZone;
 import com.shnok.javaserver.gameserver.network.serverpackets.actor.AbstractNpcInfo.NpcInfo;
 import com.shnok.javaserver.gameserver.network.serverpackets.actor.ChangeMoveType;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.DeleteObject;
 import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
 import com.shnok.javaserver.gameserver.network.serverpackets.combat.Revive;
 import com.shnok.javaserver.gameserver.network.serverpackets.unused.ServerObjectInfo;
@@ -215,6 +216,7 @@ public abstract class Creature extends WorldObject
 	 */
 	public void onDecay()
 	{
+		broadcastPacket(new DeleteObject(this));
 		decayMe();
 	}
 	
