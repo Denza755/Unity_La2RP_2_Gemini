@@ -18,6 +18,7 @@ public abstract class L2UI : MonoBehaviour
     public bool MouseOverUI { get { return _mouseOverUI; } set { _mouseOverUI = value; } }
     public bool UILoaded { get { return _uiLoaded; } set { _uiLoaded = value; } }
     public VisualElement RootElement { get { return _rootElement; } }
+    public VisualElement RootVisualContainer => _rootVisualContainer;
 
     [SerializeField] protected int _windowsLoaded = 0;
     [SerializeField] protected int _totalWindowsToLoad = 0;

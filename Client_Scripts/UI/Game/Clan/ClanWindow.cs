@@ -100,27 +100,27 @@ public class ClanWindow : L2PopupWindow
 
     public void ToggleClanWindow()
     {
-        if (IsVisible())
+        if (!_isWindowHidden)
         {
             HideWindow(false);
         }
         else
         {
-            ShowWindow(false);
+            ShowWindow();
             RequestPledgeList();
         }
     }
 
     public void RequestPledgeList()
     {
-        GameClient.Instance.SendMessage(new RequestPledgeMemberListPacket());
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestPledgeMemberListPacket());
     }
 
     public void UpdateClanData(PledgeShowMemberListAllPacket packet)
     {
-        if (!IsVisible())
+        if (_isWindowHidden)
         {
-            ShowWindow(false);
+            ShowWindow();
         }
 
         if (_clanNameLabel != null)

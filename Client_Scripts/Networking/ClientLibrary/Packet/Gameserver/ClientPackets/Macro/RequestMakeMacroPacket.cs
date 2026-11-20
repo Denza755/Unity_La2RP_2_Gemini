@@ -6,19 +6,19 @@ public class RequestMakeMacroPacket : ClientPacket
         WriteS(macro.Name ?? "");
         WriteS(macro.Description ?? "");
         WriteS(macro.Acronym ?? "");
-        WriteC((byte)macro.Icon);
+        WriteB((byte)macro.Icon);
 
         int count = macro.Commands != null ? macro.Commands.Count : 0;
         if (count > 12) count = 12;
-        WriteC((byte)count);
+        WriteB((byte)count);
 
         for (int i = 0; i < count; i++)
         {
             MacroCmd cmd = macro.Commands[i];
-            WriteC((byte)(i + 1));
-            WriteC((byte)cmd.Type);
+            WriteB((byte)(i + 1));
+            WriteB((byte)cmd.Type);
             WriteI(cmd.D1);
-            WriteC((byte)cmd.D2);
+            WriteB((byte)cmd.D2);
             WriteS(cmd.Command ?? "");
         }
 

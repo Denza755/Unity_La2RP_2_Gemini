@@ -148,9 +148,9 @@ public class MacroExecutor : MonoBehaviour
         // Command: /sit
         if (line.Equals("/sit", StringComparison.OrdinalIgnoreCase))
         {
-            if (PlayerEntity.Instance != null && !PlayerEntity.Instance.WaitTypeSitting)
+            if (PlayerEntity.Instance != null && !PlayerEntity.Instance.IsSitting)
             {
-                PlayerActions.Instance?.UseAction(ActionType.SitStand);
+                PlayerActions.Instance?.UseAction(ActionType.Sit);
             }
             yield return new WaitForSeconds(0.1f);
             yield break;
@@ -159,9 +159,9 @@ public class MacroExecutor : MonoBehaviour
         // Command: /stand
         if (line.Equals("/stand", StringComparison.OrdinalIgnoreCase))
         {
-            if (PlayerEntity.Instance != null && PlayerEntity.Instance.WaitTypeSitting)
+            if (PlayerEntity.Instance != null && PlayerEntity.Instance.IsSitting)
             {
-                PlayerActions.Instance?.UseAction(ActionType.SitStand);
+                PlayerActions.Instance?.UseAction(ActionType.Sit);
             }
             yield return new WaitForSeconds(0.1f);
             yield break;
@@ -211,7 +211,7 @@ public class MacroExecutor : MonoBehaviour
         // Search near entities
         Entity found = null;
         Collider[] colliders = Physics.OverlapSphere(
-            PlayerEntity.Instance != null ? PlayerEntity.Instance.Position : Vector3.zero,
+            PlayerEntity.Instance != null ? PlayerEntity.Instance.transform.position : Vector3.zero,
             30f);
 
         for (int i = 0; i < colliders.Length; i++)
@@ -248,7 +248,7 @@ public class MacroExecutor : MonoBehaviour
         }
         else if (PlayerSkill.Instance != null && PlayerSkill.Instance.Skills != null)
         {
-            foreach (SkillInfo si in PlayerSkill.Instance.Skills)
+            foreach (SkillInfo si in PlayerSkill.Instance.Skills.Values)
             {
                 SkillNameData nameData = SkillNameTable.Instance?.GetName(si.Id, 1);
                 if (nameData != null && !string.IsNullOrEmpty(nameData.Name))

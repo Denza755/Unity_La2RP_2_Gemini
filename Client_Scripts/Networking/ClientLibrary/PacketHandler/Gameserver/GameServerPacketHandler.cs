@@ -942,13 +942,13 @@ public class GameServerPacketHandler : ServerPacketHandler
     private void OnSendTradeRequest(byte[] data)
     {
         SendTradeRequestPacket packet = new SendTradeRequestPacket(data);
-        string senderName = World.Instance?.GetPlayer(packet.SenderId)?.Identity?.Name ?? $"Player #{packet.SenderId}";
+        string senderName = WorldSpawner.Instance?.GetEntity(packet.SenderId)?.Identity?.Name ?? $"Player #{packet.SenderId}";
         _eventProcessor.QueueEvent(() =>
         {
             L2ConfirmWindow.Instance?.ShowWindow(
                 $"Player {senderName} requested an exchange. Accept?",
-                () => GameClientPacketHandler.Instance?.SendMessage(new AnswerTradeRequestPacket(1)),
-                () => GameClientPacketHandler.Instance?.SendMessage(new AnswerTradeRequestPacket(0)));
+                () => GameClient.Instance?.ClientPacketHandler?.SendPacket(new AnswerTradeRequestPacket(1)),
+                () => GameClient.Instance?.ClientPacketHandler?.SendPacket(new AnswerTradeRequestPacket(0)));
         });
     }
 

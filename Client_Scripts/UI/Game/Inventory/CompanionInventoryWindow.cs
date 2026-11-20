@@ -94,6 +94,21 @@ public class CompanionInventoryWindow : L2PopupWindow
         InitInventoryGrid();
     }
 
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        CenterWindow();
+        HideWindow(true);
+
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowLoadComplete();
+        }
+    }
+
     private void InitGearAnchors()
     {
         _gearAnchors.Clear();
@@ -220,7 +235,7 @@ public class CompanionInventoryWindow : L2PopupWindow
 
             if (width > 50)
             {
-                _windowEle.style.position = Position.Absolute;
+                _windowEle.style.position = UnityEngine.UIElements.Position.Absolute;
                 _windowEle.style.left = left + width + 10f;
                 _windowEle.style.top = top;
                 return;
@@ -254,7 +269,7 @@ public class CompanionInventoryWindow : L2PopupWindow
         // 2. Clear unequipped slots
         for (int i = 0; i < _invSlots.Count; i++)
         {
-            _invSlots[i].ResetSlot();
+            _invSlots[i].AssignEmpty();
         }
 
         int unequippedIndex = 0;
@@ -264,7 +279,7 @@ public class CompanionInventoryWindow : L2PopupWindow
         {
             if (item == null) continue;
 
-            if (item.IsEquipped)
+            if (item.Equipped)
             {
                 equippedCount++;
                 AssignGearItem(item);
@@ -315,16 +330,16 @@ public class CompanionInventoryWindow : L2PopupWindow
 
     public void TransferItemFromPlayer(int itemObjectId, int count)
     {
-        Client.Instance?.SendPacket(new RequestCompanionItemActionPacket(0, _companionObjectId, itemObjectId, count > 0 ? count : 1));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestCompanionItemActionPacket(0, _companionObjectId, itemObjectId, count > 0 ? count : 1));
     }
 
     public void TransferItemToPlayer(int itemObjectId, int count)
     {
-        Client.Instance?.SendPacket(new RequestCompanionItemActionPacket(1, _companionObjectId, itemObjectId, count > 0 ? count : 1));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestCompanionItemActionPacket(1, _companionObjectId, itemObjectId, count > 0 ? count : 1));
     }
 
     public void EquipCompanionItem(int itemObjectId)
     {
-        Client.Instance?.SendPacket(new RequestCompanionItemActionPacket(2, _companionObjectId, itemObjectId, 1));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestCompanionItemActionPacket(2, _companionObjectId, itemObjectId, 1));
     }
 }

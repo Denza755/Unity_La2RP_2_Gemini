@@ -116,13 +116,13 @@ public class RankingWindow : L2PopupWindow
 
     public void ToggleRankingWindow()
     {
-        if (IsVisible())
+        if (!_isWindowHidden)
         {
             HideWindow(false);
         }
         else
         {
-            ShowWindow(false);
+            ShowWindow();
             SwitchCategory(_currentCategory);
         }
     }
@@ -161,14 +161,14 @@ public class RankingWindow : L2PopupWindow
 
     public void RequestRanking(int category)
     {
-        GameClient.Instance.SendMessage(new RequestRankingPacket(category));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestRankingPacket(category));
     }
 
     public void UpdateRankingData(RankingListPacket packet)
     {
-        if (!IsVisible())
+        if (_isWindowHidden)
         {
-            ShowWindow(false);
+            ShowWindow();
         }
 
         if (_rowsContainer == null) return;

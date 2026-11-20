@@ -40,7 +40,7 @@ public class MacroSlot : L2DraggableSlot
         {
             _acronymLabel = new Label();
             _acronymLabel.name = "MacroAcronym";
-            _acronymLabel.style.position = Position.Absolute;
+            _acronymLabel.style.position = UnityEngine.UIElements.Position.Absolute;
             _acronymLabel.style.left = 0;
             _acronymLabel.style.right = 0;
             _acronymLabel.style.bottom = 1;
@@ -116,7 +116,7 @@ public class MacroSlot : L2DraggableSlot
         }
         else
         {
-            _tooltipManipulator = new TooltipManipulator(_slotElement, tooltip);
+            _tooltipManipulator = new TooltipManipulator(_slotElement, _slotType, tooltip);
             _slotElement.AddManipulator(_tooltipManipulator);
         }
     }

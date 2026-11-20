@@ -7,6 +7,7 @@ index.html
 LATEST_GIT_DIFF.txt
 PROJECT_CONTEXT.md
 _sidebar.md
+antigravity_logs\чат.txt
 Client_Scripts\Animation\SkinnedMeshSync.cs
 Client_Scripts\Animation\Container\IL2HumanoidAnimation.cs
 Client_Scripts\Animation\Container\L2HumanoidAnimation.cs

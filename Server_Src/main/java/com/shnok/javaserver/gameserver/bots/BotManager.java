@@ -328,12 +328,20 @@ public class BotManager
 		_ambientChatTask = ThreadPool.scheduleAtFixedRate(this::tickAmbientChatter, 15000, 35000);
 	}
 
+	private long _lastMoveDebugTime = 0;
+	private static final long MOVE_DEBUG_INTERVAL_MS = 10_000;
+
 	private void tickHotBots()
 	{
+		FakePlayer firstHot = null;
 		for (FakePlayer bot : _bots.values())
 		{
 			if (bot.getSimulationMode() == BotSimulationMode.HOT)
 			{
+				if (firstHot == null)
+				{
+					firstHot = bot;
+				}
 				try
 				{
 					bot.getAI().think();
@@ -343,6 +351,22 @@ public class BotManager
 					LOGGER.error("Error ticking bot AI for {}: {}", bot.getName(), e.getMessage());
 				}
 			}
+		}
+
+		// Periodic movement diagnostics: log first active HOT bot every 10 seconds
+		final long now = System.currentTimeMillis();
+		if (firstHot != null && (now - _lastMoveDebugTime) >= MOVE_DEBUG_INTERVAL_MS)
+		{
+			_lastMoveDebugTime = now;
+			final BotMove mv = firstHot.getMove();
+			final int dx = mv != null ? mv.getDestination().getX() : 0;
+			final int dy = mv != null ? mv.getDestination().getY() : 0;
+			final int dz = mv != null ? mv.getDestination().getZ() : 0;
+			LOGGER.info("[BOT_MOVE_DEBUG] name={} state={} pos=({},{},{}) dest=({},{},{}) moving={}",
+				firstHot.getName(), firstHot.getBotState(),
+				firstHot.getX(), firstHot.getY(), firstHot.getZ(),
+				dx, dy, dz,
+				firstHot.isMoving());
 		}
 	}
 

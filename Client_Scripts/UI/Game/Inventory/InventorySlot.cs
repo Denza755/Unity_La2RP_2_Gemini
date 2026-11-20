@@ -7,8 +7,8 @@ public class InventorySlot : L2DraggableSlot
     private int _count;
     private long _remainingTime;
     private SlotClickSoundManipulator _slotClickSoundManipulator;
-    private int _objectId;
-    private ItemName _assignedItem;
+    protected int _objectId;
+    protected ItemName _assignedItem;
     private ItemType1 _type1;
     private ItemType2 _type2;
     public int Count { get { return _count; } }

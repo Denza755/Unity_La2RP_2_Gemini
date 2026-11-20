@@ -64,6 +64,21 @@ public class DropListWindow : L2PopupWindow
         _emptyDropLabel = GetLabelById("EmptyDropLabel");
     }
 
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        CenterWindow();
+        HideWindow(true);
+
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowLoadComplete();
+        }
+    }
+
     public void SetDropList(string mobName, int[] itemIds)
     {
         if (_mobNameHeader != null)
@@ -123,12 +138,12 @@ public class DropListWindow : L2PopupWindow
 
             row.RegisterCallback<PointerEnterEvent>(evt =>
             {
-                L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Item, new ItemTooltipData(currentItemId, itemName), row);
+                L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Inventory, new ItemTooltipData(currentItemId, itemName), row);
             });
 
             row.RegisterCallback<PointerLeaveEvent>(evt =>
             {
-                L2ToolTip.Instance?.HideWindow();
+                L2ToolTip.Instance?.HideWindow(false);
             });
 
             _dropItemsContainer.Add(row);

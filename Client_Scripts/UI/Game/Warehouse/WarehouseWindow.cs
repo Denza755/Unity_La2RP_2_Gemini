@@ -103,8 +103,8 @@ public class WarehouseWindow : L2PopupWindow
         _whAvailableGrid = GetElementById("WhAvailableGrid");
         _whSelectedGrid = GetElementById("WhSelectedGrid");
 
-        _okBtn = GetButtonById("WhOkBtn");
-        _cancelBtn = GetButtonById("WhCancelBtn");
+        _okBtn = _windowEle.Q<Button>("WhOkBtn");
+        _cancelBtn = _windowEle.Q<Button>("WhCancelBtn");
 
         if (_okBtn != null)
         {
@@ -114,6 +114,21 @@ public class WarehouseWindow : L2PopupWindow
         if (_cancelBtn != null)
         {
             _cancelBtn.clicked += OnClickCancel;
+        }
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        CenterWindow();
+        HideWindow(true);
+
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowLoadComplete();
         }
     }
 
@@ -300,12 +315,12 @@ public class WarehouseWindow : L2PopupWindow
 
         slot.RegisterCallback<PointerEnterEvent>(evt =>
         {
-            L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Item, new ItemTooltipData(itemId, itemName), slot);
+            L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Inventory, new ItemTooltipData(itemId, itemName), slot);
         });
 
         slot.RegisterCallback<PointerLeaveEvent>(evt =>
         {
-            L2ToolTip.Instance?.HideWindow();
+            L2ToolTip.Instance?.HideWindow(false);
         });
 
         return slot;
@@ -334,11 +349,11 @@ public class WarehouseWindow : L2PopupWindow
 
         if (_currentMode == Mode.Deposit)
         {
-            GameClientPacketHandler.Instance?.SendMessage(new SendWarehouseDepositListPacket(itemsToSend));
+            GameClient.Instance?.ClientPacketHandler?.SendPacket(new SendWarehouseDepositListPacket(itemsToSend));
         }
         else
         {
-            GameClientPacketHandler.Instance?.SendMessage(new SendWarehouseWithdrawListPacket(itemsToSend));
+            GameClient.Instance?.ClientPacketHandler?.SendPacket(new SendWarehouseWithdrawListPacket(itemsToSend));
         }
 
         HideWindow(false);

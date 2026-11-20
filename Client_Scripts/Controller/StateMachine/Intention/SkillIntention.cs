@@ -70,9 +70,9 @@ public class SkillIntention : IntentionBase
                 }
             }
 
+            Entity targetEntity = TargetManager.Instance.Target;
             float skillRange = GetRealSkillRange(PlayerEntity.Instance, targetEntity, _lastSkillIntentionGrp);
-            Entity targetEntityRef = TargetManager.Instance.Target;
-            Vector3 targetPos = targetEntityRef.transform.position;
+            Vector3 targetPos = targetEntity.transform.position;
 
             float distance = VectorUtils.Distance2D(PlayerEntity.Instance.transform.position, targetPos);
 
@@ -84,7 +84,7 @@ public class SkillIntention : IntentionBase
                 PlayerController.Instance.ResetDestination(false);
                 _stateMachine.ChangeState(PlayerState.IDLE);
 
-                if (!targetEntityRef.IsDead || IsCorpseSkill(_lastSkillIntention.Id))
+                if (!targetEntity.IsDead || IsCorpseSkill(_lastSkillIntention.Id))
                 {
                     _stateMachine.NotifyEvent(Event.READY_TO_SKILL, _lastSkillIntention);
                 }

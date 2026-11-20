@@ -15,9 +15,9 @@ public class SendMacroListPacket : ServerPacket
     public override void Parse()
     {
         Revision = ReadI();
-        ReadC(); // unknown
-        Count = ReadC();
-        int hasMacro = ReadC();
+        ReadB(); // unknown
+        Count = ReadB();
+        int hasMacro = ReadB();
         HasMacro = hasMacro != 0;
 
         if (HasMacro)
@@ -26,16 +26,16 @@ public class SendMacroListPacket : ServerPacket
             string name = ReadS();
             string descr = ReadS();
             string acronym = ReadS();
-            int icon = ReadC();
-            int cmdCount = ReadC();
+            int icon = ReadB();
+            int cmdCount = ReadB();
 
             List<MacroCmd> commands = new List<MacroCmd>();
             for (int i = 0; i < cmdCount; i++)
             {
-                int entry = ReadC();
-                int type = ReadC();
+                int entry = ReadB();
+                int type = ReadB();
                 int d1 = ReadI();
-                int d2 = ReadC();
+                int d2 = ReadB();
                 string cmd = ReadS();
                 commands.Add(new MacroCmd(entry, type, d1, d2, cmd));
             }

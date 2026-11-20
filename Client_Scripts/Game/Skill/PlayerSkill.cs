@@ -9,6 +9,7 @@ public class PlayerSkill : MonoBehaviour
     private static PlayerSkill _instance;
     public static PlayerSkill Instance => _instance;
     private Dictionary<int, SkillInfo> _skills;
+    public Dictionary<int, SkillInfo> Skills => _skills;
     private List<SkillInfo> _skillsOnCd;
     private Coroutine _cooltimeManagementCoroutine;
 

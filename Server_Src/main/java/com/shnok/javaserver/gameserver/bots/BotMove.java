@@ -56,7 +56,18 @@ public class BotMove extends PlayerMove
 			final Location loc = calculatePath(position.getX(), position.getY(), position.getZ(), destination.getX(), destination.getY(), destination.getZ());
 			if (loc != null)
 			{
-				destination.set(loc);
+				// FIX: calculatePath returns current position when geodata has no path and no
+				// valid waypoint — this causes leftDistance≈0, task cancels instantly, bot freezes.
+				// If path result is suspiciously close to actor's current position, skip it and
+				// use the original destination for a direct step (open-field fallback).
+				final double returnedDist = Math.sqrt(
+					Math.pow(loc.getX() - position.getX(), 2) +
+					Math.pow(loc.getY() - position.getY(), 2));
+				if (returnedDist > 10.0)
+				{
+					destination.set(loc);
+				}
+				// else: use original destination directly (geo-less open field)
 			}
 		}
 
@@ -94,7 +105,14 @@ public class BotMove extends PlayerMove
 		final Location loc = calculatePath(position.getX(), position.getY(), position.getZ(), destination.getX(), destination.getY(), destination.getZ());
 		if (loc != null)
 		{
-			destination.set(loc);
+			// FIX: same open-field fallback as in moveToLocation
+			final double returnedDist = Math.sqrt(
+				Math.pow(loc.getX() - position.getX(), 2) +
+				Math.pow(loc.getY() - position.getY(), 2));
+			if (returnedDist > 10.0)
+			{
+				destination.set(loc);
+			}
 		}
 
 		_destination.set(destination);
@@ -320,20 +338,22 @@ public class BotMove extends PlayerMove
 			return;
 		}
 
+		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
+
+		// FIX: check distance to real target (not to the separation-shifted destination)
+		// to avoid false "already close enough" that prevented moveToLocation from being called.
+		if ((getMoveType() == MoveType.GROUND) ? _actor.isIn2DRadius(target, realOffset) : _actor.isIn3DRadius(target, realOffset))
+		{
+			return;
+		}
+
+		// Separation offset: shift destination slightly so bots don't stack on the target
 		final Location destination = target.getPosition().clone();
-		// Separation offset based on actor's objectId and collision radius to avoid stacking
 		final double angle = Math.toRadians((_actor.getObjectId() * 59) % 360);
 		final double sepDist = Math.max(20.0, _actor.getCollisionRadius() * 0.95);
 		final int newX = destination.getX() + (int) (Math.cos(angle) * sepDist);
 		final int newY = destination.getY() + (int) (Math.sin(angle) * sepDist);
 		destination.set(newX, newY, GeoEngine.getInstance().getHeight(newX, newY, destination.getZ()));
-
-		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
-
-		if ((getMoveType() == MoveType.GROUND) ? _actor.isIn2DRadius(destination, realOffset) : _actor.isIn3DRadius(destination, realOffset))
-		{
-			return;
-		}
 
 		_pawn = target;
 		_offset = realOffset;
@@ -356,20 +376,21 @@ public class BotMove extends PlayerMove
 			return;
 		}
 
+		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
+
+		// FIX: check distance to real target, not to separation-shifted point
+		if ((getMoveType() == MoveType.GROUND) ? _actor.isIn2DRadius(target, realOffset) : _actor.isIn3DRadius(target, realOffset))
+		{
+			return;
+		}
+
+		// Separation offset: shift destination slightly to avoid stacking
 		final Location destination = target.getPosition().clone();
-		// Separation offset based on actor's objectId and collision radius to avoid stacking
 		final double angle = Math.toRadians((_actor.getObjectId() * 59) % 360);
 		final double sepDist = Math.max(25.0, _actor.getCollisionRadius() * 1.1);
 		final int newX = destination.getX() + (int) (Math.cos(angle) * sepDist);
 		final int newY = destination.getY() + (int) (Math.sin(angle) * sepDist);
 		destination.set(newX, newY, GeoEngine.getInstance().getHeight(newX, newY, destination.getZ()));
-
-		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
-
-		if ((getMoveType() == MoveType.GROUND) ? _actor.isIn2DRadius(destination, realOffset) : _actor.isIn3DRadius(destination, realOffset))
-		{
-			return;
-		}
 
 		_pawn = null;
 		_offset = 0;

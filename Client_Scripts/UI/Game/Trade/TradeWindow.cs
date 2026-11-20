@@ -100,8 +100,8 @@ public class TradeWindow : L2PopupWindow
         _partnerStatusLabel = GetLabelById("PartnerStatusLabel");
         _partnerSectionLabel = GetLabelById("PartnerSectionLabel");
 
-        _okButton = GetButtonById("TradeOkButton");
-        _cancelButton = GetButtonById("TradeCancelButton");
+        _okButton = _windowEle.Q<Button>("TradeOkButton");
+        _cancelButton = _windowEle.Q<Button>("TradeCancelButton");
 
         if (_okButton != null)
         {
@@ -111,6 +111,21 @@ public class TradeWindow : L2PopupWindow
         if (_cancelButton != null)
         {
             _cancelButton.clicked += OnClickCancel;
+        }
+    }
+
+    protected override IEnumerator BuildWindow(VisualElement root)
+    {
+        InitWindow(root);
+
+        yield return new WaitForEndOfFrame();
+
+        CenterWindow();
+        HideWindow(true);
+
+        if (L2GameUI.Instance != null)
+        {
+            L2GameUI.Instance.WindowLoadComplete();
         }
     }
 
@@ -134,7 +149,7 @@ public class TradeWindow : L2PopupWindow
         RefreshMyTradeGrid();
         RefreshPartnerTradeGrid();
 
-        string partnerName = World.Instance?.GetPlayer(partnerObjectId)?.Identity?.Name;
+        string partnerName = WorldSpawner.Instance?.GetEntity(partnerObjectId)?.Identity?.Name;
         if (string.IsNullOrEmpty(partnerName))
         {
             partnerName = "Partner";
@@ -237,12 +252,12 @@ public class TradeWindow : L2PopupWindow
 
         slot.RegisterCallback<PointerEnterEvent>(evt =>
         {
-            L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Item, new ItemTooltipData(itemId, itemName), slot);
+            L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Inventory, new ItemTooltipData(itemId, itemName), slot);
         });
 
         slot.RegisterCallback<PointerLeaveEvent>(evt =>
         {
-            L2ToolTip.Instance?.HideWindow();
+            L2ToolTip.Instance?.HideWindow(false);
         });
 
         return slot;
@@ -272,7 +287,7 @@ public class TradeWindow : L2PopupWindow
 
     private void SendAddItem(int objectId, int count)
     {
-        GameClientPacketHandler.Instance?.SendMessage(new AddTradeItemPacket(0, objectId, count));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new AddTradeItemPacket(0, objectId, count));
     }
 
     public void AddMyItem(int objectId, int itemId, int count, int enchant)
@@ -325,12 +340,12 @@ public class TradeWindow : L2PopupWindow
         if (_myConfirmed) return;
         _myConfirmed = true;
         UpdateStatusLabels();
-        GameClientPacketHandler.Instance?.SendMessage(new TradeDonePacket(1));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new TradeDonePacket(1));
     }
 
     private void OnClickCancel()
     {
-        GameClientPacketHandler.Instance?.SendMessage(new TradeDonePacket(0));
+        GameClient.Instance?.ClientPacketHandler?.SendPacket(new TradeDonePacket(0));
         HideWindow(false);
     }
 

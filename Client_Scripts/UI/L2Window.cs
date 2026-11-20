@@ -7,6 +7,7 @@ public abstract class L2Window : MonoBehaviour
     protected VisualElement _root;
     protected VisualTreeAsset _windowTemplate;
     protected VisualElement _windowEle;
+    public VisualElement WindowEle => _windowEle;
     protected bool _isWindowHidden = false;
     protected MouseOverDetectionManipulator _mouseOverDetection;
 

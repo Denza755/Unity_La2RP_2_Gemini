@@ -32,7 +32,7 @@ public class WarehouseDepositListPacket : AbstractItemPacket
                 int customType2 = ReadH();
                 int unk = ReadH();
 
-                Items[i] = new ItemInstance(type1, objectId, itemId, itemCount, type2, customType1, 0, bodyPart, enchant, customType2, 0, 0, i);
+                Items[i] = new ItemInstance(objectId, itemId, ItemLocation.Inventory, i, itemCount, (ItemType1)type1, (ItemType2)type2, false, (ItemSlot)bodyPart, enchant, 0L);
             }
         }
         catch (Exception ex)

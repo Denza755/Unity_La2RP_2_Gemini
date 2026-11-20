@@ -22,13 +22,16 @@ import com.shnok.javaserver.gameserver.skills.L2Skill;
 public class HotBotAI extends PlayerAI
 {
 	private static final CLogger LOGGER = new CLogger(HotBotAI.class.getName());
-	private static int _loggedMoveCount = 0;
 
 	private final FakePlayer _bot;
 	private long _lastPatrolTime = 0;
 	private long _lastPotionTime = 0;
 	private long _castStartTime = 0;
 	private long _attackStartTime = 0;
+
+	// Periodic debug log: printed every 10 seconds for the first active HOT bot only
+	private long _lastDebugLogTime = 0;
+	private static final long DEBUG_LOG_INTERVAL_MS = 10_000;
 
 	public HotBotAI(FakePlayer bot)
 	{
@@ -38,11 +41,15 @@ public class HotBotAI extends PlayerAI
 
 	private void logMoveIfNeeded(String action, int tx, int ty, int tz)
 	{
-		if (_loggedMoveCount < 10)
+		final long now = System.currentTimeMillis();
+		if (now - _lastDebugLogTime >= DEBUG_LOG_INTERVAL_MS)
 		{
-			_loggedMoveCount++;
-			LOGGER.info("[BotAI] {} is {} towards ({}, {}, {}) from ({}, {}, {})",
-				_bot.getName(), action, tx, ty, tz, _bot.getX(), _bot.getY(), _bot.getZ());
+			_lastDebugLogTime = now;
+			LOGGER.info("[BOT_MOVE_DEBUG] name={} state={} pos=({},{},{}) dest=({},{},{}) moving={}",
+				_bot.getName(), _bot.getBotState(),
+				_bot.getX(), _bot.getY(), _bot.getZ(),
+				tx, ty, tz,
+				_bot.isMoving());
 		}
 	}
 
@@ -391,8 +398,11 @@ public class HotBotAI extends PlayerAI
 			return;
 		}
 
-		// Pick a random walk point within 300..800 units, verified by GeoEngine
-		for (int attempts = 0; attempts < 6; attempts++)
+		// Pick a random walk point within 300..800 units.
+		// First 6 attempts: prefer geodata-verified points (walls / cliffs filtered out).
+		// Fallback attempt: skip geo-check for open-field zones where geodata is absent.
+		Location fallback = null;
+		for (int attempts = 0; attempts < 7; attempts++)
 		{
 			final double angle = Rnd.nextDouble() * 2 * Math.PI;
 			final int dist = Rnd.get(300, 800);
@@ -400,14 +410,34 @@ public class HotBotAI extends PlayerAI
 			final int ty = (int) (curY + dist * Math.sin(angle));
 			final int tz = GeoEngine.getInstance().getHeight(tx, ty, curZ);
 
-			if (spot.getCenter().distance2D(new Location(tx, ty, tz)) <= spot.getRadius()
-				&& Math.abs(tz - curZ) < 250
-				&& GeoEngine.getInstance().canMoveToTarget(curX, curY, curZ, tx, ty, tz))
+			final boolean inSpot = spot.getCenter().distance2D(new Location(tx, ty, tz)) <= spot.getRadius();
+			final boolean flatEnough = Math.abs(tz - curZ) < 250;
+
+			if (!inSpot || !flatEnough)
 			{
+				continue;
+			}
+
+			if (attempts < 6 && GeoEngine.getInstance().canMoveToTarget(curX, curY, curZ, tx, ty, tz))
+			{
+				// Geodata confirms the step is clear — use it immediately
 				logMoveIfNeeded("patrolling random spot", tx, ty, tz);
 				_bot.getMove().maybeMoveToLocation(new Location(tx, ty, tz), 0, true, false);
-				break;
+				return;
 			}
+			else if (fallback == null)
+			{
+				// Keep first geometrically-valid point as a geo-less fallback
+				fallback = new Location(tx, ty, tz);
+			}
+		}
+
+		// FIX: if geodata blocked all attempts (no geo data for open field),
+		// use the fallback point directly so the bot still walks around.
+		if (fallback != null)
+		{
+			logMoveIfNeeded("patrolling fallback (no geo)", fallback.getX(), fallback.getY(), fallback.getZ());
+			_bot.getMove().maybeMoveToLocation(fallback, 0, false, false);
 		}
 	}
 

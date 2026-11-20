@@ -136,7 +136,7 @@ public class PrivateStoreWindow : L2PopupWindow
         _sellStoreItems = packet.Items;
         _cartItems.Clear();
 
-        ShowWindow(false);
+        ShowWindow();
 
         if (_titleLabel != null) _titleLabel.text = "Buy From Private Store";
         if (_leftHeader != null) _leftHeader.text = "Store Items (Click to Buy)";
@@ -155,7 +155,7 @@ public class PrivateStoreWindow : L2PopupWindow
         _buyStoreItems = packet.Items;
         _cartItems.Clear();
 
-        ShowWindow(false);
+        ShowWindow();
 
         if (_titleLabel != null) _titleLabel.text = "Sell to Private Store";
         if (_leftHeader != null) _leftHeader.text = "Buyer Wanted Items";
@@ -182,7 +182,7 @@ public class PrivateStoreWindow : L2PopupWindow
 
                 VisualElement slot = CreateSlotElement(item.ItemId, item.Enchant, remaining, item.Price, () =>
                 {
-                    PromptAddToCart(item.ObjectId, item.ItemId, item.Enchant, remaining, item.Price);
+                    PromptAddToCart(item.ObjectId, item.ItemId, (short)item.Enchant, remaining, item.Price);
                 });
                 _availableGrid.Add(slot);
             }
@@ -252,14 +252,10 @@ public class PrivateStoreWindow : L2PopupWindow
         VisualElement icon = new VisualElement();
         icon.AddToClassList("ps-slot-icon");
 
-        string iconPath = IconTable.Instance.GetIconPath(itemId);
-        if (!string.IsNullOrEmpty(iconPath))
+        Texture2D iconTex = IconTable.Instance.GetIcon(itemId);
+        if (iconTex != null)
         {
-            Sprite sp = Resources.Load<Sprite>(iconPath);
-            if (sp != null)
-            {
-                icon.style.backgroundImage = new StyleBackground(sp);
-            }
+            icon.style.backgroundImage = new StyleBackground(iconTex);
         }
         slot.Add(icon);
 
@@ -271,14 +267,14 @@ public class PrivateStoreWindow : L2PopupWindow
             slot.Add(countLabel);
         }
 
-        string itemName = ItemNameTable.Instance.GetItemName(itemId);
+        string itemName = ItemNameTable.Instance.GetItemName(itemId)?.Name ?? $"Item #{itemId}";
         slot.RegisterCallback<MouseEnterEvent>(evt =>
         {
-            L2ToolTip.Instance?.ShowTooltip($"{itemName} (Price: {price:N0} Adena)\nCount: {count:N0}");
+            L2ToolTip.Instance?.UpdateTooltip(L2Slot.SlotType.Inventory, $"{itemName} (Price: {price:N0} Adena)\nCount: {count:N0}", slot);
         });
         slot.RegisterCallback<MouseLeaveEvent>(evt =>
         {
-            L2ToolTip.Instance?.HideTooltip();
+            L2ToolTip.Instance?.HideWindow(false);
         });
 
         slot.RegisterCallback<ClickEvent>(evt =>
@@ -299,7 +295,7 @@ public class PrivateStoreWindow : L2PopupWindow
 
         if (L2InputAmountWindow.Instance != null)
         {
-            string itemName = ItemNameTable.Instance.GetItemName(itemId);
+            string itemName = ItemNameTable.Instance.GetItemName(itemId)?.Name ?? $"Item #{itemId}";
             L2InputAmountWindow.Instance.ShowWindow(itemName, maxCount, selectedCount =>
             {
                 if (selectedCount > 0 && selectedCount <= maxCount)
@@ -357,7 +353,7 @@ public class PrivateStoreWindow : L2PopupWindow
                 return;
             }
 
-            GameClient.Instance.SendMessage(new RequestPrivateStoreBuyPacket(_storePlayerId, requests));
+            GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestPrivateStoreBuyPacket(_storePlayerId, requests));
         }
         else
         {
@@ -367,7 +363,7 @@ public class PrivateStoreWindow : L2PopupWindow
                 requests.Add(new RequestPrivateStoreSellPacket.RequestedItem(c.ObjectId, c.ItemId, c.Enchant, c.Count, c.Price));
             }
 
-            GameClient.Instance.SendMessage(new RequestPrivateStoreSellPacket(_storePlayerId, requests));
+            GameClient.Instance?.ClientPacketHandler?.SendPacket(new RequestPrivateStoreSellPacket(_storePlayerId, requests));
         }
 
         HideWindow(false);
