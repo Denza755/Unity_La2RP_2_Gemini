@@ -1,4 +1,4 @@
-package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+package com.shnok.javaserver.gameserver.network.clientpackets;
 
 import java.util.Collection;
 
@@ -6,7 +6,6 @@ import com.shnok.javaserver.gameserver.model.Macro;
 import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.model.records.MacroCmd;
 import com.shnok.javaserver.gameserver.network.SystemMessageId;
-import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
 
 public final class RequestMakeMacro extends L2GameClientPacket
 {

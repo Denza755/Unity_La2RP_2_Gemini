@@ -573,6 +573,13 @@ public class CreatureMove<T extends Creature>
 			return;
 		
 		final Location destination = target.getPosition().clone();
+		// Separation offset to prevent stacking
+		final double angle = Math.toRadians((_actor.getObjectId() * 59) % 360);
+		final double sepDist = Math.max(16.0, _actor.getCollisionRadius() * 0.85);
+		final int newX = destination.getX() + (int) (Math.cos(angle) * sepDist);
+		final int newY = destination.getY() + (int) (Math.sin(angle) * sepDist);
+		destination.set(newX, newY, GeoEngine.getInstance().getHeight(newX, newY, destination.getZ()));
+
 		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
 		
 		// Don't bother moving if already in radius.
@@ -599,6 +606,13 @@ public class CreatureMove<T extends Creature>
 			return;
 		
 		final Location destination = target.getPosition().clone();
+		// Separation offset to prevent stacking
+		final double angle = Math.toRadians((_actor.getObjectId() * 59) % 360);
+		final double sepDist = Math.max(16.0, _actor.getCollisionRadius() * 0.85);
+		final int newX = destination.getX() + (int) (Math.cos(angle) * sepDist);
+		final int newY = destination.getY() + (int) (Math.sin(angle) * sepDist);
+		destination.set(newX, newY, GeoEngine.getInstance().getHeight(newX, newY, destination.getZ()));
+
 		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
 		
 		// Don't bother moving if already in radius.

@@ -36,36 +36,13 @@ public class CursorManager : MonoBehaviour
         _talkCursorTexture = Resources.Load<Texture2D>(_cursorFolder + "Talk");
         _pickupCursorTexture = Resources.Load<Texture2D>(_cursorFolder + "Pickup");
 
-        if (_defaultCursorTexture != null)
-        {
-            UnityEngine.Cursor.SetCursor(_defaultCursorTexture, Vector2.zero, CursorMode.Auto);
-        }
+        // Force standard Windows system cursor everywhere
+        UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
     }
 
     public void ChangeCursor(CursorType cursorType)
     {
-        if (_lastCursorType == cursorType)
-        {
-            return;
-        }
-
         _lastCursorType = cursorType;
-
-
-        switch (cursorType)
-        {
-            case CursorType.Default:
-                UnityEngine.Cursor.SetCursor(_defaultCursorTexture, Vector2.zero, CursorMode.Auto);
-                break;
-            case CursorType.Attack:
-                UnityEngine.Cursor.SetCursor(_attackCursorTexture, Vector2.zero, CursorMode.Auto);
-                break;
-            case CursorType.Talk:
-                UnityEngine.Cursor.SetCursor(_talkCursorTexture, Vector2.zero, CursorMode.Auto);
-                break;
-            case CursorType.Pickup:
-                UnityEngine.Cursor.SetCursor(_pickupCursorTexture, Vector2.zero, CursorMode.Auto);
-                break;
-        }
+        UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
     }
 }

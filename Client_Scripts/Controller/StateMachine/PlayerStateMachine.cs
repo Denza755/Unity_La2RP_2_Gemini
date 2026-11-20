@@ -99,6 +99,11 @@ public class PlayerStateMachine : MonoBehaviour
 
     public void ChangeIntention(Intention newIntention, object arg0)
     {
+        if (_currentState == PlayerState.SKILL && (newIntention == Intention.INTENTION_MOVE_TO || newIntention == Intention.INTENTION_MOVE))
+        {
+            return;
+        }
+
         if (_waitingForServerReply)
         {
             Debug.LogWarning("Was waiting for another reply!");

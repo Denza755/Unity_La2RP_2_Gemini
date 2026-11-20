@@ -30,6 +30,8 @@ public class CompanionAI extends PlayerAI
 	private final Player _owner;
 	private long _deathTime = 0;
 	private long _lastPotionTime = 0;
+	private long _castStartTime = 0;
+	private long _attackStartTime = 0;
 	private Creature _lastAttacker = null;
 
 	public CompanionAI(Player companion, Player owner)
@@ -143,6 +145,44 @@ public class CompanionAI extends PlayerAI
 		}
 		_deathTime = 0;
 
+		// Watchdog for stuck casting / attacking states
+		final long now = System.currentTimeMillis();
+		if (_companion.getCast().isCastingNow())
+		{
+			if (_castStartTime == 0)
+			{
+				_castStartTime = now;
+			}
+			else if (now - _castStartTime > 10000)
+			{
+				_companion.getCast().stop();
+				doIdleIntention();
+				_castStartTime = 0;
+			}
+		}
+		else
+		{
+			_castStartTime = 0;
+		}
+
+		if (_companion.getAttack().isAttackingNow())
+		{
+			if (_attackStartTime == 0)
+			{
+				_attackStartTime = now;
+			}
+			else if (now - _attackStartTime > 8000)
+			{
+				_companion.getAttack().stop();
+				doIdleIntention();
+				_attackStartTime = 0;
+			}
+		}
+		else
+		{
+			_attackStartTime = 0;
+		}
+
 		// 2. OWNER VALIDATION
 		if (_owner == null || !_owner.isOnline())
 		{
@@ -220,7 +260,6 @@ public class CompanionAI extends PlayerAI
 		}
 
 		// 6. POTION USAGE
-		final long now = System.currentTimeMillis();
 		if (_companion.getStatus().getHpRatio() < 0.60 && (now - _lastPotionTime >= 15000))
 		{
 			if (useHealingPotion())
@@ -550,6 +589,8 @@ public class CompanionAI extends PlayerAI
 
 		if (!_companion.getCast().canAttemptCast(target, skill))
 		{
+			doIdleIntention();
+			tryToAttack(target);
 			return;
 		}
 
@@ -570,6 +611,8 @@ public class CompanionAI extends PlayerAI
 
 		if (!_companion.getCast().canCast(target, skill, _currentIntention.isCtrlPressed(), _currentIntention.getItemObjectId()))
 		{
+			doIdleIntention();
+			tryToAttack(target);
 			return;
 		}
 

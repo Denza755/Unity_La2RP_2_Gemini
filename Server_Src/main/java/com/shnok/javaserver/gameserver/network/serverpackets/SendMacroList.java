@@ -1,8 +1,7 @@
-package com.shnok.javaserver.gameserver.network.serverpackets.unused;
+package com.shnok.javaserver.gameserver.network.serverpackets;
 
 import com.shnok.javaserver.gameserver.model.Macro;
 import com.shnok.javaserver.gameserver.model.records.MacroCmd;
-import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
 
 public class SendMacroList extends L2GameServerPacket
 {

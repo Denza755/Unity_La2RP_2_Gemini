@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="ps-window">
+        <ui:VisualElement name="Content" class="ps-window-content">
+            <ui:Label name="StoreTitleLabel" text="Private Store" class="ps-title-label" />
+            <ui:VisualElement class="ps-two-panels-container">
+                <!-- Left panel: Store Available Items -->
+                <ui:VisualElement class="ps-panel">
+                    <ui:Label name="StoreLeftHeader" text="Available Items" class="ps-panel-header" />
+                    <ui:ScrollView name="StoreAvailableScroll" class="ps-scroll-panel">
+                        <ui:VisualElement name="StoreAvailableGrid" class="ps-slots-grid" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+
+                <!-- Right panel: Cart / Selected Items -->
+                <ui:VisualElement class="ps-panel">
+                    <ui:Label name="StoreRightHeader" text="Selected Items" class="ps-panel-header" />
+                    <ui:ScrollView name="StoreSelectedScroll" class="ps-scroll-panel">
+                        <ui:VisualElement name="StoreSelectedGrid" class="ps-slots-grid" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Info summary -->
+            <ui:VisualElement class="ps-info-bar">
+                <ui:Label name="StoreAdenaLabel" text="Adena: 0" class="ps-info-text" />
+                <ui:Label name="StoreTotalLabel" text="Total: 0 Adena" class="ps-info-total" />
+            </ui:VisualElement>
+
+            <!-- Buttons -->
+            <ui:VisualElement class="ps-btn-bar">
+                <ui:Button name="StoreActionBtn" text="Buy" class="ps-action-btn" />
+                <ui:Button name="StoreCancelBtn" text="Cancel" class="ps-action-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

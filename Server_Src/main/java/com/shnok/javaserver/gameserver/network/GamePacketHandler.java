@@ -22,6 +22,10 @@ import com.shnok.javaserver.gameserver.network.clientpackets.movement.RequestCha
 import com.shnok.javaserver.gameserver.network.clientpackets.movement.ValidatePosition;
 import com.shnok.javaserver.gameserver.network.clientpackets.ruler.*;
 import com.shnok.javaserver.gameserver.network.clientpackets.skill.*;
+import com.shnok.javaserver.gameserver.network.clientpackets.RequestMakeMacro;
+import com.shnok.javaserver.gameserver.network.clientpackets.RequestDeleteMacro;
+import com.shnok.javaserver.gameserver.network.clientpackets.RequestShortCutReg;
+import com.shnok.javaserver.gameserver.network.clientpackets.RequestShortCutDel;
 import com.shnok.javaserver.gameserver.network.clientpackets.unused.*;
 
 /**
@@ -843,11 +847,17 @@ public final class GamePacketHandler implements IPacketHandler<GameClient>, ICli
 								break;
 						}
 						break;
+					case 0xec:
+						msg = new RequestCompanionItemAction();
+						break;
 					case 0xee:
 						msg = new RequestRulerBuildAction();
 						break;
 					case 0xef:
 						msg = new RequestRulerCameraSync();
+						break;
+					case 0xf1:
+						msg = new RequestRankingPacket();
 						break;
 					default:
 						printDebug(opcode, buf, state, client);

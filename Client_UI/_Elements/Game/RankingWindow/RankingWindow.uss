@@ -1,0 +1,181 @@
+.rk-window {
+    width: 440px;
+    height: 480px;
+    position: absolute;
+    left: 300px;
+    top: 130px;
+}
+
+.rk-window-content {
+    flex-grow: 1;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+}
+
+.rk-tab-bar {
+    display: flex;
+    flex-direction: row;
+    height: 26px;
+    margin-bottom: 6px;
+}
+
+.rk-tab-btn {
+    flex-grow: 1;
+    height: 24px;
+    font-size: 11px;
+    color: #a09080;
+    background-color: rgba(30, 26, 20, 0.85);
+    border-width: 1px;
+    border-color: rgba(100, 85, 60, 0.6);
+    margin-right: 2px;
+}
+
+.rk-tab-btn:hover {
+    color: #e5b350;
+    background-color: rgba(50, 42, 30, 0.9);
+}
+
+.rk-tab-active {
+    color: #ffd700;
+    -unity-font-style: bold;
+    background-color: rgba(60, 50, 35, 0.95);
+    border-color: #e5b350;
+}
+
+.rk-table-header {
+    display: flex;
+    flex-direction: row;
+    height: 22px;
+    background-color: rgba(45, 38, 28, 0.85);
+    border-width: 1px;
+    border-color: rgba(120, 105, 80, 0.5);
+    align-items: center;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.rk-col-header {
+    font-size: 11px;
+    color: #d6ccb1;
+    -unity-font-style: bold;
+}
+
+.rk-col-rank {
+    width: 8%;
+    -unity-text-align: middle-center;
+}
+
+.rk-col-name {
+    width: 32%;
+}
+
+.rk-col-class {
+    width: 30%;
+}
+
+.rk-col-lv {
+    width: 12%;
+    -unity-text-align: middle-center;
+}
+
+.rk-col-val {
+    width: 18%;
+    -unity-text-align: middle-right;
+}
+
+.rk-scroll-panel {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: rgba(80, 70, 50, 0.5);
+    margin-bottom: 6px;
+}
+
+.rk-rows-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.rk-row {
+    display: flex;
+    flex-direction: row;
+    height: 20px;
+    align-items: center;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(60, 50, 40, 0.3);
+}
+
+.rk-row-alt {
+    background-color: rgba(40, 36, 30, 0.4);
+}
+
+.rk-row:hover {
+    background-color: rgba(90, 75, 45, 0.4);
+}
+
+.rk-cell-text {
+    font-size: 11px;
+    color: #c4b090;
+}
+
+.rk-rank-gold {
+    color: #ffd700;
+    -unity-font-style: bold;
+}
+
+.rk-rank-silver {
+    color: #e0e0e0;
+    -unity-font-style: bold;
+}
+
+.rk-rank-bronze {
+    color: #cd7f32;
+    -unity-font-style: bold;
+}
+
+.rk-online-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+    background-color: #55ff55;
+}
+
+.rk-offline-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+    background-color: #666666;
+}
+
+.rk-name-box {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.rk-btn-bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.rk-action-btn {
+    width: 70px;
+    height: 22px;
+    margin-left: 6px;
+    font-size: 11px;
+    color: #e0d0b0;
+    background-color: rgba(40, 35, 25, 0.85);
+    border-width: 1px;
+    border-color: rgba(140, 120, 90, 0.8);
+}
+
+.rk-action-btn:hover {
+    background-color: rgba(70, 60, 45, 0.9);
+    border-color: #e5b350;
+}

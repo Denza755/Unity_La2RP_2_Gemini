@@ -93,6 +93,9 @@ public class PlayerShortcuts : MonoBehaviour
             case Shortcut.TYPE_SKILL:
                 PlayerSkill.Instance.UseSkill(shortcut.Id);
                 break;
+            case Shortcut.TYPE_MACRO:
+                MacroExecutor.Instance.ExecuteMacro(shortcut.Id);
+                break;
             default:
                 Debug.LogWarning("Unkown shortcut type.");
                 break;

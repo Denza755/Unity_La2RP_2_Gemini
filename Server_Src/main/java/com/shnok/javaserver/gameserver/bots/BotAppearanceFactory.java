@@ -200,27 +200,10 @@ public class BotAppearanceFactory
 		}
 		else
 		{
-			if (level <= 5)
-			{
-				// Squire's clothes (1146 Shirt, 1147 Pants, 37 Shoes)
-				equipItemSafe(bot, 1146);
-				equipItemSafe(bot, 1147);
-				equipItemSafe(bot, 37);
-			}
-			else if (level <= 11)
-			{
-				// Leather Armor set (22 Shirt, 29 Pants, 37 Shoes)
-				equipItemSafe(bot, 22);
-				equipItemSafe(bot, 29);
-				equipItemSafe(bot, 37);
-			}
-			else
-			{
-				// Hard Leather set (27 Shirt, 30 Pants, 38 Low Boots)
-				equipItemSafe(bot, 27);
-				equipItemSafe(bot, 30);
-				equipItemSafe(bot, 38);
-			}
+			// Safe Wooden armor set with 100% verified 3D meshes across all races (including Dark Elf Male)
+			equipItemSafe(bot, 23); // Wooden Breastplate
+			equipItemSafe(bot, 30); // Wooden Gaiters
+			equipItemSafe(bot, 37); // Shoes
 		}
 	}
 

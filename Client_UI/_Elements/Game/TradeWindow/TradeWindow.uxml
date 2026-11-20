@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <ui:Template name="L2Button" src="project://database/Assets/Resources/Data/UI/_Elements/Components/L2Button/L2Button.uxml?fileID=9197481963319205126&amp;guid=47796068f89476143b10b5d383be52fc&amp;type=3#L2Button" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="trade-window">
+        <ui:VisualElement name="Content" class="trade-window-content">
+            <!-- Section 1: My Inventory -->
+            <ui:Label text="My Inventory (Double-click or Drag to add)" class="trade-section-label" />
+            <ui:ScrollView name="MyInventoryScroll" class="trade-inventory-scroll">
+                <ui:VisualElement name="MyInventoryGrid" class="trade-slots-grid" />
+            </ui:ScrollView>
+
+            <!-- Section 2: My Trade Offer -->
+            <ui:VisualElement class="trade-section-header-row">
+                <ui:Label text="My Exchange List" class="trade-section-label" />
+                <ui:Label name="MyStatusLabel" text="Pending" class="trade-status-label" />
+            </ui:VisualElement>
+            <ui:ScrollView name="MyTradeScroll" class="trade-offer-scroll">
+                <ui:VisualElement name="MyTradeGrid" class="trade-slots-grid" />
+            </ui:ScrollView>
+
+            <!-- Section 3: Partner Trade Offer -->
+            <ui:VisualElement class="trade-section-header-row">
+                <ui:Label name="PartnerSectionLabel" text="Partner's Exchange List" class="trade-section-label" />
+                <ui:Label name="PartnerStatusLabel" text="Pending" class="trade-status-label" />
+            </ui:VisualElement>
+            <ui:ScrollView name="PartnerTradeScroll" class="trade-offer-scroll">
+                <ui:VisualElement name="PartnerTradeGrid" class="trade-slots-grid" />
+            </ui:ScrollView>
+
+            <!-- Bottom Buttons -->
+            <ui:VisualElement name="ButtonBar" class="trade-button-bar">
+                <ui:Button name="TradeOkButton" text="OK" class="trade-action-btn" />
+                <ui:Button name="TradeCancelButton" text="Cancel" class="trade-action-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

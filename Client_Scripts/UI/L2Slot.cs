@@ -17,7 +17,10 @@ public class L2Slot
         Trash,
         Product,
         Basket,
-        Effect
+        Effect,
+        CompanionInventory,
+        CompanionGear,
+        Macro
     }
 
     [SerializeField] protected int _id;

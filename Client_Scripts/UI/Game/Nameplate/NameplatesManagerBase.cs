@@ -12,6 +12,7 @@ public class NameplatesManagerBase : MonoBehaviour
     [SerializeField] protected float nameplateHeightMultiplier = 1.95f;
 
     protected readonly ConcurrentDictionary<int, Nameplate> nameplates = new();
+    private static readonly ConcurrentDictionary<int, (bool isSell, string message)> _cachedStoreMessages = new();
     [SerializeField] protected Transform playerTransform;
     [SerializeField] protected Camera mainCamera;
     protected VisualElement rootElement;
@@ -163,6 +164,23 @@ public class NameplatesManagerBase : MonoBehaviour
         return !isTooFar;
     }
 
+    public void SetPlayerStoreMessage(int objectId, bool isSell, string message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            _cachedStoreMessages.TryRemove(objectId, out _);
+        }
+        else
+        {
+            _cachedStoreMessages[objectId] = (isSell, message);
+        }
+
+        if (nameplates.TryGetValue(objectId, out Nameplate np))
+        {
+            np.SetStoreMessage(isSell, message);
+        }
+    }
+
     // Factory methods for creating nameplates
     protected virtual Nameplate CreateNameplate(Entity entity)
     {
@@ -174,6 +192,10 @@ public class NameplatesManagerBase : MonoBehaviour
             entity
         );
         rootElement.Add(element);
+        if (entity != null && entity.Identity != null && _cachedStoreMessages.TryGetValue(entity.Identity.Id, out var storeData))
+        {
+            nameplate.SetStoreMessage(storeData.isSell, storeData.message);
+        }
         return nameplate;
     }
 

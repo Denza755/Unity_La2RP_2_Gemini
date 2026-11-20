@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="wh-window">
+        <ui:VisualElement name="Content" class="wh-window-content">
+            <ui:Label name="WhModeHeader" text="Warehouse Deposit" class="wh-title-label" />
+            <ui:VisualElement class="wh-two-panels-container">
+                <!-- Left panel: Available Items -->
+                <ui:VisualElement class="wh-panel">
+                    <ui:Label name="LeftPanelLabel" text="Available Items" class="wh-panel-header" />
+                    <ui:ScrollView name="WhAvailableScroll" class="wh-scroll-panel">
+                        <ui:VisualElement name="WhAvailableGrid" class="wh-slots-grid" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+
+                <!-- Right panel: Selected Items -->
+                <ui:VisualElement class="wh-panel">
+                    <ui:Label text="Selected to Transfer" class="wh-panel-header" />
+                    <ui:ScrollView name="WhSelectedScroll" class="wh-scroll-panel">
+                        <ui:VisualElement name="WhSelectedGrid" class="wh-slots-grid" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Info summary -->
+            <ui:VisualElement class="wh-info-bar">
+                <ui:Label name="WhAdenaLabel" text="Adena: 0" class="wh-info-text" />
+                <ui:Label name="WhFeeLabel" text="Fee: 0 Adena (30 / slot)" class="wh-info-fee" />
+            </ui:VisualElement>
+
+            <!-- Buttons -->
+            <ui:VisualElement class="wh-btn-bar">
+                <ui:Button name="WhOkBtn" text="OK" class="wh-action-btn" />
+                <ui:Button name="WhCancelBtn" text="Cancel" class="wh-action-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

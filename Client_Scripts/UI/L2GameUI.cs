@@ -14,6 +14,20 @@ public class L2GameUI : L2UI
     public static L2GameUI Instance { get { return _instance; } }
     public bool IsTyping { get; set; }
 
+    public bool IsFocusedOnTextInput()
+    {
+        if (IsTyping) return true;
+        if (ChatWindow.Instance != null && ChatWindow.Instance.ChatOpened) return true;
+        var focused = _rootVisualContainer?.panel?.focusController?.focusedElement;
+        if (focused != null)
+        {
+            if (focused is TextField) return true;
+            string typeName = focused.GetType().Name;
+            if (typeName.Contains("TextInput") || typeName.Contains("TextField")) return true;
+        }
+        return false;
+    }
+
     private void Awake()
     {
         if (_instance == null)
@@ -44,6 +58,34 @@ public class L2GameUI : L2UI
         if (QuestWindow.Instance == null)
         {
             gameObject.AddComponent<QuestWindow>();
+        }
+        if (DropListWindow.Instance == null)
+        {
+            gameObject.AddComponent<DropListWindow>();
+        }
+        if (TradeWindow.Instance == null)
+        {
+            gameObject.AddComponent<TradeWindow>();
+        }
+        if (WarehouseWindow.Instance == null)
+        {
+            gameObject.AddComponent<WarehouseWindow>();
+        }
+        if (PrivateStoreWindow.Instance == null)
+        {
+            gameObject.AddComponent<PrivateStoreWindow>();
+        }
+        if (ClanWindow.Instance == null)
+        {
+            gameObject.AddComponent<ClanWindow>();
+        }
+        if (RankingWindow.Instance == null)
+        {
+            gameObject.AddComponent<RankingWindow>();
+        }
+        if (MacroWindow.Instance == null)
+        {
+            gameObject.AddComponent<MacroWindow>();
         }
     }
 
@@ -191,6 +233,41 @@ public class L2GameUI : L2UI
             QuestWindow.Instance.AddWindow(_rootVisualContainer);
             QuestWindow.Instance.HideWindow(true);
         }
+        if (DropListWindow.Instance != null)
+        {
+            DropListWindow.Instance.AddWindow(_rootVisualContainer);
+            DropListWindow.Instance.HideWindow(true);
+        }
+        if (TradeWindow.Instance != null)
+        {
+            TradeWindow.Instance.AddWindow(_rootVisualContainer);
+            TradeWindow.Instance.HideWindow(true);
+        }
+        if (WarehouseWindow.Instance != null)
+        {
+            WarehouseWindow.Instance.AddWindow(_rootVisualContainer);
+            WarehouseWindow.Instance.HideWindow(true);
+        }
+        if (PrivateStoreWindow.Instance != null)
+        {
+            PrivateStoreWindow.Instance.AddWindow(_rootVisualContainer);
+            PrivateStoreWindow.Instance.HideWindow(true);
+        }
+        if (ClanWindow.Instance != null)
+        {
+            ClanWindow.Instance.AddWindow(_rootVisualContainer);
+            ClanWindow.Instance.HideWindow(true);
+        }
+        if (RankingWindow.Instance != null)
+        {
+            RankingWindow.Instance.AddWindow(_rootVisualContainer);
+            RankingWindow.Instance.HideWindow(true);
+        }
+        if (MacroWindow.Instance != null)
+        {
+            MacroWindow.Instance.AddWindow(_rootVisualContainer);
+            MacroWindow.Instance.HideWindow(true);
+        }
     }
 
     public void EnableMouse()
@@ -272,14 +349,6 @@ public class L2GameUI : L2UI
             }
         }
 
-        if (InputManager.Instance.OpenCharacerStatus)
-        {
-            if (CharacterInfoWindow.Instance != null)
-            {
-                CharacterInfoWindow.Instance.ToggleHideWindow();
-            }
-        }
-
         if (InputManager.Instance.OpenSkills)
         {
             if (SkillWindow.Instance != null)
@@ -301,6 +370,22 @@ public class L2GameUI : L2UI
             if (QuestWindow.Instance != null)
             {
                 QuestWindow.Instance.ToggleHideWindow();
+            }
+        }
+
+        if (InputManager.Instance.OpenClan)
+        {
+            if (ClanWindow.Instance != null)
+            {
+                ClanWindow.Instance.ToggleClanWindow();
+            }
+        }
+
+        if (InputManager.Instance.OpenMacro)
+        {
+            if (MacroWindow.Instance != null)
+            {
+                MacroWindow.Instance.ToggleHideWindow();
             }
         }
     }

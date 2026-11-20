@@ -54,6 +54,7 @@ public class CameraController : MonoBehaviour
             Destroy(this);
         }
 
+        _minDistance = 0f;
         _mainCamera = GetComponent<Camera>();
     }
 
@@ -159,9 +160,18 @@ public class CameraController : MonoBehaviour
         Vector3[] cameraClips = _collisionDetector.GetCameraViewPortPoints();
         if (cameraClips == null) return false;
         bool visible = false;
+
+        float targetHeight = 0.5f;
+        Entity entity = target.GetComponent<Entity>();
+        if (entity != null && entity.Appearance != null && entity.Appearance.CollisionHeight > 0)
+        {
+            targetHeight = Mathf.Clamp(entity.Appearance.CollisionHeight, 0.25f, 1.2f);
+        }
+
+        Vector3 testPos = target.position + Vector3.up * targetHeight;
         for (int i = 0; i < cameraClips.Length; i++)
         {
-            if (!Physics.Linecast(cameraClips[i], target.position + 1f * Vector3.up, out hit, _collisionMask))
+            if (!Physics.Linecast(cameraClips[i], testPos, out hit, _collisionMask))
             {
                 visible = true;
                 break;
@@ -250,7 +260,8 @@ public class CameraController : MonoBehaviour
             boneOffset = _rootBone.position.y - _target.position.y - _rootBoneHeight;
         }
 
-        _targetPos = new Vector3(_camOffset.x, boneOffset + _camOffset.y, _camOffset.z) + _target.position;
+        Vector3 targetOffset = (_camDistance <= 0.45f) ? new Vector3(_camOffset.x, 1.55f, _camOffset.z) : _camOffset;
+        _targetPos = new Vector3(targetOffset.x, boneOffset + targetOffset.y, targetOffset.z) + _target.position;
 
         if (_smoothCamera)
         {

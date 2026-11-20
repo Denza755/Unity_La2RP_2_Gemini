@@ -123,6 +123,15 @@ public class L2SlotManager : L2PopupWindow
             case L2Slot.SlotType.Basket:
                 HandleBasketDrag();
                 break;
+            case L2Slot.SlotType.CompanionInventory:
+                HandleCompanionInventoryDrag();
+                break;
+            case L2Slot.SlotType.CompanionGear:
+                HandleCompanionGearDrag();
+                break;
+            case L2Slot.SlotType.Macro:
+                HandleMacroDrag();
+                break;
             default:
                 break;
         }
@@ -142,10 +151,45 @@ public class L2SlotManager : L2PopupWindow
         }
     }
 
+    private void HandleMacroDrag()
+    {
+        if (SkillbarWindow.Instance != null && SkillbarWindow.Instance.Locked)
+        {
+            return;
+        }
+
+        if (_hoverSlot == null)
+        {
+            return;
+        }
+
+        if (_hoverSlot.Type == L2Slot.SlotType.SkillBar)
+        {
+            AddMacroToSkillbar();
+        }
+    }
+
+    private void AddMacroToSkillbar()
+    {
+        int macroId = _draggedSlot.Id;
+        int slot = _hoverSlot.Position;
+        Debug.LogWarning($"Add macro ID {macroId} into skillbar slot {slot}.");
+        PlayerShortcuts.Instance.AddShortcut(slot, macroId, Shortcut.TYPE_MACRO);
+    }
+
     private void HandleGearDrag()
     {
         if (_hoverSlot == null)
         {
+            return;
+        }
+
+        if (_hoverSlot.Type == L2Slot.SlotType.CompanionInventory || _hoverSlot.Type == L2Slot.SlotType.CompanionGear)
+        {
+            if (CompanionInventoryWindow.Instance != null && _draggedSlot is InventorySlot invSlot)
+            {
+                CompanionInventoryWindow.Instance.TransferItemFromPlayer(invSlot.ObjectId, invSlot.Count);
+            }
             return;
         }
 
@@ -160,6 +204,53 @@ public class L2SlotManager : L2PopupWindow
         else if (_hoverSlot.Type == L2Slot.SlotType.Trash)
         {
             DestroyItem();
+        }
+    }
+
+    private void HandleCompanionInventoryDrag()
+    {
+        if (_hoverSlot == null || CompanionInventoryWindow.Instance == null)
+        {
+            return;
+        }
+
+        var compSlot = _draggedSlot as CompanionSlot;
+        int objectId = compSlot != null ? compSlot.ObjectId : _draggedSlot.Id;
+        int count = compSlot != null ? compSlot.Count : 1;
+
+        switch (_hoverSlot.Type)
+        {
+            case L2Slot.SlotType.Inventory:
+            case L2Slot.SlotType.InventoryBis:
+            case L2Slot.SlotType.Gear:
+                CompanionInventoryWindow.Instance.TransferItemToPlayer(objectId, count);
+                break;
+            case L2Slot.SlotType.CompanionGear:
+                CompanionInventoryWindow.Instance.EquipCompanionItem(objectId);
+                break;
+        }
+    }
+
+    private void HandleCompanionGearDrag()
+    {
+        if (_hoverSlot == null || CompanionInventoryWindow.Instance == null)
+        {
+            return;
+        }
+
+        var compSlot = _draggedSlot as CompanionSlot;
+        int objectId = compSlot != null ? compSlot.ObjectId : _draggedSlot.Id;
+        int count = compSlot != null ? compSlot.Count : 1;
+
+        switch (_hoverSlot.Type)
+        {
+            case L2Slot.SlotType.Inventory:
+            case L2Slot.SlotType.InventoryBis:
+                CompanionInventoryWindow.Instance.TransferItemToPlayer(objectId, count);
+                break;
+            case L2Slot.SlotType.CompanionInventory:
+                CompanionInventoryWindow.Instance.EquipCompanionItem(objectId);
+                break;
         }
     }
 
@@ -179,6 +270,13 @@ public class L2SlotManager : L2PopupWindow
 
         switch (_hoverSlot.Type)
         {
+            case L2Slot.SlotType.CompanionInventory:
+            case L2Slot.SlotType.CompanionGear:
+                if (CompanionInventoryWindow.Instance != null && inventorySlot != null)
+                {
+                    CompanionInventoryWindow.Instance.TransferItemFromPlayer(inventorySlot.ObjectId, inventorySlot.Count);
+                }
+                break;
             case L2Slot.SlotType.Gear when IsItemGear(inventorySlot.Type1):
                 Equip();
                 break;

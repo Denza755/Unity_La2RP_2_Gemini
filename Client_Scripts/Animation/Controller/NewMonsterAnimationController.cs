@@ -181,10 +181,16 @@ public class NewMonsterAnimationController : NewBaseAnimationController
     public override void Emote(int action)
     {
         Debug.Log($"[{transform.name}] Social Action: {action}");
-        PlayAnimation((int)MonsterAnimationEvent.spwait);
-        if (!_animancerState.HasEvents)
+        if (PlayAnimation((int)MonsterAnimationEvent.spwait))
         {
-            _animancerState.Events.OnEnd = Wait;
+            if (_animancerState != null && !_animancerState.HasEvents)
+            {
+                _animancerState.Events.OnEnd = Wait;
+            }
+        }
+        else
+        {
+            Wait();
         }
     }
 }

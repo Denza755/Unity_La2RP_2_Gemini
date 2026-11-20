@@ -61,9 +61,7 @@ public class SkillState : StateBase
                 }
                 break;
             case Event.CLICK_TO_MOVE:
-                _intentionToRun = true;
-                _intentionToRunDestination = (Vector3)arg0;
-                TryCancelCast();
+                // Ignore click to move during cast. Ground clicks must not cancel active cast.
                 break;
             case Event.ACTION_ALLOWED:
                 Debug.LogWarning("Move allowed.");

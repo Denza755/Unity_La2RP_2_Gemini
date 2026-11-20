@@ -72,6 +72,7 @@ public class ChatBubbleManager : MonoBehaviour
         VisualElement bubble = new VisualElement();
         bubble.pickingMode = PickingMode.Ignore;
         bubble.style.position = Position.Absolute;
+        bubble.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), new Length(-100, LengthUnit.Percent)));
         bubble.style.backgroundColor = new Color(0.96f, 0.96f, 0.96f, 0.94f);
         bubble.style.borderTopWidth = 1f;
         bubble.style.borderBottomWidth = 1f;
@@ -103,11 +104,13 @@ public class ChatBubbleManager : MonoBehaviour
         label.style.unityTextAlign = TextAnchor.MiddleCenter;
         bubble.Add(label);
 
-        // Triangular pointer at bottom
+        // Triangular pointer centered at bottom
         VisualElement arrow = new VisualElement();
         arrow.pickingMode = PickingMode.Ignore;
         arrow.style.position = Position.Absolute;
         arrow.style.bottom = -4f;
+        arrow.style.left = new Length(50, LengthUnit.Percent);
+        arrow.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), 0));
         arrow.style.width = 7f;
         arrow.style.height = 7f;
         arrow.style.backgroundColor = new Color(0.96f, 0.96f, 0.96f, 0.94f);
@@ -187,11 +190,8 @@ public class ChatBubbleManager : MonoBehaviour
             else
             {
                 bubble.BubbleElement.style.display = DisplayStyle.Flex;
-                float halfWidth = bubble.BubbleElement.resolvedStyle.width > 0 ? bubble.BubbleElement.resolvedStyle.width / 2f : 60f;
-                float elemHeight = bubble.BubbleElement.resolvedStyle.height > 0 ? bubble.BubbleElement.resolvedStyle.height : 26f;
-
-                bubble.BubbleElement.style.left = screenPos.x - halfWidth;
-                bubble.BubbleElement.style.top = Screen.height - screenPos.y - elemHeight - 10f;
+                bubble.BubbleElement.style.left = screenPos.x;
+                bubble.BubbleElement.style.top = Screen.height - screenPos.y - 12f;
             }
         }
 

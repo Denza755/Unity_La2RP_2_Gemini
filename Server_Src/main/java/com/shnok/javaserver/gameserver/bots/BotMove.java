@@ -321,6 +321,13 @@ public class BotMove extends PlayerMove
 		}
 
 		final Location destination = target.getPosition().clone();
+		// Separation offset based on actor's objectId and collision radius to avoid stacking
+		final double angle = Math.toRadians((_actor.getObjectId() * 59) % 360);
+		final double sepDist = Math.max(20.0, _actor.getCollisionRadius() * 0.95);
+		final int newX = destination.getX() + (int) (Math.cos(angle) * sepDist);
+		final int newY = destination.getY() + (int) (Math.sin(angle) * sepDist);
+		destination.set(newX, newY, GeoEngine.getInstance().getHeight(newX, newY, destination.getZ()));
+
 		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
 
 		if ((getMoveType() == MoveType.GROUND) ? _actor.isIn2DRadius(destination, realOffset) : _actor.isIn3DRadius(destination, realOffset))
@@ -350,6 +357,13 @@ public class BotMove extends PlayerMove
 		}
 
 		final Location destination = target.getPosition().clone();
+		// Separation offset based on actor's objectId and collision radius to avoid stacking
+		final double angle = Math.toRadians((_actor.getObjectId() * 59) % 360);
+		final double sepDist = Math.max(25.0, _actor.getCollisionRadius() * 1.1);
+		final int newX = destination.getX() + (int) (Math.cos(angle) * sepDist);
+		final int newY = destination.getY() + (int) (Math.sin(angle) * sepDist);
+		destination.set(newX, newY, GeoEngine.getInstance().getHeight(newX, newY, destination.getZ()));
+
 		final int realOffset = (int) (offset + _actor.getCollisionRadius() + target.getCollisionRadius());
 
 		if ((getMoveType() == MoveType.GROUND) ? _actor.isIn2DRadius(destination, realOffset) : _actor.isIn3DRadius(destination, realOffset))

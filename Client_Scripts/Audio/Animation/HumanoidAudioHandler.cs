@@ -19,6 +19,26 @@ public class HumanoidAudioHandler : BaseAnimationAudioHandler
         }
 
         _chargrp = ChargrpTable.Instance.CharGrps[_entityReferenceHolder.Entity.RaceId];
+
+        CharacterModelType modelType = _entityReferenceHolder.Entity.RaceId;
+        switch (modelType)
+        {
+            case CharacterModelType.MFighter: _race = CharacterModelSound.MHFighter; break;
+            case CharacterModelType.FFighter: _race = CharacterModelSound.FHFighter; break;
+            case CharacterModelType.MMagic: _race = CharacterModelSound.MHMagician; break;
+            case CharacterModelType.FMagic: _race = CharacterModelSound.FHMagician; break;
+            case CharacterModelType.MElf: _race = CharacterModelSound.MElf; break;
+            case CharacterModelType.FElf: _race = CharacterModelSound.FElf; break;
+            case CharacterModelType.MDarkElf: _race = CharacterModelSound.MDElf; break;
+            case CharacterModelType.FDarkElf: _race = CharacterModelSound.FDElf; break;
+            case CharacterModelType.MDwarf: _race = CharacterModelSound.MDwarf; break;
+            case CharacterModelType.FDwarf: _race = CharacterModelSound.FDwarf; break;
+            case CharacterModelType.MOrc: _race = CharacterModelSound.MOFighter; break;
+            case CharacterModelType.FOrc: _race = CharacterModelSound.FOFighter; break;
+            case CharacterModelType.MShaman: _race = CharacterModelSound.MOMagician; break;
+            case CharacterModelType.FShaman: _race = CharacterModelSound.FOMagician; break;
+            default: _race = CharacterModelSound.MHFighter; break;
+        }
     }
 
     public override void PlaySound(EntitySoundEvent soundEvent)

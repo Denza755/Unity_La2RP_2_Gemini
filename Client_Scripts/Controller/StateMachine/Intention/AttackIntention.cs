@@ -27,8 +27,10 @@ public class AttackIntention : IntentionBase
         float distance2D = VectorUtils.Distance2D(playerPos, targetPos);
         float deltaY = Mathf.Abs(playerPos.y - targetPos.y);
 
-        // Ground combat in L2: 2D attack range + height difference check (150 uu = ~3.0m in Unity)
-        bool inRange = distance2D <= (attackRange + 0.1f) && deltaY <= 3.0f;
+        // Ground combat in L2: 2D attack range + height difference check (150 uu = ~3.0m in Unity, 4.8m for bows uphill)
+        bool isBow = PlayerEntity.Instance != null && PlayerEntity.Instance.Gear != null && PlayerEntity.Instance.Gear.WeaponType == WeaponType.bow;
+        float maxDeltaY = isBow ? 4.8f : 3.0f;
+        bool inRange = distance2D <= (attackRange + 0.1f) && deltaY <= maxDeltaY;
 
         if (inRange)
         {

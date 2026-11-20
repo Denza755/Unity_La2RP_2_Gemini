@@ -33,18 +33,36 @@ public class InventoryTab : L2Tab
         {
             if (item.Location == ItemLocation.Inventory)
             {
+                bool isQuestItem = item.Type2 == ItemType2.TYPE2_QUEST;
+
+                // Main tab excludes quest items
+                if (_mainTab && isQuestItem)
+                {
+                    return;
+                }
+
                 if (_filteredCategories == null || _filteredCategories.Count == 0)
                 {
-                    if (item.Slot >= 0 && item.Slot < _slotContainer.Slots.Length)
+                    if (_mainTab)
                     {
-                        ((InventorySlot)_slotContainer.Slots[item.Slot]).AssignItem(item);
+                        if (item.Slot >= 0 && item.Slot < _slotContainer.Slots.Length)
+                        {
+                            ((InventorySlot)_slotContainer.Slots[item.Slot]).AssignItem(item);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"InventoryTab: item {item.ItemId} has invalid slot {item.Slot} (available slots: {_slotContainer.Slots.Length}).");
+                        }
                     }
-                    else
+                    else if (isQuestItem)
                     {
-                        Debug.LogWarning($"InventoryTab: item {item.ItemId} has invalid slot {item.Slot} (available slots: {_slotContainer.Slots.Length}).");
+                        if (_itemCount < _slotContainer.Slots.Length)
+                        {
+                            ((InventorySlot)_slotContainer.Slots[_itemCount++]).AssignItem(item);
+                        }
                     }
                 }
-                else if (_filteredCategories.Contains(item.Type1))
+                else if (_filteredCategories.Contains(item.Type1) || (isQuestItem && _filteredCategories.Contains(ItemType1.TYPE1_ITEM_QUESTITEM_ADENA)))
                 {
                     if (_itemCount < _slotContainer.Slots.Length)
                     {

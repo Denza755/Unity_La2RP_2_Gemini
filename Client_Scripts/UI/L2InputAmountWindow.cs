@@ -185,7 +185,7 @@ public class L2InputAmountWindow : L2PopupWindow
         ShowWindow(systemMessage.PrintMessage(false), count, confirmAction, cancelAction);
     }
 
-    private void ShowWindow(string content, int count, Action<int> confirmAction, Action cancelAction)
+    public void ShowWindow(string content, int count, Action<int> confirmAction, Action cancelAction)
     {
         _inputFocused = false;
         _maxAmount = count;

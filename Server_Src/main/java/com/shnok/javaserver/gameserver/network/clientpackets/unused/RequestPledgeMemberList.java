@@ -23,7 +23,10 @@ public final class RequestPledgeMemberList extends L2GameClientPacket
 		
 		final Clan clan = player.getClan();
 		if (clan == null)
+		{
+			player.sendPacket(com.shnok.javaserver.gameserver.network.SystemMessageId.YOU_ARE_NOT_A_CLAN_MEMBER);
 			return;
+		}
 		
 		player.sendPacket(new PledgeShowMemberListAll(clan, 0));
 		

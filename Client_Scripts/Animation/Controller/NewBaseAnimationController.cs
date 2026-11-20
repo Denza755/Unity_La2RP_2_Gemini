@@ -46,6 +46,7 @@ public abstract class NewBaseAnimationController : MonoBehaviour
 
         foreach (Animator anim in GetComponentsInChildren<Animator>(true))
         {
+            anim.applyRootMotion = false;
             if (anim.GetComponent<L2CharacterAnimationEvents>() == null)
             {
                 anim.gameObject.AddComponent<L2CharacterAnimationEvents>();

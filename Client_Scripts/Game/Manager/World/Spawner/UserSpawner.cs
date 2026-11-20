@@ -13,6 +13,13 @@ public class UserSpawner : EntitySpawnStrategy<PlayerAppearance, Stats, PlayerSt
     protected override void SpawnEntity(NetworkIdentity identity, PlayerStatus status,
         Stats stats, PlayerAppearance appearance, EntityActionInfo actionInfo)
     {
+        Entity existing = WorldSpawner.Instance.GetEntity(identity.Id);
+        if (existing != null && existing.gameObject != null)
+        {
+            UpdateEntitySync(existing, identity, status, stats, appearance, actionInfo);
+            return;
+        }
+
         identity.SetPosY(World.Instance.GetGroundHeight(identity.Position));
         identity.EntityType = EntityType.User;
 

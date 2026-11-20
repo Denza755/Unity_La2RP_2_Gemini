@@ -23,6 +23,13 @@ public class NpcSpawner : EntitySpawnStrategy<Appearance, Stats, NpcStatus>
     protected override void SpawnEntity(NetworkIdentity identity, NpcStatus status,
         Stats stats, Appearance appearance, EntityActionInfo actionInfo)
     {
+        Entity existing = WorldSpawner.Instance.GetEntity(identity.Id);
+        if (existing != null && existing.gameObject != null)
+        {
+            UpdateEntitySync(existing, identity, status, stats, appearance, actionInfo);
+            return;
+        }
+
         Npcgrp npcgrp = NpcgrpTable.Instance.GetNpcgrp(identity.NpcId);
         NpcName npcName = NpcNameTable.Instance.GetNpcName(identity.NpcId);
 
@@ -107,6 +114,11 @@ public class NpcSpawner : EntitySpawnStrategy<Appearance, Stats, NpcStatus>
             VectorUtils.ConvertRotToUnity(identity.Heading),
             npcGo.transform.eulerAngles.z
         );
+
+        foreach (var anim in npcGo.GetComponentsInChildren<Animator>(true))
+        {
+            anim.applyRootMotion = false;
+        }
 
         return npcGo;
     }

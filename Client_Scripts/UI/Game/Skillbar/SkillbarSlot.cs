@@ -53,6 +53,7 @@ public class SkillbarSlot : SkillSlot
                 AssignItem(shortcut.Id);
                 break;
             case Shortcut.TYPE_MACRO:
+                AssignMacro(shortcut.Id);
                 break;
             case Shortcut.TYPE_RECIPE:
                 break;
@@ -133,6 +134,23 @@ public class SkillbarSlot : SkillSlot
 
         _innerSlot = new ActionSlot(_slotElement, _position, SlotType.SkillBar);
         ((ActionSlot)_innerSlot).AssignAction((ActionType)objectId);
+        ((L2ClickableSlot)_innerSlot).UnregisterClickableCallback();
+
+        UpdateInputInfo();
+    }
+
+    public void AssignMacro(int macroId)
+    {
+        _empty = false;
+
+        Macro macro = PlayerMacros.Instance != null ? PlayerMacros.Instance.GetMacro(macroId) : null;
+        if (macro == null)
+        {
+            macro = new Macro(macroId, 0, $"Macro", "", "", null);
+        }
+
+        _innerSlot = new MacroSlot(_slotElement, _position, SlotType.SkillBar);
+        ((MacroSlot)_innerSlot).AssignMacro(macro);
         ((L2ClickableSlot)_innerSlot).UnregisterClickableCallback();
 
         UpdateInputInfo();

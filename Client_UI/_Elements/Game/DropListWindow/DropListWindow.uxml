@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="droplist-window">
+        <ui:VisualElement name="Content" class="droplist-window-content">
+            <ui:Label name="MobNameHeader" text="Monster Drops" class="droplist-mob-header" />
+            <ui:ScrollView name="DropListScrollView" class="droplist-scroll-view">
+                <ui:VisualElement name="DropItemsContainer" class="droplist-items-container" />
+            </ui:ScrollView>
+            <ui:Label name="EmptyDropLabel" text="No items drop from this creature." class="droplist-empty-label" style="display: none;" />
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

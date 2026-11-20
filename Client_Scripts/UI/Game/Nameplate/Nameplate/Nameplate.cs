@@ -25,6 +25,8 @@ public class Nameplate
     private int _previousServerNameColor = -1;
     private string _previousRawTitle;
     private bool _hasAppliedTitle;
+    private string _storeMessage = null;
+    private bool _isStoreSell = false;
     private Color _previousServerNameColorValue;
     private int _lastFlag = 0;
     private int _previousKarmaAmount = 0;
@@ -72,10 +74,27 @@ public class Nameplate
         return title;
     }
 
+    public void SetStoreMessage(bool isSell, string message)
+    {
+        _isStoreSell = isSell;
+        _storeMessage = string.IsNullOrWhiteSpace(message) ? null : message;
+        _hasAppliedTitle = false;
+        UpdateTitle();
+    }
+
     public void UpdateTitle()
     {
         if (_nameplateEntityTitle == null || _entity == null || _entity.Identity == null)
         {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(_storeMessage))
+        {
+            string storePrefix = _isStoreSell ? "<Private - Sell Store>\n" : "<Private - Buy Store>\n";
+            _nameplateEntityTitle.text = storePrefix + _storeMessage;
+            _nameplateEntityTitle.style.color = _isStoreSell ? new Color(1f, 0.75f, 0.2f, 1f) : new Color(0.4f, 0.85f, 1f, 1f);
+            _nameplateEntityTitle.style.display = DisplayStyle.Flex;
             return;
         }
 

@@ -73,47 +73,37 @@ public class WorldSpawner : MonoBehaviour
 
     public bool AddObject(int id, Entity entity)
     {
-        if (!_objects.TryAdd(id, entity))
-        {
-            Debug.LogError($"Cant add npc with ID {id} in Objects.");
-            return false;
-        }
-
+        _objects[id] = entity;
         return true;
     }
 
     public bool AddNpc(int id, Entity entity)
     {
-        if (!_npcs.TryAdd(id, entity))
-        {
-            Debug.LogError($"Cant add npc with ID {id} in Npcs.");
-            return false;
-        }
-
+        _npcs[id] = entity;
         return true;
     }
 
     public bool AddPlayer(int id, Entity entity)
     {
-        if (!_players.TryAdd(id, entity))
-        {
-            Debug.LogError($"Cant add npc with ID {id} in Players.");
-            return false;
-        }
-
+        _players[id] = entity;
         return true;
     }
 
     public Task RemoveObject(int id)
     {
-        if (IsEntityPresent(id, true))
+        lock (_idBag)
         {
-            return ExecuteWithEntityAsync(id, e =>
-            {
-                _players.TryRemove(id, out Entity removed);
-                _npcs.TryRemove(id, out Entity removed2);
-                _objects.TryRemove(id, out Entity removed3);
+            _idBag.Remove(id);
+        }
 
+        return ExecuteWithEntityAsync(id, e =>
+        {
+            _players.TryRemove(id, out Entity removed);
+            _npcs.TryRemove(id, out Entity removed2);
+            _objects.TryRemove(id, out Entity removed3);
+
+            if (e != null && e.gameObject != null)
+            {
                 Debug.Log("Gameobject destroyed : " + e.gameObject.name);
 
                 if (TargetManager.Instance != null && TargetManager.Instance.Target != null && TargetManager.Instance.Target.Identity != null && TargetManager.Instance.Target.Identity.Id == id)
@@ -121,15 +111,11 @@ public class WorldSpawner : MonoBehaviour
                     TargetManager.Instance.ClearTarget();
                 }
 
-                NameplatesManagerGame.Instance.RemoveNameplate(id);
+                NameplatesManagerGame.Instance?.RemoveNameplate(id);
 
                 Destroy(e.gameObject);
-            });
-        }
-        else
-        {
-            return null;
-        }
+            }
+        });
     }
 
     // Execute action after entity is loaded
@@ -250,26 +236,19 @@ public class WorldSpawner : MonoBehaviour
 
     public bool IsEntityPresent(int id)
     {
-        return IsEntityPresent(id, false);
-    }
-
-    private bool IsEntityPresent(int id, bool remove)
-    {
         lock (_idBag)
         {
-            if (_idBag.Contains(id))
+            if (_idBag.Contains(id) || _objects.ContainsKey(id))
             {
-                if (remove)
+                if (!_idBag.Contains(id))
                 {
-                    _idBag.Remove(id);
+                    _idBag.Add(id);
                 }
                 return true;
             }
-            else
-            {
-                _idBag.Add(id);
-                return false;
-            }
+
+            _idBag.Add(id);
+            return false;
         }
     }
 

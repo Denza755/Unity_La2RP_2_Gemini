@@ -1,7 +1,6 @@
-package com.shnok.javaserver.gameserver.network.clientpackets.unused;
+package com.shnok.javaserver.gameserver.network.clientpackets;
 
 import com.shnok.javaserver.gameserver.model.actor.Player;
-import com.shnok.javaserver.gameserver.network.clientpackets.L2GameClientPacket;
 
 public final class RequestDeleteMacro extends L2GameClientPacket
 {

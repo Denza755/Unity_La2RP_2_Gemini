@@ -109,5 +109,38 @@ public class FollowIntention : IntentionBase
                 return;
             }
         }
+        else if (MoveReason == MoveReason.SKILL)
+        {
+            if (TargetManager.Instance == null || !TargetManager.Instance.HasTarget())
+            {
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(false);
+                _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+                return;
+            }
+
+            Entity targetEntity = TargetManager.Instance.Target;
+            if (targetEntity == null || (targetEntity.IsDead && !SkillIntention.IsCorpseSkill(SkillIntention.LastSkillId)))
+            {
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(false);
+                _stateMachine.ChangeIntention(Intention.INTENTION_IDLE);
+                return;
+            }
+
+            Skillgrp grp = SkillIntention.LastSkillGrp;
+            float skillRange = SkillIntention.GetRealSkillRange(PlayerEntity.Instance, targetEntity, grp);
+            float distance2D = VectorUtils.Distance2D(PlayerEntity.Instance.transform.position, targetEntity.transform.position);
+            float deltaY = Mathf.Abs(PlayerEntity.Instance.transform.position.y - targetEntity.transform.position.y);
+
+            // Reached skill range during follow:
+            if (distance2D <= (skillRange + 0.15f) && deltaY <= 4.0f)
+            {
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(true);
+                _stateMachine.ChangeIntention(Intention.INTENTION_SKILL, SkillIntention.LastSkillInfo);
+                return;
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ import com.shnok.javaserver.gameserver.enums.ZoneId;
 import com.shnok.javaserver.gameserver.enums.items.ShotType;
 import com.shnok.javaserver.gameserver.model.AccessLevel;
 import com.shnok.javaserver.gameserver.model.actor.Creature;
+import com.shnok.javaserver.gameserver.model.actor.Playable;
 import com.shnok.javaserver.gameserver.model.actor.Player;
 import com.shnok.javaserver.gameserver.model.actor.container.player.Appearance;
 import com.shnok.javaserver.gameserver.model.actor.template.PlayerTemplate;
@@ -16,6 +17,7 @@ import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
 import com.shnok.javaserver.gameserver.network.SystemMessageId;
 import com.shnok.javaserver.gameserver.network.serverpackets.CreatureSay;
 import com.shnok.javaserver.gameserver.network.serverpackets.L2GameServerPacket;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.DeleteObject;
 import com.shnok.javaserver.gameserver.network.serverpackets.skill.MagicSkillUse;
 import com.shnok.javaserver.gameserver.skills.L2Skill;
 
@@ -141,6 +143,37 @@ public class FakePlayer extends Player
 	public void sendPacket(SystemMessageId id)
 	{
 		// Safely ignored for bots.
+	}
+
+	@Override
+	public boolean isAttackableWithoutForceBy(Playable attacker)
+	{
+		if (attacker == null)
+		{
+			return false;
+		}
+
+		final Player attackerPlayer = attacker.getActingPlayer();
+		if (attackerPlayer == this)
+		{
+			return false;
+		}
+
+		// Companions and party members are friendly
+		if ((isCompanion() && getCompanionOwner() == attackerPlayer)
+			|| (attackerPlayer != null && attackerPlayer.getParty() != null && attackerPlayer.getParty().containsPlayer(this)))
+		{
+			return false;
+		}
+
+		// In peace zones, bot is not auto-attackable
+		if (isInsideZone(ZoneId.PEACE) || (attackerPlayer != null && attackerPlayer.isInsideZone(ZoneId.PEACE)))
+		{
+			return false;
+		}
+
+		// In open world / farm spots, fake players can be attacked without Ctrl
+		return true;
 	}
 
 	public BotRole getRole()
@@ -534,6 +567,7 @@ public class FakePlayer extends Player
 			else if (System.currentTimeMillis() - _deathTimestamp >= 6000)
 			{
 				_deathTimestamp = 0;
+				broadcastPacket(new DeleteObject(this));
 				doRevive(100.0);
 				getStatus().setHp(getStatus().getMaxHp());
 				getStatus().setMp(getStatus().getMaxMp());

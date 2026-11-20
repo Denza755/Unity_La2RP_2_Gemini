@@ -27,6 +27,26 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
     [SerializeField] protected WeaponAnimType _weaponAnim;
     [SerializeField] private int _atkAnimIndex;
 
+    private Vector3 _initialLocalRootPos = Vector3.zero;
+    private bool _hasInitialLocalPos = false;
+
+    private void LateUpdate()
+    {
+        if (_rootBone != null && _entityReferenceHolder != null && _entityReferenceHolder.Entity != null && _entityReferenceHolder.Entity.Identity != null && _entityReferenceHolder.Entity.Identity.EntityType == EntityType.NPC)
+        {
+            if (!_hasInitialLocalPos)
+            {
+                _initialLocalRootPos = _rootBone.localPosition;
+                _hasInitialLocalPos = true;
+            }
+
+            Vector3 pos = _rootBone.localPosition;
+            pos.x = _initialLocalRootPos.x;
+            pos.z = _initialLocalRootPos.z;
+            _rootBone.localPosition = pos;
+        }
+    }
+
     public override void Initialize()
     {
         base.Initialize();
@@ -70,8 +90,21 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
 
             case AnimationCategory.SpAtk:
                 if (_spAtkAnimContainer != null && index < _spAtkAnimContainer.Animations.Length)
-                    return _spAtkAnimContainer.Animations[index].AnimationClip;
-                break;
+                {
+                    clip = _spAtkAnimContainer.Animations[index].AnimationClip;
+                }
+                if (clip == null)
+                {
+                    if (_weaponAnim == WeaponAnimType.bow)
+                    {
+                        clip = GetAnimationClip(AnimationCategory.Atk, (int)HumanoidAnimationAtkEvent.atk01_bow);
+                    }
+                    else if (_atkAnimContainer != null)
+                    {
+                        clip = GetAtkFallbackClip(0);
+                    }
+                }
+                return clip;
 
             case AnimationCategory.Social:
                 if (_socialAnimContainer != null && index < _socialAnimContainer.Animations.Length)
@@ -834,10 +867,14 @@ public class NewHumanoidAnimationController : NewBaseAnimationController
         Debug.Log($"[{transform.name}] Social Action: {action}");
         if (PlayAnimation(AnimationCategory.Social, action))
         {
-            if (!_animancerState.HasEvents)
+            if (_animancerState != null && !_animancerState.HasEvents)
             {
                 _animancerState.Events.OnEnd = Wait;
             }
+        }
+        else
+        {
+            Wait();
         }
     }
 }

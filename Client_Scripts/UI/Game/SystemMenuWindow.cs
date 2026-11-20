@@ -57,6 +57,16 @@ public class SystemMenuWindow : L2PopupWindow
 
         yield return new WaitForEndOfFrame();
 
+        VisualElement macroButton = GetElementByClass("macro-btn");
+        if (macroButton != null)
+        {
+            macroButton.AddManipulator(new ButtonClickSoundManipulator(macroButton));
+            macroButton.RegisterCallback<ClickEvent>((evt) =>
+            {
+                HideWindow(false);
+                MacroWindow.Instance?.ToggleHideWindow();
+            });
+        }
         VisualElement exitButton = GetElementByClass("exit-btn");
         exitButton.AddManipulator(new ButtonClickSoundManipulator(exitButton));
         exitButton.RegisterCallback<ClickEvent>((evt) => HandleExitButtonClick());

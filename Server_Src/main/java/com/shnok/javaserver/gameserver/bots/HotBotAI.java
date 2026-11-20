@@ -16,6 +16,7 @@ import com.shnok.javaserver.gameserver.model.actor.ai.type.PlayerAI;
 import com.shnok.javaserver.gameserver.model.actor.instance.Monster;
 import com.shnok.javaserver.gameserver.model.item.instance.ItemInstance;
 import com.shnok.javaserver.gameserver.model.location.Location;
+import com.shnok.javaserver.gameserver.network.serverpackets.actor.DeleteObject;
 import com.shnok.javaserver.gameserver.skills.L2Skill;
 
 public class HotBotAI extends PlayerAI
@@ -26,6 +27,8 @@ public class HotBotAI extends PlayerAI
 	private final FakePlayer _bot;
 	private long _lastPatrolTime = 0;
 	private long _lastPotionTime = 0;
+	private long _castStartTime = 0;
+	private long _attackStartTime = 0;
 
 	public HotBotAI(FakePlayer bot)
 	{
@@ -50,6 +53,44 @@ public class HotBotAI extends PlayerAI
 		{
 			handleDeath();
 			return;
+		}
+
+		// Watchdog for stuck casting / attacking states
+		final long now = System.currentTimeMillis();
+		if (_bot.getCast().isCastingNow())
+		{
+			if (_castStartTime == 0)
+			{
+				_castStartTime = now;
+			}
+			else if (now - _castStartTime > 10000)
+			{
+				_bot.getCast().stop();
+				doIdleIntention();
+				_castStartTime = 0;
+			}
+		}
+		else
+		{
+			_castStartTime = 0;
+		}
+
+		if (_bot.getAttack().isAttackingNow())
+		{
+			if (_attackStartTime == 0)
+			{
+				_attackStartTime = now;
+			}
+			else if (now - _attackStartTime > 8000)
+			{
+				_bot.getAttack().stop();
+				doIdleIntention();
+				_attackStartTime = 0;
+			}
+		}
+		else
+		{
+			_attackStartTime = 0;
 		}
 
 		// 2. STATIC TRADER
@@ -156,6 +197,7 @@ public class HotBotAI extends PlayerAI
 		if (System.currentTimeMillis() - _bot.getDeathTimestamp() >= 6000)
 		{
 			_bot.setDeathTimestamp(0);
+			_bot.broadcastPacket(new DeleteObject(_bot));
 			_bot.doRevive(100.0);
 			_bot.getStatus().setHp(_bot.getStatus().getMaxHp());
 			_bot.getStatus().setMp(_bot.getStatus().getMaxMp());
@@ -474,7 +516,7 @@ public class HotBotAI extends PlayerAI
 		switch (_bot.getRole())
 		{
 			case HEALER:
-				if (_bot.getStatus().getHpRatio() < 0.60)
+				if (_bot.getStatus().getHpRatio() < 0.60 && canUseSkill(1011))
 				{
 					if (useShots)
 					{
@@ -482,7 +524,7 @@ public class HotBotAI extends PlayerAI
 					}
 					tryToCast(_bot, 1011, getSkillLevel(1011)); // Heal
 				}
-				else if (target instanceof Player && hasSkill(1177) && Rnd.get(100) < 60)
+				else if (target instanceof Player && canUseSkill(1177) && Rnd.get(100) < 60)
 				{
 					if (useShots)
 					{
@@ -490,7 +532,7 @@ public class HotBotAI extends PlayerAI
 					}
 					tryToCast(target, 1177, getSkillLevel(1177)); // Wind Strike
 				}
-				else if (hasSkill(1177) && Rnd.get(100) < 50)
+				else if (canUseSkill(1177) && Rnd.get(100) < 50)
 				{
 					if (useShots)
 					{
@@ -513,19 +555,19 @@ public class HotBotAI extends PlayerAI
 				{
 					_bot.autoUseShots(true);
 				}
-				if (_bot.getStatus().getHpRatio() < 0.50 && hasSkill(1090)) // Life Drain
+				if (_bot.getStatus().getHpRatio() < 0.50 && canUseSkill(1090)) // Life Drain
 				{
 					tryToCast(target, 1090, 1);
 				}
-				else if (target instanceof Player && hasSkill(1168) && target.getFirstEffect(1168) == null && Rnd.get(100) < 50) // Curse Poison
+				else if (target instanceof Player && canUseSkill(1168) && target.getFirstEffect(1168) == null && Rnd.get(100) < 50) // Curse Poison
 				{
 					tryToCast(target, 1168, 1);
 				}
-				else if (hasSkill(1177) && Rnd.get(100) < 65) // Wind Strike
+				else if (canUseSkill(1177) && Rnd.get(100) < 65) // Wind Strike
 				{
 					tryToCast(target, 1177, getSkillLevel(1177));
 				}
-				else if (hasSkill(1184)) // Ice Bolt
+				else if (canUseSkill(1184)) // Ice Bolt
 				{
 					tryToCast(target, 1184, getSkillLevel(1184));
 				}
@@ -540,7 +582,7 @@ public class HotBotAI extends PlayerAI
 				{
 					_bot.autoUseShots(false);
 				}
-				if (hasSkill(56) && Rnd.get(100) < 35) // Power Shot
+				if (canUseSkill(56) && Rnd.get(100) < 35) // Power Shot
 				{
 					tryToCast(target, 56, getSkillLevel(56));
 				}
@@ -555,7 +597,7 @@ public class HotBotAI extends PlayerAI
 				{
 					_bot.autoUseShots(false);
 				}
-				if (hasSkill(1040) && _bot.getFirstEffect(1040) == null && Rnd.get(100) < 50) // Shield
+				if (canUseSkill(1040) && _bot.getFirstEffect(1040) == null && Rnd.get(100) < 50) // Shield
 				{
 					if (useShots)
 					{
@@ -563,7 +605,7 @@ public class HotBotAI extends PlayerAI
 					}
 					tryToCast(_bot, 1040, 1);
 				}
-				else if (hasSkill(3) && Rnd.get(100) < 40) // Power Strike
+				else if (canUseSkill(3) && Rnd.get(100) < 40) // Power Strike
 				{
 					tryToCast(target, 3, getSkillLevel(3));
 				}
@@ -579,7 +621,7 @@ public class HotBotAI extends PlayerAI
 				{
 					_bot.autoUseShots(false);
 				}
-				if (hasSkill(78) && _bot.getFirstEffect(78) == null && Rnd.get(100) < 50) // War Cry
+				if (canUseSkill(78) && _bot.getFirstEffect(78) == null && Rnd.get(100) < 50) // War Cry
 				{
 					if (useShots)
 					{
@@ -587,19 +629,19 @@ public class HotBotAI extends PlayerAI
 					}
 					tryToCast(_bot, 78, 1);
 				}
-				else if (target instanceof Monster && hasSkill(254) && !((Monster) target).getSpoilState().isSpoiled()) // Spoil
+				else if (target instanceof Monster && canUseSkill(254) && !((Monster) target).getSpoilState().isSpoiled()) // Spoil
 				{
 					tryToCast(target, 254, 1);
 				}
-				else if (hasSkill(16) && Rnd.get(100) < 30) // Mortal Blow
+				else if (canUseSkill(16) && Rnd.get(100) < 30) // Mortal Blow
 				{
 					tryToCast(target, 16, getSkillLevel(16));
 				}
-				else if (hasSkill(3) && Rnd.get(100) < 35) // Power Strike
+				else if (canUseSkill(3) && Rnd.get(100) < 35) // Power Strike
 				{
 					tryToCast(target, 3, getSkillLevel(3));
 				}
-				else if (hasSkill(29) && Rnd.get(100) < 25) // Iron Punch
+				else if (canUseSkill(29) && Rnd.get(100) < 25) // Iron Punch
 				{
 					tryToCast(target, 29, getSkillLevel(29));
 				}
@@ -710,6 +752,24 @@ public class HotBotAI extends PlayerAI
 		return _bot.getSkill(skillId) != null;
 	}
 
+	private boolean canUseSkill(int skillId)
+	{
+		final L2Skill skill = _bot.getSkill(skillId);
+		if (skill == null)
+		{
+			return false;
+		}
+		if (_bot.getStatus().getMp() < skill.getMpConsume())
+		{
+			return false;
+		}
+		if (_bot.isSkillDisabled(skill))
+		{
+			return false;
+		}
+		return true;
+	}
+
 	private int getSkillLevel(int skillId)
 	{
 		final L2Skill skill = _bot.getSkill(skillId);
@@ -770,6 +830,8 @@ public class HotBotAI extends PlayerAI
 
 		if (!_bot.getCast().canAttemptCast(target, skill))
 		{
+			doIdleIntention();
+			tryToAttack(target);
 			return;
 		}
 
@@ -790,6 +852,8 @@ public class HotBotAI extends PlayerAI
 
 		if (!_bot.getCast().canCast(target, skill, _currentIntention.isCtrlPressed(), _currentIntention.getItemObjectId()))
 		{
+			doIdleIntention();
+			tryToAttack(target);
 			return;
 		}
 

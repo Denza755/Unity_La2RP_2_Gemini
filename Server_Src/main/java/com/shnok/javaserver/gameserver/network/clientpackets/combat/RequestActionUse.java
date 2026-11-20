@@ -124,6 +124,39 @@ public final class RequestActionUse extends L2GameClientPacket
 					player.forceRunStance();
 				break;
 			
+			case 2: // Trade
+				if (target instanceof Player targetPlayer)
+				{
+					if (targetPlayer == player)
+					{
+						player.sendPacket(SystemMessageId.TARGET_IS_INCORRECT);
+						break;
+					}
+					if (!player.getAccessLevel().allowTransaction())
+					{
+						player.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
+						break;
+					}
+					if (player.isProcessingTransaction())
+					{
+						player.sendPacket(SystemMessageId.ALREADY_TRADING);
+						break;
+					}
+					if (targetPlayer.isProcessingRequest() || targetPlayer.isProcessingTransaction())
+					{
+						player.sendPacket(com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage.getSystemMessage(SystemMessageId.S1_IS_BUSY_TRY_LATER).addCharName(targetPlayer));
+						break;
+					}
+					player.onTransactionRequest(targetPlayer);
+					targetPlayer.sendPacket(new com.shnok.javaserver.gameserver.network.serverpackets.unused.SendTradeRequest(player.getObjectId()));
+					player.sendPacket(com.shnok.javaserver.gameserver.network.serverpackets.SystemMessage.getSystemMessage(SystemMessageId.REQUEST_S1_FOR_TRADE).addCharName(targetPlayer));
+				}
+				else
+				{
+					player.sendPacket(SystemMessageId.TARGET_IS_INCORRECT);
+				}
+				break;
+			
 			case 10: // Private Store - Sell
 				player.tryOpenPrivateSellStore(false);
 				break;

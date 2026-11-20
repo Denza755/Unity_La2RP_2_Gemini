@@ -1,0 +1,155 @@
+.clan-window {
+    width: 360px;
+    height: 460px;
+    position: absolute;
+    left: 320px;
+    top: 140px;
+}
+
+.clan-window-content {
+    flex-grow: 1;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+}
+
+.clan-info-box {
+    background-color: rgba(20, 18, 15, 0.7);
+    border-width: 1px;
+    border-color: rgba(120, 105, 80, 0.4);
+    padding: 6px;
+    margin-bottom: 6px;
+}
+
+.clan-info-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.clan-name-text {
+    font-size: 13px;
+    color: #ffd700;
+    -unity-font-style: bold;
+}
+
+.clan-lv-text {
+    font-size: 12px;
+    color: #e5b350;
+}
+
+.clan-leader-text {
+    font-size: 11px;
+    color: #c4b090;
+}
+
+.clan-count-text {
+    font-size: 11px;
+    color: #a0a0a0;
+}
+
+.clan-table-header {
+    display: flex;
+    flex-direction: row;
+    height: 22px;
+    background-color: rgba(45, 38, 28, 0.85);
+    border-width: 1px;
+    border-color: rgba(120, 105, 80, 0.5);
+    align-items: center;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.clan-col-header {
+    font-size: 11px;
+    color: #d6ccb1;
+    -unity-font-style: bold;
+}
+
+.clan-col-name {
+    width: 38%;
+}
+
+.clan-col-lv {
+    width: 14%;
+    -unity-text-align: middle-center;
+}
+
+.clan-col-class {
+    width: 32%;
+}
+
+.clan-col-status {
+    width: 16%;
+    -unity-text-align: middle-right;
+}
+
+.clan-members-scroll {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: rgba(80, 70, 50, 0.5);
+    margin-bottom: 6px;
+}
+
+.clan-members-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.clan-member-row {
+    display: flex;
+    flex-direction: row;
+    height: 20px;
+    align-items: center;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(60, 50, 40, 0.3);
+}
+
+.clan-member-row-alt {
+    background-color: rgba(40, 36, 30, 0.4);
+}
+
+.clan-member-row:hover {
+    background-color: rgba(90, 75, 45, 0.4);
+}
+
+.clan-cell-text {
+    font-size: 11px;
+    color: #c4b090;
+}
+
+.clan-status-online {
+    color: #55ff55;
+    -unity-font-style: bold;
+}
+
+.clan-status-offline {
+    color: #777777;
+}
+
+.clan-btn-bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.clan-action-btn {
+    width: 70px;
+    height: 22px;
+    margin-left: 6px;
+    font-size: 11px;
+    color: #e0d0b0;
+    background-color: rgba(40, 35, 25, 0.85);
+    border-width: 1px;
+    border-color: rgba(140, 120, 90, 0.8);
+}
+
+.clan-action-btn:hover {
+    background-color: rgba(70, 60, 45, 0.9);
+    border-color: #e5b350;
+}

@@ -61,6 +61,17 @@ public final class AttackRequest extends L2GameClientPacket
 			player.setTarget(target);
 		}
 
+		if (target instanceof Player targetPlayer)
+		{
+			final boolean isFriendlyCompanion = (targetPlayer.isCompanion() && targetPlayer.getCompanionOwner() == player)
+				|| (player.getParty() != null && player.getParty().containsPlayer(targetPlayer));
+			if (isFriendlyCompanion)
+			{
+				target.onAction(player, false, _isShiftAction);
+				return;
+			}
+		}
+
 		// Proceed to attack target
 		target.onAction(player, true, _isShiftAction);
 	}

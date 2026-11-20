@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
@@ -181,6 +181,18 @@ public class GameClientPacketHandler : ClientPacketHandler
     public void RequestRemoveShortcut(int oldSlot)
     {
         RequestShortcutDelPacket packet = new RequestShortcutDelPacket(oldSlot);
+        SendPacket(packet);
+    }
+
+    public void RequestMakeMacro(Macro macro)
+    {
+        RequestMakeMacroPacket packet = new RequestMakeMacroPacket(macro);
+        SendPacket(packet);
+    }
+
+    public void RequestDeleteMacro(int macroId)
+    {
+        RequestDeleteMacroPacket packet = new RequestDeleteMacroPacket(macroId);
         SendPacket(packet);
     }
 

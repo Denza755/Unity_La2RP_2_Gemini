@@ -16,9 +16,13 @@ public class AttackAction : L2Action
             Entity targetEntity = TargetManager.Instance.Target;
             EntityType targetType = targetEntity.Identity.EntityType;
 
-            if ((targetType == EntityType.User || targetType == EntityType.NPC) && InputManager.Instance.Ctrl || targetType == EntityType.Monster)
+            bool canAttackWithoutCtrl = targetType == EntityType.Monster
+                || targetEntity.Identity.IsAttackable
+                || targetEntity.Identity.PvpFlag > 0
+                || (targetEntity.Stats != null && targetEntity.Stats.Karma > 0);
+
+            if (canAttackWithoutCtrl || InputManager.Instance.Ctrl)
             {
-                //Todo: Check if the target is flagged or has karma too
                 TargetManager.Instance.SetAttackTarget(targetEntity);
                 PlayerStateMachine.Instance.ChangeIntention(Intention.INTENTION_ATTACK);
             }

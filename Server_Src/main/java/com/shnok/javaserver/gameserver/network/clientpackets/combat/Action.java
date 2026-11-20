@@ -59,6 +59,17 @@ public final class Action extends L2GameClientPacket
 			return;
 		}
 		
+		if (_isShiftAction)
+		{
+			if (target instanceof com.shnok.javaserver.gameserver.model.actor.Attackable attackable)
+			{
+				player.setTarget(target);
+				player.sendPacket(new com.shnok.javaserver.gameserver.network.serverpackets.NpcDropListPacket(attackable));
+				player.sendPacket(ActionFailed.STATIC_PACKET);
+				return;
+			}
+		}
+		
 		target.onAction(player, false, _isShiftAction);
 	}
 	

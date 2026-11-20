@@ -42,6 +42,8 @@ public class Folk extends Npc
 	 */
 	public void showSkillList(Player player)
 	{
+		// Note: Temporarily allow all races/classes to learn their skills on Talking Island from any trainer
+		/*
 		if (!getTemplate().canTeach(player.getClassId()))
 		{
 			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
@@ -49,6 +51,7 @@ public class Folk extends Npc
 			player.sendPacket(html);
 			return;
 		}
+		*/
 		
 		final List<GeneralSkillNode> skills = player.getAvailableSkills();
 		if (skills.isEmpty())

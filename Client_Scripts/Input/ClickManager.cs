@@ -64,10 +64,23 @@ public class ClickManager : MonoBehaviour
             return;
         }
 
-        Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
+        Vector2 mousePos = Mouse.current != null ? Mouse.current.position.ReadValue() : new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+        Ray ray = _mainCamera.ScreenPointToRay(mousePos);
         RaycastHit hit;
+        bool hitSomething = false;
 
-        if (Physics.Raycast(ray, out hit, 1000f, ~_clickThroughMask))
+        // Use a 0.35m radius SphereCast first to easily target low/small creatures like Keltir or Imp
+        if (Physics.SphereCast(ray, 0.35f, out RaycastHit sphereHit, 1000f, _entityMask))
+        {
+            hit = sphereHit;
+            hitSomething = true;
+        }
+        else if (Physics.Raycast(ray, out hit, 1000f, ~_clickThroughMask))
+        {
+            hitSomething = true;
+        }
+
+        if (hitSomething)
         {
             int hitLayer = hit.collider.gameObject.layer;
             if (_entityMask == (_entityMask | (1 << hitLayer)))
@@ -133,6 +146,11 @@ public class ClickManager : MonoBehaviour
 
     public void OnClickToMove(RaycastHit hit)
     {
+        if (PlayerStateMachine.Instance != null && PlayerStateMachine.Instance.State == PlayerState.SKILL)
+        {
+            return;
+        }
+
         _lastClickPosition = hit.point;
         //  PlayerCombatController.Instance.RunningToTarget = false;
 

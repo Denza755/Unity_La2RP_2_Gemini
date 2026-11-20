@@ -1,0 +1,35 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="rk-window">
+        <ui:VisualElement name="Content" class="rk-window-content">
+            <!-- Category Tabs -->
+            <ui:VisualElement class="rk-tab-bar">
+                <ui:Button name="TabLevel" text="Level" class="rk-tab-btn rk-tab-active" />
+                <ui:Button name="TabPvp" text="PvP" class="rk-tab-btn" />
+                <ui:Button name="TabPk" text="PK" class="rk-tab-btn" />
+                <ui:Button name="TabOnline" text="Online" class="rk-tab-btn" />
+            </ui:VisualElement>
+
+            <!-- Table Header -->
+            <ui:VisualElement class="rk-table-header">
+                <ui:Label text="#" class="rk-col-header rk-col-rank" />
+                <ui:Label text="Name" class="rk-col-header rk-col-name" />
+                <ui:Label text="Class" class="rk-col-header rk-col-class" />
+                <ui:Label text="Lv." class="rk-col-header rk-col-lv" />
+                <ui:Label name="ValueHeaderLabel" text="Exp" class="rk-col-header rk-col-val" />
+            </ui:VisualElement>
+
+            <!-- Table ScrollView -->
+            <ui:ScrollView name="RankingScroll" class="rk-scroll-panel">
+                <ui:VisualElement name="RankingRowsContainer" class="rk-rows-container" />
+            </ui:ScrollView>
+
+            <!-- Bottom Bar -->
+            <ui:VisualElement class="rk-btn-bar">
+                <ui:Button name="RankingRefreshBtn" text="Refresh" class="rk-action-btn" />
+                <ui:Button name="RankingCloseBtn" text="Close" class="rk-action-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

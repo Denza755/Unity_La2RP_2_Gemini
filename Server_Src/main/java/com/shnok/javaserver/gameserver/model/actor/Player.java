@@ -343,6 +343,17 @@ public class Player extends Playable
 	private PcFreight _freight;
 	
 	private OperateType _operateType = OperateType.NONE;
+	private boolean _isOfflineShop = false;
+
+	public boolean isOfflineShop()
+	{
+		return _isOfflineShop;
+	}
+
+	public void setIsOfflineShop(boolean val)
+	{
+		_isOfflineShop = val;
+	}
 	
 	private TradeList _activeTradeList;
 	private ItemContainer _activeWarehouse;
@@ -2244,8 +2255,15 @@ public class Player extends Playable
 			player.setTarget(this);
 		else
 		{
+			final boolean isFriendlyCompanion = (isCompanion() && getCompanionOwner() == player)
+				|| (player.getParty() != null && player.getParty().containsPlayer(this));
+
 			if (player.isInBoat() && !isInBoat() || !player.isInBoat() && isInBoat())
 				player.sendPacket(ActionFailed.STATIC_PACKET);
+			else if (isFriendlyCompanion && !isCtrlPressed)
+			{
+				player.getAI().tryToFollow(this, isShiftPressed);
+			}
 			else if (isAttackableWithoutForceBy(player) || (isCtrlPressed && isAttackableBy(player)))
 				player.getAI().tryToAttack(this, isCtrlPressed, isShiftPressed);
 			else if (isOperating())

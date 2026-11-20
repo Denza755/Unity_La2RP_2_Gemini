@@ -641,7 +641,7 @@ public final class GameClient extends MMOClient<MMOConnection<GameClient>> imple
 				// Prevent closing again.
 				getPlayer().setClient(null);
 				
-				if (getPlayer().isOnline())
+				if (getPlayer().isOnline() && !getPlayer().isOfflineShop())
 					getPlayer().deleteMe();
 			}
 			setPlayer(null);

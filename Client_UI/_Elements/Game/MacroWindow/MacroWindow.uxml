@@ -1,0 +1,51 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="WindowTemplate" src="project://database/Assets/Resources/Data/UI/_Elements/Components/WindowTemplate.uxml?fileID=9197481963319205126&amp;guid=5ca840f56ef6f1044b4dc077c7d3e6e6&amp;type=3#WindowTemplate" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/L2StyleSheet.uss?fileID=7433441132597879392&amp;guid=72e99cc94b130bf4ba100dceaa830b13&amp;type=3#L2StyleSheet" />
+    <Style src="project://database/Assets/Resources/Data/UI/_Elements/Game/MacroWindow/MacroWindow.uss" />
+    <ui:Instance template="WindowTemplate" name="WindowTemplate" class="macro-window" style="width: 350px; height: 500px; position: absolute;">
+        <ui:VisualElement name="Content" class="macro-window-content">
+            <!-- MAIN VIEW (Macro List) -->
+            <ui:VisualElement name="MainView" class="macro-view-container">
+                <ui:Label text="Registered Macros" class="macro-section-header l2-color-3" />
+                <ui:ScrollView name="MacroListScrollView" class="macro-list-scroll">
+                    <ui:VisualElement name="MacroItemsContainer" class="macro-items-container" />
+                </ui:ScrollView>
+                <ui:Label name="EmptyMacroLabel" text="No macros created yet. Click 'Add' to create one." class="macro-empty-label" style="display: none;" />
+                <ui:VisualElement name="MainButtonBar" class="macro-button-bar">
+                    <ui:Button name="AddMacroBtn" text="Add" class="l2-btn macro-action-btn" />
+                    <ui:Button name="EditMacroBtn" text="Edit" class="l2-btn macro-action-btn" />
+                    <ui:Button name="DeleteMacroBtn" text="Delete" class="l2-btn macro-action-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- EDIT VIEW (Create / Modify Macro) -->
+            <ui:VisualElement name="EditView" class="macro-view-container" style="display: none;">
+                <ui:Label name="EditTitleLabel" text="Edit Macro" class="macro-section-header l2-color-3" />
+                <ui:ScrollView name="EditScrollView" class="macro-edit-scroll">
+                    <ui:VisualElement class="macro-input-row">
+                        <ui:Label text="Name:" class="macro-input-label" />
+                        <ui:TextField name="MacroNameInput" class="macro-text-input" max-length="24" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="macro-input-row">
+                        <ui:Label text="Acronym (max 4):" class="macro-input-label" />
+                        <ui:TextField name="MacroAcronymInput" class="macro-text-input" max-length="4" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="macro-input-row">
+                        <ui:Label text="Description:" class="macro-input-label" />
+                        <ui:TextField name="MacroDescInput" class="macro-text-input" max-length="32" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="macro-icon-section">
+                        <ui:Label text="Select Icon:" class="macro-input-label" />
+                        <ui:VisualElement name="IconPickerContainer" class="macro-icon-picker-container" />
+                    </ui:VisualElement>
+                    <ui:Label text="Commands (12 lines max):" class="macro-input-label" style="margin-top: 6px;" />
+                    <ui:VisualElement name="CommandLinesContainer" class="macro-commands-container" />
+                </ui:ScrollView>
+                <ui:VisualElement name="EditButtonBar" class="macro-button-bar">
+                    <ui:Button name="SaveMacroBtn" text="Save" class="l2-btn macro-action-btn" />
+                    <ui:Button name="CancelEditBtn" text="Cancel" class="l2-btn macro-action-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Instance>
+</ui:UXML>

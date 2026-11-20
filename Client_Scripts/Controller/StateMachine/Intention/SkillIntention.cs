@@ -7,6 +7,29 @@ public class SkillIntention : IntentionBase
     public static bool CtrlPressed = false;
     public static bool ShiftPressed = false;
 
+    public static int LastSkillId => _lastSkillIntention != null ? _lastSkillIntention.Id : 0;
+    public static SkillInfo LastSkillInfo => _lastSkillIntention;
+    public static Skillgrp LastSkillGrp => _lastSkillIntentionGrp;
+
+    public static float GetRealSkillRange(Entity attacker, Entity target, Skillgrp grp)
+    {
+        float baseRange = (grp != null && grp.CastRange > 0) ? (grp.CastRange / 52.5f) : (40f / 52.5f);
+        if (baseRange < (40f / 52.5f))
+        {
+            baseRange = 40f / 52.5f;
+        }
+
+        float attackerRadius = (attacker != null && attacker.Appearance != null && attacker.Appearance.CollisionRadius > 0)
+            ? attacker.Appearance.CollisionRadius
+            : (15f / 52.5f);
+
+        float targetRadius = (target != null && target.Appearance != null && target.Appearance.CollisionRadius > 0)
+            ? target.Appearance.CollisionRadius
+            : (15f / 52.5f);
+
+        return baseRange + attackerRadius + targetRadius;
+    }
+
     public SkillIntention(PlayerStateMachine stateMachine) : base(stateMachine) { }
 
     public override void Enter(object arg0)
@@ -47,29 +70,29 @@ public class SkillIntention : IntentionBase
                 }
             }
 
-            // TODO: If buff or heal and require target, if not target selected send skill on self
-            float skillRange = _lastSkillIntentionGrp.CastRange / 52.5f * 0.95f; //5% error margin
-            Entity targetEntity = TargetManager.Instance.Target;
-            Vector3 targetPos = targetEntity.transform.position;
+            float skillRange = GetRealSkillRange(PlayerEntity.Instance, targetEntity, _lastSkillIntentionGrp);
+            Entity targetEntityRef = TargetManager.Instance.Target;
+            Vector3 targetPos = targetEntityRef.transform.position;
 
-            float distance = Vector3.Distance(VectorUtils.To2D(PlayerEntity.Instance.transform.position), VectorUtils.To2D(targetPos));
+            float distance = VectorUtils.Distance2D(PlayerEntity.Instance.transform.position, targetPos);
 
-            // Debug.Log($"Distance: {distance} SkillRange: {skillRange}");
-            if (distance <= skillRange && !_stateMachine.WaitingForServerReply)
+            if (distance <= (skillRange + 0.1f) && !_stateMachine.WaitingForServerReply)
             {
                 Debug.Log("Using skill on target");
 
+                PlayerController.Instance.StopMoving();
+                PlayerController.Instance.ResetDestination(false);
                 _stateMachine.ChangeState(PlayerState.IDLE);
 
-                if (!targetEntity.IsDead || IsCorpseSkill(_lastSkillIntention.Id))
+                if (!targetEntityRef.IsDead || IsCorpseSkill(_lastSkillIntention.Id))
                 {
                     _stateMachine.NotifyEvent(Event.READY_TO_SKILL, _lastSkillIntention);
                 }
             }
             else
             {
-                // Move to target with a 5% error margin
-                PathFinderController.Instance.MoveTo(targetPos, skillRange, () =>
+                // Move to target range
+                PathFinderController.Instance.MoveTo(targetPos, skillRange * 0.85f, () =>
                 {
                     _stateMachine.ChangeIntention(Intention.INTENTION_FOLLOW, MoveReason.SKILL);
                 });

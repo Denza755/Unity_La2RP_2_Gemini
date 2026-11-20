@@ -91,6 +91,10 @@ public class CameraCollisionDetection {
         RaycastHit hit;
         for(int i = 0; i < clipPoints.Length; i++) {
             if(Physics.Linecast(_target.position + _offset, clipPoints[i], out hit, _collisionLayer)) {
+                // Ignore player's own colliders so camera can zoom in to 1st person
+                if (hit.transform == _target || hit.transform.IsChildOf(_target)) {
+                    continue;
+                }
                 if(distance == -1f || hit.distance < distance) {
                     distance = hit.distance;
                 }

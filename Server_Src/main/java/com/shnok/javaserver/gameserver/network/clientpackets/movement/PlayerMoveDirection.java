@@ -62,6 +62,13 @@ public class PlayerMoveDirection extends L2GameClientPacket
         player._verticalVelocity = _verticalVelocity;
         player._lastGamePosition = new Location(_x, _y ,_z);
         player._lastPacketTimestamp = _timestamp;
+        // Cancel relaxing and stand up if moving while sitting
+        if (player.isSitting() || player.isSittingNow())
+        {
+            player.stopEffects(com.shnok.javaserver.gameserver.enums.skills.EffectType.RELAXING);
+            player.standUp();
+        }
+
         // Cancel enchant over movement.
         player.cancelActiveEnchant();
 

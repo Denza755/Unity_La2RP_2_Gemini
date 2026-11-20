@@ -76,6 +76,8 @@ public class InputManager : MonoBehaviour
     [field: SerializeField] public bool OpenSkills { get; private set; }
     [field: SerializeField] public bool OpenMap { get; private set; }
     [field: SerializeField] public bool OpenQuest { get; private set; }
+    [field: SerializeField] public bool OpenClan { get; private set; }
+    [field: SerializeField] public bool OpenMacro { get; private set; }
     [field: SerializeField] public bool CloseWindow { get; private set; }
     [field: SerializeField] public bool Validate { get; private set; }
 
@@ -199,7 +201,9 @@ public class InputManager : MonoBehaviour
             L2GameUI.Instance.EnableMouse();
         }
 
-        if (ChatWindow.Instance != null && !ChatWindow.Instance.ChatOpened && !L2GameUI.Instance.IsTyping)
+        bool isTextFocused = L2GameUI.Instance != null && L2GameUI.Instance.IsFocusedOnTextInput();
+
+        if (!isTextFocused)
         {
             // In Ruler RTS mode, do not feed keyboard WASD into player character movement!
             if (RulerManager.Instance != null && RulerManager.Instance.IsRtsActive)
@@ -216,49 +220,44 @@ public class InputManager : MonoBehaviour
             TargetSelf = _targetSelfAction.WasPerformedThisFrame();
             Sit = _sitAction.WasPerformedThisFrame();
 
-            OpenCharacerStatus = _characterStatusAction.WasPerformedThisFrame();
-            bool tabPressed = (Keyboard.current != null && Keyboard.current.tabKey != null && Keyboard.current.tabKey.wasPressedThisFrame) || Input.GetKeyDown(KeyCode.Tab);
-            OpenInventory = _inventoryAction.WasPerformedThisFrame() || tabPressed;
-            OpenSystemMenu = _systemMenuAction.WasPerformedThisFrame();
-            OpenActions = _actionsAction.WasPerformedThisFrame();
-
-            bool altPressed = false;
+            bool tabPressed = false;
+            bool iPressed = false;
+            bool kPressed = false;
+            bool cPressed = false;
             bool mPressed = false;
-            if (Keyboard.current != null)
-            {
-                altPressed = Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed;
-                mPressed = Keyboard.current.mKey.wasPressedThisFrame;
-            }
-            if (!altPressed)
-            {
-                altPressed = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
-            }
-            if (!mPressed)
-            {
-                mPressed = Input.GetKeyDown(KeyCode.M);
-            }
-            OpenMap = altPressed && mPressed;
-
             bool uPressed = false;
+            bool tPressed = false;
+            bool nPressed = false;
+            bool rPressed = false;
+
             if (Keyboard.current != null)
             {
-                uPressed = Keyboard.current.uKey.wasPressedThisFrame;
+                tabPressed = Keyboard.current.tabKey != null && Keyboard.current.tabKey.wasPressedThisFrame;
+                iPressed = Keyboard.current.iKey != null && Keyboard.current.iKey.wasPressedThisFrame;
+                kPressed = Keyboard.current.kKey != null && Keyboard.current.kKey.wasPressedThisFrame;
+                cPressed = Keyboard.current.cKey != null && Keyboard.current.cKey.wasPressedThisFrame;
+                mPressed = Keyboard.current.mKey != null && Keyboard.current.mKey.wasPressedThisFrame;
+                uPressed = Keyboard.current.uKey != null && Keyboard.current.uKey.wasPressedThisFrame;
+                tPressed = Keyboard.current.tKey != null && Keyboard.current.tKey.wasPressedThisFrame;
+                nPressed = Keyboard.current.nKey != null && Keyboard.current.nKey.wasPressedThisFrame;
+                rPressed = Keyboard.current.rKey != null && Keyboard.current.rKey.wasPressedThisFrame;
             }
-            if (!uPressed)
-            {
-                uPressed = Input.GetKeyDown(KeyCode.U);
-            }
-            OpenQuest = altPressed && uPressed;
+
+            OpenCharacerStatus = _characterStatusAction.WasPerformedThisFrame() || tPressed;
+            OpenInventory = _inventoryAction.WasPerformedThisFrame() || iPressed || tabPressed;
+            OpenSystemMenu = _systemMenuAction.WasPerformedThisFrame();
+            OpenActions = _actionsAction.WasPerformedThisFrame() || cPressed;
+            OpenSkills = kPressed;
+            OpenMap = mPressed;
+            OpenQuest = uPressed;
+            OpenClan = nPressed;
+            OpenMacro = rPressed;
 
             bool walkRunPressed = false;
             if (Keyboard.current != null)
             {
                 walkRunPressed = (Keyboard.current.numpadDivideKey != null && Keyboard.current.numpadDivideKey.wasPressedThisFrame)
                               || (Keyboard.current.slashKey != null && Keyboard.current.slashKey.wasPressedThisFrame);
-            }
-            if (!walkRunPressed)
-            {
-                walkRunPressed = Input.GetKeyDown(KeyCode.KeypadDivide) || Input.GetKeyDown(KeyCode.Slash);
             }
             ToggleWalkRun = walkRunPressed;
 
@@ -273,9 +272,29 @@ public class InputManager : MonoBehaviour
         else
         {
             MoveInput = Vector2.zero;
-            ToggleWalkRun = false;
+            Jump = false;
+            Attack = false;
+            NextTarget = false;
+            TargetSelf = false;
+            Sit = false;
+            OpenCharacerStatus = false;
+            OpenInventory = false;
+            OpenSystemMenu = false;
+            OpenActions = false;
+            OpenSkills = false;
             OpenMap = false;
             OpenQuest = false;
+            OpenClan = false;
+            OpenMacro = false;
+            ToggleWalkRun = false;
+
+            for (int skillbar = 0; skillbar < 5; skillbar++)
+            {
+                for (int i = 0; i < 12; i++)
+                {
+                    SkillbarInputs[skillbar, i] = false;
+                }
+            }
         }
 
         ArrowUp = _arrowUpAction.WasPerformedThisFrame();

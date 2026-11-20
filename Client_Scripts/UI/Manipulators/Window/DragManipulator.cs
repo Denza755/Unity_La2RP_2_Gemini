@@ -41,7 +41,19 @@ public class DragManipulator : PointerManipulator
         {
             dragged = false;
             _startMousePosition = evt.position;
-            _startPosition = _root.layout.position;// + target.layout.position;
+
+            float currentLeft = _root.resolvedStyle.left;
+            float currentTop = _root.resolvedStyle.top;
+            if (float.IsNaN(currentLeft) || currentLeft == 0)
+            {
+                currentLeft = _root.layout.position.x;
+            }
+            if (float.IsNaN(currentTop) || currentTop == 0)
+            {
+                currentTop = _root.layout.position.y;
+            }
+
+            _startPosition = new Vector2(currentLeft, currentTop);
             target.CapturePointer(evt.pointerId);
         }
     }
@@ -51,8 +63,8 @@ public class DragManipulator : PointerManipulator
         if (target.HasPointerCapture(evt.pointerId))
         {
             dragged = true;
-            Vector2 diff = _startMousePosition - new Vector2(evt.position.x, evt.position.y);
-            DragWindow(diff);
+            Vector2 delta = new Vector2(evt.position.x - _startMousePosition.x, evt.position.y - _startMousePosition.y);
+            DragWindow(delta);
         }
         evt.StopPropagation();
     }
@@ -67,36 +79,25 @@ public class DragManipulator : PointerManipulator
                 _window.OnClick();
             }
         }
-
-        UpdateAnchorType();
     }
 
-    // Apply drag
-    private void DragWindow(Vector2 diff)
+    // Apply drag smoothly using left and top offsets
+    private void DragWindow(Vector2 delta)
     {
-        UpdateAnchorType();
+        float parentWidth = (_root.parent != null && _root.parent.layout.width > 0) ? _root.parent.layout.width : Screen.width;
+        float parentHeight = (_root.parent != null && _root.parent.layout.height > 0) ? _root.parent.layout.height : Screen.height;
 
-        if (_rightAnchor)
-        {
-            _root.style.right = Screen.width - _startPosition.x - _root.layout.width + diff.x;
-            _root.style.left = StyleKeyword.Null;
-        }
-        else
-        {
-            _root.style.left = _startPosition.x - diff.x;
-            _root.style.right = StyleKeyword.Null;
-        }
+        float width = _root.layout.width > 0 ? _root.layout.width : 250f;
+        float height = _root.layout.height > 0 ? _root.layout.height : 300f;
 
-        if (_bottomAnchor)
-        {
-            _root.style.bottom = Screen.height - _startPosition.y - _root.layout.height + diff.y;
-            _root.style.top = StyleKeyword.Null;
-        }
-        else
-        {
-            _root.style.top = _startPosition.y - diff.y;
-            _root.style.bottom = StyleKeyword.Null;
-        }
+        float newLeft = Mathf.Clamp(_startPosition.x + delta.x, 0, Mathf.Max(0, parentWidth - width));
+        float newTop = Mathf.Clamp(_startPosition.y + delta.y, 0, Mathf.Max(0, parentHeight - height));
+
+        _root.style.position = Position.Absolute;
+        _root.style.left = newLeft;
+        _root.style.top = newTop;
+        _root.style.right = StyleKeyword.Null;
+        _root.style.bottom = StyleKeyword.Null;
     }
 
     // Update the anchor based on the window position ratio

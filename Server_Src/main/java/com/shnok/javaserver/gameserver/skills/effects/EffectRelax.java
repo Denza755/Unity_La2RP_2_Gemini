@@ -31,6 +31,19 @@ public class EffectRelax extends AbstractEffect
 	}
 	
 	@Override
+	public void onExit()
+	{
+		super.onExit();
+		if (getEffected() instanceof Player player)
+		{
+			if (player.isSitting() || player.isSittingNow())
+			{
+				player.standUp();
+			}
+		}
+	}
+	
+	@Override
 	public boolean onActionTime()
 	{
 		if (getEffected().isDead())

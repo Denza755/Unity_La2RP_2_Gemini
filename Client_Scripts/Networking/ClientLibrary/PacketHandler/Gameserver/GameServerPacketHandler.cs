@@ -89,6 +89,9 @@ public class GameServerPacketHandler : ServerPacketHandler
             case GameServerPacketType.ShortcutInit:
                 OnShortcutInit(data);
                 break;
+            case GameServerPacketType.SendMacroList:
+                OnSendMacroList(data);
+                break;
             case GameServerPacketType.ShortcutRegister:
                 OnShortcutRegister(data);
                 break;
@@ -187,6 +190,57 @@ public class GameServerPacketHandler : ServerPacketHandler
                 break;
             case GameServerPacketType.PartyEffect:
                 OnPartyEffect(data);
+                break;
+            case GameServerPacketType.CompanionInventory:
+                OnCompanionInventory(data);
+                break;
+            case GameServerPacketType.NpcDropList:
+                OnNpcDropList(data);
+                break;
+            case GameServerPacketType.TradeStart:
+                OnTradeStart(data);
+                break;
+            case GameServerPacketType.TradeOwnAdd:
+                OnTradeOwnAdd(data);
+                break;
+            case GameServerPacketType.TradeOtherAdd:
+                OnTradeOtherAdd(data);
+                break;
+            case GameServerPacketType.SendTradeDone:
+                OnSendTradeDone(data);
+                break;
+            case GameServerPacketType.SendTradeRequest:
+                OnSendTradeRequest(data);
+                break;
+            case GameServerPacketType.TradePressOwnOk:
+                OnTradePressOwnOk(data);
+                break;
+            case GameServerPacketType.TradePressOtherOk:
+                OnTradePressOtherOk(data);
+                break;
+            case GameServerPacketType.WarehouseDepositList:
+                OnWarehouseDepositList(data);
+                break;
+            case GameServerPacketType.WarehouseWithdrawList:
+                OnWarehouseWithdrawList(data);
+                break;
+            case GameServerPacketType.PrivateStoreListSell:
+                OnPrivateStoreListSell(data);
+                break;
+            case GameServerPacketType.PrivateStoreListBuy:
+                OnPrivateStoreListBuy(data);
+                break;
+            case GameServerPacketType.PrivateStoreMsgSell:
+                OnPrivateStoreMsgSell(data);
+                break;
+            case GameServerPacketType.PrivateStoreMsgBuy:
+                OnPrivateStoreMsgBuy(data);
+                break;
+            case GameServerPacketType.PledgeShowMemberListAll:
+                OnPledgeShowMemberListAll(data);
+                break;
+            case GameServerPacketType.RankingList:
+                OnRankingList(data);
                 break;
             case GameServerPacketType.EtcStatusUpdate:
                 OnEtcStatusUpdate(data);
@@ -638,6 +692,12 @@ public class GameServerPacketHandler : ServerPacketHandler
         _eventProcessor.QueueEvent(() => PlayerShortcuts.Instance.SetShortcutList(packet.Shortcuts));
     }
 
+    private void OnSendMacroList(byte[] data)
+    {
+        SendMacroListPacket packet = new SendMacroListPacket(data);
+        _eventProcessor.QueueEvent(() => PlayerMacros.Instance.OnReceiveMacroList(packet));
+    }
+
     private void OnShortcutRegister(byte[] data)
     {
         ShortcutRegisterPacket packet = new ShortcutRegisterPacket(data);
@@ -722,7 +782,7 @@ public class GameServerPacketHandler : ServerPacketHandler
     private void OnRelationChanged(byte[] data)
     {
         RelationChangedPacket packet = new RelationChangedPacket(data);
-        WorldCombat.Instance.RelationChanged(packet.Owner, packet.Karma, packet.PvpFlag);
+        WorldCombat.Instance.RelationChanged(packet.Owner, packet.Karma, packet.PvpFlag, packet.AutoAttackable);
     }
 
     private void OnCharDeleteOk(byte[] data)
@@ -867,6 +927,77 @@ public class GameServerPacketHandler : ServerPacketHandler
         // _eventProcessor.QueueEvent(() => BuffWindow.Instance.UpsertBuffs(packet.ObjectId, packet.Type, packet.Effects));
     }
 
+    private void OnCompanionInventory(byte[] data)
+    {
+        CompanionInventoryPacket packet = new CompanionInventoryPacket(data);
+        _eventProcessor.QueueEvent(() => CompanionInventoryWindow.Instance.SetCompanionInventory(packet.CompanionObjectId, packet.CompanionName, packet.Adena, packet.Items));
+    }
+
+    private void OnNpcDropList(byte[] data)
+    {
+        NpcDropListPacket packet = new NpcDropListPacket(data);
+        _eventProcessor.QueueEvent(() => DropListWindow.Instance?.SetDropList(packet.NpcName, packet.ItemIds));
+    }
+
+    private void OnSendTradeRequest(byte[] data)
+    {
+        SendTradeRequestPacket packet = new SendTradeRequestPacket(data);
+        string senderName = World.Instance?.GetPlayer(packet.SenderId)?.Identity?.Name ?? $"Player #{packet.SenderId}";
+        _eventProcessor.QueueEvent(() =>
+        {
+            L2ConfirmWindow.Instance?.ShowWindow(
+                $"Player {senderName} requested an exchange. Accept?",
+                () => GameClientPacketHandler.Instance?.SendMessage(new AnswerTradeRequestPacket(1)),
+                () => GameClientPacketHandler.Instance?.SendMessage(new AnswerTradeRequestPacket(0)));
+        });
+    }
+
+    private void OnTradeStart(byte[] data)
+    {
+        TradeStartPacket packet = new TradeStartPacket(data);
+        _eventProcessor.QueueEvent(() => TradeWindow.Instance?.StartTrade(packet.PartnerObjectId, packet.Items));
+    }
+
+    private void OnTradeOwnAdd(byte[] data)
+    {
+        TradeOwnAddPacket packet = new TradeOwnAddPacket(data);
+        _eventProcessor.QueueEvent(() => TradeWindow.Instance?.AddMyItem(packet.ObjectId, packet.ItemId, packet.Count, packet.Enchant));
+    }
+
+    private void OnTradeOtherAdd(byte[] data)
+    {
+        TradeOtherAddPacket packet = new TradeOtherAddPacket(data);
+        _eventProcessor.QueueEvent(() => TradeWindow.Instance?.AddPartnerItem(packet.ObjectId, packet.ItemId, packet.Count, packet.Enchant));
+    }
+
+    private void OnTradePressOwnOk(byte[] data)
+    {
+        _eventProcessor.QueueEvent(() => TradeWindow.Instance?.ConfirmOwn());
+    }
+
+    private void OnTradePressOtherOk(byte[] data)
+    {
+        _eventProcessor.QueueEvent(() => TradeWindow.Instance?.ConfirmOther());
+    }
+
+    private void OnSendTradeDone(byte[] data)
+    {
+        SendTradeDonePacket packet = new SendTradeDonePacket(data);
+        _eventProcessor.QueueEvent(() => TradeWindow.Instance?.OnTradeDone(packet.Status));
+    }
+
+    private void OnWarehouseDepositList(byte[] data)
+    {
+        WarehouseDepositListPacket packet = new WarehouseDepositListPacket(data);
+        _eventProcessor.QueueEvent(() => WarehouseWindow.Instance?.ShowDepositList(packet.PlayerAdena, packet.Items));
+    }
+
+    private void OnWarehouseWithdrawList(byte[] data)
+    {
+        WarehouseWithdrawListPacket packet = new WarehouseWithdrawListPacket(data);
+        _eventProcessor.QueueEvent(() => WarehouseWindow.Instance?.ShowWithdrawList(packet.PlayerAdena, packet.Items));
+    }
+
     private void OnEtcStatusUpdate(byte[] data)
     {
         EtcStatusUpdatePacket packet = new EtcStatusUpdatePacket(data);
@@ -900,5 +1031,41 @@ public class GameServerPacketHandler : ServerPacketHandler
                 BuildingPlacementSystem.Instance.HandleServerRulerBuildings(packet);
             }
         });
+    }
+
+    private void OnPrivateStoreListSell(byte[] data)
+    {
+        PrivateStoreListSellPacket packet = new PrivateStoreListSellPacket(data);
+        _eventProcessor.QueueEvent(() => PrivateStoreWindow.Instance?.OpenSellStore(packet));
+    }
+
+    private void OnPrivateStoreListBuy(byte[] data)
+    {
+        PrivateStoreListBuyPacket packet = new PrivateStoreListBuyPacket(data);
+        _eventProcessor.QueueEvent(() => PrivateStoreWindow.Instance?.OpenBuyStore(packet));
+    }
+
+    private void OnPrivateStoreMsgSell(byte[] data)
+    {
+        PrivateStoreMsgSellPacket packet = new PrivateStoreMsgSellPacket(data);
+        _eventProcessor.QueueEvent(() => NameplatesManagerGame.Instance?.SetPlayerStoreMessage(packet.PlayerId, true, packet.Message));
+    }
+
+    private void OnPrivateStoreMsgBuy(byte[] data)
+    {
+        PrivateStoreMsgBuyPacket packet = new PrivateStoreMsgBuyPacket(data);
+        _eventProcessor.QueueEvent(() => NameplatesManagerGame.Instance?.SetPlayerStoreMessage(packet.PlayerId, false, packet.Message));
+    }
+
+    private void OnPledgeShowMemberListAll(byte[] data)
+    {
+        PledgeShowMemberListAllPacket packet = new PledgeShowMemberListAllPacket(data);
+        _eventProcessor.QueueEvent(() => ClanWindow.Instance?.UpdateClanData(packet));
+    }
+
+    private void OnRankingList(byte[] data)
+    {
+        RankingListPacket packet = new RankingListPacket(data);
+        _eventProcessor.QueueEvent(() => RankingWindow.Instance?.UpdateRankingData(packet));
     }
 }

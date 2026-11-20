@@ -45,6 +45,12 @@ public abstract class ClientPacket : Packet
         }
     }
 
+    public void WriteH(short s)
+    {
+        byte[] data = BitConverter.GetBytes(s);
+        _buffer.AddRange(data);
+    }
+
     public void WriteI(int i)
     {
         byte[] data = BitConverter.GetBytes(i);
