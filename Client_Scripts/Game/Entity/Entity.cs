@@ -155,6 +155,11 @@ public abstract class Entity : MonoBehaviour
         }
     }
 
+    public void SetSitting(bool sitting)
+    {
+        _sitting = sitting;
+    }
+
     public virtual void UpdateMoveType(bool running)
     {
         Running = running;

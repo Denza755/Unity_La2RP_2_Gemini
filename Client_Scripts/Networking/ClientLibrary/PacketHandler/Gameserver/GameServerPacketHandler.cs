@@ -507,6 +507,19 @@ public class GameServerPacketHandler : ServerPacketHandler
         UserInfoPacket packet = new UserInfoPacket(data);
 
         WorldSpawner.Instance.OnReceiveUserInfo(packet.Identity, packet.Status, packet.Stats, packet.Appearance, packet.EntityActionInfo);
+
+        if (packet.OperateType > 0)
+        {
+            _eventProcessor.QueueEvent(() =>
+            {
+                Entity entity = WorldSpawner.Instance?.GetEntity(packet.Identity.Id);
+                if (entity is NetworkHumanoidEntity humanoid)
+                {
+                    humanoid.IsInPrivateStore = true;
+                    humanoid.PrivateStoreType = packet.OperateType;
+                }
+            });
+        }
     }
 
     private void OnUpdatePosition(byte[] data)
@@ -1048,13 +1061,31 @@ public class GameServerPacketHandler : ServerPacketHandler
     private void OnPrivateStoreMsgSell(byte[] data)
     {
         PrivateStoreMsgSellPacket packet = new PrivateStoreMsgSellPacket(data);
-        _eventProcessor.QueueEvent(() => NameplatesManagerGame.Instance?.SetPlayerStoreMessage(packet.PlayerId, true, packet.Message));
+        _eventProcessor.QueueEvent(() =>
+        {
+            NameplatesManagerGame.Instance?.SetPlayerStoreMessage(packet.PlayerId, true, packet.Message);
+            Entity entity = WorldSpawner.Instance?.GetEntity(packet.PlayerId);
+            if (entity is NetworkHumanoidEntity humanoid)
+            {
+                humanoid.IsInPrivateStore = true;
+                humanoid.PrivateStoreType = 1;
+            }
+        });
     }
 
     private void OnPrivateStoreMsgBuy(byte[] data)
     {
         PrivateStoreMsgBuyPacket packet = new PrivateStoreMsgBuyPacket(data);
-        _eventProcessor.QueueEvent(() => NameplatesManagerGame.Instance?.SetPlayerStoreMessage(packet.PlayerId, false, packet.Message));
+        _eventProcessor.QueueEvent(() =>
+        {
+            NameplatesManagerGame.Instance?.SetPlayerStoreMessage(packet.PlayerId, false, packet.Message);
+            Entity entity = WorldSpawner.Instance?.GetEntity(packet.PlayerId);
+            if (entity is NetworkHumanoidEntity humanoid)
+            {
+                humanoid.IsInPrivateStore = true;
+                humanoid.PrivateStoreType = 3;
+            }
+        });
     }
 
     private void OnPledgeShowMemberListAll(byte[] data)

@@ -45,5 +45,7 @@ public class PrivateStoreListBuyPacket : ServerPacket
             item.Quantity = ReadI();
             Items.Add(item);
         }
+
+        UnityEngine.Debug.Log($"[PrivateStore] Received {Items.Count} items from buy store {StorePlayerId}");
     }
 }

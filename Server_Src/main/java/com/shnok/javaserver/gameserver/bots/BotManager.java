@@ -138,13 +138,14 @@ public class BotManager
 	private void setupTraderStore(FakePlayer trader, int index)
 	{
 		trader.getMove().stop();
+		trader.setIsSitting(true);
 		trader.sitDown();
 
 		switch (index)
 		{
 			case 0: // Soulshot NG Seller
 			{
-				final ItemInstance ss = trader.getInventory().addItem(2039, 50000);
+				final ItemInstance ss = trader.getInventory().addItem(1835, 50000);
 				final TradeList sellList = trader.getSellList();
 				sellList.clear();
 				sellList.setTitle("Soulshots NG 12a");
@@ -156,7 +157,7 @@ public class BotManager
 			}
 			case 1: // Spiritshot NG Seller
 			{
-				final ItemInstance sps = trader.getInventory().addItem(2047, 30000);
+				final ItemInstance sps = trader.getInventory().addItem(2509, 30000);
 				final TradeList sellList = trader.getSellList();
 				sellList.clear();
 				sellList.setTitle("Spiritshots NG 25a");
@@ -182,15 +183,15 @@ public class BotManager
 			}
 			case 3: // Starter Weapons Seller
 			{
-				final ItemInstance sword = trader.getInventory().addItem(1, 5);
-				final ItemInstance dagger = trader.getInventory().addItem(223, 5);
-				final ItemInstance club = trader.getInventory().addItem(3, 5);
+				final ItemInstance sword = trader.getInventory().addItem(1, 1);
+				final ItemInstance dagger = trader.getInventory().addItem(223, 1);
+				final ItemInstance club = trader.getInventory().addItem(3, 1);
 				final TradeList sellList = trader.getSellList();
 				sellList.clear();
 				sellList.setTitle("Starter Weapons");
-				sellList.addItem(sword.getObjectId(), 5, 1500);
-				sellList.addItem(dagger.getObjectId(), 5, 1500);
-				sellList.addItem(club.getObjectId(), 5, 1500);
+				sellList.addItem(sword.getObjectId(), 1, 1500);
+				sellList.addItem(dagger.getObjectId(), 1, 1500);
+				sellList.addItem(club.getObjectId(), 1, 1500);
 				trader.setOperateType(OperateType.SELL);
 				trader.broadcastUserInfo();
 				trader.broadcastPacket(new PrivateStoreMsgSell(trader));
@@ -198,15 +199,15 @@ public class BotManager
 			}
 			case 4: // Starter Armors Seller
 			{
-				final ItemInstance plate = trader.getInventory().addItem(22, 5);
-				final ItemInstance armor = trader.getInventory().addItem(23, 5);
-				final ItemInstance pants = trader.getInventory().addItem(24, 5);
+				final ItemInstance plate = trader.getInventory().addItem(22, 1);
+				final ItemInstance armor = trader.getInventory().addItem(23, 1);
+				final ItemInstance pants = trader.getInventory().addItem(24, 1);
 				final TradeList sellList = trader.getSellList();
 				sellList.clear();
 				sellList.setTitle("Starter Armor");
-				sellList.addItem(plate.getObjectId(), 5, 2200);
-				sellList.addItem(armor.getObjectId(), 5, 3000);
-				sellList.addItem(pants.getObjectId(), 5, 1800);
+				sellList.addItem(plate.getObjectId(), 1, 2200);
+				sellList.addItem(armor.getObjectId(), 1, 3000);
+				sellList.addItem(pants.getObjectId(), 1, 1800);
 				trader.setOperateType(OperateType.SELL);
 				trader.broadcastUserInfo();
 				trader.broadcastPacket(new PrivateStoreMsgSell(trader));
@@ -214,17 +215,17 @@ public class BotManager
 			}
 			case 5: // Mystic Gear Seller
 			{
-				final ItemInstance staff = trader.getInventory().addItem(65, 5);
-				final ItemInstance wand = trader.getInventory().addItem(15, 5);
-				final ItemInstance tunic = trader.getInventory().addItem(425, 5);
-				final ItemInstance stock = trader.getInventory().addItem(426, 5);
+				final ItemInstance staff = trader.getInventory().addItem(65, 1);
+				final ItemInstance wand = trader.getInventory().addItem(15, 1);
+				final ItemInstance tunic = trader.getInventory().addItem(425, 1);
+				final ItemInstance stock = trader.getInventory().addItem(426, 1);
 				final TradeList sellList = trader.getSellList();
 				sellList.clear();
 				sellList.setTitle("Mage Gear & Robes");
-				sellList.addItem(staff.getObjectId(), 5, 4500);
-				sellList.addItem(wand.getObjectId(), 5, 1200);
-				sellList.addItem(tunic.getObjectId(), 5, 2500);
-				sellList.addItem(stock.getObjectId(), 5, 1500);
+				sellList.addItem(staff.getObjectId(), 1, 4500);
+				sellList.addItem(wand.getObjectId(), 1, 1200);
+				sellList.addItem(tunic.getObjectId(), 1, 2500);
+				sellList.addItem(stock.getObjectId(), 1, 1500);
 				trader.setOperateType(OperateType.SELL);
 				trader.broadcastUserInfo();
 				trader.broadcastPacket(new PrivateStoreMsgSell(trader));

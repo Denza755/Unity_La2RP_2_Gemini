@@ -50,7 +50,14 @@ public class UserSpawner : EntitySpawnStrategy<PlayerAppearance, Stats, PlayerSt
 
         if (user.AnimationController != null)
         {
-            user.AnimationController.Wait();
+            if (actionInfo != null && actionInfo.Sitting)
+            {
+                user.HumanoidAnimationController?.SitWait();
+            }
+            else
+            {
+                user.AnimationController.Wait();
+            }
         }
 
         WorldSpawner.Instance.AddObject(identity.Id, user);
@@ -87,6 +94,11 @@ public class UserSpawner : EntitySpawnStrategy<PlayerAppearance, Stats, PlayerSt
         entity.UpdateAppearance(appearance);
 
         UpdateAction(entity, actionInfo);
+
+        if (actionInfo != null)
+        {
+            entity.SetSitting(actionInfo.Sitting);
+        }
 
         ((NetworkEntityReferenceHolder)entity.ReferenceHolder)
             .NetworkTransformReceive

@@ -10,6 +10,7 @@ public class UserInfoPacket : ServerPacket
     public PlayerStats Stats { get; private set; }
     public PlayerAppearance Appearance { get; private set; }
     public EntityActionInfo EntityActionInfo { get; set; }
+    public byte OperateType { get; private set; }
 
     public UserInfoPacket(byte[] d) : base(d)
     {
@@ -104,7 +105,7 @@ public class UserInfoPacket : ServerPacket
             EntityActionInfo.Invisible = ReadB() == 1;
 
             ReadB(); // MountType
-            ReadB(); // OperateType
+            OperateType = (byte)ReadB(); // OperateType
 
             int cubicCount = ReadH();
             for (int i = 0; i < cubicCount; i++)

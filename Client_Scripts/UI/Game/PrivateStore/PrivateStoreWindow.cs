@@ -121,9 +121,8 @@ public class PrivateStoreWindow : L2PopupWindow
         InitWindow(root);
         yield return new WaitForEndOfFrame();
 
-        _windowEle.style.left = new Length(50, LengthUnit.Percent);
-        _windowEle.style.top = new Length(50, LengthUnit.Percent);
-        _windowEle.style.translate = new StyleTranslate(new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent)));
+        CenterWindow();
+        HideWindow(true);
 
         L2GameUI.Instance.WindowLoadComplete();
     }
@@ -137,6 +136,7 @@ public class PrivateStoreWindow : L2PopupWindow
         _cartItems.Clear();
 
         ShowWindow();
+        Debug.Log($"[PrivateStoreWindow] OpenSellStore with {_sellStoreItems.Count} items from player {_storePlayerId}");
 
         if (_titleLabel != null) _titleLabel.text = "Buy From Private Store";
         if (_leftHeader != null) _leftHeader.text = "Store Items (Click to Buy)";
@@ -156,6 +156,7 @@ public class PrivateStoreWindow : L2PopupWindow
         _cartItems.Clear();
 
         ShowWindow();
+        Debug.Log($"[PrivateStoreWindow] OpenBuyStore with {_buyStoreItems.Count} items from player {_storePlayerId}");
 
         if (_titleLabel != null) _titleLabel.text = "Sell to Private Store";
         if (_leftHeader != null) _leftHeader.text = "Buyer Wanted Items";

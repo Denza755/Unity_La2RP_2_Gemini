@@ -1563,6 +1563,14 @@ public class Player extends Playable
 		return _isSitting;
 	}
 	
+	public void setIsSitting(boolean isSitting)
+	{
+		_isSitting = isSitting;
+		_isSittingNow = false;
+		_isStanding = !isSitting;
+		_isStandingNow = false;
+	}
+	
 	@Override
 	public boolean isStanding()
 	{

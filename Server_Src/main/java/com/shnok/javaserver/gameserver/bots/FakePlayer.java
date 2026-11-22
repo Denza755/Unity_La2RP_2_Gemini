@@ -99,6 +99,16 @@ public class FakePlayer extends Player
 	}
 
 	@Override
+	public boolean isSitting()
+	{
+		if (_role == BotRole.TRADER || _botState == BotState.TRADING)
+		{
+			return true;
+		}
+		return super.isSitting();
+	}
+
+	@Override
 	public boolean isGM()
 	{
 		return false;

@@ -5,6 +5,9 @@ using UnityEngine;
 // Used by NPCS and USERS
 public class NetworkHumanoidEntity : NetworkEntity
 {
+    public bool IsInPrivateStore { get; set; }
+    public byte PrivateStoreType { get; set; }
+
     public NewHumanoidAnimationController HumanoidAnimationController { get { return (NewHumanoidAnimationController)_referenceHolder.NewAnimationController; } }
     public override void Initialize()
     {

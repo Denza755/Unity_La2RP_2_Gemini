@@ -46,5 +46,7 @@ public class PrivateStoreListSellPacket : ServerPacket
             item.ReferencePrice = ReadI();
             Items.Add(item);
         }
+
+        UnityEngine.Debug.Log($"[PrivateStore] Received {Items.Count} items from sell store {StorePlayerId}");
     }
 }

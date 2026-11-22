@@ -118,6 +118,12 @@ public class ClickManager : MonoBehaviour
             {
                 CursorManager.Instance.ChangeCursor(CursorManager.CursorType.Pickup);
             }
+            else if (_hoverObjectData.ObjectTransform != null &&
+                     _hoverObjectData.Entity is NetworkHumanoidEntity humanoid &&
+                     (humanoid.IsInPrivateStore || humanoid.PrivateStoreType > 0 || humanoid.IsSitting))
+            {
+                CursorManager.Instance.ChangeCursor(CursorManager.CursorType.Talk);
+            }
             else if (_hoverObjectData.ObjectTransform != null && _targetObjectData.ObjectTransform != null && _targetObjectData.ObjectTransform == _hoverObjectData.ObjectTransform)
             {
                 if (_hoverObjectData.ObjectTag == "Monster" && !_hoverObjectData.Entity.Status.IsDead)
