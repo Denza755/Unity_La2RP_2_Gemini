@@ -181,6 +181,11 @@ public class LoginServerPacketHandler : ServerPacketHandler
         PlayFailPacket.PlayFailReason failedReason = packet.FailedReason;
 
         Debug.LogWarning($"Play failed reason: {Enum.GetName(typeof(PlayFailPacket.PlayFailReason), failedReason)}");
+
+        EventProcessor.Instance.QueueEvent(() =>
+        {
+            ServerSelectWindow.Instance?.OnPlayFailed(failedReason);
+        });
     }
 
 

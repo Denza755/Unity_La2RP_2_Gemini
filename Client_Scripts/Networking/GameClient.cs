@@ -77,6 +77,7 @@ public class GameClient : DefaultClient
     public override void OnConnectionFailed()
     {
         base.OnConnectionFailed();
+        ServerSelectWindow.Instance?.OnServerConnectionFailed();
     }
 
     public override void OnAuthAllowed()

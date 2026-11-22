@@ -3,7 +3,13 @@ using UnityEngine;
 
 public class NetworkMonsterCombat : NetworkCombat
 {
-    public NewMonsterAnimationController MonsterAnimationController { get { return (NewMonsterAnimationController)_referenceHolder.NewAnimationController; } }
+    public NewMonsterAnimationController MonsterAnimationController
+    {
+        get
+        {
+            return _referenceHolder != null ? (NewMonsterAnimationController)_referenceHolder.NewAnimationController : null;
+        }
+    }
 
     public override void OnDeath()
     {
@@ -13,13 +19,13 @@ public class NetworkMonsterCombat : NetworkCombat
         {
             ncc.ResetDestination();
         }
-        MonsterAnimationController.Die();
+        MonsterAnimationController?.Die();
     }
 
     public override void OnRevive()
     {
         base.OnRevive();
-        MonsterAnimationController.Wait();
+        MonsterAnimationController?.Wait();
     }
 
     protected override void OnHit(Hit hit)
@@ -27,28 +33,11 @@ public class NetworkMonsterCombat : NetworkCombat
         base.OnHit(hit);
     }
 
-    // public override void StartAttackStance()
-    // {
-    //     base.StartAttackStance();
-
-    //     // MonsterAnimationController.SetBool(MonsterAnimationEvent.atk01, true);
-    // }
-
-    // public override void StopAttackStance()
-    // {
-    //     base.StopAttackStance();
-
-    //     // if (!IsDead())
-    //     // {
-    //     //     MonsterAnimationController.SetBool(MonsterAnimationEvent.atkwait, true);
-    //     // }
-    // }
-
     public override bool AttackOnce(float hitTime, float atkEndTime, bool hitSuccess, Entity attackTarget)
     {
         if (base.AttackOnce(hitTime, atkEndTime, hitSuccess, attackTarget))
         {
-            MonsterAnimationController.Attack();
+            MonsterAnimationController?.Attack();
             return true;
         }
         else

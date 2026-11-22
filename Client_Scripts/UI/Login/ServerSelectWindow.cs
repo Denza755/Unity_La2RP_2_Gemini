@@ -153,7 +153,16 @@ public class ServerSelectWindow : L2Window
 
         Debug.Log("Server selected: " + _selectedServerId);
 
-        GameClient.Instance.ServerIp = StringUtils.ByteArrayToIpAddress(_serverData[rowId].ip);
+        string targetIp = StringUtils.ByteArrayToIpAddress(_serverData[rowId].ip);
+        if (LoginClient.Instance != null &&
+            (LoginClient.Instance.ServerIp == "127.0.0.1" || LoginClient.Instance.ServerIp == "localhost") &&
+            targetIp != "127.0.0.1")
+        {
+            Debug.Log($"[ServerSelectWindow] LoginClient is on loopback ({LoginClient.Instance.ServerIp}), routing GameClient to {LoginClient.Instance.ServerIp} instead of reported {targetIp}");
+            targetIp = LoginClient.Instance.ServerIp;
+        }
+
+        GameClient.Instance.ServerIp = targetIp;
         GameClient.Instance.ServerPort = _serverData[rowId].port;
 
         if (GameManager.Instance.AutoLogin)
@@ -270,8 +279,38 @@ public class ServerSelectWindow : L2Window
             return;
         }
 
+        if (_selectedServerId < 0)
+        {
+            if (_serverElements != null && _serverElements.Count > 0 && _serverData != null && _serverData.Count > 0)
+            {
+                SelectServer(0);
+            }
+            else
+            {
+                return;
+            }
+        }
+
         _confirmPending = true;
         LoginClient.Instance.OnServerSelected(_selectedServerId);
+    }
+
+    public void OnServerConnectionFailed()
+    {
+        _confirmPending = false;
+        if (L2ConfirmWindow.Instance != null)
+        {
+            L2ConfirmWindow.Instance.ShowWindow(127, () => { }, null);
+        }
+    }
+
+    public void OnPlayFailed(PlayFailPacket.PlayFailReason reason)
+    {
+        _confirmPending = false;
+        if (L2ConfirmWindow.Instance != null)
+        {
+            L2ConfirmWindow.Instance.ShowWindow($"Server selection failed: {reason}", () => { }, null);
+        }
     }
 
     private void CancelButtonPressed()

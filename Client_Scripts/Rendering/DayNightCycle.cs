@@ -2,7 +2,7 @@ using AtmosphericHeightFog;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-[ExecuteInEditMode]
+    //[ExecuteInEditMode]
 public class DayNightCycle : MonoBehaviour
 {
     [SerializeField] private Material _skyboxMaterial;

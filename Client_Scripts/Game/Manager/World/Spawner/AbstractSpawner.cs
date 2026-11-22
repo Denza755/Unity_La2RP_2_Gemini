@@ -47,14 +47,19 @@ public abstract class EntitySpawnStrategy<TAppearance, TStats, TStatus> where TA
 
     protected void UpdateAction(Entity entity, EntityActionInfo actionInfo)
     {
+        if (entity == null || actionInfo == null)
+        {
+            return;
+        }
+
         entity.UpdateMoveType(actionInfo.Running);
 
-        if (actionInfo.InCombat)
+        if (actionInfo.InCombat && entity.ReferenceHolder != null && entity.ReferenceHolder.Combat != null)
         {
             entity.ReferenceHolder.Combat.RefreshCombatTimestamp();
         }
 
-        if (actionInfo.AlikeDead)
+        if (actionInfo.AlikeDead && entity.Combat != null)
         {
             entity.Combat.OnDeath();
         }
